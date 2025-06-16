@@ -77,10 +77,24 @@ document.addEventListener("DOMContentLoaded", () => {
         img.className = "artist-image";
         img.src = artist.previewImage;
         img.onerror = () => {
-          img.src = `https://danbooru.donmai.us${artist.backupImage || '/images/placeholder.png'}`;
+          if (artist.backupImage) {
+            img.src = `https://danbooru.donmai.us${artist.backupImage}`;
+          } else {
+            img.src = "fallback.jpg";
+            img.onerror = null;
+          }
         };
         img.loading = "lazy";
         card.appendChild(img);
+img.addEventListener("click", () => {
+          if (img.classList.contains("zoomed")) {
+            img.classList.remove("zoomed");
+            document.body.style.overflow = "";
+          } else {
+            img.classList.add("zoomed");
+            document.body.style.overflow = "hidden";
+          }
+        });
 
         const name = document.createElement("div");
         name.className = "artist-name";
