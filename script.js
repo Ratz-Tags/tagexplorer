@@ -1,4 +1,3 @@
-
 const tagIcons = {
   "pegging": "icons/pegging.svg",
   "chastity_cage": "icons/chastity_cage.svg",
@@ -12,7 +11,6 @@ const tagIcons = {
 };
 
 const activeTags = new Set();
-
 const filterTags = [
   "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial", "netorare",
   "feminization", "public_humiliation", "humiliation", "dominatrix", "tentacle_sex",
@@ -22,23 +20,33 @@ const filterTags = [
 ];
 
 let allArtists = [];
+let tooltips = {};
+let taunts = [];
+let tagTaunts = {};
 
 function renderTagButtons(tags) {
-  const container = document.getElementById("filter-buttons");
+  const container = document.getElementById("tag-buttons");
   container.innerHTML = '';
   tags.forEach(tag => {
     const btn = document.createElement("button");
     btn.className = "tag-button";
-    const img = document.createElement("img");
+
     if (tagIcons[tag]) {
+      const img = document.createElement("img");
       img.src = tagIcons[tag];
       img.alt = tag;
       img.style.height = "16px";
       img.style.marginRight = "4px";
+      btn.appendChild(img);
     }
-    btn.appendChild(img);
+
     btn.appendChild(document.createTextNode(tag.replaceAll('_', ' ')));
     btn.dataset.tag = tag;
+
+    if (tooltips[tag]) {
+      btn.title = tooltips[tag];
+    }
+
     btn.addEventListener("click", () => {
       if (activeTags.has(tag)) {
         activeTags.delete(tag);
@@ -46,6 +54,7 @@ function renderTagButtons(tags) {
       } else {
         activeTags.add(tag);
         btn.classList.add("active");
+        spawnBubble(tag);
       }
       filterArtists();
     });
@@ -70,7 +79,7 @@ function filterArtists() {
 
       const name = document.createElement("div");
       name.className = "artist-name";
-      name.textContent = artist.artistName;
+      name.textContent = `${artist.artistName} \n(${artist.nsfwLevel}, ${artist.style})`;
       card.appendChild(name);
 
       const taglist = document.createElement("div");
@@ -83,11 +92,69 @@ function filterArtists() {
   });
 }
 
-// Fetch artist data and init
-fetch("artists.json")
-  .then(res => res.json())
-  .then(data => {
-    allArtists = data;
-    renderTagButtons(filterTags);
-    filterArtists();
-  });
+function spawnBubble(tag) {
+  const container = document.getElementById("jrpg-bubbles");
+  const bubble = document.createElement("div");
+  bubble.className = "jrpg-bubble";
+
+  const pool = tagTaunts[tag] || taunts;
+  bubble.textContent = pool[Math.floor(Math.random() * pool.length)];
+
+  container.appendChild(bubble);
+  setTimeout(() => bubble.remove(), 5000);
+}
+
+// Audio controls
+const hypnoTracks = [
+  "https://on.soundcloud.com/HADalMkX8rPG2ISu0Z",
+  "https://on.soundcloud.com/vOQ4cOkO5vjnkZoqPu",
+  "https://soundcloud.com/sissypositive/happy-chastity-audio-hypnosis-18",
+  "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
+  "https://soundcloud.com/user-682994637/after-dark-2-gloryhole-instructions",
+  "https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1",
+  "https://soundcloud.com/user-526345318/sph-hypno-repetitions-4",
+  "https://soundcloud.com/dogelol-523627490/maria-dont-beg-me-soft",
+  "https://soundcloud.com/babewithaboner/bethanys-cum-rag",
+  "https://soundcloud.com/re-elle/urethral-ft-lamb-kebab-version-2"
+];
+let currentAudio = 0;
+const scPlayer = document.getElementById("sc-player");
+const audioToggle = document.getElementById("toggle-audio");
+const prevAudio = document.getElementById("prev-audio");
+const nextAudio = document.getElementById("next-audio");
+
+function loadTrack(index) {
+  const url = hypnoTracks[index];
+  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=true`;
+  document.getElementById("soundcloud-container").style.display = 'block';
+}
+
+audioToggle.addEventListener("click", () => {
+  const container = document.getElementById("soundcloud-container");
+  const visible = container.style.display !== 'none';
+  container.style.display = visible ? 'none' : 'block';
+});
+prevAudio.addEventListener("click", () => {
+  currentAudio = (currentAudio - 1 + hypnoTracks.length) % hypnoTracks.length;
+  loadTrack(currentAudio);
+});
+nextAudio.addEventListener("click", () => {
+  currentAudio = (currentAudio + 1) % hypnoTracks.length;
+  loadTrack(currentAudio);
+});
+
+loadTrack(currentAudio);
+
+Promise.all([
+  fetch("artists.json").then(r => r.json()),
+  fetch("tag-tooltips.json").then(r => r.json()),
+  fetch("taunts.json").then(r => r.json()),
+  fetch("tag-taunts.json").then(r => r.json())
+]).then(([artists, tool, baseTaunts, specificTaunts]) => {
+  allArtists = artists;
+  tooltips = tool;
+  taunts = baseTaunts;
+  tagTaunts = specificTaunts;
+  renderTagButtons(filterTags);
+  filterArtists();
+});
