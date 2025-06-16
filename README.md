@@ -1,20 +1,23 @@
-# Chastity & Kink Artist Explorer
+# Kink Artist Explorer
 
-Explore artists filtered by advanced fetish tags such as chastity, femdom, pegging, humiliation, and more.
+The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering NSFW artists on Danbooru based on humiliating kink tags like femdom, chastity, and sissy training.
 
-## Live Version
-Once deployed via GitHub Pages, access the tool at:
-`https://yourusername.github.io/kink-explorer/`
+## 💦 Features
 
-## Contents
-- `index.html`: Mobile-friendly filterable UI
-- `Chastity_Kink_Tag_Expanded_10Tags.csv`: Tag matrix (10 tags per artist)
-- `Top50_Expanded_Chastity_Kink_Heatmap.png`: Visual heatmap of Top 50
-- `Filtered_Kink_Artist_Dataset.csv`: All kink-relevant artists (filtered)
+- 🔘 Dynamic Kink Tag Filters
+- 🖼 Live Artist Card Fetching from Danbooru + Zele
+- 🎧 Embedded Femdom Hypnosis (10 rotating tracks)
+- 💬 Taunting JRPG-style Bubble Insults
+- 🎀 Feminine UI Design (coming soon)
 
-## Hosting Instructions (Mobile-Friendly)
-1. Upload all files to a new **public** GitHub repository.
-2. Go to **Settings → Pages**.
-3. Set source as `main` branch, folder `/ (root)`.
-4. GitHub will give you a shareable URL.
+## 🚀 Use
 
+Upload contents to GitHub Pages and open the site. Click your kinks. Get degraded. Try to stop.
+
+## 🖤 Credits
+
+- Audio: SoundCloud
+- Images: Danbooru
+- CDN: Zele
+
+Made by degenerates, for degenerates.

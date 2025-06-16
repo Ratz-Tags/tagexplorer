@@ -10,17 +10,22 @@
 <body>
   <div class="header">
     <h1>Kink Artist Explorer</h1>
-    <button id="toggle-audio" class="audio-toggle">🔇 Femdom Hypno</button>
+    <div class="audio-controls">
+      <button id="toggle-audio">🔇 Femdom Hypno</button>
+      <button id="prev-audio">⏮ Prev</button>
+      <button id="next-audio">⏭ Next</button>
+    </div>
   </div>
 
   <div id="soundcloud-container" style="display:none;">
     <iframe
+      id="sc-player"
       width="100%"
       height="120"
       scrolling="no"
       frameborder="no"
       allow="autoplay"
-      src="https://w.soundcloud.com/player/?url=https%3A//on.soundcloud.com/HADalMkX8rPG2ISu0Z&auto_play=true&hide_related=false&show_comments=false&show_user=false&show_reposts=false&visual=false">
+      src="">
     </iframe>
   </div>
 
