@@ -196,3 +196,54 @@ const favBtn = document.createElement("button");
 favBtn.textContent = "🌟 Show Favorites";
 favBtn.onclick = loadFavorites;
 document.querySelector(".audio-controls").appendChild(favBtn);
+
+// Patch for v7.1 — ensure .tag-button click binds even after tooltip load
+function refreshTagListeners() {
+  document.querySelectorAll(".tag-button").forEach(button => {
+    button.addEventListener("click", () => {
+      const tagName = button.textContent.replace(/ /g, "_");
+      button.classList.toggle("active");
+      showTaunt(tagName);
+      fetchArtists();
+    });
+  });
+}
+
+// After rendering all tag buttons
+setTimeout(refreshTagListeners, 1000);
+
+// Add fallback debug log if fetch returns 0 artists
+function displayArtists(list) {
+  artistGallery.innerHTML = "";
+  if (list.length === 0) {
+    artistGallery.innerHTML = "<p class='error-msg'>No artists found. Try another kink or combo.</p>";
+    console.warn("Artist list empty. Tags selected may not match core rules.");
+    return;
+  }
+
+  const saved = JSON.parse(localStorage.getItem("favorites") || "{}");
+  list.forEach(artist => {
+    const img = document.createElement("img");
+    img.src = getZeleImg(artist.name);
+    img.onerror = () => { if (artist.preview) img.src = `https://danbooru.donmai.us${artist.preview}`; };
+
+    const div = document.createElement("div");
+    div.className = "artist-card";
+    div.innerHTML = `
+      <h3>${artist.name}</h3>
+      <p>${[...artist.tags].map(t => t.replace(/_/g, " ")).join(", ")}</p>
+      <button class="save-btn">${saved[artist.name] ? "❤️ Saved" : "💾 Save"}</button>
+    `;
+    div.querySelector("button").addEventListener("click", (e) => {
+      if (saved[artist.name]) {
+        removeFavorite(artist.name);
+        e.target.textContent = "💾 Save";
+      } else {
+        saveFavorite(artist);
+        e.target.textContent = "❤️ Saved";
+      }
+    });
+    div.prepend(img);
+    artistGallery.appendChild(div);
+  });
+}
