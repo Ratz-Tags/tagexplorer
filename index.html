@@ -1,36 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kink Artist Explorer</title>
-  <link rel="stylesheet" href="style.css">
-  <script defer src="script.js"></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="header">
-    <h1>Kink Artist Explorer</h1>
-    <div class="audio-controls">
-      <button id="toggle-audio">🔇 Femdom Hypno</button>
-      <button id="prev-audio">⏮ Prev</button>
-      <button id="next-audio">⏭ Next</button>
+  <header>
+    <h1 class="site-title">Kink Artist Explorer</h1>
+    <button id="reset-filters">Reset</button>
+  </header>
+
+  <main>
+    <div id="tag-buttons" class="tag-container"></div>
+    <div id="jrpg-bubbles" class="bubble-container"></div>
+    <div id="artist-gallery" class="gallery"></div>
+  </main>
+
+  <footer>
+    <div id="audio-controls">
+      <audio id="audio-player" controls loop></audio>
     </div>
-  </div>
+  </footer>
 
-  <div id="soundcloud-container" style="display:none;">
-    <iframe
-      id="sc-player"
-      width="100%"
-      height="120"
-      scrolling="no"
-      frameborder="no"
-      allow="autoplay"
-      src="">
-    </iframe>
-  </div>
-
-  <div class="tag-grid" id="tag-buttons"></div>
-  <div class="bubble-container" id="jrpg-bubbles"></div>
-  <div class="artist-gallery" id="artist-gallery"></div>
+  <script src="script.js"></script>
 </body>
 </html>
