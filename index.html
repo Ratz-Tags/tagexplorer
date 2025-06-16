@@ -10,6 +10,11 @@
   <header>
     <h1 class="site-title">Kink Artist Explorer</h1>
     <button id="reset-filters">Reset</button>
+    <div class="audio-buttons">
+      <button id="toggle-audio">🔊</button>
+      <button id="prev-audio">⏮</button>
+      <button id="next-audio">⏭</button>
+    </div>
   </header>
 
   <main>
@@ -19,8 +24,8 @@
   </main>
 
   <footer>
-    <div id="audio-controls">
-      <audio id="audio-player" controls loop></audio>
+    <div id="soundcloud-container" style="display: none;">
+      <iframe id="sc-player" allow="autoplay" frameborder="0" width="100%" height="166"></iframe>
     </div>
   </footer>
 
