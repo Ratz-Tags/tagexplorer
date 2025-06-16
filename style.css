@@ -213,3 +213,23 @@ body {
   margin: 10px auto;
   display: block;
 }
+
+@media (max-width: 768px) {
+  .artist-card {
+    max-width: 90%;
+  }
+}
+
+.artist-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.artist-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 0 10px rgba(255, 105, 180, 0.4);
+}
+
+.tag-button[data-tag*="futanari"] { background-color: #d63384; }
+.tag-button[data-tag*="pegging"] { background-color: #6f42c1; }
+.tag-button[data-tag*="chastity_cage"] { background-color: #fd7e14; }
+.tag-button[data-tag*="feminization"] { background-color: #20c997; }
+.tag-button[data-tag*="mind_break"] { background-color: #6610f2; }
