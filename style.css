@@ -113,3 +113,103 @@ body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
+  background-color: #111;
+  color: #eee;
+  margin: 0;
+  padding: 0;
+}
+
+.artist-card {
+  background: #222;
+  border-radius: 8px;
+  padding: 10px;
+  margin: 8px;
+  text-align: center;
+  flex: 1 1 220px;
+  max-width: 260px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.artist-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+#artist-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+}
+
+#tag-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 12px auto;
+  max-width: 90%;
+}
+
+.tag-button {
+  background-color: #333;
+  color: #fff;
+  border: 1px solid #888;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.tag-button.active {
+  background-color: #ff69b4;
+  color: #000;
+  font-weight: bold;
+}
+
+.tag-button img {
+  vertical-align: middle;
+}
+
+.audio-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 10px auto;
+}
+
+.audio-buttons button {
+  background: #444;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.audio-buttons button:hover {
+  background: #ff69b4;
+  color: #000;
+}
+
+#soundcloud-container iframe {
+  width: 100%;
+  max-width: 600px;
+  height: 166px;
+  border: none;
+  margin: 10px auto;
+  display: block;
+}
