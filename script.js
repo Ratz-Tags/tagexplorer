@@ -76,12 +76,15 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = document.createElement("img");
         img.className = "artist-image";
         img.src = artist.previewImage;
+        img.onerror = () => {
+          img.src = `https://danbooru.donmai.us${artist.backupImage || '/images/placeholder.png'}`;
+        };
         img.loading = "lazy";
         card.appendChild(img);
 
         const name = document.createElement("div");
         name.className = "artist-name";
-        name.textContent = `${artist.artistName} (${artist.nsfwLevel}, ${artist.artStyle})`;
+        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ''})`;
         card.appendChild(name);
 
         const taglist = document.createElement("div");
