@@ -113,3 +113,23 @@ body {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Mobile UI improvements */
+@media (max-width: 768px) {
+  body {
+    padding: 0.5rem;
+  }
+  .tag-button {
+    margin: 4px;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
+  .artist-card {
+    margin: 0.5rem;
+    padding: 0.5rem;
+  }
+  .artist-image {
+    max-width: 100%;
+    height: auto;
+  }
+}
