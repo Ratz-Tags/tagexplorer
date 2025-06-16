@@ -49,3 +49,41 @@ document.getElementById("next-audio").addEventListener("click", () => {
 });
 
 // The rest of the artist filtering code remains unchanged from v4
+
+
+// Tag-specific taunts
+let tagTaunts = {};
+fetch("tag-taunts.json")
+  .then(res => res.json())
+  .then(data => tagTaunts = data);
+
+function showTaunt(tag = null) {
+  let msg = document.createElement("div");
+  msg.className = "jrpg-bubble";
+
+  if (tag && tagTaunts[tag]) {
+    const pool = tagTaunts[tag];
+    msg.textContent = pool[Math.floor(Math.random() * pool.length)];
+  } else {
+    const fallback = [
+      "You're really into that? Pathetic.",
+      "Keep clicking, you desperate freak.",
+      "Tsk. This is all being recorded, you know.",
+      "Your shame is showing again, slut."
+    ];
+    msg.textContent = fallback[Math.floor(Math.random() * fallback.length)];
+  }
+
+  bubbleContainer.appendChild(msg);
+  setTimeout(() => bubbleContainer.removeChild(msg), 3000);
+}
+
+// Patch tag click to use tag-based taunt
+document.querySelectorAll(".tag-button").forEach(button => {
+  button.addEventListener("click", () => {
+    const tagName = button.textContent.replace(/ /g, "_");
+    button.classList.toggle("active");
+    showTaunt(tagName);
+    fetchArtists();
+  });
+});
