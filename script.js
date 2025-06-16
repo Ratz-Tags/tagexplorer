@@ -77,12 +77,18 @@ document.addEventListener("DOMContentLoaded", () => {
         img.className = "artist-image";
         img.src = artist.previewImage;
         img.onerror = () => {
-          if (artist.backupImage) {
-            img.src = `https://danbooru.donmai.us${artist.backupImage}`;
-          } else {
-            img.src = "fallback.jpg";
-            img.onerror = null;
-          }
+          const artistName = artist.artistName;
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
+            .then(res => res.json())
+            .then(data => {
+              if (data.length && data[0].preview_file_url) {
+                img.src = `https://danbooru.donmai.us${data[0].preview_file_url}`;
+              } else {
+                img.src = "fallback.jpg";
+              }
+            }).catch(() => {
+              img.src = "fallback.jpg";
+            });
         };
         img.loading = "lazy";
         card.appendChild(img);
@@ -143,7 +149,7 @@ img.addEventListener("click", () => {
   function loadTrack(index) {
     const url = hypnoTracks[index];
     if (scPlayer) {
-      scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=true`;
+      scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
       document.getElementById("soundcloud-container").style.display = 'block';
     }
   }
