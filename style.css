@@ -1,0 +1,91 @@
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  background-size: cover;
+  background-position: center;
+  color: #eee;
+  background-color: #111;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: rgba(0, 0, 0, 0.7);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.audio-toggle {
+  background: none;
+  border: 2px solid #eee;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: #eee;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.tag-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1rem;
+  justify-content: center;
+}
+.tag-button {
+  background-color: #222;
+  border: 1px solid #888;
+  border-radius: 20px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  color: #ccc;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.tag-button.active {
+  background-color: #c0392b;
+  color: white;
+  border-color: #e74c3c;
+}
+.artist-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+.artist-card {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.5rem;
+  border-radius: 12px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+}
+.artist-card img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.bubble-container {
+  position: fixed;
+  bottom: 60px;
+  left: 20px;
+  z-index: 15;
+}
+.jrpg-bubble {
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #ccc;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  max-width: 280px;
+  font-style: italic;
+  font-size: 0.9rem;
+  animation: bubbleIn 0.3s ease-out;
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
