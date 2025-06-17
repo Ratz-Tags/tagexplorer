@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", () => {
   const tagIcons = {
     "pegging": "icons/pegging.svg",
@@ -25,26 +24,22 @@ document.addEventListener("DOMContentLoaded", () => {
   let tooltips = {};
   let taunts = [];
   let tagTaunts = {};
+  let localImages = [];
 
-  function checkImageExists(url, callback, fallback) {
-    const tester = new Image();
-    tester.onload = () => callback(url);
-    tester.onerror = fallback;
-    tester.src = url;
+  function getLocalImageFilename(name) {
+    const cleaned = name.replaceAll('/', '_').replaceAll(' ', '_');
+    return `images/${cleaned}.jpg`;
   }
 
-  function loadTopPostImage(artistName, img) {
+  function fetchDanbooruImage(artistName, img) {
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
       .then(res => res.json())
       .then(data => {
         if (data.length && data[0].preview_file_url) {
           const danbooruURL = data[0].preview_file_url.startsWith("http")
             ? data[0].preview_file_url
-            : "https://danbooru.donmai.us" + data[0].preview_file_url;
-          checkImageExists(danbooruURL, 
-            (url) => { img.src = url; },
-            () => { img.src = "fallback.png"; }
-          );
+            : data[0].preview_file_url;
+          img.src = danbooruURL;
         } else {
           img.src = "fallback.png";
         }
@@ -55,11 +50,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setBestImage(artist, img) {
-    const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
-    checkImageExists(localURL, 
-      (url) => { img.src = url; },
-      () => loadTopPostImage(artist.artistName, img)
-    );
+    const localMatch = localImages.find(n => n.toLowerCase() === artist.artistName.toLowerCase());
+    if (localMatch) {
+      img.src = getLocalImageFilename(localMatch);
+    } else {
+      fetchDanbooruImage(artist.artistName, img);
+    }
+    img.onerror = () => {
+      if (!localMatch) {
+        fetchDanbooruImage(artist.artistName, img);
+      } else {
+        img.src = "fallback.png";
+      }
+    };
   }
 
   function renderTagButtons(tags) {
@@ -197,11 +200,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   Promise.all([
     fetch("artists.json").then(r => r.json()),
+    fetch("artists-local.json").then(r => r.json()),
     fetch("tag-tooltips.json").then(r => r.json()),
     fetch("taunts.json").then(r => r.json()),
     fetch("tag-taunts.json").then(r => r.json())
-  ]).then(([artists, tool, baseTaunts, specificTaunts]) => {
+  ]).then(([artists, locals, tool, baseTaunts, specificTaunts]) => {
     allArtists = artists;
+    localImages = locals;
     tooltips = tool;
     taunts = baseTaunts;
     tagTaunts = specificTaunts;
