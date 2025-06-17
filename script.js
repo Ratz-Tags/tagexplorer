@@ -40,8 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.body.style.backgroundRepeat = 'no-repeat';
           document.body.style.backgroundAttachment = 'fixed';
           document.body.style.backgroundPosition = 'center';
-        }
- 
+        })
       .catch(err => console.error("Background image fetch failed:", err));
   }
 
