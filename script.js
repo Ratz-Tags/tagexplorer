@@ -27,23 +27,24 @@ document.addEventListener("DOMContentLoaded", () => {
   let taunts = [];
   let tagTaunts = {};
 
-  function setRandomBackground() {
-    const query = `chastity_cage`;
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${Math.floor(Math.random() * 10) + 1}&limit=40`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.length) {
-          const post = data[Math.floor(Math.random() * data.length)];
-          const imgUrl = post.large_file_url;
-          document.body.style.backgroundImage = `url(${imgUrl})`;
-          document.body.style.backgroundSize = 'auto auto';
-          document.body.style.backgroundRepeat = 'no-repeat';
-          document.body.style.backgroundAttachment = 'fixed';
-          document.body.style.backgroundPosition = 'center';
-        })
+function setRandomBackground() {
+  const query = `chastity_cage`;
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${Math.floor(Math.random() * 10) + 1}&limit=40`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length) {
+        const post = data[Math.floor(Math.random() * data.length)];
+        const imgUrl = post.large_file_url;
+        document.body.style.backgroundImage = `url(${imgUrl})`;
+        document.body.style.backgroundSize = 'auto auto';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundPosition = 'center';
       }
-      .catch(err => console.error("Background image fetch failed:", err));
-  }
+    })
+    .catch(err => console.error("Background image fetch failed:", err));
+}
+
 
   function fetchDanbooruImage(artistName, img) {
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
