@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let tooltips = {};
   let taunts = [];
   let tagTaunts = {};
+  let localImages = [];
 
   function getLocalImageFilename(name) {
     const cleaned = name.replaceAll('/', '_').replaceAll(' ', '_');
@@ -48,18 +49,20 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
   
-  function checkImageExists(url, callback, fallback) {
-    const tester = new Image();
-    tester.onload = () => callback(url);
-    tester.onerror = fallback;
-    tester.src = url;
-  }
+  
+function checkImageExists(url, callback, fallback) {
+  const tester = new Image();
+  tester.onload = () => callback(url);
+  tester.onerror = () => fallback();
+  tester.src = url;
+}
+
   
   function setBestImage(artist, img) {
     const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
     checkImageExists(localURL, 
       (url) => { img.src = url; },
-      () => fetchDanbooruImage(artist.artistName, img)
+      () => loadTopPostImage(artist.artistName, img)
 	);
   }
 
@@ -147,19 +150,17 @@ function spawnBubble(tag) {
   bubble.className = "jrpg-bubble";
 
   const chibi = document.createElement("img");
-  chibi.src = "icons/chibi.png"; // Replace with your actual file path
+  chibi.src = "chibi.png"; // Or whatever your small chibi path is
   chibi.alt = "chibi";
-  chibi.className = "chibi-icon";
-
-  const text = document.createElement("div");
-  text.className = "bubble-text";
-  const pool = tagTaunts[tag] || taunts;
-  text.textContent = pool[Math.floor(Math.random() * pool.length)];
-
+  chibi.className = "chibi";
   bubble.appendChild(chibi);
-  bubble.appendChild(text);
-  container.appendChild(bubble);
 
+  const pool = tagTaunts[tag] || taunts;
+  const tauntText = document.createElement("span");
+  tauntText.textContent = pool[Math.floor(Math.random() * pool.length)];
+  bubble.appendChild(tauntText);
+
+  container.appendChild(bubble);
   setTimeout(() => bubble.remove(), 5000);
 }
 
@@ -210,6 +211,7 @@ function spawnBubble(tag) {
 
   Promise.all([
     fetch("artists.json").then(r => r.json()),
+    fetch("artists-local.json").then(r => r.json()),
     fetch("tag-tooltips.json").then(r => r.json()),
     fetch("taunts.json").then(r => r.json()),
     fetch("tag-taunts.json").then(r => r.json())
