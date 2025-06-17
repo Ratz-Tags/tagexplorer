@@ -50,7 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setBestImage(artist, img) {
-    const localMatch = localImages.find(n => n.toLowerCase() === artist.artistName.toLowerCase());
+    const localMatch = localImages.find(n =>
+		(typeof n === 'string' ? n.toLowerCase() : n.name?.toLowerCase()) === artist.artistName.toLowerCase()
+	);
     if (localMatch) {
       img.src = getLocalImageFilename(localMatch);
     } else {
