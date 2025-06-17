@@ -225,3 +225,8 @@ function spawnBubble(tag) {
     filterArtists();
   });
 });
+
+document.body.style.display = "none";
+setTimeout(() => {
+  document.body.style.display = "";
+}, 0);
