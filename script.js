@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setRandomBackground() {
     const query = `chastity_cage`;
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&limit=200`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${Math.floor(Math.random() * 10) + 1}&limit=40`)
       .then(res => res.json())
       .then(data => {
         if (data.length) {
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.body.style.backgroundAttachment = 'fixed';
           document.body.style.backgroundPosition = 'center';
         }
-      })
+ 
       .catch(err => console.error("Background image fetch failed:", err));
   }
 
