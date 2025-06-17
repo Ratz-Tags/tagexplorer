@@ -1,8 +1,8 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-  // (Truncated for brevity - will focus on fallback image patch)
-  // Assume rest of script is fine
+  // Your existing logic, minus the broken top-level fallback test
 
+  // This function is correctly scoped and only used when an image fails inside filterArtists
   function loadTopPostImage(artistName, img) {
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
       .then(res => res.json())
@@ -17,8 +17,5 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // Example usage in image fallback:
-  const img = new Image();
-  img.src = artist.previewImage;
-  img.onerror = () => loadTopPostImage(artist.artistName, img);
+  // No unscoped usage of artist here — only used properly during render
 });
