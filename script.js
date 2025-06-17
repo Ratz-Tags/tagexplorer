@@ -41,9 +41,10 @@ function setRandomBackground() {
         document.body.style.backgroundAttachment = 'fixed';
         document.body.style.backgroundPosition = 'center';
       }
-    })
-    .catch(err => console.error("Background image fetch failed:", err));
+    }) 
+    .catch(err => console.error("Background image fetch failed:", err)); // ✅ now .catch() is in the right place
 }
+
 
 
   function fetchDanbooruImage(artistName, img) {
