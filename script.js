@@ -150,7 +150,7 @@ function spawnBubble(tag) {
   bubble.className = "jrpg-bubble";
 
   const chibi = document.createElement("img");
-  chibi.src = "chibi.png"; // Or whatever your small chibi path is
+  chibi.src = "icons/chibi.png"; // Or whatever your small chibi path is
   chibi.alt = "chibi";
   chibi.className = "chibi";
   bubble.appendChild(chibi);
