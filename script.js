@@ -1,3 +1,4 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   const tagIcons = {
     "pegging": "icons/pegging.svg",
