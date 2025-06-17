@@ -1,5 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
   setRandomBackground();
+
   const tagIcons = {
     "pegging": "icons/pegging.svg",
     "chastity_cage": "icons/chastity_cage.svg",
@@ -67,7 +68,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
     checkImageExists(localURL,
       url => img.src = url,
-      () => fetchDanbooruImage(artist.artistName, img));
+      () => fetchDanbooruImage(artist.artistName, img)
+    );
   }
 
   function showToast(message) {
@@ -180,7 +182,50 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => bubble.remove(), 5000);
   }
 
-  const hypnoTracks = [...]; // Leave as-is
+  const hypnoTracks = [
+    "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
+    "https://soundcloud.com/sissy-needs/layer-zero",
+    "https://soundcloud.com/user-526345318/sissy-hypnosis-bimbo-affirmations-deep-repetition",
+    "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
+    "https://soundcloud.com/user-526345318/hypno-affirmations-3",
+    "https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1",
+    "https://soundcloud.com/user-526345318/sph-hypno-repetitions-4",
+    "https://soundcloud.com/babewithaboner/bethanys-cum-rag",
+    "https://soundcloud.com/babewithaboner/sissy-cuckold-throws-a-fit",
+    "https://soundcloud.com/babewithaboner/ruinedorgasm-lifes-not-fair"
+  ];
+
+  let currentAudio = 0;
+  const scPlayer = document.getElementById("sc-player");
+  const audioToggle = document.getElementById("toggle-audio");
+  const prevAudio = document.getElementById("prev-audio");
+  const nextAudio = document.getElementById("next-audio");
+
+  function loadTrack(index) {
+    const url = hypnoTracks[index];
+    if (scPlayer) {
+      scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
+      document.getElementById("soundcloud-container").style.display = 'block';
+    }
+  }
+
+  if (audioToggle && prevAudio && nextAudio) {
+    audioToggle.addEventListener("click", () => {
+      const container = document.getElementById("soundcloud-container");
+      const visible = container.style.display !== 'none';
+      container.style.display = visible ? 'none' : 'block';
+    });
+    prevAudio.addEventListener("click", () => {
+      currentAudio = (currentAudio - 1 + hypnoTracks.length) % hypnoTracks.length;
+      loadTrack(currentAudio);
+    });
+    nextAudio.addEventListener("click", () => {
+      currentAudio = (currentAudio + 1) % hypnoTracks.length;
+      loadTrack(currentAudio);
+    });
+  }
+
+  loadTrack(currentAudio);
 
   Promise.all([
     fetch("artists.json").then(r => r.json()),
