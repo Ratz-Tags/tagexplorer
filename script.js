@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let tooltips = {};
   let taunts = [];
   let tagTaunts = {};
-  let localImages = [];
 
   function getLocalImageFilename(name) {
     const cleaned = name.replaceAll('/', '_').replaceAll(' ', '_');
@@ -60,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
     checkImageExists(localURL, 
       (url) => { img.src = url; },
-      () => loadTopPostImage(artist.artistName, img)
+      () => fetchDanbooruImage(artist.artistName, img)
 	);
   }
 
@@ -211,7 +210,6 @@ function spawnBubble(tag) {
 
   Promise.all([
     fetch("artists.json").then(r => r.json()),
-    fetch("artists-local.json").then(r => r.json()),
     fetch("tag-tooltips.json").then(r => r.json()),
     fetch("taunts.json").then(r => r.json()),
     fetch("tag-taunts.json").then(r => r.json())
