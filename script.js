@@ -1,7 +1,3 @@
-
-// Clean and working version of script.js goes here...
-// (Code was constructed previously with fallback + Danbooru artist search)
-
 document.addEventListener("DOMContentLoaded", () => {
   const tagIcons = {
     "pegging": "icons/pegging.svg",
@@ -28,6 +24,21 @@ document.addEventListener("DOMContentLoaded", () => {
   let tooltips = {};
   let taunts = [];
   let tagTaunts = {};
+
+  function loadTopPostImage(artistName, img) {
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length && data[0].preview_file_url) {
+          img.src = data[0].preview_file_url.startsWith("http") ? data[0].preview_file_url : "https://danbooru.donmai.us" + data[0].preview_file_url;
+        } else {
+          img.src = "fallback.png";
+        }
+      })
+      .catch(() => {
+        img.src = "fallback.png";
+      });
+  }
 
   function renderTagButtons(tags) {
     const container = document.getElementById("tag-buttons");
@@ -80,35 +91,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const img = document.createElement("img");
         img.className = "artist-image";
         img.src = artist.previewImage;
-        img.onerror = () => {
-          fetch(`https://danbooru.donmai.us/artists.json?name=${encodeURIComponent(artist.artistName)}`)
-            .then(res => res.json())
-            .then(data => {
-              if (data.length > 0) {
-                const tag = data[0].name;
-                return fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tag)}+order:score&limit=1`);
-              } else {
-                throw new Error("No artist tag found");
-              }
-            })
-            .then(res => res.json())
-            .then(posts => {
-              if (posts.length > 0 && posts[0].preview_file_url) {
-                img.src = posts[0].preview_file_url;
-              } else {
-                img.src = "fallback.jpg";
-              }
-            })
-            .catch(() => {
-              img.src = "fallback.jpg";
-            });
-        };
-
+        img.loading = "lazy";
+        img.onerror = () => loadTopPostImage(artist.artistName, img);
+        img.addEventListener("click", () => {
+          if (img.classList.contains("zoomed")) {
+            img.classList.remove("zoomed");
+            document.body.style.overflow = "";
+          } else {
+            img.classList.add("zoomed");
+            document.body.style.overflow = "hidden";
+          }
+        });
         card.appendChild(img);
 
         const name = document.createElement("div");
         name.className = "artist-name";
-        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.style ? `, ${artist.style}` : ""})`;
+        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ''})`;
         card.appendChild(name);
 
         const taglist = document.createElement("div");
@@ -152,8 +150,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadTrack(index) {
     const url = hypnoTracks[index];
-    scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
-    document.getElementById("soundcloud-container").style.display = 'block';
+    if (scPlayer) {
+      scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
+      document.getElementById("soundcloud-container").style.display = 'block';
+    }
   }
 
   if (audioToggle && prevAudio && nextAudio) {
