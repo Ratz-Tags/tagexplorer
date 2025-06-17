@@ -65,6 +65,12 @@ body {
   box-shadow: 0 0 10px #ff3399;
 }
 
+.artist-name {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #f2f2f2;
+}
+
 .artist-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
