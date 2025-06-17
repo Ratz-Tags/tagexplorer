@@ -35,7 +35,7 @@ function setRandomBackground()
     .then(data => {
       if (data.length) {
         const post = data[Math.floor(Math.random() * data.length)];
-        const imgUrl = post.large_file_url?.startsWith('http')
+        const imgUrl = post.large_file_url.startsWith('http')
           ? post.large_file_url
           : post.large_file_url;
         
