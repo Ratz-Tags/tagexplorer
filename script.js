@@ -26,12 +26,25 @@ document.addEventListener("DOMContentLoaded", () => {
   let taunts = [];
   let tagTaunts = {};
 
+  function checkImageExists(url, callback, fallback) {
+    const tester = new Image();
+    tester.onload = () => callback(url);
+    tester.onerror = fallback;
+    tester.src = url;
+  }
+
   function loadTopPostImage(artistName, img) {
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
       .then(res => res.json())
       .then(data => {
         if (data.length && data[0].preview_file_url) {
-          img.src = data[0].preview_file_url.startsWith("http") ? data[0].preview_file_url : "https://danbooru.donmai.us" + data[0].preview_file_url;
+          const danbooruURL = data[0].preview_file_url.startsWith("http")
+            ? data[0].preview_file_url
+            : "https://danbooru.donmai.us" + data[0].preview_file_url;
+          checkImageExists(danbooruURL, 
+            (url) => { img.src = url; },
+            () => { img.src = "fallback.png"; }
+          );
         } else {
           img.src = "fallback.png";
         }
@@ -39,6 +52,14 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(() => {
         img.src = "fallback.png";
       });
+  }
+
+  function setBestImage(artist, img) {
+    const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
+    checkImageExists(localURL, 
+      (url) => { img.src = url; },
+      () => loadTopPostImage(artist.artistName, img)
+    );
   }
 
   function renderTagButtons(tags) {
@@ -91,9 +112,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const img = document.createElement("img");
         img.className = "artist-image";
-        img.src = artist.previewImage;
         img.loading = "lazy";
-        img.onerror = () => loadTopPostImage(artist.artistName, img);
+        setBestImage(artist, img);
         img.addEventListener("click", () => {
           if (img.classList.contains("zoomed")) {
             img.classList.remove("zoomed");
