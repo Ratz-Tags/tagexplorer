@@ -48,12 +48,21 @@ document.addEventListener("DOMContentLoaded", () => {
         img.src = "fallback.png";
       });
   }
-
+  
+  function checkImageExists(url, callback, fallback) {
+    const tester = new Image();
+    tester.onload = () => callback(url);
+    tester.onerror = fallback;
+    tester.src = url;
+  }
+  
   function setBestImage(artist, img) {
-    const localMatch = localImages.find(n => {
-		const name = typeof n === 'string' ? n : (n && typeof n.name === 'string' ? n.name : null);
-		return name?.toLowerCase() === artist.artistName.toLowerCase();
-	});
+    const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
+    checkImageExists(localURL, 
+      (url) => { img.src = url; },
+      () => loadTopPostImage(artist.artistName, img)
+    );
+  }
 
     if (localMatch) {
       img.src = getLocalImageFilename(localMatch);
@@ -147,17 +156,27 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function spawnBubble(tag) {
-    const container = document.getElementById("jrpg-bubbles");
-    const bubble = document.createElement("div");
-    bubble.className = "jrpg-bubble";
+function spawnBubble(tag) {
+  const container = document.getElementById("jrpg-bubbles");
+  const bubble = document.createElement("div");
+  bubble.className = "jrpg-bubble";
 
-    const pool = tagTaunts[tag] || taunts;
-    bubble.textContent = pool[Math.floor(Math.random() * pool.length)];
+  const chibi = document.createElement("img");
+  chibi.src = "icons/chibi.png"; // Replace with your actual file path
+  chibi.alt = "chibi";
+  chibi.className = "chibi-icon";
 
-    container.appendChild(bubble);
-    setTimeout(() => bubble.remove(), 5000);
-  }
+  const text = document.createElement("div");
+  text.className = "bubble-text";
+  const pool = tagTaunts[tag] || taunts;
+  text.textContent = pool[Math.floor(Math.random() * pool.length)];
+
+  bubble.appendChild(chibi);
+  bubble.appendChild(text);
+  container.appendChild(bubble);
+
+  setTimeout(() => bubble.remove(), 5000);
+}
 
   const hypnoTracks = [
     "https://soundcloud.com/sissypositive/happy-chastity-audio-hypnosis-18",
