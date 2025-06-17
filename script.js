@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function setRandomBackground() {
   const query = `chastity_cage`;
 
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&limit=10`)
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&limit=200`)
     .then(res => res.json())
     .then(data => {
       if (data.length) {
@@ -40,7 +40,7 @@ function setRandomBackground() {
           : post.large_file_url;
         
         document.body.style.backgroundImage = `url(${imgUrl})`;
-        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundSize = 'auto auto';
         document.body.style.backgroundRepeat = 'no-repeat';
         document.body.style.backgroundAttachment = 'fixed';
         document.body.style.backgroundPosition = 'center';
