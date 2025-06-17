@@ -27,9 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let tagTaunts = {};
   let localImages = [];
 
-function setRandomBackground() {
-  const randomTag = filterTags[Math.floor(Math.random() * filterTags.length)];
-  const query = `chastity_cage+${randomTag}`;
+function setRandomBackground()
+  const query = `chastity_cage`;
 
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&limit=10`)
     .then(res => res.json())
