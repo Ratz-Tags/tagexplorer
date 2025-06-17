@@ -6,6 +6,7 @@ body {
   background-blend-mode: overlay;
   color: #660033;
   background-attachment: fixed;
+  overflow-x: hidden;
 }
 
 .header {
@@ -61,6 +62,10 @@ body {
   background-color: #ff66b2;
   color: white;
   box-shadow: 0 0 10px #ff3399;
+  animation: throb 1.2s infinite ease-in-out;
+}
+.tag-button:hover {
+  transform: scale(1.05);
 }
 
 .artist-gallery {
@@ -77,6 +82,7 @@ body {
   font-style: italic;
   box-shadow: 0 0 10px #ff99cc;
   transition: transform 0.2s;
+  position: relative;
 }
 .artist-card:hover {
   transform: scale(1.03);
@@ -86,6 +92,25 @@ body {
   max-height: 200px;
   object-fit: cover;
   border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+.artist-card img.zoomed {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: auto;
+  height: 95vh;
+  max-width: 95vw;
+  transform: translate(-50%, -50%);
+  z-index: 9999;
+  border-radius: 18px;
+  box-shadow: 0 0 30px #ff66b2;
+  animation: pulseIn 0.3s ease-out;
+}
+
+@keyframes pulseIn {
+  from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
 }
 
 .bubble-container {
@@ -138,4 +163,51 @@ body {
   padding: 4px 6px;
   border-radius: 8px;
   display: inline-block;
+}
+
+.toast {
+  position: fixed;
+  bottom: 1rem;
+  right: 1rem;
+  background: #ffccf2;
+  color: #800040;
+  padding: 0.8rem 1.2rem;
+  border-radius: 12px;
+  font-weight: bold;
+  box-shadow: 0 0 20px #ff66b2;
+  animation: fadeToast 2s ease-out;
+  z-index: 9999;
+}
+
+@keyframes fadeToast {
+  0% { opacity: 0; transform: translateY(20px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(20px); }
+}
+
+@keyframes throb {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+
+@media screen and (max-width: 600px) {
+  .jrpg-bubble {
+    max-width: 80vw;
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem 0.5rem 2.2rem;
+  }
+
+  .artist-card img.zoomed {
+    width: auto;
+    height: 100vh;
+    max-width: 100vw;
+    border-radius: 0;
+  }
+
+  .toast {
+    right: 0.5rem;
+    left: 0.5rem;
+    text-align: center;
+  }
 }
