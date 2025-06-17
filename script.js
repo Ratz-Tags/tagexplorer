@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
     checkImageExists(localURL, 
       (url) => { img.src = url; },
       () => loadTopPostImage(artist.artistName, img)
-    );
+	);
   }
 
   function renderTagButtons(tags) {
