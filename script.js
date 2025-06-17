@@ -1,4 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
+  setRandomBackground();
   const tagIcons = {
     "pegging": "icons/pegging.svg",
     "chastity_cage": "icons/chastity_cage.svg",
@@ -19,13 +20,35 @@ document.addEventListener("DOMContentLoaded", () => {
     "prostate_milking", "lactation", "sex_machine", "cyber_femdom", "gagged",
     "sissy_training", "extreme_penetration", "large_penetration", "netorase"
   ];
-
+  
   let allArtists = [];
   let tooltips = {};
   let taunts = [];
   let tagTaunts = {};
   let localImages = [];
 
+function setRandomBackground() {
+  const randomTag = filterTags[Math.floor(Math.random() * filterTags.length)];
+  const query = `chastity_cage+${randomTag}`;
+
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&limit=10`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length) {
+        const post = data[Math.floor(Math.random() * data.length)];
+        const imgUrl = post.large_file_url?.startsWith('http')
+          ? post.large_file_url
+          : post.large_file_url;
+        
+        document.body.style.backgroundImage = `url(${imgUrl})`;
+        document.body.style.backgroundSize = 'cover';
+        document.body.style.backgroundRepeat = 'no-repeat';
+        document.body.style.backgroundAttachment = 'fixed';
+        document.body.style.backgroundPosition = 'center';
+      }
+    })
+    .catch(err => console.error("Background image fetch failed:", err));
+}
   function getLocalImageFilename(name) {
     const cleaned = name.replaceAll('/', '_').replaceAll(' ', '_');
     return `images/${cleaned}.jpg`;
