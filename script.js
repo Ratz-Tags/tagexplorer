@@ -64,20 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-    if (localMatch) {
-      img.src = getLocalImageFilename(localMatch);
-    } else {
-      fetchDanbooruImage(artist.artistName, img);
-    }
-    img.onerror = () => {
-      if (!localMatch) {
-        fetchDanbooruImage(artist.artistName, img);
-      } else {
-        img.src = "fallback.png";
-      }
-    };
-  }
-
   function renderTagButtons(tags) {
     const container = document.getElementById("tag-buttons");
     container.innerHTML = '';
