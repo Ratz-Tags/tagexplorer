@@ -101,7 +101,7 @@ setInterval(setRandomBackground, 10000); // update every 10 seconds
         img.src = "fallback.png";
       }
     })
-    .catch(() => img.src = "fallback.png");
+    .catch(() => img.src = "fallback.jpg");
   }
 
   function showToast(message) {
