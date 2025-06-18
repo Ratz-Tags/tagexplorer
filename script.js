@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-
+  setRandomBackground();
   const tagIcons = {
     "pegging": "icons/pegging.svg",
     "chastity_cage": "icons/chastity_cage.svg",
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   setRandomBackground();
-setInterval(setRandomBackground, 10000); // update every 10 seconds
+  setInterval(setRandomBackground, 10000); // update every 10 seconds
 
   function fetchDanbooruImage(artistName, img) {
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order: approval&limit=1`)
