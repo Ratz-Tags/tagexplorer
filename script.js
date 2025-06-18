@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function setRandomBackground() {
     const query = `chastity_cage`;
     const page = Math.floor(Math.random() * 10) + 1;
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${page}&limit=40`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&page=${page}&limit=40`)
       .then(res => res.json())
       .then(data => {
         if (data.length) {
@@ -49,17 +49,21 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function fetchDanbooruImage(artistName, img) {
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
-      .then(res => res.json())
-      .then(data => {
-        const post = data[0];
-        if (post?.preview_file_url) {
-          const url = post.preview_file_url;
-          img.src = url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-        } else img.src = "fallback.png";
-      })
-      .catch(() => img.src = "fallback.png");
-  }
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order: approval&limit=1`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length && data[0].preview_file_url) {
+        const url = data[0].preview_file_url;
+        img.onerror = () => { img.src = "fallback.png"; };  // <--- ensures fallback
+        img.src = url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+      } else {
+        img.src = "fallback.png";
+      }
+    })
+    .catch(() => {
+      img.src = "fallback.png";
+    });
+}
 
   function checkImageExists(url, callback, fallback) {
     const tester = new Image();
