@@ -69,11 +69,34 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setBestImage(artist, img) {
-    const localURL = `images/${encodeURIComponent(artist.artistName)}.jpg`;
-    checkImageExists(localURL,
-      url => img.src = url,
-      () => fetchDanbooruImage(artist.artistName, img)
-    );
+  const cacheKey = `danbooru-image-${artist.artistName}`;
+
+  // Check localStorage first
+  const cachedUrl = localStorage.getItem(cacheKey);
+  if (cachedUrl) {
+    img.src = cachedUrl;
+    return;
+  }
+
+  // Fetch from Danbooru
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approvals&limit=1`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length && data[0].large_file_url) {
+        const url = data[0].large_file_url.startsWith("http")
+          ? data[0].large_file_url
+          : `https://danbooru.donmai.us${data[0].large_file_url}`;
+        localStorage.setItem(cacheKey, url);
+        img.src = url;
+      } else if (data.length && data[0].file_url) {
+        const fallbackUrl = `https://danbooru.donmai.us${data[0].file_url}`;
+        localStorage.setItem(cacheKey, fallbackUrl);
+        img.src = fallbackUrl;
+      } else {
+        img.src = "fallback.png";
+      }
+    })
+    .catch(() => img.src = "fallback.png");
   }
 
   function showToast(message) {
