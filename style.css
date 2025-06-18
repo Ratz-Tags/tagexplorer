@@ -96,8 +96,8 @@ body {
   position: fixed;
   top: 50%;
   left: 50%;
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: 65vw;
+  max-height: 65vh;
   transform: translate(-50%, -50%);
   border: 6px dashed #ff66b2;
   box-shadow: 0 0 50px #ff99cc;
