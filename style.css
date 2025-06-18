@@ -96,15 +96,26 @@ body {
   position: fixed;
   top: 50%;
   left: 50%;
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 90vw;
+  max-height: 90vh;
   transform: translate(-50%, -50%);
   border: 6px dashed #ff66b2;
   box-shadow: 0 0 50px #ff99cc;
   z-index: 100;
+  animation: throb 2s infinite ease-in-out;
   background: rgba(255, 240, 255, 0.9);
   border-radius: 20px;
-  animation: throb 2s infinite ease-in-out;
+  object-fit: contain; 
+}
+
+.fullscreen-img::before {
+  content: "";
+  position: absolute;
+  top: -10px; left: -10px;
+  right: -10px; bottom: -10px;
+  background: url('images/lace-border.png') no-repeat center/cover;
+  pointer-events: none;
+  border-radius: 20px;
 }
 
 @keyframes throb {
