@@ -31,7 +31,17 @@ body {
   100% { box-shadow: 0 0 6px #ff99cc; }
 }
 
+.artist-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  justify-items: center; /* ✨ centers cards */
+}
+
 .artist-card {
+  width: 100%;
+  max-width: 220px; /* ✨ keeps them from stretching wide */
   background: rgba(255, 200, 240, 0.5);
   padding: 0.6rem;
   border-radius: 16px;
@@ -39,9 +49,6 @@ body {
   font-style: italic;
   box-shadow: 0 0 10px #ff99cc;
   transition: transform 0.2s;
-  border-image: url('images/lace-border.png') 30 round; /* Optional decorative lace */
-  border-width: 8px;
-  border-style: solid;
 }
 
 .artist-card:hover {
