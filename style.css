@@ -2,11 +2,22 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Comic Neue', cursive, sans-serif;
-  background: url('images/gooner-bg.jpg') center/cover no-repeat fixed, linear-gradient(to bottom, #ffccf9, #ffe6f7);
+  background: url('images/gooner-bg.jpg') center/cover no-repeat fixed, translarent;
   background-blend-mode: overlay;
   color: #660033;
   background-attachment: fixed;
   overflow-x: hidden;
+}
+
+.background-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: brightness(0.65) blur(2px);
+  transition: background-image 1s ease-in-out;
 }
 
 .header {
