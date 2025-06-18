@@ -73,36 +73,53 @@ document.addEventListener("DOMContentLoaded", () => {
     tester.src = url;
   }
 
-  function setBestImage(artist, img) {
+ function setBestImage(artist, img) {
   const cacheKey = `danbooru-image-${artist.artistName}`;
-
-  // Check localStorage first
   const cachedUrl = localStorage.getItem(cacheKey);
+
+  const tryLoad = (url, retries = 2) => {
+    const testImg = new Image();
+    testImg.onload = () => {
+      img.src = url;
+      localStorage.setItem(cacheKey, url);
+    };
+    testImg.onerror = () => {
+      if (retries > 0) {
+        setTimeout(() => tryLoad(url, retries - 1), 500); // retry after 0.5s
+      } else {
+        img.src = "fallback.jpg";
+      }
+    };
+    testImg.src = url;
+  };
+
   if (cachedUrl) {
-    img.src = cachedUrl;
+    tryLoad(cachedUrl);
     return;
   }
 
-  // Fetch from Danbooru
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approvals&limit=1`)
     .then(res => res.json())
     .then(data => {
-      if (data.length && data[0].large_file_url) {
-        const url = data[0].large_file_url.startsWith("http")
-          ? data[0].large_file_url
-          : `https://danbooru.donmai.us${data[0].large_file_url}`;
-        localStorage.setItem(cacheKey, url);
-        img.src = url;
-      } else if (data.length && data[0].file_url) {
-        const fallbackUrl = `https://danbooru.donmai.us${data[0].file_url}`;
-        localStorage.setItem(cacheKey, fallbackUrl);
-        img.src = fallbackUrl;
+      if (data.length) {
+        const post = data[0];
+        const rawUrl = post.large_file_url || post.file_url;
+        if (rawUrl) {
+          const url = rawUrl.startsWith("http") ? rawUrl : `https://danbooru.donmai.us${rawUrl}`;
+          tryLoad(url);
+        } else {
+          img.src = "fallback.jpg";
+        }
       } else {
-        img.src = "fallback.png";
+        img.src = "fallback.jpg";
       }
     })
-    .catch(() => img.src = "fallback.jpg");
-  }
+    .catch(() => {
+      img.src = "fallback.jpg";
+    });
+}
+
+
 
   function showToast(message) {
     const toast = document.createElement("div");
