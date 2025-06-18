@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  setRandomBackground();
 
   const tagIcons = {
     "pegging": "icons/pegging.svg",
@@ -28,25 +27,27 @@ document.addEventListener("DOMContentLoaded", () => {
   let tagTaunts = {};
 
   function setRandomBackground() {
-    const query = `chastity_cage`;
-    const page = Math.floor(Math.random() * 10) + 1;
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&page=${page}&limit=40`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.length) {
-          const post = data[Math.floor(Math.random() * data.length)];
-          const imgUrl = post.large_file_url || post.file_url;
-          if (imgUrl) {
-            document.body.style.backgroundImage = `url(${imgUrl})`;
-            document.body.style.backgroundSize = 'auto auto';
-            document.body.style.backgroundRepeat = 'no-repeat';
-            document.body.style.backgroundAttachment = 'fixed';
-            document.body.style.backgroundPosition = 'center';
-          }
+  const query = "chastity_cage";
+  const page = Math.floor(Math.random() * 10) + 1;
+
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&page=${page}&limit=40`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length) {
+        const post = data[Math.floor(Math.random() * data.length)];
+        const imgUrl = post.large_file_url || post.file_url;
+
+        const bgDiv = document.getElementById("background-overlay");
+        if (bgDiv && imgUrl) {
+          bgDiv.style.backgroundImage = `url(${imgUrl})`;
         }
-      })
-      .catch(err => console.error("Background fetch failed:", err));
+      }
+    })
+    .catch(err => console.error("Background fetch failed:", err));
   }
+
+  setRandomBackground();
+setInterval(setRandomBackground, 10000); // update every 10 seconds
 
   function fetchDanbooruImage(artistName, img) {
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order: approval&limit=1`)
@@ -54,14 +55,14 @@ document.addEventListener("DOMContentLoaded", () => {
     .then(data => {
       if (data.length && data[0].preview_file_url) {
         const url = data[0].preview_file_url;
-        img.onerror = () => { img.src = "fallback.png"; };  // <--- ensures fallback
+        img.onerror = () => { img.src = "fallback.jpg"; };  // <--- ensures fallback
         img.src = url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
       } else {
-        img.src = "fallback.png";
+        img.src = "fallback.jpg";
       }
     })
     .catch(() => {
-      img.src = "fallback.png";
+      img.src = "fallback.jpg";
     });
 }
 
