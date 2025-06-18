@@ -27,32 +27,34 @@ document.addEventListener("DOMContentLoaded", () => {
   let taunts = [];
   let tagTaunts = {};
 
-function setRandomBackground() {
-  const query = `chastity_cage`;
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${Math.floor(Math.random() * 10) + 1}&limit=40`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length) {
-        const post = data[Math.floor(Math.random() * data.length)];
-        const imgUrl = post.large_file_url;
-        document.body.style.backgroundImage = `url(${imgUrl})`;
-        document.body.style.backgroundSize = 'auto auto';
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundAttachment = 'fixed';
-        document.body.style.backgroundPosition = 'center';
-      }
-    }) 
-    .catch(err => console.error("Background image fetch failed:", err)); // ✅ now .catch() is in the right place
-}
-
-
+  function setRandomBackground() {
+    const query = `chastity_cage`;
+    const page = Math.floor(Math.random() * 10) + 1;
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:rank&page=${page}&limit=40`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length) {
+          const post = data[Math.floor(Math.random() * data.length)];
+          const imgUrl = post.large_file_url || post.file_url;
+          if (imgUrl) {
+            document.body.style.backgroundImage = `url(${imgUrl})`;
+            document.body.style.backgroundSize = 'auto auto';
+            document.body.style.backgroundRepeat = 'no-repeat';
+            document.body.style.backgroundAttachment = 'fixed';
+            document.body.style.backgroundPosition = 'center';
+          }
+        }
+      })
+      .catch(err => console.error("Background fetch failed:", err));
+  }
 
   function fetchDanbooruImage(artistName, img) {
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order:rank&limit=1`)
       .then(res => res.json())
       .then(data => {
-        if (data.length && data[0].preview_file_url) {
-          const url = data[0].preview_file_url;
+        const post = data[0];
+        if (post?.preview_file_url) {
+          const url = post.preview_file_url;
           img.src = url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
         } else img.src = "fallback.png";
       })
@@ -88,7 +90,6 @@ function setRandomBackground() {
     tags.forEach(tag => {
       const btn = document.createElement("button");
       btn.className = "tag-button";
-
       if (tagIcons[tag]) {
         const img = document.createElement("img");
         img.src = tagIcons[tag];
@@ -97,7 +98,6 @@ function setRandomBackground() {
         img.style.marginRight = "4px";
         btn.appendChild(img);
       }
-
       btn.appendChild(document.createTextNode(tag.replaceAll('_', ' ')));
       btn.dataset.tag = tag;
       if (tooltips[tag]) btn.title = tooltips[tag];
