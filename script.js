@@ -121,7 +121,7 @@ function setRandomBackground() {
       }
     })
     .catch(() => {
-      backgroundBlur.style.backgroundColor = \"#111\"; // fallback
+      backgroundBlur.style.backgroundColor = "#111"; // fallback
     });
 }
 
