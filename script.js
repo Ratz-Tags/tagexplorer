@@ -255,7 +255,6 @@ function setRandomBackground() {
 }
 
     copiedSidebar.appendChild(container);
-  }
 
   name.textContent = "Copied!";
   setTimeout(() => {
