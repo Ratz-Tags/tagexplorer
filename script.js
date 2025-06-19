@@ -35,18 +35,28 @@ let cachedArtists = [];
 let tagTooltips = {};
 let tagTaunts = {};
 
-fetch("tag-tooltips.json").then(r => r.json()).then(d => tagTooltips = d);
-fetch("tag-taunts.json").then(r => r.json()).then(d => tagTaunts = d);
+Promise.all([
+  fetch("tag-tooltips.json").then(r => r.json()).catch(() => ({})),
+  fetch("tag-taunts.json").then(r => r.json()).catch(() => ({}))
+])
+.then(([tooltips, taunts]) => {
+  tagTooltips = tooltips;
+  tagTaunts = taunts;
+  renderTagButtons();
+  fetchAndRenderArtists();
+})
+.catch(console.error);
 
-// Load all tag buttons
-kinkTags.forEach((tag) => {
-  const btn = document.createElement("button");
-  btn.classList.add("tag-button");
-  btn.innerText = tag.replaceAll("_", " ");
-  btn.title = tagTooltips[tag] || `You really tapped '${tag}'? Pathetic.`;
-  btn.addEventListener("click", () => toggleTag(tag, btn));
-  tagButtonsContainer.appendChild(btn);
-});
+function renderTagButtons() {
+  kinkTags.forEach((tag) => {
+    const btn = document.createElement("button");
+    btn.classList.add("tag-button");
+    btn.innerText = tag.replaceAll("_", " ");
+    btn.title = tagTooltips[tag] || `You really tapped '${tag}'? Pathetic.`;
+    btn.addEventListener("click", () => toggleTag(tag, btn));
+    tagButtonsContainer.appendChild(btn);
+  });
+}
 
 function toggleTag(tag, btn) {
   if (activeTags.includes(tag)) {
@@ -78,7 +88,8 @@ function updateBackground(tag) {
       if (posts[0]?.large_file_url) {
         backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${posts[0].large_file_url})`;
       }
-    });
+    })
+    .catch(console.error);
 }
 
 function fetchAndRenderArtists() {
@@ -87,9 +98,12 @@ function fetchAndRenderArtists() {
     .then((res) => res.json())
     .then((artists) => {
       cachedArtists = artists.filter((a) =>
-        activeTags.every((tag) => a.tags.includes(tag))
+        activeTags.length === 0 || activeTags.every((tag) => a.tags.includes(tag))
       );
       cachedArtists.forEach((artist, index) => createArtistCard(artist, index));
+    })
+    .catch((err) => {
+      console.error("Failed to load artists.json", err);
     });
 }
 
@@ -184,5 +198,3 @@ nextAudioBtn.addEventListener("click", () => {
   currentAudioIndex = (currentAudioIndex + 1) % audioLinks.length;
   loadAudio(currentAudioIndex);
 });
-
-window.addEventListener("load", fetchAndRenderArtists);
