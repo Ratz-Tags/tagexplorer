@@ -105,23 +105,26 @@ function showToast(message) {
 }
 
 
-  function setRandomBackground() {
-    const tag = [...activeTags].at(-1) || "femdom";
-    const page = Math.floor(Math.random() * 5) + 1;
-    const url = `https://danbooru.donmai.us/posts.json?limit=100&page=${page}&tags=${encodeURIComponent(`order:approval rating:explicit ${tag}`)}`;
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
+function setRandomBackground() {
+  const query = "chastity_cage"; // or any other default
+  const page = Math.floor(Math.random() * 5) + 1;
+
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
+    .then(res => res.json())
+    .then(data => {
+      if (data.length) {
         const post = data[Math.floor(Math.random() * data.length)];
-        if (post?.large_file_url) {
-          localStorage.setItem("backgroundImage", `https://danbooru.donmai.us${post.large_file_url}`);
-          backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${post.large_file_url})`;
-        } else {
-          const cached = localStorage.getItem("backgroundImage");
-          if (cached) backgroundBlur.style.backgroundImage = `url(${cached})`;
+        const url = post.large_file_url || post.file_url;
+        if (url && backgroundBlur) {
+          backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${url})`;
         }
-      });
-  }
+      }
+    })
+    .catch(() => {
+      backgroundBlur.style.backgroundColor = \"#111\"; // fallback
+    });
+}
+
 
   function spawnBubble(tag) {
     const div = document.createElement("div");
@@ -285,5 +288,7 @@ function showToast(message) {
     renderTagButtons();
     filterArtists();
     setRandomBackground();
+    setInterval(setRandomBackground, 15000); // every 15 seconds
+
   });
 });
