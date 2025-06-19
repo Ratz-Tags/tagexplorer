@@ -162,7 +162,7 @@ function updateLightbox(artist) {
 
 // Soundcloud logic
 function setSoundcloudTrack(index) {
-  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudLinks[index])}&auto_play=true`;
+  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudLinks[index])}&auto_play=false`;
 }
 
 toggleAudioBtn.onclick = () => {
