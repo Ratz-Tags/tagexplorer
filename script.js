@@ -123,7 +123,7 @@ function setRandomBackground() {
     })
     .catch(() => {
       backgroundBlur.style.backgroundColor = "#111"; // fallback
-    )};
+    });
 }
 
 
