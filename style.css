@@ -11,12 +11,12 @@ body {
 #background-blur {
   position: fixed;
   inset: 0;
-  z-index: -1;
   background-size: cover;
   background-position: center;
-  filter: blur(8px) brightness(0.3);
+  filter: blur(8px) brightness(0.25);
+  z-index: -1;
+  transition: background-image 1s ease-in-out;
 }
-
 
 #tag-buttons {
   display: flex;
@@ -58,12 +58,10 @@ body {
   text-align: center;
   box-shadow: 0 0 8px #ff00c880;
   transition: transform 0.2s;
-  max-width: 300px;
-  overflow-wrap: break-word;
 }
 
 .artist-card:hover {
-  transform: scale(1.15);
+  transform: scale(1.05);
 }
 
 .artist-image {
@@ -159,7 +157,8 @@ body {
 }
 
 #artist-gallery {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   flex-wrap: wrap;
   justify-content: center;
   padding: 2rem;
