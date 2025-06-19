@@ -220,20 +220,26 @@ function setRandomBackground() {
           zoomed.onclick = () => zoomed.remove();
         });
 
-        const name = document.createElement("div");
-        name.className = "artist-name";
-        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+        // Touch (mobile) long press
         name.addEventListener("touchstart", e => {
-          name.dataset.touchStart = Date.now();
+        name.dataset.touchStart = Date.now();
         });
-      name.addEventListener("touchend", e => {
-      if (Date.now() - name.dataset.touchStart < 1000) return;
-        const cleanName = artist.artistName.replaceAll("_", " ");
-        navigator.clipboard.writeText(cleanName);
-        showToast("Copied: " + cleanName);
 
-      if (!copiedArtists.has(artist.artistName)) {
-    copiedArtists.add(artist.artistName);
+        name.addEventListener("touchend", e => {
+        if (Date.now() - name.dataset.touchStart < 800) return;
+        handleArtistCopy(artist, img.src);
+        });
+
+        // Mouse (desktop) long press
+        name.addEventListener("mousedown", e => {
+        name.dataset.mouseDown = Date.now();
+        });
+
+        name.addEventListener("mouseup", e => {
+        if (Date.now() - name.dataset.mouseDown < 800) return;
+          handleArtistCopy(artist, img.src);
+      });
+
 
     const container = document.createElement("div");
     container.className = "sidebar-artist";
@@ -273,7 +279,36 @@ function setRandomBackground() {
       }
     });
   }
+  function handleArtistCopy(artist, previewUrl) {
+  const cleanName = artist.artistName.replaceAll("_", " ");
+  navigator.clipboard.writeText(cleanName);
+  showToast("Copied: " + cleanName);
 
+  if (!copiedArtists.has(artist.artistName)) {
+    copiedArtists.add(artist.artistName);
+
+    const container = document.createElement("div");
+    container.className = "sidebar-artist";
+    container.id = `copy-${artist.artistName}`;
+
+    const previewImg = document.createElement("img");
+    previewImg.src = previewUrl || "fallback.jpg";
+    container.appendChild(previewImg);
+
+    const span = document.createElement("span");
+    span.textContent = cleanName;
+    container.appendChild(span);
+
+    container.onclick = () => {
+      const zoomed = previewImg.cloneNode();
+      zoomed.className = "fullscreen-img";
+      document.body.appendChild(zoomed);
+      zoomed.onclick = () => zoomed.remove();
+    };
+
+    copiedSidebar.appendChild(container);
+  }
+}
   Promise.all([
     fetch("artists.json").then(r => r.json()),
     fetch("artists-local.json").then(r => r.json()),
