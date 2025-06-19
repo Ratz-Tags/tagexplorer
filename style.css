@@ -58,10 +58,12 @@ body {
   text-align: center;
   box-shadow: 0 0 8px #ff00c880;
   transition: transform 0.2s;
+  max-width: 300px;
+  overflow-wrap: break-word;
 }
 
 .artist-card:hover {
-  transform: scale(1.02);
+  transform: scale(1.15);
 }
 
 .artist-image {
@@ -161,7 +163,6 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   padding: 2rem;
-  max-width: 300px;
   margin: 0 auto;
 }
 
