@@ -159,9 +159,10 @@ body {
 #artist-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  flex-wrap: wrap;
-  justify-content: center;
+  gap: 1.5rem;
   padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .fullscreen-img {
