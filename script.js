@@ -1,4 +1,4 @@
-// (Script.js) – merged from working + current version with full artist logic, localStorage fallback, audio, and background
+// (Script.js) – final patched version with insult bubble logic + SoundCloud integration restored
 
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
