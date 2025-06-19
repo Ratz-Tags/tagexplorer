@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
     showPost(currentIndex);
   };
 
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:rank&limit=20`)
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=20`)
     .then(res => res.json())
     .then(data => {
       posts = data;
