@@ -23,6 +23,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const artistGallery = document.getElementById("artist-gallery");
   const jrpgBubbles = document.getElementById("jrpg-bubbles");
   const backgroundBlur = document.getElementById("background-blur");
+  const copiedSidebar = document.getElementById("copied-sidebar");
+  const sidebarToggle = document.querySelector(".sidebar-toggle");
+  const moanAudio = document.getElementById("moan-audio");
+  let copiedArtists = new Set();
 
   const soundcloudLinks = [
     "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
@@ -74,19 +78,32 @@ document.addEventListener("DOMContentLoaded", () => {
     showToast("Next up: Femdom Track #" + (currentAudioIndex + 1));
   };
 
+  if (sidebarToggle && copiedSidebar) {
+  sidebarToggle.addEventListener("click", () => {
+    copiedSidebar.classList.toggle("visible");
+  });
+}
+
   let activeTags = new Set();
   let allArtists = [];
   let tagTooltips = {};
   let tagTaunts = {};
   let taunts = [];
 
-  function showToast(message) {
-    const toast = document.createElement("div");
-    toast.className = "toast-popup";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "toast-popup";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  if (Math.random() < 0.4) {
+    moanAudio.currentTime = 0;
+    moanAudio.play().catch(() => {});
   }
+
+  setTimeout(() => toast.remove(), 3000);
+}
+
 
   function setRandomBackground() {
     const tag = [...activeTags].at(-1) || "femdom";
@@ -206,14 +223,43 @@ document.addEventListener("DOMContentLoaded", () => {
         name.addEventListener("touchstart", e => {
           name.dataset.touchStart = Date.now();
         });
-        name.addEventListener("touchend", e => {
-          if (Date.now() - name.dataset.touchStart < 1000) return;
-          navigator.clipboard.writeText(artist.artistName.replaceAll("_", " "));
-          name.textContent = "Copied!";
-          setTimeout(() => {
-            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
-          }, 800);
-        });
+      name.addEventListener("touchend", e => {
+      if (Date.now() - name.dataset.touchStart < 1000) return;
+        const cleanName = artist.artistName.replaceAll("_", " ");
+        navigator.clipboard.writeText(cleanName);
+        showToast("Copied: " + cleanName);
+
+      if (!copiedArtists.has(artist.artistName)) {
+    copiedArtists.add(artist.artistName);
+
+    const container = document.createElement("div");
+    container.className = "sidebar-artist";
+    container.id = `copy-${artist.artistName}`;
+
+    const copyImg = img.cloneNode();
+    container.appendChild(copyImg);
+
+    const span = document.createElement("span");
+    span.textContent = cleanName;
+    container.appendChild(span);
+
+    container.onclick = () => {
+      const zoomed = copyImg.cloneNode();
+      zoomed.className = "fullscreen-img";
+      document.body.appendChild(zoomed);
+      zoomed.onclick = () => zoomed.remove();
+    };
+
+    copiedSidebar.appendChild(container);
+  }
+
+  name.textContent = "Copied!";
+  setTimeout(() => {
+    name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+  }, 800);
+});
+
+
 
         const taglist = document.createElement("div");
         taglist.className = "artist-tags";
