@@ -195,7 +195,22 @@ body {
   cursor: pointer;
   transition: 0.2s;
 }
+#audio-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 1rem;
+}
 
+#audio-controls button {
+  background: #ff00c8;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
 #toggle-audio:hover, #prev-audio:hover, #next-audio:hover {
   color: #ff00c8;
   transform: scale(1.1);
