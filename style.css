@@ -161,6 +161,8 @@ body {
   flex-wrap: wrap;
   justify-content: center;
   padding: 2rem;
+  max-width: 300px;
+  margin: 0 auto;
 }
 
 .fullscreen-img {
