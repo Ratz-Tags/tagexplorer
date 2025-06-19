@@ -79,10 +79,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   if (sidebarToggle && copiedSidebar) {
-  sidebarToggle.addEventListener("click", () => {
-    copiedSidebar.classList.toggle("visible");
-  });
-}
+    sidebarToggle.addEventListener("click", () => {
+      copiedSidebar.classList.toggle("visible");
+    });
+  }
 
   let activeTags = new Set();
   let allArtists = [];
@@ -90,43 +90,40 @@ document.addEventListener("DOMContentLoaded", () => {
   let tagTaunts = {};
   let taunts = [];
 
-function showToast(message) {
-  const toast = document.createElement("div");
-  toast.className = "toast-popup";
-  toast.textContent = message;
-  document.body.appendChild(toast);
+  function showToast(message) {
+    const toast = document.createElement("div");
+    toast.className = "toast-popup";
+    toast.textContent = message;
+    document.body.appendChild(toast);
 
-  if (Math.random() < 0.4) {
-    moanAudio.currentTime = 0;
-    moanAudio.play().catch(() => {});
+    if (Math.random() < 0.4) {
+      moanAudio.currentTime = 0;
+      moanAudio.play().catch(() => {});
+    }
+
+    setTimeout(() => toast.remove(), 3000);
   }
 
-  setTimeout(() => toast.remove(), 3000);
-}
+  function setRandomBackground() {
+    const query = "chastity_cage"; // You can rotate this later
+    const page = Math.floor(Math.random() * 5) + 1;
 
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.length) {
+          const post = data[Math.floor(Math.random() * data.length)];
+          const url = post?.large_file_url || post?.file_url;
 
-function setRandomBackground() {
-  const query = "chastity_cage"; // You can rotate this later
-  const page = Math.floor(Math.random() * 5) + 1;
-
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length) {
-        const post = data[Math.floor(Math.random() * data.length)];
-        const url = post?.large_file_url || post?.file_url;
-
-        if (url && backgroundBlur) {
-          backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${url})`;
+          if (url && backgroundBlur) {
+            backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${url})`;
+          }
         }
-      }
-    })
-    .catch(() => {
-      backgroundBlur.style.backgroundColor = "#111"; // fallback
-    });
-}
-
-
+      })
+      .catch(() => {
+        backgroundBlur.style.backgroundColor = "#111"; // fallback
+      });
+  }
 
   function spawnBubble(tag) {
     const div = document.createElement("div");
@@ -204,65 +201,45 @@ function setRandomBackground() {
   }
 
   function filterArtists() {
-  artistGallery.innerHTML = "";
-  const selected = Array.from(activeTags);
-  allArtists.forEach(artist => {
-    const tags = artist.kinkTags || [];
-    if (selected.every(tag => tags.includes(tag))) {
-      const card = document.createElement("div");
-      card.className = "artist-card";
+    artistGallery.innerHTML = "";
+    const selected = Array.from(activeTags);
+    allArtists.forEach(artist => {
+      const tags = artist.kinkTags || [];
+      if (selected.every(tag => tags.includes(tag))) {
+        const card = document.createElement("div");
+        card.className = "artist-card";
 
-      const img = document.createElement("img");
-      img.className = "artist-image";
-      setBestImage(artist, img);
-      img.addEventListener("click", () => {
-        const zoomed = img.cloneNode();
-        zoomed.classList.add("fullscreen-img");
-        document.body.appendChild(zoomed);
-        zoomed.onclick = () => zoomed.remove();
-      });
+        const img = document.createElement("img");
+        img.className = "artist-image";
+        setBestImage(artist, img);
+        img.addEventListener("click", () => {
+          const zoomed = img.cloneNode();
+          zoomed.classList.add("fullscreen-img");
+          document.body.appendChild(zoomed);
+          zoomed.onclick = () => zoomed.remove();
+        });
 
-      const name = document.createElement("div");
-      name.className = "artist-name";
-      name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+        const name = document.createElement("div");
+        name.className = "artist-name";
+        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-      // Touch (mobile) long press
-      name.addEventListener("touchstart", e => {
-        name.dataset.touchStart = Date.now();
-      });
-      name.addEventListener("touchend", e => {
-        if (Date.now() - name.dataset.touchStart < 800) return;
-        handleArtistCopy(artist, img.src);
-      });
+        // Touch (mobile) long press
+        name.addEventListener("touchstart", e => {
+          name.dataset.touchStart = Date.now();
+        });
+        name.addEventListener("touchend", e => {
+          if (Date.now() - name.dataset.touchStart < 800) return;
+          handleArtistCopy(artist, img.src);
+        });
 
-      // Mouse (desktop) long press
-      name.addEventListener("mousedown", e => {
-        name.dataset.mouseDown = Date.now();
-      });
-      name.addEventListener("mouseup", e => {
-        if (Date.now() - name.dataset.mouseDown < 800) return;
-        handleArtistCopy(artist, img.src);
-      });
-
-      const taglist = document.createElement("div");
-      taglist.className = "artist-tags";
-      taglist.textContent = artist.kinkTags.join(", ");
-
-      card.append(img, name, taglist);
-      artistGallery.appendChild(card);
-    }
-  });
-}
-
-    copiedSidebar.appendChild(container);
-
-  name.textContent = "Copied!";
-  setTimeout(() => {
-    name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
-  }, 800);
-});
-
-
+        // Mouse (desktop) long press
+        name.addEventListener("mousedown", e => {
+          name.dataset.mouseDown = Date.now();
+        });
+        name.addEventListener("mouseup", e => {
+          if (Date.now() - name.dataset.mouseDown < 800) return;
+          handleArtistCopy(artist, img.src);
+        });
 
         const taglist = document.createElement("div");
         taglist.className = "artist-tags";
@@ -270,38 +247,41 @@ function setRandomBackground() {
 
         card.append(img, name, taglist);
         artistGallery.appendChild(card);
-      });
- }
-  function handleArtistCopy(artist, previewUrl) {
-  const cleanName = artist.artistName.replaceAll("_", " ");
-  navigator.clipboard.writeText(cleanName);
-  showToast("Copied: " + cleanName);
-
-  if (!copiedArtists.has(artist.artistName)) {
-    copiedArtists.add(artist.artistName);
-
-    const container = document.createElement("div");
-    container.className = "sidebar-artist";
-    container.id = `copy-${artist.artistName}`;
-
-    const previewImg = document.createElement("img");
-    previewImg.src = previewUrl || "fallback.jpg";
-    container.appendChild(previewImg);
-
-    const span = document.createElement("span");
-    span.textContent = cleanName;
-    container.appendChild(span);
-
-    container.onclick = () => {
-      const zoomed = previewImg.cloneNode();
-      zoomed.className = "fullscreen-img";
-      document.body.appendChild(zoomed);
-      zoomed.onclick = () => zoomed.remove();
-    };
-
-    copiedSidebar.appendChild(container);
+      }
+    });
   }
-}
+
+  function handleArtistCopy(artist, previewUrl) {
+    const cleanName = artist.artistName.replaceAll("_", " ");
+    navigator.clipboard.writeText(cleanName);
+    showToast("Copied: " + cleanName);
+
+    if (!copiedArtists.has(artist.artistName)) {
+      copiedArtists.add(artist.artistName);
+
+      const container = document.createElement("div");
+      container.className = "sidebar-artist";
+      container.id = `copy-${artist.artistName}`;
+
+      const previewImg = document.createElement("img");
+      previewImg.src = previewUrl || "fallback.jpg";
+      container.appendChild(previewImg);
+
+      const span = document.createElement("span");
+      span.textContent = cleanName;
+      container.appendChild(span);
+
+      container.onclick = () => {
+        const zoomed = previewImg.cloneNode();
+        zoomed.className = "fullscreen-img";
+        document.body.appendChild(zoomed);
+        zoomed.onclick = () => zoomed.remove();
+      };
+
+      copiedSidebar.appendChild(container);
+    }
+  }
+
   Promise.all([
     fetch("artists.json").then(r => r.json()),
     fetch("artists-local.json").then(r => r.json()),
@@ -317,6 +297,6 @@ function setRandomBackground() {
     filterArtists();
     setRandomBackground();
     setInterval(setRandomBackground, 15000); // every 15 seconds
-
   });
+
 });
