@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Artist Explorer</title>
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kink Artist Explorer</title>
+  <link rel="stylesheet" href="style.css" />
   <script defer src="script.js"></script>
 </head>
+
 <body>
-  <div id="background-overlay"></div>
   <div class="header">
-    <h1>Artist Explorer</h1>
+    <h1>Kink Artist Explorer</h1>
     <div class="audio-controls">
       <button id="toggle-audio">🔇 Femdom Hypno</button>
       <button id="prev-audio">⏮ Prev</button>
@@ -19,21 +19,23 @@
     </div>
   </div>
 
-  <div id="soundcloud-container" style="display:none;">
-    <iframe
-      id="sc-player"
-      width="100%"
-      height="120"
-      scrolling="no"
-      frameborder="no"
-      allow="autoplay"
-      src="">
-    </iframe>
+  <div id="soundcloud-container" style="display: none">
+    <iframe id="sc-player" width="100%" height="120" scrolling="no" frameborder="no" allow="autoplay" src=""></iframe>
   </div>
 
   <div class="tag-grid" id="tag-buttons"></div>
-  <div id="jrpg-bubbles" class="bubble-container"></div>
   <div class="bubble-container" id="jrpg-bubbles"></div>
   <div class="artist-gallery" id="artist-gallery"></div>
+
+  <div id="background-blur"></div>
+
+  <div id="lightbox" class="hidden">
+    <span class="close">&times;</span>
+    <img class="lightbox-content" id="lightbox-img" />
+    <div id="lightbox-caption"></div>
+    <div class="nav-arrow left" id="prev-img">⟵</div>
+    <div class="nav-arrow right" id="next-img">⟶</div>
+  </div>
 </body>
+
 </html>
