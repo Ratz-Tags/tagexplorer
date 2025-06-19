@@ -18,6 +18,13 @@ body {
   transition: background-image 1s ease-in-out;
 }
 
+@media (max-width: 600px) {
+  #artist-gallery {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    padding: 1rem;
+  }
+}
+
 #tag-buttons {
   display: flex;
   flex-wrap: wrap;
