@@ -4,7 +4,7 @@ const kinkTags = [
   "tentacle_sex", "foot_domination", "gokkun", "milking_machine", "mind_break",
   "cum_feeding", "prostate_milking", "lactation", "sex_machine", "cyber_femdom",
   "gagged", "sissy_training", "extreme_penetration", "large_penetration", "netorase"
-];
+].sort();
 
 const audioLinks = [
   'https://on.soundcloud.com/HADalMkX8rPG2ISu0Z',
@@ -48,6 +48,7 @@ Promise.all([
 .catch(console.error);
 
 function renderTagButtons() {
+  tagButtonsContainer.innerHTML = "";
   kinkTags.forEach((tag) => {
     const btn = document.createElement("button");
     btn.classList.add("tag-button");
@@ -75,7 +76,7 @@ function showTaunt(tag) {
   const taunt = tagTaunts[tag] || `Still chasing '${tag}' huh? You're beyond help.`;
   const bubble = document.createElement("div");
   bubble.className = "jrpg-bubble";
-  bubble.textContent = taunt;
+  bubble.innerHTML = `<img src='./images/chibi.png' class='chibi' /><span>${taunt}</span>`;
   jrpgBubbles.appendChild(bubble);
   setTimeout(() => bubble.remove(), 5000);
 }
@@ -97,9 +98,10 @@ function fetchAndRenderArtists() {
   fetch("artists.json")
     .then((res) => res.json())
     .then((artists) => {
-      cachedArtists = artists.filter((a) =>
-        activeTags.length === 0 || activeTags.every((tag) => a.tags.includes(tag))
-      );
+      cachedArtists = artists.filter((a) => {
+        if (!a.tags || !Array.isArray(a.tags)) return false;
+        return activeTags.length === 0 || activeTags.every((tag) => a.tags.includes(tag));
+      });
       cachedArtists.forEach((artist, index) => createArtistCard(artist, index));
     })
     .catch((err) => {
