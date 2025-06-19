@@ -213,11 +213,56 @@ document.addEventListener("DOMContentLoaded", () => {
         img.className = "artist-image";
         setBestImage(artist, img);
         img.addEventListener("click", () => {
-          const zoomed = img.cloneNode();
-          zoomed.classList.add("fullscreen-img");
-          document.body.appendChild(zoomed);
-          zoomed.onclick = () => zoomed.remove();
-        });
+  let currentIndex = 0;
+  let posts = [];
+  const zoomWrapper = document.createElement("div");
+  zoomWrapper.className = "fullscreen-wrapper";
+
+  const zoomed = document.createElement("img");
+  zoomed.className = "fullscreen-img";
+  zoomWrapper.appendChild(zoomed);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "zoom-close";
+  closeBtn.textContent = "×";
+  closeBtn.onclick = () => zoomWrapper.remove();
+
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "zoom-prev";
+  prevBtn.textContent = "←";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "zoom-next";
+  nextBtn.textContent = "→";
+
+  zoomWrapper.append(closeBtn, prevBtn, nextBtn);
+  document.body.appendChild(zoomWrapper);
+
+  function showPost(i) {
+    const post = posts[i];
+    const url = post?.large_file_url || post?.file_url;
+    if (url) {
+      zoomed.src = `https://danbooru.donmai.us${url}`;
+    }
+  }
+
+  prevBtn.onclick = () => {
+    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+    showPost(currentIndex);
+  };
+
+  nextBtn.onclick = () => {
+    currentIndex = (currentIndex + 1) % posts.length;
+    showPost(currentIndex);
+  };
+
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:rank&limit=20`)
+    .then(res => res.json())
+    .then(data => {
+      posts = data;
+      if (posts.length) showPost(currentIndex);
+    });
+});
 
         const name = document.createElement("div");
         name.className = "artist-name";
