@@ -280,7 +280,6 @@ function setRandomBackground() {
         artistGallery.appendChild(card);
       }
     });
-  }
   function handleArtistCopy(artist, previewUrl) {
   const cleanName = artist.artistName.replaceAll("_", " ");
   navigator.clipboard.writeText(cleanName);
