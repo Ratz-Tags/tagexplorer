@@ -202,3 +202,8 @@ body {
     max-width: 90vw;
   }
 }
+
+/* Audio moan element */
+audio#moan-audio {
+  display: none;
+}
