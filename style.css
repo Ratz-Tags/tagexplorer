@@ -218,22 +218,13 @@ audio#moan-audio {
 }
 
 /* Sidebar for copied artists */
-#copied-sidebar {
-  position: relative;
-  background: rgba(24, 0, 36, 0.92);
-  border: 2px solid #ff00c8;
-  padding: 10px;
-  margin: 1rem auto;
-  max-width: 1000px;
-  display: none;
-}
-#copied-sidebar.visible {
-  display: block;
+.sidebar-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 2rem;
 }
 
 .sidebar-toggle {
-  display: block;
-  margin: 0.5rem auto;
   background: #ff00c8;
   color: white;
   border: none;
@@ -241,8 +232,24 @@ audio#moan-audio {
   border-radius: 8px;
   cursor: pointer;
   font-size: 0.9rem;
+  margin-right: 1rem;
 }
 
+#copied-sidebar {
+  background: rgba(24, 0, 36, 0.92);
+  border: 2px solid #ff00c8;
+  padding: 10px;
+  width: 260px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+#copied-sidebar.visible {
+  display: flex;
+}
 
 .sidebar-artist {
   display: flex;
