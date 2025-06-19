@@ -1,7 +1,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: sans-serif;
+  font-family: "Comic Neue", cursive, sans-serif;
   background-color: black;
   color: white;
   overflow-x: hidden;
@@ -17,13 +17,14 @@ body {
   z-index: 10;
 }
 
-audio-controls button {
+.audio-controls button {
   margin: 0 0.5rem;
   padding: 0.5rem 1rem;
   font-size: 1rem;
   background-color: #222;
   color: white;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -38,15 +39,17 @@ audio-controls button {
 .tag-button {
   background: #333;
   color: white;
-  border: 1px solid #555;
+  border: 2px solid hotpink;
   border-radius: 20px;
   padding: 0.4rem 0.8rem;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
 .tag-button:hover {
-  background: #555;
+  background: hotpink;
+  color: black;
 }
 
 .tag-button.active {
@@ -64,8 +67,8 @@ audio-controls button {
 }
 
 .artist-card {
-  background: rgba(255,255,255,0.05);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
   padding: 0.5rem;
   text-align: center;
   width: 150px;
@@ -102,31 +105,34 @@ audio-controls button {
   pointer-events: none;
 }
 
-.bubble-container {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
+.bubble-container, #jrpg-bubbles {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  z-index: 20;
+  z-index: 100;
 }
 
 .jrpg-bubble {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(255, 182, 193, 0.9);
   border: 2px solid hotpink;
   border-radius: 10px;
-  padding: 0.8rem;
+  padding: 1rem 1rem 1rem 3.5rem;
   font-size: 0.9rem;
-  max-width: 240px;
-  color: white;
+  max-width: 280px;
+  color: black;
   position: relative;
+  font-weight: bold;
+  box-shadow: 0 0 10px hotpink;
 }
 
 .jrpg-bubble img.chibi {
   position: absolute;
-  left: -36px;
-  top: -36px;
-  width: 48px;
-  height: 48px;
+  left: -12px;
+  top: -16px;
+  width: 64px;
+  height: 64px;
+  pointer-events: none;
 }
