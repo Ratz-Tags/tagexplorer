@@ -204,62 +204,55 @@ function setRandomBackground() {
   }
 
   function filterArtists() {
-    artistGallery.innerHTML = "";
-    const selected = Array.from(activeTags);
-    allArtists.forEach(artist => {
-      const tags = artist.kinkTags || [];
-      if (selected.every(tag => tags.includes(tag))) {
-        const card = document.createElement("div");
-        card.className = "artist-card";
+  artistGallery.innerHTML = "";
+  const selected = Array.from(activeTags);
+  allArtists.forEach(artist => {
+    const tags = artist.kinkTags || [];
+    if (selected.every(tag => tags.includes(tag))) {
+      const card = document.createElement("div");
+      card.className = "artist-card";
 
-        const img = document.createElement("img");
-        img.className = "artist-image";
-        setBestImage(artist, img);
-        img.addEventListener("click", () => {
-          const zoomed = img.cloneNode();
-          zoomed.classList.add("fullscreen-img");
-          document.body.appendChild(zoomed);
-          zoomed.onclick = () => zoomed.remove();
-        });
-
-        // Touch (mobile) long press
-        name.addEventListener("touchstart", e => {
-        name.dataset.touchStart = Date.now();
-        });
-
-        name.addEventListener("touchend", e => {
-        if (Date.now() - name.dataset.touchStart < 800) return;
-        handleArtistCopy(artist, img.src);
-        });
-
-        // Mouse (desktop) long press
-        name.addEventListener("mousedown", e => {
-        name.dataset.mouseDown = Date.now();
-        });
-
-        name.addEventListener("mouseup", e => {
-        if (Date.now() - name.dataset.mouseDown < 800) return;
-          handleArtistCopy(artist, img.src);
+      const img = document.createElement("img");
+      img.className = "artist-image";
+      setBestImage(artist, img);
+      img.addEventListener("click", () => {
+        const zoomed = img.cloneNode();
+        zoomed.classList.add("fullscreen-img");
+        document.body.appendChild(zoomed);
+        zoomed.onclick = () => zoomed.remove();
       });
 
+      const name = document.createElement("div");
+      name.className = "artist-name";
+      name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-    const container = document.createElement("div");
-    container.className = "sidebar-artist";
-    container.id = `copy-${artist.artistName}`;
+      // Touch (mobile) long press
+      name.addEventListener("touchstart", e => {
+        name.dataset.touchStart = Date.now();
+      });
+      name.addEventListener("touchend", e => {
+        if (Date.now() - name.dataset.touchStart < 800) return;
+        handleArtistCopy(artist, img.src);
+      });
 
-    const copyImg = img.cloneNode();
-    container.appendChild(copyImg);
+      // Mouse (desktop) long press
+      name.addEventListener("mousedown", e => {
+        name.dataset.mouseDown = Date.now();
+      });
+      name.addEventListener("mouseup", e => {
+        if (Date.now() - name.dataset.mouseDown < 800) return;
+        handleArtistCopy(artist, img.src);
+      });
 
-    const span = document.createElement("span");
-    span.textContent = cleanName;
-    container.appendChild(span);
+      const taglist = document.createElement("div");
+      taglist.className = "artist-tags";
+      taglist.textContent = artist.kinkTags.join(", ");
 
-    container.onclick = () => {
-      const zoomed = copyImg.cloneNode();
-      zoomed.className = "fullscreen-img";
-      document.body.appendChild(zoomed);
-      zoomed.onclick = () => zoomed.remove();
-    };
+      card.append(img, name, taglist);
+      artistGallery.appendChild(card);
+    }
+  });
+}
 
     copiedSidebar.appendChild(container);
   }
