@@ -1,5 +1,3 @@
-// script.js — full validated version with all patches applied and working random backgrounds
-
 const kinkTags = [
   "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial",
   "netorare", "feminization", "public_humiliation", "humiliation", "dominatrix",
@@ -48,11 +46,13 @@ lightbox.style.display = "none";
 
 Promise.all([
   fetch("tag-tooltips.json").then(r => r.json()).catch(() => ({})),
-  fetch("tag-taunts.json").then(r => r.json()).catch(() => ({}))
+  fetch("tag-taunts.json").then(r => r.json()).catch(() => ({})),
+  fetch("artists.json").then(r => r.json()).catch(() => [])
 ])
-.then(([tooltips, taunts]) => {
+.then(([tooltips, taunts, artists]) => {
   tagTooltips = tooltips;
   tagTaunts = taunts;
+  cachedArtists = artists;
   renderTagButtons();
   fetchAndRenderArtists();
   updateBackground("femdom");
@@ -106,4 +106,70 @@ function updateBackground(tag) {
     .catch(console.error);
 }
 
-// Remaining functions like fetchAndRenderArtists, lightbox navigation, audio toggle, etc. stay unchanged.
+function fetchAndRenderArtists() {
+  artistGallery.innerHTML = "";
+  const filtered = cachedArtists.filter(artist =>
+    activeTags.every(tag => artist.tags.includes(tag))
+  );
+
+  filtered.forEach((artist, index) => {
+    const card = document.createElement("div");
+    card.classList.add("artist-card");
+
+    const name = document.createElement("div");
+    name.classList.add("artist-name");
+    name.innerText = artist.name;
+
+    let tapTimeout = null;
+    name.addEventListener("click", () => {
+      if (tapTimeout !== null) {
+        navigator.clipboard.writeText(artist.name);
+        name.innerText = "Copied!";
+        setTimeout(() => (name.innerText = artist.name), 800);
+        clearTimeout(tapTimeout);
+        tapTimeout = null;
+      } else {
+        tapTimeout = setTimeout(() => {
+          tapTimeout = null;
+        }, 300);
+      }
+    });
+
+    const img = document.createElement("img");
+    img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${encodeURIComponent(artist.name)}.jpg`;
+    img.onerror = () => {
+      img.src = artist.image || "fallback.jpg";
+    };
+    img.addEventListener("click", () => openLightbox(artist));
+
+    card.appendChild(img);
+    card.appendChild(name);
+    artistGallery.appendChild(card);
+  });
+}
+
+function openLightbox(artist) {
+  if (!artist.images || artist.images.length === 0) return;
+  currentIndex = 0;
+  lightbox.style.display = "flex";
+  updateLightbox(artist);
+
+  prevBtn.onclick = () => {
+    if (currentIndex > 0) currentIndex--;
+    updateLightbox(artist);
+  };
+
+  nextBtn.onclick = () => {
+    if (currentIndex < artist.images.length - 1) currentIndex++;
+    updateLightbox(artist);
+  };
+
+  closeBtn.onclick = () => {
+    lightbox.style.display = "none";
+  };
+}
+
+function updateLightbox(artist) {
+  lightboxImg.src = artist.images[currentIndex];
+  lightboxCaption.innerText = `${artist.name} — Image ${currentIndex + 1} of ${artist.images.length}`;
+}
