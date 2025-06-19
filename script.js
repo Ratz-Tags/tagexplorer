@@ -106,7 +106,7 @@ function showToast(message) {
 
 
 function setRandomBackground() {
-  const query = "chastity_cage"; // or any other default
+  const query = "chastity_cage"; // You can rotate this later
   const page = Math.floor(Math.random() * 5) + 1;
 
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
@@ -114,7 +114,8 @@ function setRandomBackground() {
     .then(data => {
       if (data.length) {
         const post = data[Math.floor(Math.random() * data.length)];
-        const url = post?.large_file_url
+        const url = post?.large_file_url || post?.file_url;
+
         if (url && backgroundBlur) {
           backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${url})`;
         }
@@ -124,6 +125,7 @@ function setRandomBackground() {
       backgroundBlur.style.backgroundColor = "#111"; // fallback
     });
 }
+
 
 
   function spawnBubble(tag) {
