@@ -1,197 +1,184 @@
-/* style.css */
+/* style.css – polished, immersive, humiliating femdom aesthetic */
 
 body {
   margin: 0;
-  padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #111;
-  color: #fff;
+  font-family: 'Inter', sans-serif;
+  background-color: #000;
+  color: #f2e4ff;
   overflow-x: hidden;
 }
 
 #background-blur {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-position: center;
+  inset: 0;
   background-size: cover;
-  filter: blur(24px) brightness(0.3);
+  background-position: center;
+  filter: blur(8px) brightness(0.25);
+  z-index: -1;
+  transition: background-image 1s ease-in-out;
 }
 
 #tag-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 12px;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
+  padding: 1rem;
+  gap: 0.5rem;
+  overflow-x: auto;
+  background: rgba(20, 10, 30, 0.6);
+  border-bottom: 2px solid #ff00c8;
 }
 
 .tag-button {
-  background-color: hotpink;
+  padding: 6px 10px;
+  font-size: 0.9rem;
   border: none;
-  color: black;
-  padding: 6px 12px;
   border-radius: 20px;
-  font-weight: bold;
+  background: #1e0f2e;
+  color: #ffcbff;
   cursor: pointer;
   display: flex;
   align-items: center;
-  transition: background-color 0.2s;
+  transition: 0.2s ease-in-out;
 }
 
 .tag-button.active {
-  background-color: deeppink;
-  color: white;
-}
-
-.artist-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 12px;
-  margin: 8px;
-  width: 180px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 0 10px rgba(255, 20, 147, 0.3);
-  transition: transform 0.2s ease-in-out;
-}
-
-.artist-card:hover {
+  background: #ff00c8;
+  color: black;
+  font-weight: bold;
   transform: scale(1.05);
 }
 
+.artist-card {
+  background: rgba(36, 12, 48, 0.85);
+  border: 2px solid #ff00c8;
+  border-radius: 12px;
+  padding: 10px;
+  margin: 10px;
+  text-align: center;
+  box-shadow: 0 0 8px #ff00c880;
+  transition: transform 0.2s;
+}
+
+.artist-card:hover {
+  transform: scale(1.02);
+}
+
 .artist-image {
-  width: 160px;
-  height: 160px;
+  width: 100%;
+  max-width: 300px;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
   object-fit: cover;
-  border-radius: 8px;
-  margin-bottom: 6px;
-  cursor: pointer;
 }
 
 .artist-name {
-  font-size: 0.95em;
+  font-size: 1.1rem;
   font-weight: bold;
-  margin: 6px 0;
-  text-align: center;
+  color: #ffe4fa;
+  margin-bottom: 4px;
+  text-shadow: 1px 1px 2px #000;
 }
 
 .artist-tags {
-  font-size: 0.75em;
-  opacity: 0.7;
-  text-align: center;
-}
-
-#artist-gallery {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px;
-  padding: 20px;
+  font-size: 0.85rem;
+  color: #ffbdf0;
+  text-shadow: 0 0 2px #000;
 }
 
 .jrpg-bubble {
-  position: fixed;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 182, 193, 0.9);
-  color: black;
-  padding: 10px 14px;
-  border-radius: 12px;
-  box-shadow: 0 0 12px deeppink;
   display: flex;
   align-items: center;
+  position: absolute;
+  top: 10vh;
+  left: 10vw;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff0ff;
+  font-size: 1rem;
+  padding: 10px 14px;
+  border: 2px solid #ff00c8;
+  border-radius: 12px;
+  max-width: 320px;
+  box-shadow: 0 0 10px #ff00c870;
+  animation: pop-in 0.3s ease;
   z-index: 9999;
-  animation: fadeout 4s forwards;
 }
 
 .jrpg-bubble .chibi {
-  height: 32px;
+  height: 40px;
   margin-right: 10px;
 }
 
-@keyframes fadeout {
-  0% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+@keyframes pop-in {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
-
-#lightbox {
-  position: fixed;
-  display: none;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0,0,0,0.9);
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  z-index: 10000;
-}
-
-#lightbox img {
-  max-width: 90%;
-  max-height: 80vh;
-  border-radius: 10px;
-  margin-bottom: 10px;
-}
-
-#lightbox button {
-  background: hotpink;
-  border: none;
-  padding: 6px 10px;
-  margin: 4px;
-  border-radius: 6px;
-  color: black;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-#soundcloud-container {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  z-index: 1000;
-  display: block;
-}
-
-#toggle-audio, #prev-audio, #next-audio {
-  position: fixed;
-  bottom: 140px;
-  right: 16px;
-  z-index: 1100;
-  background: hotpink;
-  color: black;
-  font-weight: bold;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  margin-top: 6px;
-  cursor: pointer;
-}
-
-#prev-audio { bottom: 100px; }
-#next-audio { bottom: 60px; }
 
 .toast-popup {
   position: fixed;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: deeppink;
+  background: #ff00c8;
+  color: black;
   padding: 10px 16px;
-  border-radius: 10px;
-  color: white;
+  border-radius: 20px;
   font-weight: bold;
-  z-index: 10000;
+  box-shadow: 0 0 8px #ff00c880;
+  animation: pop-in 0.2s ease;
+  z-index: 9999;
+  text-shadow: none;
+}
+
+#artist-gallery {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.fullscreen-img {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 9999;
+  cursor: zoom-out;
+}
+
+#toggle-audio, #prev-audio, #next-audio {
+  background: transparent;
+  border: none;
+  color: #ffcbff;
+  font-size: 1.2rem;
+  padding: 6px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+#toggle-audio:hover, #prev-audio:hover, #next-audio:hover {
+  color: #ff00c8;
+  transform: scale(1.1);
+}
+
+@media (max-width: 768px) {
+  .artist-card {
+    max-width: 90vw;
+  }
+  .jrpg-bubble {
+    top: 20vh;
+    left: 5vw;
+    right: 5vw;
+    max-width: 90vw;
+  }
 }
