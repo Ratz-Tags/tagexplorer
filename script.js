@@ -1,5 +1,3 @@
-// (Script.js) – merged from working + current version with full artist logic, localStorage fallback, audio, and background
-
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
     "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial",
@@ -108,4 +106,138 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // ... rest unchanged ...
+  function spawnBubble(tag) {
+    const div = document.createElement("div");
+    div.className = "jrpg-bubble";
+    const chibi = document.createElement("img");
+    chibi.src = "icons/chibi.png";
+    chibi.className = "chibi";
+    const line = document.createElement("span");
+    const pool = tagTaunts[tag] || taunts;
+    line.textContent = pool[Math.floor(Math.random() * pool.length)] || `Still chasing '${tag}' huh? You're beyond help.`;
+    div.append(chibi, line);
+    jrpgBubbles.appendChild(div);
+    setTimeout(() => div.remove(), 5000);
+  }
+
+  function setBestImage(artist, img) {
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const cachedUrl = localStorage.getItem(cacheKey);
+    const tryLoad = (url, retries = 2) => {
+      const testImg = new Image();
+      testImg.onload = () => {
+        img.src = url;
+        localStorage.setItem(cacheKey, url);
+      };
+      testImg.onerror = () => {
+        if (retries > 0) setTimeout(() => tryLoad(url, retries - 1), 500);
+        else img.src = "fallback.jpg";
+      };
+      testImg.src = url;
+    };
+
+    if (cachedUrl) return tryLoad(cachedUrl);
+
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        const post = data[0];
+        const raw = post?.large_file_url || post?.file_url;
+        if (raw) {
+          const full = raw.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+          tryLoad(full);
+        } else img.src = "fallback.jpg";
+      })
+      .catch(() => img.src = "fallback.jpg");
+  }
+
+  function renderTagButtons() {
+    tagButtonsContainer.innerHTML = "";
+    kinkTags.forEach(tag => {
+      const btn = document.createElement("button");
+      btn.className = "tag-button";
+      if (tagIcons[tag]) {
+        const icon = document.createElement("img");
+        icon.src = tagIcons[tag];
+        icon.style.height = "16px";
+        icon.style.marginRight = "4px";
+        btn.appendChild(icon);
+      }
+      btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
+      btn.dataset.tag = tag;
+      if (tagTooltips[tag]) btn.title = tagTooltips[tag];
+      if (activeTags.has(tag)) btn.classList.add("active");
+      btn.onclick = () => {
+        if (activeTags.has(tag)) activeTags.delete(tag);
+        else {
+          activeTags.add(tag);
+          spawnBubble(tag);
+        }
+        renderTagButtons();
+        filterArtists();
+        setRandomBackground();
+      };
+      tagButtonsContainer.appendChild(btn);
+    });
+  }
+
+  function filterArtists() {
+    artistGallery.innerHTML = "";
+    const selected = Array.from(activeTags);
+    allArtists.forEach(artist => {
+      const tags = artist.kinkTags || [];
+      if (selected.every(tag => tags.includes(tag))) {
+        const card = document.createElement("div");
+        card.className = "artist-card";
+
+        const img = document.createElement("img");
+        img.className = "artist-image";
+        setBestImage(artist, img);
+        img.addEventListener("click", () => {
+          const zoomed = img.cloneNode();
+          zoomed.classList.add("fullscreen-img");
+          document.body.appendChild(zoomed);
+          zoomed.onclick = () => zoomed.remove();
+        });
+
+        const name = document.createElement("div");
+        name.className = "artist-name";
+        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+        name.addEventListener("touchstart", e => {
+          name.dataset.touchStart = Date.now();
+        });
+        name.addEventListener("touchend", e => {
+          if (Date.now() - name.dataset.touchStart < 1000) return;
+          navigator.clipboard.writeText(artist.artistName.replaceAll("_", " "));
+          name.textContent = "Copied!";
+          setTimeout(() => {
+            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+          }, 800);
+        });
+
+        const taglist = document.createElement("div");
+        taglist.className = "artist-tags";
+        taglist.textContent = artist.kinkTags.join(", ");
+
+        card.append(img, name, taglist);
+        artistGallery.appendChild(card);
+      }
+    });
+  }
+
+  Promise.all([
+    fetch("artists.json").then(r => r.json()),
+    fetch("artists-local.json").then(r => r.json()),
+    fetch("tag-tooltips.json").then(r => r.json()),
+    fetch("taunts.json").then(r => r.json()),
+    fetch("tag-taunts.json").then(r => r.json())
+  ]).then(([remote, local, tips, general, specific]) => {
+    allArtists = [...remote, ...local];
+    tagTooltips = tips;
+    taunts = general;
+    tagTaunts = specific;
+    renderTagButtons();
+    filterArtists();
+    setRandomBackground();
+  });
+});
