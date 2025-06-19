@@ -1,294 +1,188 @@
-document.addEventListener("DOMContentLoaded", () => {
-  setRandomBackground();
-  const tagIcons = {
-    "pegging": "icons/pegging.svg",
-    "chastity_cage": "icons/chastity_cage.svg",
-    "feminization": "icons/feminization.svg",
-    "bimbofication": "icons/bimbofication.svg",
-    "gagged": "icons/gagged.png",
-    "tentacle_sex": "icons/tentacle_sex.png",
-    "futanari": "icons/futanari.png",
-    "mind_break": "icons/mind_break.png",
-    "netorare": "icons/netorare.png"
-  };
+const kinkTags = [
+  "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial",
+  "netorare", "feminization", "public_humiliation", "humiliation", "dominatrix",
+  "tentacle_sex", "foot_domination", "gokkun", "milking_machine", "mind_break",
+  "cum_feeding", "prostate_milking", "lactation", "sex_machine", "cyber_femdom",
+  "gagged", "sissy_training", "extreme_penetration", "large_penetration", "netorase"
+];
 
-  const activeTags = new Set();
-  const filterTags = [
-    "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial", "netorare",
-    "feminization", "public_humiliation", "humiliation", "dominatrix", "tentacle_sex",
-    "foot_domination", "gokkun", "milking_machine", "mind_break", "cum_feeding",
-    "prostate_milking", "lactation", "sex_machine", "cyber_femdom", "gagged",
-    "sissy_training", "extreme_penetration", "large_penetration", "netorase"
-  ];
+const audioLinks = [
+  'https://on.soundcloud.com/HADalMkX8rPG2ISu0Z',
+  'https://on.soundcloud.com/vOQ4cOkO5vjnkZoqPu',
+  'https://soundcloud.com/sissypositive/happy-chastity-audio-hypnosis-18',
+  'https://soundcloud.com/sissy-needs/nipples-sissy-hypno',
+  'https://soundcloud.com/user-682994637/after-dark-2-gloryhole-instructions',
+  'https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1',
+  'https://soundcloud.com/user-526345318/sph-hypno-repetitions-4',
+  'https://soundcloud.com/dogelol-523627490/maria-dont-beg-me-soft',
+  'https://soundcloud.com/babewithaboner/bethanys-cum-rag',
+  'https://soundcloud.com/re-elle/urethral-ft-lamb-kebab-version-2'
+];
 
-  let allArtists = [];
-  let tooltips = {};
-  let taunts = [];
-  let tagTaunts = {};
+const tagButtonsContainer = document.getElementById("tag-buttons");
+const artistGallery = document.getElementById("artist-gallery");
+const jrpgBubbles = document.getElementById("jrpg-bubbles");
+const backgroundBlur = document.getElementById("background-blur");
+const scPlayer = document.getElementById("sc-player");
+const soundcloudContainer = document.getElementById("soundcloud-container");
+const toggleAudioBtn = document.getElementById("toggle-audio");
+const prevAudioBtn = document.getElementById("prev-audio");
+const nextAudioBtn = document.getElementById("next-audio");
 
-  function setRandomBackground() {
-  const query = "chastity_cage";
-  const page = Math.floor(Math.random() * 10) + 1;
+let currentAudioIndex = 0;
+let activeTags = [];
+let cachedArtists = [];
+let tagTooltips = {};
+let tagTaunts = {};
 
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&page=${page}&limit=40`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length) {
-        const post = data[Math.floor(Math.random() * data.length)];
-        const imgUrl = post.large_file_url || post.file_url;
+fetch("tag-tooltips.json").then(r => r.json()).then(d => tagTooltips = d);
+fetch("tag-taunts.json").then(r => r.json()).then(d => tagTaunts = d);
 
-        const bgDiv = document.getElementById("background-overlay");
-        if (bgDiv && imgUrl) {
-          bgDiv.style.backgroundImage = `url(${imgUrl})`;
-        }
-      }
-    })
-    .catch(err => console.error("Background fetch failed:", err));
+// Load all tag buttons
+kinkTags.forEach((tag) => {
+  const btn = document.createElement("button");
+  btn.classList.add("tag-button");
+  btn.innerText = tag.replaceAll("_", " ");
+  btn.title = tagTooltips[tag] || `You really tapped '${tag}'? Pathetic.`;
+  btn.addEventListener("click", () => toggleTag(tag, btn));
+  tagButtonsContainer.appendChild(btn);
+});
+
+function toggleTag(tag, btn) {
+  if (activeTags.includes(tag)) {
+    activeTags = activeTags.filter((t) => t !== tag);
+    btn.classList.remove("active");
+  } else {
+    activeTags.push(tag);
+    btn.classList.add("active");
   }
+  fetchAndRenderArtists();
+  showTaunt(tag);
+  updateBackground(tag);
+}
 
-  setRandomBackground();
-  setInterval(setRandomBackground, 10000); // update every 10 seconds
+function showTaunt(tag) {
+  const taunt = tagTaunts[tag] || `Still chasing '${tag}' huh? You're beyond help.`;
+  const bubble = document.createElement("div");
+  bubble.className = "jrpg-bubble";
+  bubble.textContent = taunt;
+  jrpgBubbles.appendChild(bubble);
+  setTimeout(() => bubble.remove(), 5000);
+}
 
-  function fetchDanbooruImage(artistName, img) {
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artistName)}+order: approval&limit=1`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length && data[0].preview_file_url) {
-        const url = data[0].preview_file_url;
-        img.onerror = () => { img.src = "fallback.jpg"; };  // <--- ensures fallback
-        img.src = url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-      } else {
-        img.src = "fallback.jpg";
+function updateBackground(tag) {
+  const url = `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=${encodeURIComponent(tag)}+rating:explicit+-loli+-shota+-young`;
+  fetch(url)
+    .then((res) => res.json())
+    .then((posts) => {
+      if (posts[0]?.large_file_url) {
+        backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${posts[0].large_file_url})`;
       }
-    })
-    .catch(() => {
-      img.src = "fallback.jpg";
     });
 }
 
-  function checkImageExists(url, callback, fallback) {
-    const tester = new Image();
-    tester.onload = () => callback(url);
-    tester.onerror = fallback;
-    tester.src = url;
-  }
-
- function setBestImage(artist, img) {
-  const cacheKey = `danbooru-image-${artist.artistName}`;
-  const cachedUrl = localStorage.getItem(cacheKey);
-
-  const tryLoad = (url, retries = 2) => {
-    const testImg = new Image();
-    testImg.onload = () => {
-      img.src = url;
-      localStorage.setItem(cacheKey, url);
-    };
-    testImg.onerror = () => {
-      if (retries > 0) {
-        setTimeout(() => tryLoad(url, retries - 1), 500); // retry after 0.5s
-      } else {
-        img.src = "fallback.jpg";
-      }
-    };
-    testImg.src = url;
-  };
-
-  if (cachedUrl) {
-    tryLoad(cachedUrl);
-    return;
-  }
-
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approvals&limit=1`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length) {
-        const post = data[0];
-        const rawUrl = post.large_file_url || post.file_url;
-        if (rawUrl) {
-          const url = rawUrl.startsWith("http") ? rawUrl : `https://danbooru.donmai.us${rawUrl}`;
-          tryLoad(url);
-        } else {
-          img.src = "fallback.jpg";
-        }
-      } else {
-        img.src = "fallback.jpg";
-      }
-    })
-    .catch(() => {
-      img.src = "fallback.jpg";
+function fetchAndRenderArtists() {
+  artistGallery.innerHTML = "";
+  fetch("artists.json")
+    .then((res) => res.json())
+    .then((artists) => {
+      cachedArtists = artists.filter((a) =>
+        activeTags.every((tag) => a.tags.includes(tag))
+      );
+      cachedArtists.forEach((artist, index) => createArtistCard(artist, index));
     });
 }
 
+function createArtistCard(artist, index) {
+  const card = document.createElement("div");
+  card.className = "artist-card";
 
+  const img = document.createElement("img");
+  const encoded = encodeURIComponent(artist.name).replace(/%20/g, "%2520");
+  const cacheKey = `artist-img-${encoded}`;
+  const cached = localStorage.getItem(cacheKey);
 
-  function showToast(message) {
-    const toast = document.createElement("div");
-    toast.className = "toast-popup";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 2000);
-  }
-
-  function renderTagButtons(tags) {
-    const container = document.getElementById("tag-buttons");
-    container.innerHTML = '';
-    tags.forEach(tag => {
-      const btn = document.createElement("button");
-      btn.className = "tag-button";
-      if (tagIcons[tag]) {
-        const img = document.createElement("img");
-        img.src = tagIcons[tag];
-        img.alt = tag;
-        img.style.height = "16px";
-        img.style.marginRight = "4px";
-        btn.appendChild(img);
+  if (cached) {
+    img.src = cached;
+  } else {
+    img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${encoded}.jpg`;
+    img.onload = () => localStorage.setItem(cacheKey, img.src);
+    img.onerror = () => {
+      if (!img.src.includes("danbooru")) {
+        img.src = `https://danbooru.donmai.us${artist.fallback}`;
+        localStorage.setItem(cacheKey, img.src);
       }
-      btn.appendChild(document.createTextNode(tag.replaceAll('_', ' ')));
-      btn.dataset.tag = tag;
-      if (tooltips[tag]) btn.title = tooltips[tag];
-
-      btn.addEventListener("click", () => {
-        if (activeTags.has(tag)) {
-          activeTags.delete(tag);
-          btn.classList.remove("active");
-        } else {
-          activeTags.add(tag);
-          btn.classList.add("active");
-          spawnBubble(tag);
-        }
-        filterArtists();
-      });
-      container.appendChild(btn);
-    });
+    };
   }
 
-  function filterArtists() {
-    const gallery = document.getElementById("artist-gallery");
-    gallery.innerHTML = "";
-    const selected = Array.from(activeTags);
-    allArtists.forEach(artist => {
-      const artistTags = artist.kinkTags;
-      if (selected.every(t => artistTags.includes(t))) {
-        const card = document.createElement("div");
-        card.className = "artist-card";
+  img.addEventListener("click", () => openLightbox(index));
 
-        const img = document.createElement("img");
-        img.className = "artist-image";
-        img.loading = "lazy";
-        setBestImage(artist, img);
-        img.addEventListener("click", () => {
-          const zoomed = img.cloneNode();
-          zoomed.classList.add("fullscreen-img");
-          document.body.appendChild(zoomed);
-          zoomed.addEventListener("click", () => zoomed.remove());
-        });
-        card.appendChild(img);
-
-        const name = document.createElement("div");
-        name.className = "artist-name";
-        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ''})`;
-        card.appendChild(name);
-
-        name.addEventListener("touchstart", e => {
-          name.dataset.touchStart = Date.now();
-        });
-
-        name.addEventListener("touchend", e => {
-          if (Date.now() - name.dataset.touchStart < 1000) return;
-          navigator.clipboard.writeText(artist.artistName.replaceAll('_', ' '));
-          showToast("Copied: " + artist.artistName.replaceAll('_', ' '));
-        });
-
-        const taglist = document.createElement("div");
-        taglist.className = "artist-tags";
-        taglist.textContent = artist.kinkTags.join(", ");
-        card.appendChild(taglist);
-
-        gallery.appendChild(card);
-      }
-    });
-  }
-
-  function spawnBubble(tag) {
-    const container = document.getElementById("jrpg-bubbles");
-    const bubble = document.createElement("div");
-    bubble.className = "jrpg-bubble";
-
-    const chibi = document.createElement("img");
-    chibi.src = "icons/chibi.png";
-    chibi.alt = "chibi";
-    chibi.className = "chibi";
-    bubble.appendChild(chibi);
-
-    const pool = tagTaunts[tag] || taunts;
-    const tauntText = document.createElement("span");
-    tauntText.textContent = pool[Math.floor(Math.random() * pool.length)];
-    bubble.appendChild(tauntText);
-
-    container.appendChild(bubble);
-    setTimeout(() => bubble.remove(), 5000);
-  }
-
-  const hypnoTracks = [
-    "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
-    "https://soundcloud.com/sissy-needs/layer-zero",
-    "https://soundcloud.com/user-526345318/sissy-hypnosis-bimbo-affirmations-deep-repetition",
-    "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
-    "https://soundcloud.com/user-526345318/hypno-affirmations-3",
-    "https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1",
-    "https://soundcloud.com/user-526345318/sph-hypno-repetitions-4",
-    "https://soundcloud.com/babewithaboner/bethanys-cum-rag",
-    "https://soundcloud.com/babewithaboner/sissy-cuckold-throws-a-fit",
-    "https://soundcloud.com/babewithaboner/ruinedorgasm-lifes-not-fair"
-  ];
-
-  let currentAudio = 0;
-  const scPlayer = document.getElementById("sc-player");
-  const audioToggle = document.getElementById("toggle-audio");
-  const prevAudio = document.getElementById("prev-audio");
-  const nextAudio = document.getElementById("next-audio");
-
-  function loadTrack(index) {
-    const url = hypnoTracks[index];
-    if (scPlayer) {
-      scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}`;
-      document.getElementById("soundcloud-container").style.display = 'block';
-    }
-  }
-
-  if (audioToggle && prevAudio && nextAudio) {
-    audioToggle.addEventListener("click", () => {
-      const container = document.getElementById("soundcloud-container");
-      const visible = container.style.display !== 'none';
-      container.style.display = visible ? 'none' : 'block';
-    });
-    prevAudio.addEventListener("click", () => {
-      currentAudio = (currentAudio - 1 + hypnoTracks.length) % hypnoTracks.length;
-      loadTrack(currentAudio);
-    });
-    nextAudio.addEventListener("click", () => {
-      currentAudio = (currentAudio + 1) % hypnoTracks.length;
-      loadTrack(currentAudio);
-    });
-  }
-
-  loadTrack(currentAudio);
-
-  Promise.all([
-    fetch("artists.json").then(r => r.json()),
-    fetch("artists-local.json").then(r => r.json()),
-    fetch("tag-tooltips.json").then(r => r.json()),
-    fetch("taunts.json").then(r => r.json()),
-    fetch("tag-taunts.json").then(r => r.json())
-  ]).then(([artists, locals, tool, baseTaunts, specificTaunts]) => {
-    allArtists = artists;
-    tooltips = tool;
-    taunts = baseTaunts;
-    tagTaunts = specificTaunts;
-    renderTagButtons(filterTags);
-    filterArtists();
+  const name = document.createElement("div");
+  name.className = "artist-name";
+  name.textContent = artist.name;
+  name.addEventListener("dblclick", () => {
+    navigator.clipboard.writeText(artist.name);
+    name.textContent = "Copied!";
+    setTimeout(() => (name.textContent = artist.name), 1000);
   });
 
-  document.body.style.display = "none";
-  setTimeout(() => document.body.style.display = "", 0);
+  card.appendChild(img);
+  card.appendChild(name);
+  artistGallery.appendChild(card);
+}
+
+// Lightbox viewer
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+const lightboxCaption = document.getElementById("lightbox-caption");
+const closeBtn = document.querySelector(".close");
+const prevBtn = document.getElementById("prev-img");
+const nextBtn = document.getElementById("next-img");
+
+let currentIndex = 0;
+
+function openLightbox(index) {
+  currentIndex = index;
+  const artist = cachedArtists[index];
+  lightbox.style.display = "flex";
+  lightboxImg.src = `https://danbooru.donmai.us${artist.fallback}`;
+  lightboxCaption.textContent = artist.name;
+}
+
+function changeLightbox(dir) {
+  currentIndex = (currentIndex + dir + cachedArtists.length) % cachedArtists.length;
+  openLightbox(currentIndex);
+}
+
+closeBtn.onclick = () => (lightbox.style.display = "none");
+prevBtn.onclick = () => changeLightbox(-1);
+nextBtn.onclick = () => changeLightbox(1);
+
+// Audio control logic
+function loadAudio(index) {
+  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioLinks[index])}&auto_play=true`;
+}
+
+toggleAudioBtn.addEventListener("click", () => {
+  if (soundcloudContainer.style.display === "none") {
+    soundcloudContainer.style.display = "block";
+    loadAudio(currentAudioIndex);
+    toggleAudioBtn.textContent = "🔊 Femdom Hypno";
+  } else {
+    soundcloudContainer.style.display = "none";
+    scPlayer.src = "";
+    toggleAudioBtn.textContent = "🔇 Femdom Hypno";
+  }
 });
+
+prevAudioBtn.addEventListener("click", () => {
+  currentAudioIndex = (currentAudioIndex - 1 + audioLinks.length) % audioLinks.length;
+  loadAudio(currentAudioIndex);
+});
+
+nextAudioBtn.addEventListener("click", () => {
+  currentAudioIndex = (currentAudioIndex + 1) % audioLinks.length;
+  loadAudio(currentAudioIndex);
+});
+
+window.addEventListener("load", fetchAndRenderArtists);
