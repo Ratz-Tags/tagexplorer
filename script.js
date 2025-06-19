@@ -44,8 +44,8 @@ Promise.all([
   tagTaunts = taunts;
   renderTagButtons();
   fetchAndRenderArtists();
-})
-.catch(console.error);
+  updateBackground("femdom"); // fallback image if no tag picked yet
+});
 
 function renderTagButtons() {
   tagButtonsContainer.innerHTML = "";
@@ -54,22 +54,19 @@ function renderTagButtons() {
     btn.classList.add("tag-button");
     btn.innerText = tag.replaceAll("_", " ");
     btn.title = tagTooltips[tag] || `You really tapped '${tag}'? Pathetic.`;
-    btn.addEventListener("click", () => toggleTag(tag, btn));
+    if (activeTags.includes(tag)) btn.classList.add("active");
+    btn.addEventListener("click", () => toggleTag(tag));
     tagButtonsContainer.appendChild(btn);
   });
 }
 
-function toggleTag(tag, btn) {
-  if (activeTags.includes(tag)) {
-    activeTags = activeTags.filter((t) => t !== tag);
-    btn.classList.remove("active");
-  } else {
-    activeTags.push(tag);
-    btn.classList.add("active");
-  }
+function toggleTag(tag) {
+  const isActive = activeTags.includes(tag);
+  activeTags = isActive ? activeTags.filter(t => t !== tag) : [...activeTags, tag];
+  renderTagButtons();
   fetchAndRenderArtists();
   showTaunt(tag);
-  updateBackground(tag);
+  if (!isActive && activeTags.length === 1) updateBackground(tag);
 }
 
 function showTaunt(tag) {
@@ -99,14 +96,13 @@ function fetchAndRenderArtists() {
     .then((res) => res.json())
     .then((artists) => {
       cachedArtists = artists.filter((a) => {
-        if (!a.tags || !Array.isArray(a.tags)) return false;
-        return activeTags.length === 0 || activeTags.every((tag) => a.tags.includes(tag));
+        if (!Array.isArray(a.tags)) return false;
+        const normalizedTags = a.tags.map(t => t.trim().toLowerCase());
+        return activeTags.length === 0 || activeTags.every(tag => normalizedTags.includes(tag));
       });
       cachedArtists.forEach((artist, index) => createArtistCard(artist, index));
     })
-    .catch((err) => {
-      console.error("Failed to load artists.json", err);
-    });
+    .catch(err => console.error("Failed to load artists.json", err));
 }
 
 function createArtistCard(artist, index) {
@@ -124,7 +120,7 @@ function createArtistCard(artist, index) {
     img.src = `https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/${encoded}.jpg`;
     img.onload = () => localStorage.setItem(cacheKey, img.src);
     img.onerror = () => {
-      if (!img.src.includes("danbooru")) {
+      if (artist.fallback) {
         img.src = `https://danbooru.donmai.us${artist.fallback}`;
         localStorage.setItem(cacheKey, img.src);
       }
@@ -147,7 +143,7 @@ function createArtistCard(artist, index) {
   artistGallery.appendChild(card);
 }
 
-// Lightbox viewer
+// Lightbox logic
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightbox-img");
 const lightboxCaption = document.getElementById("lightbox-caption");
@@ -174,7 +170,7 @@ closeBtn.onclick = () => (lightbox.style.display = "none");
 prevBtn.onclick = () => changeLightbox(-1);
 nextBtn.onclick = () => changeLightbox(1);
 
-// Audio control logic
+// Audio Controls
 function loadAudio(index) {
   scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioLinks[index])}&auto_play=true`;
 }
