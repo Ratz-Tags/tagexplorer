@@ -7,16 +7,16 @@ const kinkTags = [
 ].sort();
 
 const audioLinks = [
-  'https://on.soundcloud.com/HADalMkX8rPG2ISu0Z',
-  'https://on.soundcloud.com/vOQ4cOkO5vjnkZoqPu',
-  'https://soundcloud.com/sissypositive/happy-chastity-audio-hypnosis-18',
-  'https://soundcloud.com/sissy-needs/nipples-sissy-hypno',
-  'https://soundcloud.com/user-682994637/after-dark-2-gloryhole-instructions',
-  'https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1',
-  'https://soundcloud.com/user-526345318/sph-hypno-repetitions-4',
-  'https://soundcloud.com/dogelol-523627490/maria-dont-beg-me-soft',
-  'https://soundcloud.com/babewithaboner/bethanys-cum-rag',
-  'https://soundcloud.com/re-elle/urethral-ft-lamb-kebab-version-2'
+"https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
+	"https://soundcloud.com/sissy-needs/layer-zero",
+    "https://soundcloud.com/user-526345318/sissy-hypnosis-bimbo-affirmations-deep-repetition",
+    "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
+    "https://soundcloud.com/user-526345318/hypno-affirmations-3",
+    "https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1",
+    "https://soundcloud.com/user-526345318/sph-hypno-repetitions-4",
+    "https://soundcloud.com/babewithaboner/bethanys-cum-rag",
+    "https://soundcloud.com/babewithaboner/sissy-cuckold-throws-a-fit",
+	"https://soundcloud.com/babewithaboner/ruinedorgasm-lifes-not-fair"
 ];
 
 const tagButtonsContainer = document.getElementById("tag-buttons");
