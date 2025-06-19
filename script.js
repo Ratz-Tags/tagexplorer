@@ -1,4 +1,4 @@
-// (Script.js) – final patched version with insult bubble logic + SoundCloud integration restored
+// (Script.js) – merged from working + current version with full artist logic, localStorage fallback, audio, and background
 
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
@@ -26,11 +26,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const jrpgBubbles = document.getElementById("jrpg-bubbles");
   const backgroundBlur = document.getElementById("background-blur");
 
-  const scPlayer = document.getElementById("sc-player");
-  const toggleAudioBtn = document.getElementById("toggle-audio");
-  const prevAudioBtn = document.getElementById("prev-audio");
-  const nextAudioBtn = document.getElementById("next-audio");
-
   const soundcloudLinks = [
     "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
     "https://soundcloud.com/sissy-needs/layer-zero",
@@ -45,32 +40,38 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   let currentAudioIndex = 0;
+  let audio = new Audio();
+  audio.src = soundcloudLinks[currentAudioIndex];
+  audio.autoplay = true;
+  audio.loop = false;
+
+  document.getElementById("toggle-audio").onclick = () => {
+    if (audio.paused) {
+      audio.play();
+      document.getElementById("toggle-audio").textContent = "🔊 Femdom Hypno";
+    } else {
+      audio.pause();
+      document.getElementById("toggle-audio").textContent = "🔇 Femdom Hypno";
+    }
+  };
+
+  document.getElementById("prev-audio").onclick = () => {
+    currentAudioIndex = (currentAudioIndex - 1 + soundcloudLinks.length) % soundcloudLinks.length;
+    audio.src = soundcloudLinks[currentAudioIndex];
+    audio.play();
+  };
+
+  document.getElementById("next-audio").onclick = () => {
+    currentAudioIndex = (currentAudioIndex + 1) % soundcloudLinks.length;
+    audio.src = soundcloudLinks[currentAudioIndex];
+    audio.play();
+  };
+
   let activeTags = new Set();
   let allArtists = [];
   let tagTooltips = {};
   let tagTaunts = {};
   let taunts = [];
-
-  function setSoundcloudTrack(index) {
-    scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudLinks[index])}&auto_play=true`;
-  }
-
-  toggleAudioBtn.onclick = () => {
-    const showing = scPlayer.style.display !== "none";
-    scPlayer.style.display = showing ? "none" : "block";
-    toggleAudioBtn.textContent = showing ? "🔇 Femdom Hypno" : "🔊 Femdom Hypno";
-    if (!showing) setSoundcloudTrack(currentAudioIndex);
-  };
-
-  prevAudioBtn.onclick = () => {
-    currentAudioIndex = (currentAudioIndex - 1 + soundcloudLinks.length) % soundcloudLinks.length;
-    setSoundcloudTrack(currentAudioIndex);
-  };
-
-  nextAudioBtn.onclick = () => {
-    currentAudioIndex = (currentAudioIndex + 1) % soundcloudLinks.length;
-    setSoundcloudTrack(currentAudioIndex);
-  };
 
   function setRandomBackground() {
     const tag = [...activeTags].at(-1) || "femdom";
@@ -223,6 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTagButtons();
     filterArtists();
     setRandomBackground();
-    setSoundcloudTrack(currentAudioIndex);
+    audio.play();
   });
 });
