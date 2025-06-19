@@ -125,15 +125,18 @@ body {
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
-  background: #ff00c8;
+  background: linear-gradient(to right, #ff00c8, #ff8ae2);
   color: black;
-  padding: 10px 16px;
-  border-radius: 20px;
-  font-weight: bold;
-  box-shadow: 0 0 8px #ff00c880;
-  animation: pop-in 0.2s ease;
+  padding: 12px 20px;
+  border-radius: 30px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  box-shadow: 0 0 10px #ff00c8cc;
+  animation: pop-in 0.3s ease;
   z-index: 9999;
-  text-shadow: none;
+  text-shadow: 0 0 3px #fff;
+  font-family: "Comic Sans MS", cursive;
 }
 
 #artist-gallery {
