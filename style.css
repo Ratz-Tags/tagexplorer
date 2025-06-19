@@ -139,6 +139,23 @@ body {
   font-family: "Comic Sans MS", cursive;
 }
 
+.toast-popup::after {
+  content: url('icons/moan.svg');
+  display: inline-block;
+  margin-left: 8px;
+  animation: shake 0.3s ease-in-out;
+  height: 16px;
+  width: 16px;
+}
+
+@keyframes shake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-2px); }
+  100% { transform: translateX(0); }
+}
+
 #artist-gallery {
   display: flex;
   flex-wrap: wrap;
