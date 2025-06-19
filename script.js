@@ -113,10 +113,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .then(data => {
         if (data.length) {
           const post = data[Math.floor(Math.random() * data.length)];
-          const url = post?.large_file_url || post?.file_url;
-
-          if (url && backgroundBlur) {
-            backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${url})`;
+          const raw = post?.large_file_url || post?.file_url;
+          const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+          if (full) {
+            backgroundBlur.style.backgroundImage = `url(${full})`;
           }
         }
       })
@@ -240,10 +240,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showPost(i) {
     const post = posts[i];
-    const url = post?.large_file_url || post?.file_url;
-    if (url) {
-      zoomed.src = `https://danbooru.donmai.us${url}`;
-    }
+    const raw = post?.large_file_url || post?.file_url;
+    const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+    zoomed.src = full;
   }
 
   prevBtn.onclick = () => {
