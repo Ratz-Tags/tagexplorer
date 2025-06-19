@@ -11,12 +11,12 @@ body {
 #background-blur {
   position: fixed;
   inset: 0;
+  z-index: -1;
   background-size: cover;
   background-position: center;
-  filter: blur(8px) brightness(0.25);
-  z-index: -1;
-  transition: background-image 1s ease-in-out;
+  filter: blur(8px) brightness(0.3);
 }
+
 
 #tag-buttons {
   display: flex;
