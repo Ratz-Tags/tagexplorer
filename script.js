@@ -1,13 +1,15 @@
+// script.js — full validated version with all patches applied
+
 const kinkTags = [
   "chastity_cage", "futanari", "pegging", "bimbofication", "orgasm_denial",
   "netorare", "feminization", "public_humiliation", "humiliation", "dominatrix",
   "tentacle_sex", "foot_domination", "gokkun", "milking_machine", "mind_break",
   "cum_feeding", "prostate_milking", "lactation", "sex_machine", "cyber_femdom",
   "gagged", "sissy_training", "extreme_penetration", "large_penetration", "netorase"
-].sort();
+];
 
-const audioLinks = [
-"https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
+const soundcloudLinks = [
+    "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
 	"https://soundcloud.com/sissy-needs/layer-zero",
     "https://soundcloud.com/user-526345318/sissy-hypnosis-bimbo-affirmations-deep-repetition",
     "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
@@ -28,12 +30,21 @@ const soundcloudContainer = document.getElementById("soundcloud-container");
 const toggleAudioBtn = document.getElementById("toggle-audio");
 const prevAudioBtn = document.getElementById("prev-audio");
 const nextAudioBtn = document.getElementById("next-audio");
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightbox-img");
+const lightboxCaption = document.getElementById("lightbox-caption");
+const closeBtn = document.querySelector(".close");
+const prevBtn = document.getElementById("prev-img");
+const nextBtn = document.getElementById("next-img");
 
 let currentAudioIndex = 0;
 let activeTags = [];
 let cachedArtists = [];
 let tagTooltips = {};
 let tagTaunts = {};
+let currentIndex = 0;
+
+lightbox.style.display = "none";
 
 Promise.all([
   fetch("tag-tooltips.json").then(r => r.json()).catch(() => ({})),
@@ -44,7 +55,7 @@ Promise.all([
   tagTaunts = taunts;
   renderTagButtons();
   fetchAndRenderArtists();
-  updateBackground("femdom"); // fallback image if no tag picked yet
+  updateBackground("femdom");
 });
 
 function renderTagButtons() {
@@ -73,18 +84,22 @@ function showTaunt(tag) {
   const taunt = tagTaunts[tag] || `Still chasing '${tag}' huh? You're beyond help.`;
   const bubble = document.createElement("div");
   bubble.className = "jrpg-bubble";
-  bubble.innerHTML = `<img src='./images/chibi.png' class='chibi' /><span>${taunt}</span>`;
+  bubble.innerHTML = `<img src='./icons/chibi.png' class='chibi' /><span>${taunt}</span>`;
   jrpgBubbles.appendChild(bubble);
   setTimeout(() => bubble.remove(), 5000);
 }
 
 function updateBackground(tag) {
-  const url = `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=${encodeURIComponent(tag)}+rating:explicit+-loli+-shota+-young`;
+  const page = Math.floor(Math.random() * 5) + 1;
+  const url = `https://danbooru.donmai.us/posts.json?limit=100&page=${page}&tags=${encodeURIComponent(tag)}+rating:explicit+order:approval`;
   fetch(url)
-    .then((res) => res.json())
-    .then((posts) => {
-      if (posts[0]?.large_file_url) {
-        backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${posts[0].large_file_url})`;
+    .then(res => res.json())
+    .then(posts => {
+      if (posts && posts.length > 0) {
+        const randomPost = posts[Math.floor(Math.random() * posts.length)];
+        if (randomPost?.large_file_url) {
+          backgroundBlur.style.backgroundImage = `url(https://danbooru.donmai.us${randomPost.large_file_url})`;
+        }
       }
     })
     .catch(console.error);
@@ -143,16 +158,6 @@ function createArtistCard(artist, index) {
   artistGallery.appendChild(card);
 }
 
-// Lightbox logic
-const lightbox = document.getElementById("lightbox");
-const lightboxImg = document.getElementById("lightbox-img");
-const lightboxCaption = document.getElementById("lightbox-caption");
-const closeBtn = document.querySelector(".close");
-const prevBtn = document.getElementById("prev-img");
-const nextBtn = document.getElementById("next-img");
-
-let currentIndex = 0;
-
 function openLightbox(index) {
   currentIndex = index;
   const artist = cachedArtists[index];
@@ -170,9 +175,8 @@ closeBtn.onclick = () => (lightbox.style.display = "none");
 prevBtn.onclick = () => changeLightbox(-1);
 nextBtn.onclick = () => changeLightbox(1);
 
-// Audio Controls
 function loadAudio(index) {
-  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(audioLinks[index])}&auto_play=true`;
+  scPlayer.src = `https://w.soundcloud.com/player/?url=${encodeURIComponent(soundcloudLinks[index])}&auto_play=true`;
 }
 
 toggleAudioBtn.addEventListener("click", () => {
@@ -188,11 +192,11 @@ toggleAudioBtn.addEventListener("click", () => {
 });
 
 prevAudioBtn.addEventListener("click", () => {
-  currentAudioIndex = (currentAudioIndex - 1 + audioLinks.length) % audioLinks.length;
+  currentAudioIndex = (currentAudioIndex - 1 + soundcloudLinks.length) % soundcloudLinks.length;
   loadAudio(currentAudioIndex);
 });
 
 nextAudioBtn.addEventListener("click", () => {
-  currentAudioIndex = (currentAudioIndex + 1) % audioLinks.length;
+  currentAudioIndex = (currentAudioIndex + 1) % soundcloudLinks.length;
   loadAudio(currentAudioIndex);
 });
