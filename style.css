@@ -219,45 +219,30 @@ audio#moan-audio {
 
 /* Sidebar for copied artists */
 #copied-sidebar {
-  position: fixed;
-  right: 0;
-  top: 0;
-  width: 240px;
-  height: 100vh;
+  position: relative;
   background: rgba(24, 0, 36, 0.92);
-  border-left: 2px solid #ff00c8;
+  border: 2px solid #ff00c8;
   padding: 10px;
-  overflow-y: auto;
-  z-index: 10000;
-  transition: transform 0.3s ease;
-  transform: translateX(100%);
+  margin: 1rem auto;
+  max-width: 1000px;
+  display: none;
 }
-
 #copied-sidebar.visible {
-  transform: translateX(0);
-}
-
-#copied-sidebar h3 {
-  margin-top: 0;
-  font-size: 1rem;
-  color: #ffcbff;
-  text-align: center;
-  margin-bottom: 1rem;
+  display: block;
 }
 
 .sidebar-toggle {
-  position: fixed;
-  right: 10px;
-  top: 10px;
+  display: block;
+  margin: 0.5rem auto;
   background: #ff00c8;
   color: white;
   border: none;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 8px;
-  z-index: 10001;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
+
 
 .sidebar-artist {
   display: flex;
