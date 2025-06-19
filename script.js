@@ -123,7 +123,7 @@ function setRandomBackground() {
     })
     .catch(() => {
       backgroundBlur.style.backgroundColor = "#111"; // fallback
-    };
+    )};
 }
 
 
@@ -325,5 +325,6 @@ function setRandomBackground() {
     filterArtists();
     setRandomBackground();
     setInterval(setRandomBackground, 15000); // every 15 seconds
+
   });
 });
