@@ -29,52 +29,52 @@ document.addEventListener("DOMContentLoaded", () => {
   const moanAudio = document.getElementById("moan-audio");
   let copiedArtists = new Set();
 
-  const soundcloudLinks = [
-    "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
-    "https://soundcloud.com/sissy-needs/layer-zero",
-    "https://soundcloud.com/user-526345318/sissy-hypnosis-bimbo-affirmations-deep-repetition",
-    "https://soundcloud.com/sissy-needs/nipples-sissy-hypno",
-    "https://soundcloud.com/user-526345318/hypno-affirmations-3",
-    "https://soundcloud.com/user-526345318/affirmations-for-cuckolds-1",
-    "https://soundcloud.com/user-526345318/sph-hypno-repetitions-4",
-    "https://soundcloud.com/babewithaboner/bethanys-cum-rag",
-    "https://soundcloud.com/babewithaboner/sissy-cuckold-throws-a-fit",
-    "https://soundcloud.com/babewithaboner/ruinedorgasm-lifes-not-fair"
+  const audioFiles = [
+    "Yes.mp3",
+    "Blank.mp3",
+    "Filthy Habits.mp3",
+    "Nipples.mp3",
+    "Lazyer Zero.mp3",
+    "Girl Factory.mp3"
   ];
+
+  function getAudioSrc(index) {
+    return `audio/${audioFiles[index]}`;
+  }
 
   let currentAudioIndex = 0;
   let audio = new Audio();
-  audio.src = soundcloudLinks[currentAudioIndex];
+  audio.src = getAudioSrc[currentAudioIndex];
   audio.autoplay = false;
   audio.loop = false;
 
   audio.addEventListener("ended", () => {
-    currentAudioIndex = (currentAudioIndex + 1) % soundcloudLinks.length;
-    audio.src = soundcloudLinks[currentAudioIndex];
+    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+    audio.src = audioFiles[currentAudioIndex];
     audio.play();
-    showToast("Now playing: Femdom Track #" + (currentAudioIndex + 1));
+    showToast("Now playing: " + (currentAudioIndex + 1));
   });
 
   document.getElementById("toggle-audio").onclick = () => {
     if (audio.paused) {
       audio.play();
-      document.getElementById("toggle-audio").textContent = "🔊 Femdom Hypno";
+      document.getElementById("toggle-audio").textContent = "🔊";
     } else {
       audio.pause();
-      document.getElementById("toggle-audio").textContent = "🔇 Femdom Hypno";
+      document.getElementById("toggle-audio").textContent = "🔇";
     }
   };
 
   document.getElementById("prev-audio").onclick = () => {
-    currentAudioIndex = (currentAudioIndex - 1 + soundcloudLinks.length) % soundcloudLinks.length;
-    audio.src = soundcloudLinks[currentAudioIndex];
+    currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
+    audio.src = audioFiles[currentAudioIndex];
     audio.play();
     showToast("Rewound to: Femdom Track #" + (currentAudioIndex + 1));
   };
 
   document.getElementById("next-audio").onclick = () => {
-    currentAudioIndex = (currentAudioIndex + 1) % soundcloudLinks.length;
-    audio.src = soundcloudLinks[currentAudioIndex];
+    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+    audio.src = audioFiles[currentAudioIndex];
     audio.play();
     showToast("Next up: Femdom Track #" + (currentAudioIndex + 1));
   };
