@@ -302,6 +302,7 @@ audio#moan-audio {
 }
 
 .sidebar-artist {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -321,6 +322,7 @@ audio#moan-audio {
   width: 100%;
   border-radius: 6px;
   margin-bottom: 4px;
+  display: block; /* Prevents inline gap issues */
 }
 
 .sidebar-artist span {
@@ -339,14 +341,21 @@ audio#moan-audio {
 }
 
 .copy-button {
-  background: transparent;
-  border: none;
+  position: absolute;      /* Add this */
+  bottom: 8px;             /* Adjust as needed */
+  right: 8px;              /* Adjust as needed */
+  background: rgba(20,0,30,0.7);
+  border-radius: 50%;
+  padding: 8px;
   color: #ff9af5;
-  font-size: 1.1rem;
+  border: none;
+  font-size: 1.3rem;
   cursor: pointer;
-  transition: color 0.3s;
+  z-index: 2;
+  transition: color 0.3s, background 0.2s;
 }
 
 .copy-button:hover {
   color: white;
+  background: #ff00c8;
 }
