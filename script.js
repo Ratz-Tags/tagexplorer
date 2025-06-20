@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "Blank.mp3",
     "Filthy Habits.mp3",
     "Nipples.mp3",
-    "Lazyer Zero.mp3",
+    "Layer Zero.mp3",
     "Girl Factory.mp3"
   ];
 
@@ -69,14 +69,14 @@ document.addEventListener("DOMContentLoaded", () => {
     currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
     audio.src = audioFiles[currentAudioIndex];
     audio.play();
-    showToast("Rewound to: Femdom Track #" + (currentAudioIndex + 1));
+    showToast("Rewound to: " + (currentAudioIndex + 1));
   };
 
   document.getElementById("next-audio").onclick = () => {
     currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
     audio.src = audioFiles[currentAudioIndex];
     audio.play();
-    showToast("Next up: Femdom Track #" + (currentAudioIndex + 1));
+    showToast("Next up: " + (currentAudioIndex + 1));
   };
 
   if (sidebarToggle && copiedSidebar) {
