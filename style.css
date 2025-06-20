@@ -231,6 +231,7 @@ body {
   cursor: pointer;
   transition: 0.2s;
 }
+
 #audio-controls {
   display: flex;
   justify-content: center;
