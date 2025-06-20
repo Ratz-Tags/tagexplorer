@@ -49,28 +49,26 @@ document.addEventListener("DOMContentLoaded", () => {
   audio.loop = false;
 
   audio.addEventListener("ended", () => {
-    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
-    audio.src = audioFiles[currentAudioIndex];
-    audio.play();
-    showToast("Now playing: " + (currentAudioIndex + 1));
-  });
+   audio.addEventListener("ended", () => {
+  currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+  audio.src = getAudioSrc(currentAudioIndex);
+  audio.play();
+  showToast("Now playing: " + (currentAudioIndex + 1));
+});
 
-  document.getElementById("toggle-audio").onclick = () => {
-    if (audio.paused) {
-      audio.play();
-      document.getElementById("toggle-audio").textContent = "🔊";
-    } else {
-      audio.pause();
-      document.getElementById("toggle-audio").textContent = "🔇";
-    }
-  };
+document.getElementById("prev-audio").onclick = () => {
+  currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
+  audio.src = getAudioSrc(currentAudioIndex);
+  audio.play();
+  showToast("Rewound to: " + (currentAudioIndex + 1));
+};
 
-  document.getElementById("prev-audio").onclick = () => {
-    currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
-    audio.src = audioFiles[currentAudioIndex];
-    audio.play();
-    showToast("Rewound to: " + (currentAudioIndex + 1));
-  };
+document.getElementById("next-audio").onclick = () => {
+  currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+  audio.src = getAudioSrc(currentAudioIndex);
+  audio.play();
+  showToast("Next up: " + (currentAudioIndex + 1));
+};
 
   document.getElementById("next-audio").onclick = () => {
     currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
