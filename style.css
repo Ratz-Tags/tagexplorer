@@ -85,19 +85,21 @@ body {
   color: #ffe4fa;
   margin-bottom: 4px;
   text-shadow: 1px 1px 2px #000;
+  text-wrap: balance;
 }
 
 .artist-tags {
   font-size: 0.85rem;
   color: #ffbdf0;
   text-shadow: 0 0 2px #000;
+  text-wrap: balance;
 }
 
 .jrpg-bubble {
   display: flex;
   align-items: center;
   position: absolute;
-  top: 10vh;
+  bottom: 10vh;
   left: 10vw;
   background: rgba(0, 0, 0, 0.75);
   color: #fff0ff;
