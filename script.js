@@ -67,7 +67,6 @@ audio.onpause = () => {
   toggleAudioBtn.textContent = "🔊";
 };
   audio.addEventListener("ended", () => {
-   audio.addEventListener("ended", () => {
   currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
   audio.src = getAudioSrc(currentAudioIndex);
   audio.play();
