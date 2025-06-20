@@ -1,36 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
-  "bimbofication",
-  "chastity_cage",
-  "dominatrix",
-  "feminization",
-  "flat_chastity_cage",
-  "futanari",
-  "gagged",
-  "milking_machine",
-  "mind_break",
-  "netorare",
-  "netorase",
-  "orgasm_denial",
-  "pegging",
-  "prostate_milking",
-  "sex_machine",
-  "femdom",
-  "foot_worship",
-  "forced_feminization",
-  "hand_milking",
-  "hogtie",
-  "knotting",
-  "penis_milking",
-  "pouring_from_condom",
-  "restraints",
-  "shibari",
-  "small_penis_humiliation",
-  "sockjob",
-  "spreader_bar",
-  "toe_sucking",
-  "used_condom"
-];
+    "bimbofication", "chastity_cage", "dominatrix", "feminization", "flat_chastity_cage",
+    "futanari", "gagged", "milking_machine", "mind_break", "netorare", "netorase",
+    "orgasm_denial", "pegging", "prostate_milking", "sex_machine", "femdom", "foot_worship",
+    "forced_feminization", "hand_milking", "hogtie", "knotting", "penis_milking",
+    "pouring_from_condom", "restraints", "shibari", "small_penis_humiliation", "sockjob",
+    "spreader_bar", "toe_sucking", "used_condom"
+  ];
 
   const tagIcons = {
     "pegging": "icons/pegging.svg",
@@ -108,6 +84,14 @@ document.addEventListener("DOMContentLoaded", () => {
       copiedSidebar.classList.toggle("visible");
     });
   }
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 100) {
+      sidebarToggle.classList.add("pinned-visible");
+    } else {
+      sidebarToggle.classList.remove("pinned-visible");
+    }
+  });
 
   let activeTags = new Set();
   let allArtists = [];
@@ -292,31 +276,26 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         });
 
+        const nameRow = document.createElement("div");
+        nameRow.className = "name-row";
+
         const name = document.createElement("div");
         name.className = "artist-name";
         name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-        name.addEventListener("touchstart", e => {
-          name.dataset.touchStart = Date.now();
-        });
-        name.addEventListener("touchend", e => {
-          if (Date.now() - name.dataset.touchStart < 800) return;
-          handleArtistCopy(artist, img.src);
-        });
+        const copyBtn = document.createElement("button");
+        copyBtn.className = "copy-button";
+        copyBtn.textContent = "📋";
+        copyBtn.title = "Copy name";
+        copyBtn.onclick = () => handleArtistCopy(artist, img.src);
 
-        name.addEventListener("mousedown", e => {
-          name.dataset.mouseDown = Date.now();
-        });
-        name.addEventListener("mouseup", e => {
-          if (Date.now() - name.dataset.mouseDown < 800) return;
-          handleArtistCopy(artist, img.src);
-        });
+        nameRow.append(name, copyBtn);
 
         const taglist = document.createElement("div");
         taglist.className = "artist-tags";
         taglist.textContent = artist.kinkTags.join(", ");
 
-        card.append(img, name, taglist);
+        card.append(img, nameRow, taglist);
         artistGallery.appendChild(card);
       }
     });
