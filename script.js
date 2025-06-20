@@ -1,12 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
-    "bimbofication", "chastity_cage", "dominatrix", "feminization", "flat_chastity_cage", "trap",
-    "futanari", "gagged", "milking_machine", "mind_break", "netorare", "netorase",
-    "orgasm_denial", "pegging", "prostate_milking", "sex_machine", "femdom", "foot_worship",
-    "forced_feminization", "hand_milking", "hogtie", "knotting", "penis_milking",
-    "pouring_from_condom", "restraints", "shibari", "small_penis_humiliation", "sockjob",
-    "spreader_bar", "toe_sucking", "used_condom"
-  ];
+  "femdom", "chastity_cage", "trap", "pegging", "futanari", "netorare", "netorase", "tentacle_sex", 
+  "anal_object_insertion", "prostate_milking", "gagged", "dominatrix", "humiliation", "lactation",
+  "flat_chastity_cage", "used_condom", "orgasm_denial", "mind_break", "shibari", "object_insertion", 
+  "penis_milking", "small_penis_humiliation", "sex_machine", "foot_worship", "dildo_riding",
+  "milking_machine", "huge_dildo", "spreader_bar", "large_insertion", "hand_milking", "cum_in_mouth",
+  "gokkun", "knotting", "toe_sucking", "feminization", "hogtie", "bimbofication", "restraints",
+  "sockjob", "tentacle_pit", "object_insertion_from_behind", "pouring_from_condom", "forced_feminization"
+];
 
   const tagIcons = {
     "pegging": "icons/pegging.svg",
