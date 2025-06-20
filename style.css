@@ -328,3 +328,25 @@ audio#moan-audio {
   color: #ffcbff;
   text-align: center;
 }
+
+
+.name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.copy-button {
+  background: transparent;
+  border: none;
+  color: #ff9af5;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.copy-button:hover {
+  color: white;
+}
