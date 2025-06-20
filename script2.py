@@ -77,11 +77,22 @@ async def main():
                 kink_tags.update(tags)
                 artist["kinkTags"] = sorted(kink_tags)
                 matched_existing += 1
+
+                # Fill NSFW level based on kinkTags
+                if artist.get("nsfwLevel", "").lower() in {"", "unknown"}:
+                    level = "Suggestive"
+                    if any(tag in artist["kinkTags"] for tag in ["extreme_insertion", "large_insertion", "huge_dildo", "anal_object_insertion"]):
+                        level = "Extreme"
+                    elif any(tag in artist["kinkTags"] for tag in ["cum_in_mouth", "gokkun", "dildo_riding", "object_insertion", "public_humiliation", "tentacle_pit"]):
+                        level = "Hentai"
+                    elif any(tag in artist["kinkTags"] for tag in ["femdom", "pegging", "trap", "chastity_cage", "humiliation", "foot_domination"]):
+                        level = "Ecchi"
+                    artist["nsfwLevel"] = level
             else:
                 if key not in new_artists:
                     new_artists[key] = {
                         "artistName": artist_name,
-                        "nsfwLevel": "NSFW",
+                        "nsfwLevel": "Hentai",  # inferred default due to explicit kink tag presence
                         "artStyle": "Unknown",
                         "kinkTags": sorted(tags)
                     }

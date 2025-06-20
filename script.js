@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
     "bimbofication", "chastity_cage", "dominatrix", "feminization", "flat_chastity_cage",
-    "futanari", "gagged", "milking_machine", "mind_break", "netorare", "netorase",
+    "futanari", "gagged", "milking_machine", "mind_break", "netorare", "netorase", "trap",
     "orgasm_denial", "pegging", "prostate_milking", "sex_machine", "femdom", "foot_worship",
     "forced_feminization", "hand_milking", "hogtie", "knotting", "penis_milking",
     "pouring_from_condom", "restraints", "shibari", "small_penis_humiliation", "sockjob",
