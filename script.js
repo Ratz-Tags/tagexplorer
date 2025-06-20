@@ -88,13 +88,6 @@ document.getElementById("next-audio").onclick = () => {
   showToast("Next up: " + (currentAudioIndex + 1));
 };
 
-  document.getElementById("next-audio").onclick = () => {
-    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
-    audio.src = audioFiles[currentAudioIndex];
-    audio.play();
-    showToast("Next up: " + (currentAudioIndex + 1));
-  };
-
   if (sidebarToggle && copiedSidebar) {
     sidebarToggle.addEventListener("click", () => {
       copiedSidebar.classList.toggle("visible");
