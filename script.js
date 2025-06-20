@@ -47,7 +47,25 @@ document.addEventListener("DOMContentLoaded", () => {
   audio.src = getAudioSrc[currentAudioIndex];
   audio.autoplay = false;
   audio.loop = false;
+  const toggleAudioBtn = document.getElementById("toggle-audio");
 
+toggleAudioBtn.onclick = () => {
+  if (audio.paused) {
+    audio.play();
+    toggleAudioBtn.textContent = "🔇"; // Change icon to pause
+  } else {
+    audio.pause();
+    toggleAudioBtn.textContent = "🔊"; // Change icon to play
+  }
+};
+
+audio.onplay = () => {
+  toggleAudioBtn.textContent = "🔇";
+};
+
+audio.onpause = () => {
+  toggleAudioBtn.textContent = "🔊";
+};
   audio.addEventListener("ended", () => {
    audio.addEventListener("ended", () => {
   currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
