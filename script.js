@@ -179,6 +179,22 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch(() => img.src = "fallback.jpg");
   }
 
+  function lazyLoadBestImage(artist, img) {
+  if (img.dataset.loaded) return;
+
+  const observer = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        setBestImage(artist, img);
+        img.dataset.loaded = "true";
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { rootMargin: "100px" }); // Adjust as needed for preloading
+
+  observer.observe(img);
+}
+  
   function renderTagButtons() {
     tagButtonsContainer.innerHTML = "";
     kinkTags.forEach(tag => {
@@ -224,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const img = document.createElement("img");
         img.className = "artist-image";
-        setBestImage(artist, img);
+        lazyLoadBestImage(artist, img);
         img.addEventListener("click", () => {
           let currentIndex = 0;
           let posts = [];
