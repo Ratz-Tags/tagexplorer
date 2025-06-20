@@ -28,12 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarToggle = document.querySelector(".sidebar-toggle");
   const moanAudio = document.getElementById("moan-audio");
   let copiedArtists = new Set();
-  let debounceTimeout;
-
-  function debounce(func, delay = 150) {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(func, delay);
-  }
 
   const soundcloudLinks = [
     "https://soundcloud.com/sissy-needs/girl-factory-sissy-hypno",
@@ -154,6 +148,37 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => div.remove(), 5000);
   }
 
+  function setBestImage(artist, img) {
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const cachedUrl = localStorage.getItem(cacheKey);
+    const tryLoad = (url, retries = 2) => {
+      const testImg = new Image();
+      testImg.onload = () => {
+        img.src = url;
+        localStorage.setItem(cacheKey, url);
+      };
+      testImg.onerror = () => {
+        if (retries > 0) setTimeout(() => tryLoad(url, retries - 1), 500);
+        else img.src = "fallback.jpg";
+      };
+      testImg.src = url;
+    };
+
+    if (cachedUrl) return tryLoad(cachedUrl);
+
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
+      .then(r => r.json())
+      .then(data => {
+        const post = data[0];
+        const raw = post?.large_file_url || post?.file_url;
+        if (raw) {
+          const full = raw.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+          tryLoad(full);
+        } else img.src = "fallback.jpg";
+      })
+      .catch(() => img.src = "fallback.jpg");
+  }
+
   function renderTagButtons() {
     tagButtonsContainer.innerHTML = "";
     kinkTags.forEach(tag => {
@@ -177,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
           spawnBubble(tag);
         }
         renderTagButtons();
-        debounce(filterArtists);
+        filterArtists();
         setRandomBackground();
       };
       tagButtonsContainer.appendChild(btn);
@@ -199,7 +224,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const img = document.createElement("img");
         img.className = "artist-image";
-        img.loading = "lazy";
         setBestImage(artist, img);
         img.addEventListener("click", () => {
           let currentIndex = 0;
