@@ -105,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setRandomBackground() {
-    const query = "chastity_cage"; // You can rotate this later
+    const query = "chastity_cage";
     const page = Math.floor(Math.random() * 5) + 1;
 
     fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       })
       .catch(() => {
-        backgroundBlur.style.backgroundColor = "#111"; // fallback
+        backgroundBlur.style.backgroundColor = "#111";
       });
   }
 
@@ -203,9 +203,13 @@ document.addEventListener("DOMContentLoaded", () => {
   function filterArtists() {
     artistGallery.innerHTML = "";
     const selected = Array.from(activeTags);
+    const seen = new Set();
+
     allArtists.forEach(artist => {
       const tags = artist.kinkTags || [];
-      if (selected.every(tag => tags.includes(tag))) {
+      if (selected.every(tag => tags.includes(tag)) && !seen.has(artist.artistName)) {
+        seen.add(artist.artistName);
+
         const card = document.createElement("div");
         card.className = "artist-card";
 
@@ -213,61 +217,60 @@ document.addEventListener("DOMContentLoaded", () => {
         img.className = "artist-image";
         setBestImage(artist, img);
         img.addEventListener("click", () => {
-  let currentIndex = 0;
-  let posts = [];
-  const zoomWrapper = document.createElement("div");
-  zoomWrapper.className = "fullscreen-wrapper";
+          let currentIndex = 0;
+          let posts = [];
+          const zoomWrapper = document.createElement("div");
+          zoomWrapper.className = "fullscreen-wrapper";
 
-  const zoomed = document.createElement("img");
-  zoomed.className = "fullscreen-img";
-  zoomWrapper.appendChild(zoomed);
+          const zoomed = document.createElement("img");
+          zoomed.className = "fullscreen-img";
+          zoomWrapper.appendChild(zoomed);
 
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "zoom-close";
-  closeBtn.textContent = "×";
-  closeBtn.onclick = () => zoomWrapper.remove();
+          const closeBtn = document.createElement("button");
+          closeBtn.className = "zoom-close";
+          closeBtn.textContent = "×";
+          closeBtn.onclick = () => zoomWrapper.remove();
 
-  const prevBtn = document.createElement("button");
-  prevBtn.className = "zoom-prev";
-  prevBtn.textContent = "←";
+          const prevBtn = document.createElement("button");
+          prevBtn.className = "zoom-prev";
+          prevBtn.textContent = "←";
 
-  const nextBtn = document.createElement("button");
-  nextBtn.className = "zoom-next";
-  nextBtn.textContent = "→";
+          const nextBtn = document.createElement("button");
+          nextBtn.className = "zoom-next";
+          nextBtn.textContent = "→";
 
-  zoomWrapper.append(closeBtn, prevBtn, nextBtn);
-  document.body.appendChild(zoomWrapper);
+          zoomWrapper.append(closeBtn, prevBtn, nextBtn);
+          document.body.appendChild(zoomWrapper);
 
-  function showPost(i) {
-    const post = posts[i];
-    const raw = post?.large_file_url || post?.file_url;
-    const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
-    zoomed.src = full;
-  }
+          function showPost(i) {
+            const post = posts[i];
+            const raw = post?.large_file_url || post?.file_url;
+            const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+            zoomed.src = full;
+          }
 
-  prevBtn.onclick = () => {
-    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-    showPost(currentIndex);
-  };
+          prevBtn.onclick = () => {
+            currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+            showPost(currentIndex);
+          };
 
-  nextBtn.onclick = () => {
-    currentIndex = (currentIndex + 1) % posts.length;
-    showPost(currentIndex);
-  };
+          nextBtn.onclick = () => {
+            currentIndex = (currentIndex + 1) % posts.length;
+            showPost(currentIndex);
+          };
 
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=20`)
-    .then(res => res.json())
-    .then(data => {
-      posts = data;
-      if (posts.length) showPost(currentIndex);
-    });
-});
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=20`)
+            .then(res => res.json())
+            .then(data => {
+              posts = data;
+              if (posts.length) showPost(currentIndex);
+            });
+        });
 
         const name = document.createElement("div");
         name.className = "artist-name";
         name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-        // Touch (mobile) long press
         name.addEventListener("touchstart", e => {
           name.dataset.touchStart = Date.now();
         });
@@ -276,7 +279,6 @@ document.addEventListener("DOMContentLoaded", () => {
           handleArtistCopy(artist, img.src);
         });
 
-        // Mouse (desktop) long press
         name.addEventListener("mousedown", e => {
           name.dataset.mouseDown = Date.now();
         });
@@ -340,7 +342,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTagButtons();
     filterArtists();
     setRandomBackground();
-    setInterval(setRandomBackground, 15000); // every 15 seconds
+    setInterval(setRandomBackground, 15000);
   });
-
 });
