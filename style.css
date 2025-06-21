@@ -11,7 +11,8 @@ body {
 #background-blur {
   position: fixed;
   inset: 0;
-  background-size: cover;
+  background-repeat: no-repeat;
+  background-size: auto;
   background-position: center;
   filter: blur(1px) brightness(0.95) saturate(1.3);
   z-index: -1;
