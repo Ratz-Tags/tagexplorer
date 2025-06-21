@@ -29,6 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarToggle = document.querySelector(".sidebar-toggle");
   const moanAudio = document.getElementById("moan-audio");
   const tagSearchInput = document.getElementById("tag-search");
+  const artistNameFilterInput = document.getElementById("artist-name-filter");
+  let artistNameFilter = "";
   const clearTagsBtn = document.getElementById("clear-tags");
   let copiedArtists = new Set();
   let searchFilter = "";
@@ -45,7 +47,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function getAudioSrc(index) {
     return `audio/${audioFiles[index]}`;
   }
-
+  if (artistNameFilterInput) {
+  artistNameFilterInput.addEventListener("input", (e) => {
+    artistNameFilter = e.target.value.toLowerCase();
+    filterArtists();
+  });
+  }
   let currentAudioIndex = 0;
   let audio = new Audio();
   audio.src = getAudioSrc[currentAudioIndex];
@@ -286,9 +293,17 @@ if (clearTagsBtn) {
     const seen = new Set();
 
     allArtists.forEach(artist => {
-      const tags = artist.kinkTags || [];
-      if (selected.every(tag => tags.includes(tag)) && !seen.has(artist.artistName)) {
-        seen.add(artist.artistName);
+  const tags = artist.kinkTags || [];
+  if (
+    selected.every(tag => tags.includes(tag)) &&
+    !seen.has(artist.artistName) &&
+    (
+      artist.artistName.toLowerCase().includes(artistNameFilter) ||
+      artistNameFilter === ""
+    )
+  ) {
+    seen.add(artist.artistName);
+  
 
         const card = document.createElement("div");
         card.className = "artist-card";
@@ -393,11 +408,24 @@ if (clearTagsBtn) {
       container.appendChild(span);
 
       container.onclick = () => {
-        const zoomed = previewImg.cloneNode();
-        zoomed.className = "fullscreen-img";
-        document.body.appendChild(zoomed);
-        zoomed.onclick = () => zoomed.remove();
-      };
+  // Modal wrapper
+  const zoomWrapper = document.createElement("div");
+  zoomWrapper.className = "fullscreen-wrapper";
+
+  // Cloned image
+  const zoomed = previewImg.cloneNode();
+  zoomed.className = "fullscreen-img";
+  zoomWrapper.appendChild(zoomed);
+
+  // Close button
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "zoom-close";
+  closeBtn.textContent = "×";
+  closeBtn.onclick = () => zoomWrapper.remove();
+  zoomWrapper.appendChild(closeBtn);
+
+  document.body.appendChild(zoomWrapper);
+};
 
       copiedSidebar.appendChild(container);
     }
