@@ -29,7 +29,8 @@ body {
 
 #tag-filter {
   margin-bottom: 1.5em;
-  max-width: 700px;
+  width: 100vw; 
+  box-sizing: border-box;
 }
 
 #tag-search {
@@ -57,6 +58,13 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
+  width: 100vw;               /* Make sure it spans the full viewport width */
+  left: 50%;
+  right: 0;
+  position: relative;
+  transform: translateX(-50%); /* Center it horizontally */
+  justify-content: center;    /* Or use space-between/space-around as needed */
+  box-sizing: border-box;
 }
 .tag-btn, .tag-button {
   flex: 1 1 120px;
