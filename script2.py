@@ -11,7 +11,9 @@ TARGET_TAGS = [
     "public_humiliation", "humiliation", "foot_domination", "gokkun", "cum_in_mouth",
     "extreme_insertion", "large_insertion", "huge_dildo", "dildo_riding",
     "object_insertion", "object_insertion_from_behind", "anal_object_insertion", "tentacle_pit",
-    "trap", "otoko_no_ko"
+    "trap", "otoko_no_ko", "chastity_cage",
+    "orgasm_denial", "urethral_insertion", "sounding", "dominatrix", "strap-on",
+    "holding_key", "nipple_piercing", "small_penis", "cum", "bondage"
 ]
 CORE_TAGS = {"femdom", "pegging", "trap", "chastity_cage"}
 
