@@ -379,7 +379,7 @@ audio#moan-audio {
 
 #copied-sidebar {
   position: fixed;
-  top: 100px;
+  top: 0;
   right: 0;
   height: 100vh;
   width: 300px;
