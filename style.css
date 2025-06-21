@@ -33,7 +33,7 @@ body {
   box-sizing: border-box;
 }
 
-#tag-search {
+#tag-search, #artist-name-filter {
   width: 100%;
   max-width: 420px;
   padding: 12px;
@@ -48,7 +48,7 @@ body {
   transition: border 0.2s, background 0.2s;
 }
 
-#tag-search:focus {
+#tag-search:focus, #artist-name-filter:focus {
   border-color: #fd7bc5;
   background: #fff0f6;
 }
