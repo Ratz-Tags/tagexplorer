@@ -28,7 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const copiedSidebar = document.getElementById("copied-sidebar");
   const sidebarToggle = document.querySelector(".sidebar-toggle");
   const moanAudio = document.getElementById("moan-audio");
+  const tagSearchInput = document.getElementById("tag-search");
+  const clearTagsBtn = document.getElementById("clear-tags");
   let copiedArtists = new Set();
+  let searchFilter = "";
 
   const audioFiles = [
     "Yes.mp3",
@@ -204,35 +207,78 @@ document.getElementById("next-audio").onclick = () => {
   observer.observe(img);
 }
   
-  function renderTagButtons() {
-    tagButtonsContainer.innerHTML = "";
-    kinkTags.forEach(tag => {
-      const btn = document.createElement("button");
-      btn.className = "tag-button";
-      if (tagIcons[tag]) {
-        const icon = document.createElement("img");
-        icon.src = tagIcons[tag];
-        icon.style.height = "16px";
-        icon.style.marginRight = "4px";
-        btn.appendChild(icon);
-      }
-      btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
-      btn.dataset.tag = tag;
-      if (tagTooltips[tag]) btn.title = tagTooltips[tag];
-      if (activeTags.has(tag)) btn.classList.add("active");
-      btn.onclick = () => {
-        if (activeTags.has(tag)) activeTags.delete(tag);
-        else {
-          activeTags.add(tag);
-          spawnBubble(tag);
-        }
-        renderTagButtons();
-        filterArtists();
-        setRandomBackground();
-      };
-      tagButtonsContainer.appendChild(btn);
-    });
+function renderTagButtons() {
+  // Clear current tag buttons
+  tagButtonsContainer.innerHTML = "";
+
+  // Filter and sort tags
+  let tagsToShow = kinkTags
+    .filter(tag =>
+      tag.toLowerCase().includes(searchFilter.trim().toLowerCase())
+    )
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+  // Show a message if nothing matches
+  if (tagsToShow.length === 0) {
+    const emptyMsg = document.createElement("span");
+    emptyMsg.style.fontStyle = "italic";
+    emptyMsg.style.opacity = "0.7";
+    emptyMsg.textContent = "No tags found.";
+    tagButtonsContainer.appendChild(emptyMsg);
+    if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+    return;
   }
+
+  // Create a button for each tag
+  tagsToShow.forEach(tag => {
+    const btn = document.createElement("button");
+    btn.className = "tag-button";
+    btn.type = "button";
+    if (tagIcons[tag]) {
+      const icon = document.createElement("img");
+      icon.src = tagIcons[tag];
+      icon.style.height = "16px";
+      icon.style.marginRight = "4px";
+      btn.appendChild(icon);
+    }
+    btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
+    btn.dataset.tag = tag;
+    if (tagTooltips[tag]) btn.title = tagTooltips[tag];
+    if (activeTags.has(tag)) btn.classList.add("active");
+    btn.onclick = () => {
+      if (activeTags.has(tag)) {
+        activeTags.delete(tag);
+      } else {
+        activeTags.add(tag);
+        spawnBubble(tag);
+      }
+      renderTagButtons();
+      filterArtists();
+      setRandomBackground();
+    };
+    tagButtonsContainer.appendChild(btn);
+  });
+
+  // Show or hide the clear-all button if present
+  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+}
+// Add event for live search
+if (tagSearchInput) {
+  tagSearchInput.addEventListener("input", (e) => {
+    searchFilter = e.target.value;
+    renderTagButtons();
+  });
+}
+
+// Add event for "Clear All" button
+if (clearTagsBtn) {
+  clearTagsBtn.addEventListener("click", () => {
+    activeTags.clear();
+    renderTagButtons();
+    filterArtists();
+    setRandomBackground();
+  });
+}
 
   function filterArtists() {
     artistGallery.innerHTML = "";
