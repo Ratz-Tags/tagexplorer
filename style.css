@@ -1,10 +1,10 @@
-/* style.css – polished, immersive, humiliating femdom aesthetic */
+/* Feminized, girly, immersive style.css */
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background-color: #000;
-  color: #f2e4ff;
+  font-family: 'Inter', 'Comic Sans MS', cursive, sans-serif;
+  background-color: #fff0fb;
+  color: #900c3f;
   overflow-x: hidden;
 }
 
@@ -13,9 +13,10 @@ body {
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(2px) brightness(0.65);
+  filter: blur(3px) brightness(0.85) saturate(1.3);
   z-index: -1;
   transition: background-image 1s ease-in-out;
+  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 60%, #fbd6ff 100%);
 }
 
 @media (max-width: 600px) {
@@ -33,121 +34,150 @@ body {
 #tag-search {
   width: 100%;
   max-width: 420px;
-  padding: 10px;
-  margin-bottom: 14px;
-  font-size: 1em;
-  border-radius: 6px;
-  border: 1px solid #bfc3d1;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 1.1em;
+  border-radius: 14px;
+  border: 2px solid #f8aac8;
   outline: none;
   box-sizing: border-box;
+  background: #fff6fc;
+  color: #b8005a;
+  transition: border 0.2s, background 0.2s;
 }
 
 #tag-search:focus {
-  border-color: #6366f1;
-  background: #f0f5ff;
+  border-color: #fd7bc5;
+  background: #fff0f6;
 }
 
 #tag-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
-.tag-btn {
-  padding: 7px 16px;
-  border: 1.5px solid #a1a1aa;
-  border-radius: 18px;
-  background: #f5f6fa;
-  color: #22223b;
+.tag-btn, .tag-button {
+  padding: 9px 20px;
+  border: 2px solid #fd7bc5;
+  border-radius: 20px;
+  background: linear-gradient(90deg, #ffe0f7 0%, #f8c6f0 100%);
+  color: #e60073;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border 0.2s;
-  font-size: 1em;
+  transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
+  font-size: 1.08em;
   font-family: inherit;
   margin: 0;
   outline: none;
+  box-shadow: 0 1px 6px #fd7bc528;
+  position: relative;
 }
 
-.tag-btn:hover, .tag-btn:focus-visible {
-  background: #e0e7ff;
-  color: #3730a3;
-  border-color: #6366f1;
+.tag-btn:hover, .tag-btn:focus-visible,
+.tag-button:hover, .tag-button:focus-visible {
+  background: linear-gradient(90deg, #ffd6f6 0%, #f8aac8 100%);
+  color: #b8005a;
+  border-color: #fd7bc5;
+  box-shadow: 0 2px 10px #fd7bc540;
 }
 
-.tag-btn.selected {
-  background: #4338ca;
+/* Cute heart for selected tags */
+.tag-btn.selected::after, .tag-button.active::after {
+  content: " ♥";
+  color: #ff63a5;
+  font-size: 1.1em;
+  vertical-align: middle;
+  margin-left: 3px;
+  text-shadow: 0 0 2px #fff, 0 0 4px #ffbcdc;
+}
+
+.tag-btn.selected, .tag-button.active {
+  background: linear-gradient(90deg, #ffbcdc 0%, #fd7bc5 100%);
   color: #fff;
-  border-color: #4338ca;
+  border-color: #e60073;
+  box-shadow: 0 4px 14px #fd7bc580;
+  font-weight: 600;
+}
+
+/* Sparkle on hover for selected */
+.tag-btn.selected:hover, .tag-button.active:hover {
+  background: linear-gradient(90deg, #fff0f6 0%, #ffbcdc 100%);
+  color: #e60073;
+  box-shadow: 0 2px 14px #ffbcdcaa;
 }
 
 #clear-tags {
-  background: #f87171;
+  background: linear-gradient(90deg, #fd7bc5, #ffbcdc);
   color: #fff;
   border: none;
-  border-radius: 10px;
-  padding: 7px 18px;
+  border-radius: 12px;
+  padding: 10px 22px;
   cursor: pointer;
-  font-size: 1em;
-  margin-left: 2px;
-  transition: background 0.2s;
-  box-shadow: 0 1px 5px rgba(249,113,113,0.10);
+  font-size: 1.01em;
+  margin-left: 4px;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 10px #fd7bc540;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 2px #fff;
 }
 
 #clear-tags:hover {
-  background: #dc2626;
+  background: linear-gradient(90deg, #ff63a5, #fd7bc5);
+  box-shadow: 0 4px 16px #ffbcdc80;
+  color: #fff0f6;
 }
 
 @media (max-width: 600px) {
   #tag-buttons {
-    gap: 6px;
+    gap: 8px;
   }
-  .tag-btn {
-    font-size: 0.95em;
-    padding: 6px 10px;
+  .tag-btn, .tag-button {
+    font-size: 0.98em;
+    padding: 7px 12px;
+    border-radius: 14px;
   }
 }
 
 .artist-card {
-  background: rgba(36, 12, 48, 0.85);
-  border: 2px solid #ff00c8;
-  border-radius: 12px;
-  padding: 10px;
-  margin: 10px;
+  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 100%);
+  border: 2px solid #fd7bc5;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 12px;
   text-align: center;
-  box-shadow: 0 0 8px #ff00c880;
-  transition: transform 0.2s;
+  box-shadow: 0 0 16px #fd7bc560;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .artist-card:hover {
-  transform: scale(1.05);
+  transform: scale(1.05) rotate(-1deg);
+  box-shadow: 0 0 28px #ffbcdc;
 }
 
 .artist-image {
   width: 100%;
-  max-width: 300px;
-  border-radius: 10px;
-  margin-bottom: 0.5rem;
+  max-width: 320px;
+  border-radius: 14px;
+  margin-bottom: 0.7rem;
   object-fit: cover;
+  box-shadow: 0 2px 8px #fd7bc540;
 }
 
 .artist-name {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: bold;
-  color: #ffe4fa;
-  margin-bottom: 4px;
-  text-shadow: 1px 1px 2px #000;
+  color: #e60073;
+  margin-bottom: 6px;
+  text-shadow: 1px 1px 2px #fff0f6;
 }
 
 .artist-tags {
-  font-size: 0.85rem;
-  color: #ffbdf0;
-  text-shadow: 0 0 2px #000;
+  font-size: 0.94rem;
+  color: #f06cbb;
+  text-shadow: 0 0 2px #fff;
+  margin-top: 3px;
   text-wrap: balance;
 }
 
@@ -157,21 +187,21 @@ body {
   position: absolute;
   bottom: 10vh;
   left: 10vw;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff0ff;
-  font-size: 1rem;
-  padding: 10px 14px;
-  border: 2px solid #ff00c8;
-  border-radius: 12px;
-  max-width: 320px;
-  box-shadow: 0 0 10px #ff00c870;
+  background: linear-gradient(90deg, #ffbcdc 0%, #fd7bc5 100%);
+  color: #e60073;
+  font-size: 1.07rem;
+  padding: 12px 18px;
+  border: 2.5px solid #ff63a5;
+  border-radius: 16px;
+  max-width: 340px;
+  box-shadow: 0 0 18px #fd7bc570;
   animation: pop-in 0.3s ease;
   z-index: 9999;
 }
 
 .jrpg-bubble .chibi {
-  height: 40px;
-  margin-right: 10px;
+  height: 46px;
+  margin-right: 12px;
 }
 
 @keyframes pop-in {
@@ -187,30 +217,31 @@ body {
 
 .toast-popup {
   position: fixed;
-  bottom: 20px;
+  bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(to right, #ff00c8, #ff8ae2);
-  color: black;
-  padding: 12px 20px;
-  border-radius: 30px;
+  background: linear-gradient(90deg, #ffbcdc, #fd7bc5);
+  color: #e60073;
+  padding: 13px 24px;
+  border-radius: 32px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
-  box-shadow: 0 0 10px #ff00c8cc;
+  box-shadow: 0 0 12px #fd7bc5cc;
   animation: pop-in 0.3s ease;
   z-index: 9999;
   text-shadow: 0 0 3px #fff;
   font-family: "Comic Sans MS", cursive;
+  border: 2px solid #ff63a5;
 }
 
 .toast-popup::after {
-  content: url('icons/moan.svg');
+  content: " ✧";
   display: inline-block;
   margin-left: 8px;
+  color: #ff63a5;
+  font-size: 1.15em;
   animation: shake 0.3s ease-in-out;
-  height: 16px;
-  width: 16px;
 }
 
 @keyframes shake {
@@ -223,9 +254,9 @@ body {
 
 #artist-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 1.5rem;
-  padding: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1.7rem;
+  padding: 2.3rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -234,35 +265,36 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(255, 192, 215, 0.97);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .fullscreen-img {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 12px;
-  box-shadow: 0 0 10px #ff00c880;
+  max-width: 92%;
+  max-height: 92%;
+  border-radius: 14px;
+  box-shadow: 0 0 18px #fd7bc580;
 }
 
 .zoom-close,
 .zoom-prev,
 .zoom-next {
   position: fixed;
-  top: 1rem;
-  background: #ff00c8;
-  color: white;
+  top: 1.1rem;
+  background: #fd7bc5;
+  color: #fff;
   border: none;
-  font-size: 1.5rem;
-  padding: 0.5rem 1rem;
+  font-size: 1.7rem;
+  padding: 0.7rem 1.2rem;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #fd7bc550;
 }
 
 .zoom-close {
-  right: 1rem;
+  right: 1.2rem;
 }
 
 .zoom-prev {
@@ -280,10 +312,10 @@ body {
 #toggle-audio, #prev-audio, #next-audio {
   background: transparent;
   border: none;
-  color: #ffcbff;
-  font-size: 1.2rem;
-  padding: 6px 10px;
-  margin: 0 5px;
+  color: #fc6fb0;
+  font-size: 1.3rem;
+  padding: 7px 12px;
+  margin: 0 7px;
   cursor: pointer;
   transition: 0.2s;
 }
@@ -291,22 +323,23 @@ body {
 #audio-controls {
   display: flex;
   justify-content: center;
-  gap: 10px;
-  padding: 1rem;
+  gap: 12px;
+  padding: 1.2rem;
 }
 
 #audio-controls button {
-  background: #ff00c8;
+  background: #fd7bc5;
   color: white;
   border: none;
-  padding: 8px 12px;
-  font-size: 0.9rem;
-  border-radius: 6px;
+  padding: 9px 14px;
+  font-size: 1.02rem;
+  border-radius: 8px;
   cursor: pointer;
+  box-shadow: 0 1px 6px #fd7bc540;
 }
 #toggle-audio:hover, #prev-audio:hover, #next-audio:hover {
-  color: #ff00c8;
-  transform: scale(1.1);
+  color: #ff63a5;
+  transform: scale(1.12);
 }
 
 @media (max-width: 768px) {
@@ -333,31 +366,32 @@ audio#moan-audio {
 }
 
 .sidebar-toggle {
-  background: #ff00c8;
+  background: #fd7bc5;
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 7px 14px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 0.9rem;
-  margin-right: 1rem;
+  font-size: 1.03rem;
+  margin-right: 1.1rem;
+  box-shadow: 0 1px 6px #fd7bc540;
 }
 
 #copied-sidebar {
-  position: fixed;          /* Make it a sidebar */
+  position: fixed;
   top: 100px;
   right: 0;
   height: 100vh;
-  width: 280px;
-  background: rgba(24, 0, 36, 0.97);
-  border-left: 2px solid #ff00c8;
-  padding: 16px 10px;
+  width: 300px;
+  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 100%);
+  border-left: 2.5px solid #fd7bc5;
+  padding: 18px 14px;
   display: none;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   overflow-y: auto;
   z-index: 10001;
-  box-shadow: -2px 0 10px #ff00c860;
+  box-shadow: -2px 0 16px #fd7bc550;
 }
 
 #copied-sidebar.visible {
@@ -369,29 +403,33 @@ audio#moan-audio {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(255, 255, 255, 0.05);
-  margin-bottom: 12px;
-  border-radius: 8px;
-  padding: 8px;
+  background: rgba(255, 192, 215, 0.16);
+  margin-bottom: 16px;
+  border-radius: 10px;
+  padding: 10px;
   cursor: pointer;
-  transition: background 0.2s;
+  box-shadow: 0 1px 4px #fd7bc528;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .sidebar-artist:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 192, 215, 0.27);
+  box-shadow: 0 2px 8px #fd7bc550;
 }
 
 .sidebar-artist img {
   width: 100%;
-  border-radius: 6px;
-  margin-bottom: 4px;
-  display: block; /* Prevents inline gap issues */
+  border-radius: 8px;
+  margin-bottom: 5px;
+  display: block;
+  border: 1.5px solid #fd7bc5;
 }
 
 .sidebar-artist span {
-  font-size: 0.85rem;
-  color: #ffcbff;
+  font-size: 0.91rem;
+  color: #fc6fb0;
   text-align: center;
+  font-weight: 600;
 }
 
 
@@ -399,26 +437,28 @@ audio#moan-audio {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 10px;
+  margin-bottom: 7px;
 }
 
 .copy-button {
-  position: absolute;      /* Add this */
-  bottom: 8px;             /* Adjust as needed */
-  right: 8px;              /* Adjust as needed */
-  background: rgba(20,0,30,0.7);
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #fd7bc5 70%, #ffbcdc 100%);
   border-radius: 50%;
-  padding: 8px;
-  color: #ff9af5;
+  padding: 10px;
+  color: #fff;
   border: none;
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   cursor: pointer;
   z-index: 2;
-  transition: color 0.3s, background 0.2s;
+  box-shadow: 0 1px 5px #fd7bc540;
+  transition: color 0.3s, background 0.2s, box-shadow 0.2s;
 }
 
 .copy-button:hover {
-  color: white;
-  background: #ff00c8;
+  color: #fd7bc5;
+  background: #fff0f6;
+  box-shadow: 0 2px 14px #fd7bc540;
 }
