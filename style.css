@@ -99,7 +99,7 @@ body {
 
 /* Cute heart for selected tags */
 .tag-btn.selected::after, .tag-button.active::after {
-  content: " ♥";
+  content: " 🔐❤️" !important;
   color: #ff63a5;
   font-size: 1.1em;
   vertical-align: middle;
