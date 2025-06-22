@@ -22,7 +22,9 @@ body {
 
 @media (max-width: 600px) {
   #artist-gallery {
-    grid-template-columns: repeat(auto-fit, minmax(4, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    max-width: calc(4 * 200px); /* Optional: limits to 4 columns */
+    margin: 0 auto; /* Optional: center the grid */
     padding: 1rem;
   }
 }
@@ -270,7 +272,9 @@ body {
 
 #artist-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(4, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  max-width: calc(4 * 200px); /* Optional: limits to 4 columns */
+  margin: 0 auto; /* Optional: center the grid */
   gap: 1.4rem;
   padding: 2rem;
   max-width: 1200px;
