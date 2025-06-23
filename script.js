@@ -410,8 +410,8 @@ if (clearTagsBtn) {
           fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
-              const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
-              const raw = validPosts[i];
+              posts = data.filter(post => post?.large_file_url || post?.file_url);
+              const raw = posts[i];
               const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
               zoomed.src = full;
             });
