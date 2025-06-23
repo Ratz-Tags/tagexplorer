@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   let currentAudioIndex = 0;
   let audio = new Audio();
-  audio.src = getAudioSrc[currentAudioIndex];
+  audio.src = getAudioSrc(currentAudioIndex);
   audio.autoplay = false;
   audio.loop = false;
   const toggleAudioBtn = document.getElementById("toggle-audio");
@@ -142,8 +142,8 @@ document.getElementById("next-audio").onclick = () => {
         if (data.length) {
           const post = data[Math.floor(Math.random() * data.length)];
           const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
-          const post = validPosts[0];
-          const full = post?.startsWith("http") ? post : `https://danbooru.donmai.us${post}`;
+          const posts = validPosts[0];
+          const full = posts?.startsWith("http") ? posts : `https://danbooru.donmai.us${posts}`;
           if (full) {
             backgroundBlur.style.backgroundImage = `url(${full})`;
           }
@@ -357,6 +357,12 @@ if (clearTagsBtn) {
           const zoomed = document.createElement("img");
           zoomed.className = "fullscreen-img";
           zoomWrapper.appendChild(zoomed);
+
+          const noEntriesMsg = document.createElement("span");
+          noEntriesMsg.style.display = "none";
+          noEntriesMsg.className = "no-entries-msg";
+          noEntriesMsg.textContent = "No valid entries";
+          zoomWrapper.appendChild(noEntriesMsg);
 
           const closeBtn = document.createElement("button");
           closeBtn.className = "zoom-close";
