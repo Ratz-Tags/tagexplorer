@@ -332,17 +332,16 @@ if (clearTagsBtn) {
     const seen = new Set();
 
     allArtists.forEach(artist => {
-  const tags = artist.kinkTags || [];
-  if (
-    selected.every(tag => tags.includes(tag)) &&
-    !seen.has(artist.artistName) &&
-    (
-      artist.artistName.toLowerCase().includes(artistNameFilter) ||
-      artistNameFilter === ""
-    )
-  ) {
-    seen.add(artist.artistName);
-  
+      const tags = artist.kinkTags || [];
+      if (
+        selected.every(tag => tags.includes(tag)) &&
+        !seen.has(artist.artistName) &&
+        (
+          artist.artistName.toLowerCase().includes(artistNameFilter) ||
+          artistNameFilter === ""
+        )
+      ) {
+        seen.add(artist.artistName);
 
         const card = document.createElement("div");
         card.className = "artist-card";
@@ -417,6 +416,7 @@ if (clearTagsBtn) {
               posts = data.filter(post => post?.large_file_url || post?.file_url);
               showPost(currentIndex);
             });
+        });
 
         const nameRow = document.createElement("div");
         nameRow.className = "name-row";
@@ -440,8 +440,8 @@ if (clearTagsBtn) {
         card.append(img, nameRow, taglist);
         artistGallery.appendChild(card);
       }
-    });
-  }
+    }); // <-- closes forEach
+  } // <-- closes filterArtists
 
   function handleArtistCopy(artist, previewUrl) {
     const cleanName = artist.artistName.replaceAll("_", " ");
