@@ -136,7 +136,7 @@ document.getElementById("next-audio").onclick = () => {
     const query = "chastity_cage";
     const page = Math.floor(Math.random() * 5) + 1;
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+-status:banned+order:approval&limit=40&page=${page}`)
       .then(res => res.json())
       .then(data => {
         if (data.length) {
@@ -185,7 +185,7 @@ document.getElementById("next-audio").onclick = () => {
 
     if (cachedUrl) return tryLoad(cachedUrl);
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+-status:banned+order:approval&limit=1`)
       .then(r => r.json())
       .then(data => {
         const post = data[0];
@@ -354,7 +354,7 @@ if (clearTagsBtn) {
             showPost(currentIndex);
           };
 
-          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=20`)
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+-status:banned+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
               posts = data;
