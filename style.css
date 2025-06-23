@@ -83,7 +83,7 @@ body {
   transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
   font-size: 1.08em;
   font-family: inherit;
-  margin: 0;
+  margin: 5px;
   outline: none;
   box-shadow: 0 1px 6px #ff63a528;
   position: relative;
