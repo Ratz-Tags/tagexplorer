@@ -201,7 +201,7 @@ document.getElementById("next-audio").onclick = () => {
 
   if (cachedUrl) return tryLoad(cachedUrl);
 
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
+  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=40`)
     .then(r => r.json())
     .then(data => {
       const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
