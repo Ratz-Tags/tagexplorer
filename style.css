@@ -1,9 +1,9 @@
 /* Feminized, girly, immersive DARK MODE style.css */
-@import url('https://fonts.googleapis.com/css2?family=Snowburst+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Vibur&display=swap');
 
 body {
   margin: 0;
-  font-family: "Snowburst One", system-ui;
+  font-family: "Vibur", cursive;
   background-color: #1a0020;
   color: #ffd6f6;
   overflow-x: hidden;
