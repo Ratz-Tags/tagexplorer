@@ -392,13 +392,13 @@ if (clearTagsBtn) {
           } else {
               zoomed.style.display = "block";
               noEntriesMsg.style.display = "none";
-              posts = data.filter(post => post?.large_file_url || post?.file_url);
               const raw = posts[i];
              if (raw) {
               const url = raw?.large_file_url || raw?.file_url;
               const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
               zoomed.src = full;
               }
+           }
           }
 
           prevBtn.onclick = () => {
@@ -415,11 +415,7 @@ if (clearTagsBtn) {
             .then(res => res.json())
             .then(data => {
               posts = data.filter(post => post?.large_file_url || post?.file_url);
-              const raw = posts[i];
-              if (raw) {
-                const url = raw.large_file_url || raw.file_url;
-                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-                zoomed.src = full;
+              showPost(currentIndex);
               }
             });
         });
