@@ -81,7 +81,7 @@ body {
   color: #ffd6f6;
   cursor: pointer;
   transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
-  font-size: 1.08em;
+  font-size: 1.1em;
   font-family: inherit;
   margin: 0;
   outline: none;
@@ -153,7 +153,7 @@ body {
     gap: 8px;
   }
   .tag-btn, .tag-button {
-    font-size: 0.98em;
+    font-size: 1.3em;
     padding: 7px 12px;
     border-radius: 14px;
   }
@@ -187,7 +187,7 @@ body {
 }
 
 .artist-name {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: bold;
   color: #ff63a5;
   margin-bottom: 6px;
@@ -195,7 +195,7 @@ body {
 }
 
 .artist-tags {
-  font-size: 0.94rem;
+  font-size: 1.12rem;
   color: #fd7bc5;
   text-shadow: 0 0 2px #4b004a;
   margin-top: 3px;
@@ -450,7 +450,7 @@ audio#moan-audio {
 }
 
 .sidebar-artist span {
-  font-size: 0.91rem;
+  font-size: 1.1rem;
   color: #fd7bc5;
   text-align: center;
   font-weight: 600;
