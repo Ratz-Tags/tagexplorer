@@ -418,7 +418,6 @@ if (clearTagsBtn) {
               showPost(currentIndex);
               }
             });
-        });
 
         const nameRow = document.createElement("div");
         nameRow.className = "name-row";
