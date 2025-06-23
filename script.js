@@ -418,6 +418,7 @@ if (clearTagsBtn) {
                 const url = raw.large_file_url || raw.file_url;
                 const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
                 zoomed.src = full;
+              }
             });
         });
 
