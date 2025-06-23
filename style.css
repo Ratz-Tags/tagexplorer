@@ -1,9 +1,9 @@
 /* Feminized, girly, immersive DARK MODE style.css */
-@import url('https://fonts.googleapis.com/css2?family=Vibur&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap');
 
 body {
   margin: 0;
-  font-family: "Vibur", cursive;
+  font-family: "Hi Melody", sans-serif;
   background-color: #1a0020;
   color: #ffd6f6;
   overflow-x: hidden;
