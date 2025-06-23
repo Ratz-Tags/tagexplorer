@@ -141,8 +141,9 @@ document.getElementById("next-audio").onclick = () => {
       .then(data => {
         if (data.length) {
           const post = data[Math.floor(Math.random() * data.length)];
-          const raw = post?.large_file_url || post?.file_url;
-          const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+          const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+          const post = validPosts[0];
+          const full = post?.startsWith("http") ? post : `https://danbooru.donmai.us${post}`;
           if (full) {
             backgroundBlur.style.backgroundImage = `url(${full})`;
           }
@@ -203,10 +204,10 @@ document.getElementById("next-audio").onclick = () => {
   fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
     .then(r => r.json())
     .then(data => {
-      const post = data[0];
-      const raw = post?.large_file_url || post?.file_url;
-      if (raw) {
-        const full = raw.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+      const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+      const post = validPosts[0];
+      if (post) {
+        const full = post.startsWith("http") ? post : `https://danbooru.donmai.us${post}`;
         tryLoad(full);
       } else {
         img.style.display = 'none';
@@ -403,8 +404,9 @@ if (clearTagsBtn) {
           fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
-              posts = data;
-              if (posts.length) showPost(currentIndex);
+              const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+              const post = validPosts[i];
+              if (validPosts.length) showPost(currentIndex);
             });
         });
 
