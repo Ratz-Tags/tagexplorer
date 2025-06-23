@@ -416,7 +416,6 @@ if (clearTagsBtn) {
             .then(data => {
               posts = data.filter(post => post?.large_file_url || post?.file_url);
               showPost(currentIndex);
-              }
             });
 
         const nameRow = document.createElement("div");
