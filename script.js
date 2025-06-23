@@ -185,12 +185,12 @@ document.getElementById("next-audio").onclick = () => {
 
     if (cachedUrl) return tryLoad(cachedUrl);
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=1`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=40`)
       .then(r => r.json())
       .then(data => {
-        const post = data[0];
-        const raw = post?.large_file_url || post?.file_url;
-        if (raw) {
+        const validPosts = data.filter(post => post.large_file_url || post.file_url);
+        const post = validPosts[0];
+        if (post) {
           const full = raw.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
           tryLoad(full);
         } else img.src = "fallback.jpg";
@@ -338,8 +338,8 @@ if (clearTagsBtn) {
           document.body.appendChild(zoomWrapper);
 
           function showPost(i) {
-            const post = posts[i];
-            const raw = post?.large_file_url || post?.file_url;
+            const validPosts = data.filter(post => post.large_file_url || post.file_url);
+            const raw = validPosts[i]
             const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
             zoomed.src = full;
           }
