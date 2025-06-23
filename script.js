@@ -392,9 +392,11 @@ if (clearTagsBtn) {
           } else {
               zoomed.style.display = "block";
               noEntriesMsg.style.display = "none";
-              const post = posts[i];
-              const raw = post?.large_file_url || post?.file_url;
-              const full = raw?.startsWith("http") ? raw : `https://danbooru.donmai.us${raw}`;
+              posts = data.filter(post => post?.large_file_url || post?.file_url);
+              const raw = posts[i];
+             if (raw) {
+              const url = raw?.large_file_url || raw?.file_url;
+              const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
               zoomed.src = full;
               }
           }
