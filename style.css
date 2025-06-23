@@ -1,9 +1,9 @@
 /* Feminized, girly, immersive DARK MODE style.css */
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&family=Quicksand:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Snowburst+One&display=swap');
 
 body {
   margin: 0;
-  font-family: 'Baloo 2', Arial, sans-serif;
+  font-family: "Snowburst One", system-ui;
   background-color: #1a0020;
   color: #ffd6f6;
   overflow-x: hidden;
