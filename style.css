@@ -1,10 +1,10 @@
-/* Feminized, girly, immersive style.css */
+/* Feminized, girly, immersive DARK MODE style.css */
 
 body {
   margin: 0;
   font-family: 'Inter', 'Comic Sans MS', cursive, sans-serif;
-  background-color: #fff0fb;
-  color: #900c3f;
+  background-color: #1a0020;
+  color: #ffd6f6;
   overflow-x: hidden;
 }
 
@@ -14,24 +14,24 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  filter: blur(2px) brightness(0.75) saturate(1.3);
+  filter: blur(2px) brightness(0.7) saturate(1.2);
   z-index: -1;
   transition: background-image 1s ease-in-out;
-  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 60%, #fbd6ff 100%);
+  background: linear-gradient(120deg, #4b004a 0%, #32163a 60%, #6d1867 100%);
 }
 
 @media (max-width: 600px) {
   #artist-gallery {
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    max-width: calc(4 * 200px); /* Optional: limits to 4 columns */
-    margin: 0 auto; /* Optional: center the grid */
+    max-width: calc(4 * 200px);
+    margin: 0 auto;
     padding: 1rem;
   }
 }
 
 #tag-filter {
   margin-bottom: 1.5em;
-  width: 100vw; 
+  width: 100vw;
   box-sizing: border-box;
 }
 
@@ -42,17 +42,17 @@ body {
   margin-bottom: 16px;
   font-size: 1.1em;
   border-radius: 14px;
-  border: 2px solid #f8aac8;
+  border: 2px solid #ff63a5;
   outline: none;
   box-sizing: border-box;
-  background: #fff6fc;
-  color: #b8005a;
+  background: #2a0030;
+  color: #ffd6f6;
   transition: border 0.2s, background 0.2s;
 }
 
 #tag-search:focus, #artist-name-filter:focus {
   border-color: #fd7bc5;
-  background: #fff0f6;
+  background: #300024;
 }
 
 #tag-buttons {
@@ -60,14 +60,15 @@ body {
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
-  width: 100vw;               /* Make sure it spans the full viewport width */
+  width: 100vw;
   left: 50%;
   right: 0;
   position: relative;
-  transform: translateX(-50%); /* Center it horizontally */
-  justify-content: center;    /* Or use space-between/space-around as needed */
+  transform: translateX(-50%);
+  justify-content: center;
   box-sizing: border-box;
 }
+
 .tag-btn, .tag-button {
   flex: 1 1 120px;
   min-width: 100px;
@@ -75,15 +76,15 @@ body {
   padding: 9px 20px;
   border: 2px solid #fd7bc5;
   border-radius: 20px;
-  background: linear-gradient(90deg, #ffe0f7 0%, #f8c6f0 100%);
-  color: #e60073;
+  background: linear-gradient(90deg, #4b004a 0%, #6d1867 100%);
+  color: #ffd6f6;
   cursor: pointer;
   transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
   font-size: 1.08em;
   font-family: inherit;
   margin: 0;
   outline: none;
-  box-shadow: 0 1px 6px #fd7bc528;
+  box-shadow: 0 1px 6px #ff63a528;
   position: relative;
   text-align: center;
   display: flex;
@@ -93,8 +94,8 @@ body {
 
 .tag-btn:hover, .tag-btn:focus-visible,
 .tag-button:hover, .tag-button:focus-visible {
-  background: linear-gradient(90deg, #ffd6f6 0%, #f8aac8 100%);
-  color: #b8005a;
+  background: linear-gradient(90deg, #6d1867 0%, #ff63a5 100%);
+  color: #fff0f6;
   border-color: #fd7bc5;
   box-shadow: 0 2px 10px #fd7bc540;
 }
@@ -106,27 +107,27 @@ body {
   font-size: 1.1em;
   vertical-align: middle;
   margin-left: 3px;
-  text-shadow: 0 0 2px #fff, 0 0 4px #ffbcdc;
+  text-shadow: 0 0 2px #32163a, 0 0 4px #ff63a5;
 }
 
 .tag-btn.selected, .tag-button.active {
-  background: linear-gradient(90deg, #ffbcdc 0%, #fd7bc5 100%);
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
   color: #fff;
-  border-color: #e60073;
+  border-color: #ffd6f6;
   box-shadow: 0 4px 14px #fd7bc580;
   font-weight: 600;
 }
 
 /* Sparkle on hover for selected */
 .tag-btn.selected:hover, .tag-button.active:hover {
-  background: linear-gradient(90deg, #fff0f6 0%, #ffbcdc 100%);
-  color: #e60073;
-  box-shadow: 0 2px 14px #ffbcdcaa;
+  background: linear-gradient(90deg, #6d1867 0%, #ff63a5 100%);
+  color: #ffd6f6;
+  box-shadow: 0 2px 14px #ff63a5cc;
 }
 
 #clear-tags {
-  background: linear-gradient(90deg, #fd7bc5, #ffbcdc);
-  color: #fff;
+  background: linear-gradient(90deg, #ff63a5, #4b004a);
+  color: #fff0f6;
   border: none;
   border-radius: 12px;
   padding: 10px 22px;
@@ -134,16 +135,16 @@ body {
   font-size: 1.01em;
   margin-left: 4px;
   transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 10px #fd7bc540;
+  box-shadow: 0 2px 10px #ff63a540;
   font-weight: 700;
   letter-spacing: 0.5px;
-  text-shadow: 0 0 2px #fff;
+  text-shadow: 0 0 2px #6d1867;
 }
 
 #clear-tags:hover {
-  background: linear-gradient(90deg, #ff63a5, #fd7bc5);
-  box-shadow: 0 4px 16px #ffbcdc80;
-  color: #fff0f6;
+  background: linear-gradient(90deg, #fd7bc5, #6d1867);
+  color: #ffd6f6;
+  box-shadow: 0 4px 16px #ff63a580;
 }
 
 @media (max-width: 600px) {
@@ -158,25 +159,26 @@ body {
 }
 
 .artist-card {
-  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 100%);
+  background: linear-gradient(120deg, #32163a 0%, #4b004a 100%);
   border: 2px solid #fd7bc5;
   border-radius: 16px;
   padding: 14px;
   margin: 12px;
   text-align: center;
+  color: #ffd6f6;
   box-shadow: 0 0 16px #fd7bc560;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .artist-card:hover {
   transform: scale(1.05) rotate(-1deg);
-  box-shadow: 0 0 28px #ffbcdc;
+  box-shadow: 0 0 28px #ff63a5;
 }
 
 .artist-image {
   width: 100%;
   max-width: 320px;
-  height: 220px; 
+  height: 220px;
   border-radius: 14px;
   margin-bottom: 0.7rem;
   object-fit: cover;
@@ -186,15 +188,15 @@ body {
 .artist-name {
   font-size: 1.15rem;
   font-weight: bold;
-  color: #e60073;
+  color: #ff63a5;
   margin-bottom: 6px;
-  text-shadow: 1px 1px 2px #fff0f6;
+  text-shadow: 1px 1px 2px #1a0020;
 }
 
 .artist-tags {
   font-size: 0.94rem;
-  color: #f06cbb;
-  text-shadow: 0 0 2px #fff;
+  color: #fd7bc5;
+  text-shadow: 0 0 2px #4b004a;
   margin-top: 3px;
   text-wrap: balance;
 }
@@ -205,11 +207,11 @@ body {
   position: absolute;
   bottom: 10vh;
   left: 10vw;
-  background: linear-gradient(90deg, #ffbcdc 0%, #fd7bc5 100%);
-  color: #e60073;
+  background: linear-gradient(90deg, #4b004a 0%, #ff63a5 100%);
+  color: #ffd6f6;
   font-size: 1.07rem;
   padding: 12px 18px;
-  border: 2.5px solid #ff63a5;
+  border: 2.5px solid #fd7bc5;
   border-radius: 16px;
   max-width: 340px;
   box-shadow: 0 0 18px #fd7bc570;
@@ -238,8 +240,8 @@ body {
   bottom: 22px;
   left: 50%;
   transform: translateX(-50%);
-  background: linear-gradient(90deg, #ffbcdc, #fd7bc5);
-  color: #e60073;
+  background: linear-gradient(90deg, #4b004a, #ff63a5);
+  color: #ffd6f6;
   padding: 13px 24px;
   border-radius: 32px;
   font-weight: 800;
@@ -248,9 +250,9 @@ body {
   box-shadow: 0 0 12px #fd7bc5cc;
   animation: pop-in 0.3s ease;
   z-index: 9999;
-  text-shadow: 0 0 3px #fff;
+  text-shadow: 0 0 3px #4b004a;
   font-family: "Comic Sans MS", cursive;
-  border: 2px solid #ff63a5;
+  border: 2px solid #fd7bc5;
 }
 
 .toast-popup::after {
@@ -273,8 +275,8 @@ body {
 #artist-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  max-width: calc(4 * 200px); /* Optional: limits to 4 columns */
-  margin: 0 auto; /* Optional: center the grid */
+  max-width: calc(4 * 200px);
+  margin: 0 auto;
   gap: 1.4rem;
   padding: 2rem;
   max-width: 1200px;
@@ -286,7 +288,7 @@ body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(255, 192, 215, 0.97);
+  background: rgba(70, 0, 60, 0.97);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -296,7 +298,7 @@ body {
   max-width: 92%;
   max-height: 92%;
   border-radius: 14px;
-  box-shadow: 0 0 18px #fd7bc580;
+  box-shadow: 0 0 18px #ff63a580;
 }
 
 .zoom-close,
@@ -304,14 +306,14 @@ body {
 .zoom-next {
   position: fixed;
   top: 1.1rem;
-  background: #fd7bc5;
-  color: #fff;
+  background: #ff63a5;
+  color: #fff0f6;
   border: none;
   font-size: 1.7rem;
   padding: 0.7rem 1.2rem;
   cursor: pointer;
   border-radius: 8px;
-  box-shadow: 0 2px 8px #fd7bc550;
+  box-shadow: 0 2px 8px #ff63a550;
 }
 
 .zoom-close {
@@ -333,7 +335,7 @@ body {
 #toggle-audio, #prev-audio, #next-audio {
   background: transparent;
   border: none;
-  color: #fc6fb0;
+  color: #fd7bc5;
   font-size: 1.3rem;
   padding: 7px 12px;
   margin: 0 7px;
@@ -404,7 +406,7 @@ audio#moan-audio {
   right: 0;
   height: 100vh;
   width: 300px;
-  background: linear-gradient(120deg, #ffe0f7 0%, #f8c6f0 100%);
+  background: linear-gradient(120deg, #32163a 0%, #4b004a 100%);
   border-left: 2.5px solid #fd7bc5;
   padding: 18px 14px;
   display: none;
@@ -424,18 +426,18 @@ audio#moan-audio {
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: rgba(255, 192, 215, 0.16);
+  background: rgba(70, 0, 60, 0.16);
   margin-bottom: 16px;
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
-  box-shadow: 0 1px 4px #fd7bc528;
+  box-shadow: 0 1px 4px #ff63a520;
   transition: background 0.2s, box-shadow 0.2s;
 }
 
 .sidebar-artist:hover {
-  background: rgba(255, 192, 215, 0.27);
-  box-shadow: 0 2px 8px #fd7bc550;
+  background: rgba(70, 0, 60, 0.27);
+  box-shadow: 0 2px 8px #ff63a540;
 }
 
 .sidebar-artist img {
@@ -448,11 +450,10 @@ audio#moan-audio {
 
 .sidebar-artist span {
   font-size: 0.91rem;
-  color: #fc6fb0;
+  color: #fd7bc5;
   text-align: center;
   font-weight: 600;
 }
-
 
 .name-row {
   display: flex;
@@ -466,7 +467,7 @@ audio#moan-audio {
   position: absolute;
   bottom: 12px;
   right: 12px;
-  background: linear-gradient(135deg, #fd7bc5 70%, #ffbcdc 100%);
+  background: linear-gradient(135deg, #ff63a5 70%, #fd7bc5 100%);
   border-radius: 50%;
   padding: 10px;
   color: #fff;
@@ -474,12 +475,12 @@ audio#moan-audio {
   font-size: 1.35rem;
   cursor: pointer;
   z-index: 2;
-  box-shadow: 0 1px 5px #fd7bc540;
+  box-shadow: 0 1px 5px #ff63a540;
   transition: color 0.3s, background 0.2s, box-shadow 0.2s;
 }
 
 .copy-button:hover {
   color: #fd7bc5;
-  background: #fff0f6;
-  box-shadow: 0 2px 14px #fd7bc540;
+  background: #2a0030;
+  box-shadow: 0 2px 14px #ff63a540;
 }
