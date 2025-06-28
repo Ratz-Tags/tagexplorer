@@ -40,7 +40,14 @@
   </div>
 
  
-  <audio id="moan-audio" src="moan.mp3"></audio>
+  <!-- Moan Audio -->
+  <audio id="moan-audio" preload="auto">
+    <source src="assets/moan.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+  </audio>
+
+  <!-- Moan Toggle Button -->
+  <button id="moan-toggle" title="Toggle Moan" class="moan-toggle">🔊 Moan</button>
   <script src="script.js"></script>
   </body>
 </html>
