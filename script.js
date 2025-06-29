@@ -1,13 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
-  "femdom", "chastity_cage", "trap", "pegging", "futanari", "netorare", "netorase", "tentacle_sex", 
-  "anal_object_insertion", "prostate_milking", "gagged", "dominatrix", "humiliation", "lactation",
-  "flat_chastity_cage", "used_condom", "orgasm_denial", "mind_break", "shibari", "object_insertion", 
-  "penis_milking", "small_penis_humiliation", "sex_machine", "foot_worship", "dildo_riding",
-  "milking_machine", "huge_dildo", "spreader_bar", "large_insertion", "hand_milking", "cum_in_mouth",
-  "gokkun", "knotting", "toe_sucking", "feminization", "hogtie", "bimbofication", "restraints",
-  "sockjob", "tentacle_pit", "object_insertion_from_behind", "pouring_from_condom", "forced_feminization"
-];
+    "femdom", "chastity_cage", "trap", "pegging", "futanari", "netorare", "netorase", "tentacle_sex",
+    "anal_object_insertion", "prostate_milking", "gagged", "dominatrix", "humiliation", "lactation",
+    "flat_chastity_cage", "used_condom", "orgasm_denial", "mind_break", "shibari", "object_insertion",
+    "penis_milking", "small_penis_humiliation", "sex_machine", "foot_worship", "dildo_riding",
+    "milking_machine", "huge_dildo", "spreader_bar", "large_insertion", "hand_milking", "cum_in_mouth",
+    "gokkun", "knotting", "toe_sucking", "feminization", "hogtie", "bimbofication", "restraints",
+    "sockjob", "tentacle_pit", "object_insertion_from_behind", "pouring_from_condom", "forced_feminization"
+  ];
 
   const tagIcons = {
     "pegging": "icons/pegging.svg",
@@ -48,10 +48,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return `audio/${audioFiles[index]}`;
   }
   if (artistNameFilterInput) {
-  artistNameFilterInput.addEventListener("input", (e) => {
-    artistNameFilter = e.target.value.toLowerCase();
-    filterArtists();
-  });
+    artistNameFilterInput.addEventListener("input", (e) => {
+      artistNameFilter = e.target.value.toLowerCase();
+      filterArtists();
+    });
   }
   let currentAudioIndex = 0;
   let audio = new Audio();
@@ -60,43 +60,43 @@ document.addEventListener("DOMContentLoaded", () => {
   audio.loop = false;
   const toggleAudioBtn = document.getElementById("toggle-audio");
 
-toggleAudioBtn.onclick = () => {
-  if (audio.paused) {
-    audio.play();
-    toggleAudioBtn.textContent = "🔇"; // Change icon to pause
-  } else {
-    audio.pause();
-    toggleAudioBtn.textContent = "🔊"; // Change icon to play
-  }
-};
+  toggleAudioBtn.onclick = () => {
+    if (audio.paused) {
+      audio.play();
+      toggleAudioBtn.textContent = "🔇"; // Change icon to pause
+    } else {
+      audio.pause();
+      toggleAudioBtn.textContent = "🔊"; // Change icon to play
+    }
+  };
 
-audio.onplay = () => {
-  toggleAudioBtn.textContent = "🔇";
-};
+  audio.onplay = () => {
+    toggleAudioBtn.textContent = "🔇";
+  };
 
-audio.onpause = () => {
-  toggleAudioBtn.textContent = "🔊";
-};
+  audio.onpause = () => {
+    toggleAudioBtn.textContent = "🔊";
+  };
   audio.addEventListener("ended", () => {
-  currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
-  audio.src = getAudioSrc(currentAudioIndex);
-  audio.play();
-  showToast("Now playing: " + (currentAudioIndex + 1));
-});
+    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+    audio.src = getAudioSrc(currentAudioIndex);
+    audio.play();
+    showToast("Now playing: " + (currentAudioIndex + 1));
+  });
 
-document.getElementById("prev-audio").onclick = () => {
-  currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
-  audio.src = getAudioSrc(currentAudioIndex);
-  audio.play();
-  showToast("Rewound to: " + (currentAudioIndex + 1));
-};
+  document.getElementById("prev-audio").onclick = () => {
+    currentAudioIndex = (currentAudioIndex - 1 + audioFiles.length) % audioFiles.length;
+    audio.src = getAudioSrc(currentAudioIndex);
+    audio.play();
+    showToast("Rewound to: " + (currentAudioIndex + 1));
+  };
 
-document.getElementById("next-audio").onclick = () => {
-  currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
-  audio.src = getAudioSrc(currentAudioIndex);
-  audio.play();
-  showToast("Next up: " + (currentAudioIndex + 1));
-};
+  document.getElementById("next-audio").onclick = () => {
+    currentAudioIndex = (currentAudioIndex + 1) % audioFiles.length;
+    audio.src = getAudioSrc(currentAudioIndex);
+    audio.play();
+    showToast("Next up: " + (currentAudioIndex + 1));
+  };
 
   if (sidebarToggle && copiedSidebar) {
     sidebarToggle.addEventListener("click", () => {
@@ -126,7 +126,7 @@ document.getElementById("next-audio").onclick = () => {
 
     if (Math.random() < 0.4) {
       moanAudio.currentTime = 0;
-      moanAudio.play().catch(() => {});
+      moanAudio.play().catch(() => { });
     }
 
     setTimeout(() => toast.remove(), 3000);
@@ -146,7 +146,7 @@ document.getElementById("next-audio").onclick = () => {
           if (raw) {
             const url = raw.large_file_url || raw.file_url;
             const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-              backgroundBlur.style.backgroundImage = `url(${full})`;
+            backgroundBlur.style.backgroundImage = `url(${full})`;
           }
         }
       })
@@ -170,21 +170,61 @@ document.getElementById("next-audio").onclick = () => {
   }
 
   function setBestImage(artist, img) {
-  const cacheKey = `danbooru-image-${artist.artistName}`;
-  const cachedUrl = localStorage.getItem(cacheKey);
-  const tryLoad = (url, retries = 2) => {
-    const testImg = new Image();
-    testImg.onload = () => {
-      img.src = url;
-      img.style.display = '';
-      if (img.nextSibling && img.nextSibling.classList?.contains('no-entries-msg')) {
-        img.nextSibling.remove();
-      }
-      localStorage.setItem(cacheKey, url);
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const cachedUrl = localStorage.getItem(cacheKey);
+    const tryLoad = (url, retries = 2) => {
+      const testImg = new Image();
+      testImg.onload = () => {
+        img.src = url;
+        img.style.display = '';
+        if (img.nextSibling && img.nextSibling.classList?.contains('no-entries-msg')) {
+          img.nextSibling.remove();
+        }
+        localStorage.setItem(cacheKey, url);
+      };
+      testImg.onerror = () => {
+        if (retries > 0) setTimeout(() => tryLoad(url, retries - 1), 500);
+        else {
+          img.style.display = 'none';
+          let msg = img.nextSibling;
+          if (!msg || !msg.classList.contains('no-entries-msg')) {
+            msg = document.createElement("span");
+            msg.className = "no-entries-msg";
+            msg.style.color = "red";
+            msg.style.fontWeight = "bold";
+            msg.textContent = "No valid entries";
+            img.parentNode.insertBefore(msg, img.nextSibling);
+          }
+        }
+      };
+      testImg.src = url;
     };
-    testImg.onerror = () => {
-      if (retries > 0) setTimeout(() => tryLoad(url, retries - 1), 500);
-      else {
+
+    if (cachedUrl) return tryLoad(cachedUrl);
+
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=200`)
+      .then(r => r.json())
+      .then(data => {
+        const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+        const raw = validPosts[0];
+        if (raw) {
+          const url = raw.large_file_url || raw.file_url;
+          const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+          tryLoad(full);
+        } else {
+          img.style.display = 'none';
+          let msg = img.nextSibling;
+          if (!msg || !msg.classList.contains('no-entries-msg')) {
+            msg = document.createElement("span");
+            msg.className = "no-entries-msg";
+            msg.style.color = "red";
+            msg.style.fontWeight = "bold";
+            msg.textContent = "No valid entries";
+            img.parentNode.insertBefore(msg, img.nextSibling);
+          }
+        }
+      })
+      .catch(() => {
         img.style.display = 'none';
         let msg = img.nextSibling;
         if (!msg || !msg.classList.contains('no-entries-msg')) {
@@ -195,136 +235,96 @@ document.getElementById("next-audio").onclick = () => {
           msg.textContent = "No valid entries";
           img.parentNode.insertBefore(msg, img.nextSibling);
         }
-      }
-    };
-    testImg.src = url;
-  };
-
-  if (cachedUrl) return tryLoad(cachedUrl);
-
-  fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=200`)
-    .then(r => r.json())
-    .then(data => {
-      const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
-      const raw = validPosts[0];
-      if (raw) {
-        const url = raw.large_file_url || raw.file_url;
-        const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-        tryLoad(full);
-      } else {
-        img.style.display = 'none';
-        let msg = img.nextSibling;
-        if (!msg || !msg.classList.contains('no-entries-msg')) {
-          msg = document.createElement("span");
-          msg.className = "no-entries-msg";
-          msg.style.color = "red";
-          msg.style.fontWeight = "bold";
-          msg.textContent = "No valid entries";
-          img.parentNode.insertBefore(msg, img.nextSibling);
-        }
-      }
-    })
-    .catch(() => {
-      img.style.display = 'none';
-      let msg = img.nextSibling;
-      if (!msg || !msg.classList.contains('no-entries-msg')) {
-        msg = document.createElement("span");
-        msg.className = "no-entries-msg";
-        msg.style.color = "red";
-        msg.style.fontWeight = "bold";
-        msg.textContent = "No valid entries";
-        img.parentNode.insertBefore(msg, img.nextSibling);
-      }
-    });
-}
+      });
+  }
   function lazyLoadBestImage(artist, img) {
-  if (img.dataset.loaded) return;
+    if (img.dataset.loaded) return;
 
-  const observer = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        setBestImage(artist, img);
-        img.dataset.loaded = "true";
-        observer.unobserve(entry.target);
-      }
-    });
-  }, { rootMargin: "100px" }); // Adjust as needed for preloading
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setBestImage(artist, img);
+          img.dataset.loaded = "true";
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: "100px" }); // Adjust as needed for preloading
 
-  observer.observe(img);
-}
-  
-function renderTagButtons() {
-  // Clear current tag buttons
-  tagButtonsContainer.innerHTML = "";
-
-  // Filter and sort tags
-  let tagsToShow = kinkTags
-    .filter(tag =>
-      tag.toLowerCase().includes(searchFilter.trim().toLowerCase())
-    )
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-
-  // Show a message if nothing matches
-  if (tagsToShow.length === 0) {
-    const emptyMsg = document.createElement("span");
-    emptyMsg.style.fontStyle = "italic";
-    emptyMsg.style.opacity = "0.7";
-    emptyMsg.textContent = "No tags found.";
-    tagButtonsContainer.appendChild(emptyMsg);
-    if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
-    return;
+    observer.observe(img);
   }
 
-  // Create a button for each tag
-  tagsToShow.forEach(tag => {
-    const btn = document.createElement("button");
-    btn.className = "tag-button";
-    btn.type = "button";
-    if (tagIcons[tag]) {
-      const icon = document.createElement("img");
-      icon.src = tagIcons[tag];
-      icon.style.height = "16px";
-      icon.style.marginRight = "4px";
-      btn.appendChild(icon);
+  function renderTagButtons() {
+    // Clear current tag buttons
+    tagButtonsContainer.innerHTML = "";
+
+    // Filter and sort tags
+    let tagsToShow = kinkTags
+      .filter(tag =>
+        tag.toLowerCase().includes(searchFilter.trim().toLowerCase())
+      )
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
+
+    // Show a message if nothing matches
+    if (tagsToShow.length === 0) {
+      const emptyMsg = document.createElement("span");
+      emptyMsg.style.fontStyle = "italic";
+      emptyMsg.style.opacity = "0.7";
+      emptyMsg.textContent = "No tags found.";
+      tagButtonsContainer.appendChild(emptyMsg);
+      if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+      return;
     }
-    btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
-    btn.dataset.tag = tag;
-    if (tagTooltips[tag]) btn.title = tagTooltips[tag];
-    if (activeTags.has(tag)) btn.classList.add("active");
-    btn.onclick = () => {
-      if (activeTags.has(tag)) {
-        activeTags.delete(tag);
-      } else {
-        activeTags.add(tag);
-        spawnBubble(tag);
+
+    // Create a button for each tag
+    tagsToShow.forEach(tag => {
+      const btn = document.createElement("button");
+      btn.className = "tag-button";
+      btn.type = "button";
+      if (tagIcons[tag]) {
+        const icon = document.createElement("img");
+        icon.src = tagIcons[tag];
+        icon.style.height = "16px";
+        icon.style.marginRight = "4px";
+        btn.appendChild(icon);
       }
+      btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
+      btn.dataset.tag = tag;
+      if (tagTooltips[tag]) btn.title = tagTooltips[tag];
+      if (activeTags.has(tag)) btn.classList.add("active");
+      btn.onclick = () => {
+        if (activeTags.has(tag)) {
+          activeTags.delete(tag);
+        } else {
+          activeTags.add(tag);
+          spawnBubble(tag);
+        }
+        renderTagButtons();
+        filterArtists();
+        setRandomBackground();
+      };
+      tagButtonsContainer.appendChild(btn);
+    });
+
+    // Show or hide the clear-all button if present
+    if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+  }
+  // Add event for live search
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", (e) => {
+      searchFilter = e.target.value;
+      renderTagButtons();
+    });
+  }
+
+  // Add event for "Clear All" button
+  if (clearTagsBtn) {
+    clearTagsBtn.addEventListener("click", () => {
+      activeTags.clear();
       renderTagButtons();
       filterArtists();
       setRandomBackground();
-    };
-    tagButtonsContainer.appendChild(btn);
-  });
-
-  // Show or hide the clear-all button if present
-  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
-}
-// Add event for live search
-if (tagSearchInput) {
-  tagSearchInput.addEventListener("input", (e) => {
-    searchFilter = e.target.value;
-    renderTagButtons();
-  });
-}
-
-// Add event for "Clear All" button
-if (clearTagsBtn) {
-  clearTagsBtn.addEventListener("click", () => {
-    activeTags.clear();
-    renderTagButtons();
-    filterArtists();
-    setRandomBackground();
-  });
-}
+    });
+  }
 
   function filterArtists() {
     artistGallery.innerHTML = "";
@@ -382,22 +382,22 @@ if (clearTagsBtn) {
           document.body.appendChild(zoomWrapper);
 
           function showPost(i) {
-           if (posts.length === 0) {
+            if (posts.length === 0) {
               zoomed.style.display = "none";
               noEntriesMsg.style.display = "block";
               noEntriesMsg.style.color = "red";
               noEntriesMsg.style.fontWeight = "bold";
               noEntriesMsg.textContent = "No valid entries";
-          } else {
+            } else {
               zoomed.style.display = "block";
               noEntriesMsg.style.display = "none";
               const raw = posts[i];
-             if (raw) {
-              const url = raw?.large_file_url || raw?.file_url;
-              const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-              zoomed.src = full;
+              if (raw) {
+                const url = raw?.large_file_url || raw?.file_url;
+                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+                zoomed.src = full;
               }
-           }
+            }
           }
 
           prevBtn.onclick = () => {
@@ -464,27 +464,45 @@ if (clearTagsBtn) {
       container.appendChild(span);
 
       container.onclick = () => {
-  // Modal wrapper
-  const zoomWrapper = document.createElement("div");
-  zoomWrapper.className = "fullscreen-wrapper";
+        // Modal wrapper
+        const zoomWrapper = document.createElement("div");
+        zoomWrapper.className = "fullscreen-wrapper";
 
-  // Cloned image
-  const zoomed = previewImg.cloneNode();
-  zoomed.className = "fullscreen-img";
-  zoomWrapper.appendChild(zoomed);
+        // Cloned image
+        const zoomed = previewImg.cloneNode();
+        zoomed.className = "fullscreen-img";
+        zoomWrapper.appendChild(zoomed);
 
-  // Close button
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "zoom-close";
-  closeBtn.textContent = "×";
-  closeBtn.onclick = () => zoomWrapper.remove();
-  zoomWrapper.appendChild(closeBtn);
+        // Close button
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "zoom-close";
+        closeBtn.textContent = "×";
+        closeBtn.onclick = () => zoomWrapper.remove();
+        zoomWrapper.appendChild(closeBtn);
 
-  document.body.appendChild(zoomWrapper);
-};
+        document.body.appendChild(zoomWrapper);
+      };
 
       copiedSidebar.appendChild(container);
     }
+  }
+
+  // Setup moan toggle event listener only once
+  const moanToggle = document.getElementById("moan-toggle");
+  let moanPlaying = false;
+  if (moanToggle && moanAudio) {
+    moanToggle.addEventListener("click", () => {
+      if (!moanAudio) return;
+      if (moanPlaying) {
+        moanAudio.pause();
+        moanAudio.currentTime = 0;
+        moanToggle.textContent = "🔊 Moan";
+      } else {
+        moanAudio.play();
+        moanToggle.textContent = "🔇 Stop";
+      }
+      moanPlaying = !moanPlaying;
+    });
   }
 
   Promise.all([
