@@ -47,6 +47,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const prevBtn = document.getElementById("audio-prev");
   const moanBtn = document.getElementById("moan-mute");
 
+
+  const audioFiles = [
+    "Blank.mp3",
+    "Filthy Habits.mp3",
+    "Girl Factory.mp3",
+    "Layer Zero.mp3",
+    "Nipples.mp3",
+    "Yes.mp3"
+    // Add more audio files as needed
+  ];
+
   function getAudioSrc(index) {
     return `audio/${audioFiles[index]}`;
   }
