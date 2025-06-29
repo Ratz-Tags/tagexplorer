@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,24 +8,20 @@
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="favicon.png">
 </head>
+
 <body>
   <div id="background-blur"></div>
   <div id="tag-filter">
-  <input type="text" id="tag-search" placeholder="Type to filter tags..." />
-  <input type="text" id="artist-name-filter" placeholder="Filter by artist name...">
-  <div id="tag-buttons"></div>
-  <button id="clear-tags" style="display:none;">Clear All</button>  
-</div>
-<div id="filtered-results"></div>
-  <div id="audio-controls">
-    <button id="prev-audio">⏮</button>
-    <button id="toggle-audio">🔊</button>
-    <button id="next-audio">⏭</button>
+    <input type="text" id="tag-search" placeholder="Type to filter tags..." />
+    <input type="text" id="artist-name-filter" placeholder="Filter by artist name...">
+    <div id="tag-buttons"></div>
+    <button id="clear-tags" style="display:none;">Clear All</button>
   </div>
-  
+  <div id="filtered-results"></div>
+
   <div class="sidebar-wrapper">
     <button class="sidebar-toggle">Copied Artists</button>
-  <div id="copied-sidebar"></div>
+    <div id="copied-sidebar"></div>
   </div>
 
   <div id="artist-gallery"></div>
@@ -39,15 +36,31 @@
     <div id="lightbox-caption"></div>
   </div>
 
- 
+
+  <!-- Audio Control Panel -->
+  <div id="audio-panel" class="audio-panel hidden">
+    <div class="audio-header">
+      🎧 <span id="audio-track-name">No track playing</span>
+    </div>
+    <div class="audio-controls">
+      <button id="audio-prev">⏮️</button>
+      <button id="audio-toggle">⏯️</button>
+      <button id="audio-next">⏭️</button>
+      <button id="moan-mute">🔇 Moan</button>
+    </div>
+  </div>
+
+  <!-- Toggle Button -->
+  <button id="audio-panel-toggle" class="audio-toggle">🎵 Audio</button>
+
   <!-- Moan Audio -->
   <audio id="moan-audio" preload="auto">
-    <source src="audio/moan.mp3" type="audio/mpeg">
-    Your browser does not support the audio element.
+    <source src="assets/moan.mp3" type="audio/mpeg">
   </audio>
 
-  <!-- Moan Toggle Button -->
-  <button id="moan-toggle" title="Toggle Moan" class="moan-toggle">🔊 Moan</button>
+  <!-- Hypnosis Audio -->
+  <audio id="hypno-audio" preload="auto"></audio>
   <script src="script.js"></script>
-  </body>
+</body>
+
 </html>
