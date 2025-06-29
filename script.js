@@ -507,7 +507,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   Promise.all([
     fetch("artists.json").then(r => r.json()),
-    fetch("artists-local.json").then(r => r.json()),
     fetch("tag-tooltips.json").then(r => r.json()),
     fetch("taunts.json").then(r => r.json()),
     fetch("tag-taunts.json").then(r => r.json())
