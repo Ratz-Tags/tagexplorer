@@ -728,7 +728,7 @@ button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-t
     padding: 0.5rem;
   }
   .sidebar-toggle {
-    margin-right: 0;
+    margin-right: 1rem;
     width: 100%;
     text-align: center;
   }
