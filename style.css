@@ -1,11 +1,15 @@
 /* Feminized, girly, immersive DARK MODE style.css */
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap');
 
+* {
+  box-shadow: 0 2px 8px #ffb6d540;
+}
+
 body {
   margin: 0;
   font-family: "Hi Melody", sans-serif;
-  background-color: #1a0020;
-  color: #ffd6f6;
+  background: linear-gradient(135deg, #ffe0f6 0%, #ffd6f6 40%, #fff0fa 100%);
+  color: #a0005a;
   overflow-x: hidden;
   box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
 }
@@ -19,7 +23,8 @@ body {
   filter: blur(2px) brightness(0.7) saturate(1.2);
   z-index: -1;
   transition: background-image 1s ease-in-out;
-  background: linear-gradient(120deg, #4b004a 0%, #32163a 60%, #6d1867 100%);
+  background: linear-gradient(120deg, #ffd6f6 0%, #ffb6d5 60%, #fd7bc5 100%);
+  opacity: 0.95;
 }
 
 #tag-filter {
@@ -68,16 +73,15 @@ body {
   max-width: 240px;
   padding: 9px 20px;
   border: 2px solid #fd7bc5;
-  border-radius: 20px;
-  background: linear-gradient(90deg, #4b004a 0%, #6d1867 100%);
-  color: #ffd6f6;
+  border-radius: 2em !important;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  color: #d63384;
   cursor: pointer;
   transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
   font-size: 1.1em;
   font-family: inherit;
   margin: 0;
   outline: none;
-  box-shadow: 0 1px 6px #ff63a528;
   position: relative;
   text-align: center;
   display: flex;
@@ -146,7 +150,6 @@ body {
   margin: 12px;
   text-align: center;
   color: #ffd6f6;
-  box-shadow: 0 0 16px #fd7bc560;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -162,7 +165,6 @@ body {
   border-radius: 14px;
   margin-bottom: 0.7rem;
   object-fit: cover;
-  box-shadow: 0 2px 8px #fd7bc540;
 }
 
 .artist-name {
@@ -194,7 +196,6 @@ body {
   border: 2.5px solid #fd7bc5;
   border-radius: 16px;
   max-width: 340px;
-  box-shadow: 0 0 18px #fd7bc570;
   animation: pop-in 0.3s ease;
   z-index: 9999;
 }
@@ -221,7 +222,6 @@ body {
   font-weight: 800;
   letter-spacing: 0.7px;
   text-transform: uppercase;
-  box-shadow: 0 0 12px #fd7bc5cc;
   animation: pop-in 0.3s ease;
   z-index: 9999;
   text-shadow: 0 0 3px #4b004a;
@@ -376,6 +376,15 @@ audio#moan-audio { display: none; }
 
 #copied-sidebar.visible { display: flex; }
 
+#copied-sidebar::before {
+  content: "🎀";
+  display: block;
+  font-size: 2.2em;
+  text-align: center;
+  margin-bottom: 0.5em;
+  opacity: 0.7;
+}
+
 .sidebar-artist {
   position: relative;
   display: flex;
@@ -386,7 +395,6 @@ audio#moan-audio { display: none; }
   border-radius: 10px;
   padding: 10px;
   cursor: pointer;
-  box-shadow: 0 1px 4px #ff63a520;
   transition: background 0.2s, box-shadow 0.2s;
 }
 
@@ -598,13 +606,13 @@ body {
 /* Add a subtle blush to the top as well */
 body::before {
   content: "";
-  pointer-events: none;
   position: fixed;
-  left: 0; right: 0; top: 0;
-  height: 100px;
+  top: 0; left: 0; bottom: 0; right: 0;
+  pointer-events: none;
   z-index: 1;
-  background: radial-gradient(ellipse at 50% 0%, #ffb6d5 0%, #ff63a500 80%);
-  opacity: 0.18;
+  background: radial-gradient(ellipse at left, #ffb6d5 0%, transparent 70%),
+              radial-gradient(ellipse at right, #ffb6d5 0%, transparent 70%);
+  opacity: 0.12;
 }
 
 /* Add a lipstick kiss watermark in the corner (no animation) */
@@ -684,10 +692,16 @@ button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-t
 
 /* Add a subtle pink outline to input fields */
 input[type="text"], input[type="search"] {
-  border: 2px solid #ffb6d5 !important;
   background: #fff0fa;
-  color: #a0005a;
-  font-weight: 600;
+  border: 2px solid #ffb6d5 !important;
+  color: #d63384;
+  font-weight: 700;
+  border-radius: 2em;
+  padding-left: 2.5em;
+  background-image: url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png');
+  background-repeat: no-repeat;
+  background-size: 1.5em;
+  background-position: 0.5em center;
 }
 input[type="text"]:focus, input[type="search"]:focus {
   border-color: #fd7bc5 !important;
@@ -837,10 +851,14 @@ body::before {
   height: 48px;
   font-size: 2rem;
   cursor: pointer;
-  box-shadow: 0 2px 8px #ff63a540;
   display: none;
   transition: background 0.2s, box-shadow 0.2s;
 }
 #back-to-top:hover {
   background: #ff63a5;
+}
+
+:focus-visible {
+  outline: 2px solid #fd7bc5;
+  box-shadow: 0 0 0 4px #ffd6f680;
 }
