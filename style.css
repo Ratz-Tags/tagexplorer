@@ -334,25 +334,27 @@ audio#moan-audio { display: none; }
 
 .sidebar-toggle {
   position: fixed;
-  top: 5rem;
-  right: 1.2rem;
-  z-index: 10020;
-  margin-right: 0;
-  width: auto;
-  text-align: center;
-  background: #fd7bc5;
+  bottom: 1rem;
+  right: 6.5rem; /* Place just left of .audio-toggle (which is right: 1rem) */
+  background: #d63384;
   color: white;
   border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-size: 1.1rem;
-  box-shadow: 0 2px 8px #ff63a540;
+  padding: 0.6em 1.2em;
+  border-radius: 1.5rem;
+  font-weight: bold;
+  font-size: 1rem;
+  box-shadow: 0 0 12px rgba(214, 51, 132, 0.7);
+  z-index: 10020;
   cursor: pointer;
-  transition: background 0.2s, box-shadow 0.2s;
+  transition: background 0.2s ease, transform 0.2s ease;
+  width: auto;
+  text-align: center;
+  margin-right: 0;
 }
 
 .sidebar-toggle:hover {
-  background: #ff63a5;
+  background: #c22170;
+  transform: scale(1.05);
 }
 
 #copied-sidebar {
