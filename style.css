@@ -20,9 +20,9 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  filter: blur(2px) brightness(0.7) saturate(1.2);
+  filter: blur(1px) brightness(0.9) saturate(1.2);
   z-index: -1;
-  transition: background-image 1s ease-in-out;
+  transition: background-image 2s ease-in-out;
   background: linear-gradient(120deg, #ffd6f6 0%, #ffb6d5 60%, #fd7bc5 100%);
   opacity: 0.95;
 }
