@@ -588,7 +588,7 @@ body::after {
     url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png');
   background-repeat: repeat;
   background-size: 60px, 48px, 48px;
-  opacity: 0.08;
+  opacity: 0.02;
   mix-blend-mode: lighten;
   animation: sparkle-scroll 20s linear infinite;
 }
@@ -774,7 +774,7 @@ button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-t
 #back-to-top {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
+  left: 2rem;
   z-index: 10010;
   background: #fd7bc5;
   color: #fff;
