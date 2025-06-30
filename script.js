@@ -561,4 +561,10 @@ document.addEventListener("DOMContentLoaded", () => {
     setRandomBackground();
     setInterval(setRandomBackground, 15000);
   });
+// Add lipstick kiss watermark if not present
+if (!document.querySelector('.lipstick-kiss')) {
+  const kiss = document.createElement('div');
+  kiss.className = 'lipstick-kiss';
+  document.body.appendChild(kiss);
+}
 });

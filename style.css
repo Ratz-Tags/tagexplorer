@@ -573,6 +573,107 @@ audio#moan-audio { display: none; }
   color: #ffd6f6;
 }
 
+/* --- Humiliating Feminine Visual Enhancements --- */
+
+/* Sparkle overlay for background */
+body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png'),
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f496.png'),
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png');
+  background-repeat: repeat;
+  background-size: 60px, 48px, 48px;
+  opacity: 0.08;
+  mix-blend-mode: lighten;
+  animation: sparkle-scroll 20s linear infinite;
+}
+
+@keyframes sparkle-scroll {
+  0% { background-position: 0 0, 100px 200px, 200px 100px; }
+  100% { background-position: 200px 400px, 0 300px, 400px 0; }
+}
+
+/* Blush effect at the bottom of the screen */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 100%, #ffb6d5 0%, #ff63a500 80%);
+  opacity: 0.22;
+}
+
+/* Add a lipstick kiss watermark in the corner */
+body .lipstick-kiss {
+  position: fixed;
+  left: 1.2rem;
+  bottom: 1.2rem;
+  width: 64px;
+  height: 64px;
+  z-index: 10030;
+  opacity: 0.18;
+  background: url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png') no-repeat center/contain;
+  pointer-events: none;
+  animation: kiss-pop 2.5s infinite alternate;
+}
+@keyframes kiss-pop {
+  0% { transform: scale(1) rotate(-8deg);}
+  100% { transform: scale(1.08) rotate(8deg);}
+}
+
+/* Add a subtle pink glow to all buttons */
+button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle {
+  box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
+  transition: box-shadow 0.2s;
+}
+button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-toggle:hover {
+  box-shadow: 0 0 12px 4px #ff63a580, 0 2px 16px #fd7bc580;
+}
+
+/* Add a bow to the sidebar toggle button */
+.sidebar-toggle::after {
+  content: " 🎀";
+  font-size: 1.2em;
+  margin-left: 0.3em;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 2px #ffb6d5);
+  pointer-events: none;
+}
+
+/* Add a heart to the audio toggle button */
+.audio-toggle::after {
+  content: " 💖";
+  font-size: 1.2em;
+  margin-left: 0.3em;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 2px #ffb6d5);
+  pointer-events: none;
+}
+
+/* Extra rounded corners for humiliation/cuteness */
+#copied-sidebar,
+.audio-panel,
+.artist-card,
+.jrpg-bubble,
+.toast-popup {
+  border-radius: 2rem !important;
+}
+
+/* Optional: Add a faint pink border to main panels */
+#copied-sidebar,
+.audio-panel {
+  border: 2.5px solid #ffb6d5 !important;
+}
+
+/* Add the lipstick kiss element to your HTML body with JS if not present */
+
 /* === Responsive Styles === */
 @media (max-width: 768px) {
   .artist-card { max-width: 90vw; }
