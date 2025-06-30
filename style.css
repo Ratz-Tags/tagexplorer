@@ -335,7 +335,7 @@ audio#moan-audio { display: none; }
 .sidebar-toggle {
   position: fixed;
   bottom: 1rem;
-  right: 6.5rem; /* Place just left of .audio-toggle (which is right: 1rem) */
+  right: 10.5rem; /* Increased from 6.5rem to 10.5rem for more space */
   background: #d63384;
   color: white;
   border: none;
