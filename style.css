@@ -581,23 +581,6 @@ audio#moan-audio { display: none; }
   color: #ffd6f6;
 }
 
-/* Feminine Sparkle & Heart Background Overlay (no animation) */
-body::after {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-image:
-    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png'),
-    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f496.png'),
-    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png');
-  background-repeat: repeat;
-  background-size: 60px, 48px, 48px;
-  opacity: 0.10;
-  mix-blend-mode: lighten;
-}
-
 /* Add a soft pink vignette around the edges */
 body {
   box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
