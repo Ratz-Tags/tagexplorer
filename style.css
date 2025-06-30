@@ -704,7 +704,7 @@ input[type="text"]:focus, input[type="search"]:focus {
 
 /* Add a sparkle to tag buttons */
 .tag-btn::before, .tag-button::before {
-  content: "✨";
+  content: "💕";
   margin-right: 0.3em;
   opacity: 0.7;
   font-size: 1em;
