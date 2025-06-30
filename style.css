@@ -7,6 +7,7 @@ body {
   background-color: #1a0020;
   color: #ffd6f6;
   overflow-x: hidden;
+  box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
 }
 
 #background-blur {
@@ -572,19 +573,41 @@ audio#moan-audio { display: none; }
   color: #ffd6f6;
 }
 
-/* Blush effect at the bottom of the screen */
+/* Feminine Sparkle & Heart Background Overlay (no animation) */
+body::after {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/2728.png'),
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f496.png'),
+    url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png');
+  background-repeat: repeat;
+  background-size: 60px, 48px, 48px;
+  opacity: 0.10;
+  mix-blend-mode: lighten;
+}
+
+/* Add a soft pink vignette around the edges */
+body {
+  box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
+}
+
+/* Add a subtle blush to the top as well */
 body::before {
   content: "";
   pointer-events: none;
   position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 120px;
+  left: 0; right: 0; top: 0;
+  height: 100px;
   z-index: 1;
-  background: radial-gradient(ellipse at 50% 100%, #ffb6d5 0%, #ff63a500 80%);
-  opacity: 0.22;
+  background: radial-gradient(ellipse at 50% 0%, #ffb6d5 0%, #ff63a500 80%);
+  opacity: 0.18;
 }
 
-/* Add a lipstick kiss watermark in the corner */
+/* Add a lipstick kiss watermark in the corner (no animation) */
 body .lipstick-kiss {
   position: fixed;
   left: 1.2rem;
@@ -595,23 +618,9 @@ body .lipstick-kiss {
   opacity: 0.18;
   background: url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png') no-repeat center/contain;
   pointer-events: none;
-  animation: kiss-pop 2.5s infinite alternate;
-}
-@keyframes kiss-pop {
-  0% { transform: scale(1) rotate(-8deg);}
-  100% { transform: scale(1.08) rotate(8deg);}
 }
 
-/* Add a subtle pink glow to all buttons */
-button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle {
-  box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
-  transition: box-shadow 0.2s;
-}
-button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-toggle:hover {
-  box-shadow: 0 0 12px 4px #ff63a580, 0 2px 16px #fd7bc580;
-}
-
-/* Add a bow to the sidebar toggle button */
+/* Add bows and hearts to key buttons */
 .sidebar-toggle::after {
   content: " 🎀";
   font-size: 1.2em;
@@ -620,8 +629,6 @@ button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-t
   filter: drop-shadow(0 0 2px #ffb6d5);
   pointer-events: none;
 }
-
-/* Add a heart to the audio toggle button */
 .audio-toggle::after {
   content: " 💖";
   font-size: 1.2em;
@@ -630,20 +637,92 @@ button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-t
   filter: drop-shadow(0 0 2px #ffb6d5);
   pointer-events: none;
 }
+#back-to-top::after {
+  content: " 💋";
+  font-size: 1.1em;
+  margin-left: 0.1em;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 2px #ffb6d5);
+  pointer-events: none;
+}
 
-/* Extra rounded corners for humiliation/cuteness */
+/* Extra rounded, pillowy corners for humiliation/cuteness */
 #copied-sidebar,
 .audio-panel,
 .artist-card,
 .jrpg-bubble,
-.toast-popup {
+.toast-popup,
+button,
+.tag-btn,
+.tag-button,
+input,
+#back-to-top {
   border-radius: 2rem !important;
 }
 
-/* Optional: Add a faint pink border to main panels */
+/* Pink glow and border for all interactive elements */
+button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle, #back-to-top {
+  box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
+  border: 2px solid #ffb6d5 !important;
+  background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
+  color: #a0005a;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  transition: box-shadow 0.2s, background 0.2s, color 0.2s;
+}
+button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-toggle:hover, #back-to-top:hover {
+  box-shadow: 0 0 12px 4px #ff63a580, 0 2px 16px #fd7bc580;
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  color: #fff;
+}
+
+/* Add a faint pink border to main panels */
 #copied-sidebar,
 .audio-panel {
   border: 2.5px solid #ffb6d5 !important;
+}
+
+/* Add a subtle pink outline to input fields */
+input[type="text"], input[type="search"] {
+  border: 2px solid #ffb6d5 !important;
+  background: #fff0fa;
+  color: #a0005a;
+  font-weight: 600;
+}
+input[type="text"]:focus, input[type="search"]:focus {
+  border-color: #fd7bc5 !important;
+  background: #ffe0f6;
+  color: #d63384;
+}
+
+/* Add a little heart to artist cards */
+.artist-card::before {
+  content: "💗";
+  display: block;
+  font-size: 1.5em;
+  margin-bottom: 0.2em;
+  text-align: center;
+  opacity: 0.7;
+}
+
+/* Add a sparkle to tag buttons */
+.tag-btn::before, .tag-button::before {
+  content: "✨";
+  margin-right: 0.3em;
+  opacity: 0.7;
+  font-size: 1em;
+}
+
+/* Blush effect at the bottom of the screen */
+body::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  height: 120px;
+  z-index: 1;
+  background: radial-gradient(ellipse at 50% 100%, #ffb6d5 0%, #ff63a500 80%);
+  opacity: 0.22;
 }
 
 /* Add the lipstick kiss element to your HTML body with JS if not present */
