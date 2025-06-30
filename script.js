@@ -283,7 +283,6 @@ function renderTagButtons() {
     return;
   }
 
-  // Create a button for each tag
   tagsToShow.forEach(tag => {
     const btn = document.createElement("button");
     btn.className = "tag-button";
