@@ -333,15 +333,26 @@ audio#moan-audio { display: none; }
 }
 
 .sidebar-toggle {
+  position: fixed;
+  top: 5rem;
+  right: 1.2rem;
+  z-index: 10020;
+  margin-right: 0;
+  width: auto;
+  text-align: center;
   background: #fd7bc5;
   color: white;
   border: none;
-  padding: 7px 14px;
-  border-radius: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  box-shadow: 0 2px 8px #ff63a540;
   cursor: pointer;
-  font-size: 1.03rem;
-  margin-right: 1.1rem;
-  box-shadow: 0 1px 6px #fd7bc540;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.sidebar-toggle:hover {
+  background: #ff63a5;
 }
 
 #copied-sidebar {
@@ -655,4 +666,25 @@ audio#moan-audio { display: none; }
     box-shadow: none;
     margin-bottom: 12px;
   }
+}
+
+#back-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 10010;
+  background: #fd7bc5;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #ff63a540;
+  display: none;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+#back-to-top:hover {
+  background: #ff63a5;
 }
