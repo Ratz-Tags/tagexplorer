@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let copiedArtists = new Set();
   let searchFilter = "";
 
-  const hypnoAudio = new Audio();
   let currentTrack = 0;
   let moansMuted = false;
 
@@ -57,6 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "Yes.mp3"
     // Add more audio files as needed
   ];
+  const hypnoAudio = document.getElementById("hypnoAudio");
 
   function getAudioSrc(index) {
     return `audio/${audioFiles[index]}`;
