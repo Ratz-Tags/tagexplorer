@@ -349,7 +349,6 @@ audio#moan-audio { display: none; }
   transition: background 0.2s ease, transform 0.2s ease;
   width: auto;
   text-align: center;
-  margin-right: 0;
 }
 
 .sidebar-toggle:hover {
