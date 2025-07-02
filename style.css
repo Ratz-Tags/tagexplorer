@@ -589,13 +589,15 @@ body {
 /* Add a subtle blush to the top as well */
 body::before {
   content: "";
-  position: fixed;
-  top: 0; left: 0; bottom: 0; right: 0;
   pointer-events: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
   z-index: 1;
-  background: radial-gradient(ellipse at left, #ffb6d5 0%, transparent 70%),
-              radial-gradient(ellipse at right, #ffb6d5 0%, transparent 70%);
-  opacity: 0.12;
+  background: 
+    radial-gradient(ellipse at left, #ffb6d5 0%, transparent 70%),
+    radial-gradient(ellipse at right, #ffb6d5 0%, transparent 70%),
+    radial-gradient(ellipse at 50% 100%, #ffb6d5 0%, transparent 80%);
+  opacity: 0.18;
 }
 
 /* Add a lipstick kiss watermark in the corner (no animation) */
@@ -708,18 +710,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   margin-right: 0.3em;
   opacity: 0.7;
   font-size: 1em;
-}
-
-/* Blush effect at the bottom of the screen */
-body::before {
-  content: "";
-  pointer-events: none;
-  position: fixed;
-  left: 0; right: 0; bottom: 0;
-  height: 120px;
-  z-index: 1;
-  background: radial-gradient(ellipse at 50% 100%, #ffb6d5 0%, #ff63a500 80%);
-  opacity: 0.22;
 }
 
 /* Add the lipstick kiss element to your HTML body with JS if not present */
