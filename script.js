@@ -256,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const validPosts = data.filter(post => {
             const url = post?.large_file_url || post?.file_url;
             const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-            const valid = isImage && !post.is_deleted && !post.is_banned && !post.is_pending;
+            const valid = isImage && !post.is_bannedl
             if (!valid) {
               console.log("Filtered out post for artist", artist.artistName, post);
             }
@@ -531,9 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Filter for valid, non-deleted, non-banned, non-pending posts
             const validPosts = data.filter(post =>
               (post?.large_file_url || post?.file_url) &&
-              !post.is_deleted &&
-              !post.is_banned &&
-              !post.is_pending
+              !post.is_banned
             );
             posts = validPosts;
             // Try each post until one loads, else show "No valid entries"
