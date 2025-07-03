@@ -277,7 +277,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       // --------------------------------------------
 
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
         .then(r => r.json())
         .then(data => {
           if (!Array.isArray(data)) {
@@ -586,7 +586,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const tagQuery = activeTags.size
           ? [artist.artistName, ...activeTags].join(" ")
           : artist.artistName;
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
           .then(res => res.json())
           .then(data => {
             if (!Array.isArray(data)) {
