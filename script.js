@@ -179,7 +179,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function setBestImage(artist, img) {
     const selectedTags = Array.from(activeTags);
-    const tagQuery = [artist.artistName, ...selectedTags].join(" ");
+    const tagQuery = selectedTags.length
+      ? [artist.artistName, ...selectedTags].join(" ")
+      : artist.artistName;
     const cacheKey = `danbooru-image-${artist.artistName}-${selectedTags.join(",")}`;
     const cachedUrl = localStorage.getItem(cacheKey);
 
@@ -433,7 +435,10 @@ document.addEventListener("DOMContentLoaded", () => {
             showPost(currentIndex);
           };
 
-          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([artist.artistName, ...activeTags].join(" "))}+order:approval&limit=40`)
+          const tagQuery = activeTags.size
+            ? [artist.artistName, ...activeTags].join(" ")
+            : artist.artistName;
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
               posts = data.filter(post => post?.large_file_url || post?.file_url);
@@ -449,7 +454,9 @@ document.addEventListener("DOMContentLoaded", () => {
         name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
         // Fetch image count for this artist with selected tags
-        const tagQuery = [artist.artistName, ...activeTags].join(" ");
+        const tagQuery = activeTags.size
+          ? [artist.artistName, ...activeTags].join(" ")
+          : artist.artistName;
         fetch(`https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(tagQuery)}`)
           .then(r => r.json())
           .then(countData => {
