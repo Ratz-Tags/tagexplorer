@@ -725,6 +725,13 @@ document.addEventListener("DOMContentLoaded", () => {
       name.className = "artist-name";
       name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
+      // Add image count if available
+      if (typeof artist._imageCount === "number") {
+        name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
+      } else {
+        name.textContent += " [Loading count…]";
+      }
+
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-button";
       copyBtn.textContent = "📋";

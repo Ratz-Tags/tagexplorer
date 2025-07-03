@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap');
 
 * {
-  box-shadow: 0 2px 8px #ffb6d540;
+  box-sizing: border-box;
 }
 
 body {
@@ -12,6 +12,23 @@ body {
   color: #a0005a;
   overflow-x: hidden;
   box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
+}
+
+html, body {
+  width: 100vw;
+  max-width: 100vw;
+  overflow-x: hidden !important;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+#artist-gallery,
+#tag-buttons,
+body,
+html {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
 }
 
 #background-blur {
@@ -735,10 +752,18 @@ input[type="text"]:focus, input[type="search"]:focus {
 }
 
 @media (max-width: 600px) {
+  body, html {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
   #artist-gallery {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    max-width: 100vw;
-    padding: 1rem;
+    padding: 0.5rem !important;
+    margin: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
   }
   .artist-card {
     max-width: 90vw;
@@ -908,6 +933,18 @@ input[type="text"]:focus, input[type="search"]:focus {
   justify-content: center;
   align-items: center;
   margin: 2em 0;
+}
+
+.gallery-spinner img {
+  width: 12vw;
+  height: 12vw;
+  max-width: 64px;
+  max-height: 64px;
+  min-width: 32px;
+  min-height: 32px;
+  display: block;
+  margin: 40px auto;
+  opacity: 0.8;
 }
 
 .tag-image-popup {
