@@ -701,9 +701,11 @@ document.addEventListener("DOMContentLoaded", () => {
               // Show the first valid image in a popup
               const popup = document.createElement("div");
               popup.className = "tag-image-popup";
+              const imgUrl = validPosts[0].large_file_url || validPosts[0].file_url;
+              const fullUrl = imgUrl.startsWith("http") ? imgUrl : `https://danbooru.donmai.us${imgUrl}`;
               popup.innerHTML = `
                 <div class="tag-image-popup-bg"></div>
-                <img src="${validPosts[0].large_file_url ? 'https://danbooru.donmai.us' + validPosts[0].large_file_url : validPosts[0].file_url}" class="tag-image-popup-img" />
+                <img src="${fullUrl}" class="tag-image-popup-img" />
                 <button class="tag-image-popup-close">×</button>
               `;
               document.body.appendChild(popup);
