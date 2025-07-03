@@ -1,3 +1,5 @@
+window._danbooruUnavailable = false;
+
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
     "femdom", "chastity_cage", "trap", "pegging", "futanari", "netorare", "netorase", "tentacle_sex",
@@ -193,8 +195,14 @@ document.addEventListener("DOMContentLoaded", () => {
         msg.className = "no-entries-msg";
         msg.style.color = "red";
         msg.style.fontWeight = "bold";
-        msg.textContent = "No valid entries";
+        msg.textContent = window._danbooruUnavailable
+          ? "Danbooru unavailable"
+          : "No valid entries";
         img.parentNode.insertBefore(msg, img.nextSibling);
+      } else {
+        msg.textContent = window._danbooruUnavailable
+          ? "Danbooru unavailable"
+          : "No valid entries";
       }
     }
 
@@ -237,33 +245,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchAndTry() {
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
-        .then(r => r.json())
-        .then(data => {
-          const validPosts = data.filter(post =>
-            (post?.large_file_url || post?.file_url) &&
-            !post.is_deleted &&
-            !post.is_banned &&
-            !post.is_pending
-          );
-          const urls = validPosts.map(post => {
-            const url = post.large_file_url || post.file_url;
-            return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-          });
-          if (urls.length) {
-            tryLoadUrls(urls);
-          } else {
+      if (!window._danbooruUnavailable) {
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+          .then(r => r.json())
+          .then(data => {
+            const validPosts = data.filter(post =>
+              (post?.large_file_url || post?.file_url) &&
+              !post.is_deleted &&
+              !post.is_banned &&
+              !post.is_pending
+            );
+            const urls = validPosts.map(post => {
+              const url = post.large_file_url || post.file_url;
+              return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+            });
+            if (urls.length) {
+              tryLoadUrls(urls);
+            } else {
+              showNoEntries();
+            }
+          })
+          .catch((err) => {
             showNoEntries();
-          }
-        })
-        .catch((err) => {
-          showNoEntries();
-          // Optionally, log only once:
-          if (!window._danbooruFetchWarned) {
-            console.warn("Could not fetch images from Danbooru. You may be rate limited or offline.", err);
-            window._danbooruFetchWarned = true;
-          }
-        });
+            // Optionally, log only once:
+            if (!window._danbooruFetchWarned) {
+              console.warn("Could not fetch images from Danbooru. You may be rate limited or offline.", err);
+              window._danbooruFetchWarned = true;
+            }
+          });
+      }
     }
 
     fetchAndTry();
@@ -564,13 +574,16 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           })
           .catch(err => {
-            // Optionally, log only once to avoid spam
+            // Only warn once per session
             if (!window._danbooruCountWarned) {
+              window._danbooruUnavailable = true;
               console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
               window._danbooruCountWarned = true;
             }
-            // Optionally, show a fallback or nothing
-            // name.textContent += " [?]";
+            // Show a friendly message only if not already present
+            if (!name.textContent.includes("Danbooru unavailable")) {
+              name.textContent += " [Danbooru unavailable]";
+            }
           });
 
         const copyBtn = document.createElement("button");
