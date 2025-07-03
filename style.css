@@ -273,6 +273,11 @@ body {
   box-shadow: 0 0 18px #ff63a580;
 }
 
+.fullscreen-img.loading {
+  filter: blur(4px) brightness(0.8);
+  background: url('spinner.gif') center center no-repeat;
+}
+
 .zoom-close,
 .zoom-prev,
 .zoom-next {
