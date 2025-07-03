@@ -245,35 +245,36 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchAndTry() {
-      if (!window._danbooruUnavailable) {
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
-          .then(r => r.json())
-          .then(data => {
-            const validPosts = data.filter(post =>
-              (post?.large_file_url || post?.file_url) &&
-              !post.is_deleted &&
-              !post.is_banned &&
-              !post.is_pending
-            );
-            const urls = validPosts.map(post => {
-              const url = post.large_file_url || post.file_url;
-              return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-            });
-            if (urls.length) {
-              tryLoadUrls(urls);
-            } else {
-              showNoEntries();
-            }
-          })
-          .catch((err) => {
-            showNoEntries();
-            // Optionally, log only once:
-            if (!window._danbooruFetchWarned) {
-              console.warn("Could not fetch images from Danbooru. You may be rate limited or offline.", err);
-              window._danbooruFetchWarned = true;
-            }
-          });
+      if (window._danbooruUnavailable) {
+        showNoEntries();
+        return;
       }
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+        .then(r => r.json())
+        .then(data => {
+          const validPosts = data.filter(post =>
+            (post?.large_file_url || post?.file_url) &&
+            !post.is_deleted &&
+            !post.is_banned &&
+            !post.is_pending
+          );
+          const urls = validPosts.map(post => {
+            const url = post.large_file_url || post.file_url;
+            return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+          });
+          if (urls.length) {
+            tryLoadUrls(urls);
+          } else {
+            showNoEntries();
+          }
+        })
+        .catch((err) => {
+          showNoEntries();
+          if (!window._danbooruFetchWarned) {
+            console.warn("Could not fetch images from Danbooru. You may be rate limited or offline.", err);
+            window._danbooruFetchWarned = true;
+          }
+        });
     }
 
     fetchAndTry();
@@ -566,21 +567,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const tagQuery = activeTags.size
           ? [artist.artistName, ...activeTags].join(" ")
           : artist.artistName;
-        fetch(`https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(tagQuery)}`)
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
           .then(r => r.json())
-          .then(countData => {
-            if (countData && typeof countData.count === "number") {
-              name.textContent += ` [${countData.count}]`;
-            }
+          .then(posts => {
+            // Count unique post IDs
+            const uniqueIds = new Set(posts.map(post => post.id));
+            name.textContent += ` [${uniqueIds.size}${uniqueIds.size === 1000 ? "+" : ""}]`;
           })
           .catch(err => {
-            // Only warn once per session
             if (!window._danbooruCountWarned) {
               window._danbooruUnavailable = true;
               console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
               window._danbooruCountWarned = true;
             }
-            // Show a friendly message only if not already present
             if (!name.textContent.includes("Danbooru unavailable")) {
               name.textContent += " [Danbooru unavailable]";
             }
@@ -701,6 +700,9 @@ document.addEventListener("DOMContentLoaded", () => {
     filterArtists();
     setRandomBackground();
     setInterval(setRandomBackground, 15000);
+  }).catch(err => {
+    console.error("Failed to load required data files:", err);
+    // Optionally show a user-friendly message in the UI
   });
 // Add lipstick kiss watermark if not present
 if (!document.querySelector('.lipstick-kiss')) {
