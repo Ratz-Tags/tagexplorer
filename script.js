@@ -607,9 +607,7 @@ document.addEventListener("DOMContentLoaded", () => {
           debouncedShowPost(currentIndex);
         };
 
-        const tagQuery = activeTags.size
-          ? [artist.artistName, ...activeTags].join(" ")
-          : artist.artistName;
+        const tagQuery = `${artist.artistName}`;
         fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
           .then(res => res.json())
           .then(data => {
