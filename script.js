@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTagsBtn.addEventListener("click", () => {
       activeTags.clear();
       renderTagButtons();
-      filterArtists(true);
+      filterArtists(true); // This will fetch counts and sort by count
       setRandomBackground();
     });
   }
