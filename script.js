@@ -507,9 +507,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
       });
 
-      // Fetch image counts for all filtered artists in batches
-      const batchSize = 5; // 5 artists per batch
-      const delayMs = 600; // 0.6 seconds between batches (stays under 10/sec)
+      currentArtistPage = 0;
+      countsFetched = false;
+      renderArtistsPage();
+
+      // Fetch image counts in the background, but don't block rendering
+      const batchSize = 5;
+      const delayMs = 600;
       async function fetchInBatches(items, batchSize, fetchFn, delayMs = 500) {
         let results = [];
         for (let i = 0; i < items.length; i += batchSize) {
@@ -522,7 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return results;
       }
-      await fetchInBatches(filtered, batchSize, async (artist) => {
+      fetchInBatches(filtered, batchSize, async (artist) => {
         const tagQuery = activeTags.size
           ? [artist.artistName, ...activeTags].join(" ")
           : artist.artistName;
@@ -535,13 +539,11 @@ document.addEventListener("DOMContentLoaded", () => {
           .catch(() => {
             artist._imageCount = 0;
           });
-      }, delayMs);
-
-      // After all counts are fetched, sort and render
-      filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
-      currentArtistPage = 0;
-      renderArtistsPage();
-      return; // Don't render until counts are ready
+      }, delayMs).then(() => {
+        countsFetched = true;
+        // Optionally, you could update the UI to indicate counts are ready
+      });
+      return;
     }
 
     renderArtistsPage();
@@ -898,5 +900,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const kiss = document.createElement('div');
     kiss.className = 'lipstick-kiss';
     document.body.appendChild(kiss);
+  }
+
+  const sortBtn = document.getElementById("sort-by-count");
+  if (sortBtn) {
+    sortBtn.addEventListener("click", () => {
+      // Only sort if counts have been fetched for at least some artists
+      filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
+      currentArtistPage = 0;
+      renderArtistsPage();
+    });
   }
 });
