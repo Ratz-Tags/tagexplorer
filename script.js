@@ -190,6 +190,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const cacheKey = `danbooru-image-${artist.artistName}`;
     const cachedUrl = localStorage.getItem(cacheKey);
 
+    // Use activeTags for selected tags
+    const selectedTags = Array.from(activeTags);
+
     // --- Add sessionStorage cache for Danbooru API results ---
     const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(",")}`;
     function getApiCache() {
