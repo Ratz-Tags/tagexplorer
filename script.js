@@ -449,9 +449,43 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         return false;
       });
+
+      // Fetch image counts for all filtered artists in parallel
+      const countPromises = filtered.map(artist => {
+        const tagQuery = activeTags.size
+          ? [artist.artistName, ...activeTags].join(" ")
+          : artist.artistName;
+        return fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
+          .then(r => r.json())
+          .then(posts => {
+            // Count unique post IDs
+            const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+            artist._imageCount = uniqueIds.size;
+          })
+          .catch(() => {
+            artist._imageCount = 0;
+          });
+      });
+
+      // After all counts are fetched, sort and render
+      Promise.all(countPromises).then(() => {
+        // Sort by image count descending
+        filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
+        currentArtistPage = 0; // Reset paging
+        renderArtistsPage();
+      });
+      return; // Don't render until counts are ready
     }
 
-    // Load next "page" of artists
+    renderArtistsPage();
+  }
+
+  // Helper to render the current page of artists
+  function renderArtistsPage() {
+    // Remove spinner if present
+    const spinner = artistGallery.querySelector('.gallery-spinner');
+    if (spinner) spinner.remove();
+
     const start = currentArtistPage * artistsPerPage;
     const end = start + artistsPerPage;
     const artistsToShow = filtered.slice(start, end);
@@ -726,10 +760,6 @@ document.addEventListener("DOMContentLoaded", () => {
       artistGallery.appendChild(card);
     });
 
-    // Remove spinner after cards are added
-    const spinner = artistGallery.querySelector('.gallery-spinner');
-    if (spinner) spinner.remove();
-
     if (artistsToShow.length === 0 && currentArtistPage > 0) {
       const endMsg = document.createElement("div");
       endMsg.className = "end-of-gallery";
@@ -776,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (artistNameFilterInput) {
     artistNameFilterInput.addEventListener("input", (e) => {
       artistNameFilter = e.target.value.trim().toLowerCase();
-      filterArtists();
+      filterArtists(true); // Always reset paging when searching
     });
   }
 
@@ -841,12 +871,31 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function handleArtistCopy(artist, imgSrc) {
-  // Copy artist name to clipboard
-  navigator.clipboard.writeText(artist.artistName)
+  // Remove underscores and copy as artist:artistTag
+  const artistTag = artist.artistName.replace(/_/g, " ");
+  const copyText = `artist:${artistTag}`;
+  navigator.clipboard.writeText(copyText)
     .then(() => {
-      showToast(`Copied: ${artist.artistName}`);
+      showToast(`Copied: ${copyText}`);
+      // Add to copied sidebar
+      if (!copiedArtists.has(artist.artistName)) {
+        copiedArtists.add(artist.artistName);
+        updateCopiedSidebar();
+      }
     })
     .catch(() => {
       showToast("Failed to copy!");
     });
+}
+
+// Add this function to update the sidebar:
+function updateCopiedSidebar() {
+  if (!copiedSidebar) return;
+  copiedSidebar.innerHTML = "";
+  copiedArtists.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "copied-artist";
+    div.textContent = name.replace(/_/g, " ");
+    copiedSidebar.appendChild(div);
+  });
 }
