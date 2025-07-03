@@ -3,6 +3,24 @@ window._danbooruUnavailable = false;
 let copiedArtists = new Set();
 let copiedSidebar = null;
 
+function showToast(message) {
+  const toast = document.createElement("div");
+  toast.className = "toast-popup";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  if (Math.random() < 0.4) {
+    const moanAudio = document.getElementById("moan-audio");
+    if (moanAudio) {
+      moanAudio.currentTime = 0;
+      moanAudio.play().catch(() => { });
+    }
+  }
+
+  setTimeout(() => toast.remove(), 3000);
+}
+
+
 function handleArtistCopy(artist, imgSrc) {
   // Remove underscores and copy as artist:artistTag
   const artistTag = artist.artistName.replace(/_/g, " ");
@@ -183,19 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let tagTaunts = {};
   let taunts = [];
 
-  function showToast(message) {
-    const toast = document.createElement("div");
-    toast.className = "toast-popup";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    if (Math.random() < 0.4) {
-      moanAudio.currentTime = 0;
-      moanAudio.play().catch(() => { });
-    }
-
-    setTimeout(() => toast.remove(), 3000);
-  }
   function postHasAllTags(post, tags) {
     if (!tags.length) return true;
     // Danbooru returns tags as a space-separated string in tag_string
