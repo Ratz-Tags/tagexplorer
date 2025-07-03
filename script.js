@@ -401,7 +401,11 @@ document.addEventListener("DOMContentLoaded", () => {
   function filterArtists(reset = true) {
     if (reset) {
       artistGallery.innerHTML = "";
-      currentArtistPage = 0;
+      // Add spinner
+      const spinner = document.createElement("div");
+      spinner.className = "gallery-spinner";
+      spinner.innerHTML = "<img src='spinner.gif' alt='Loading...' />";
+      artistGallery.appendChild(spinner);
       // Filtered and deduped artists
       const selected = Array.from(activeTags);
       const seen = new Set();
@@ -533,6 +537,12 @@ document.addEventListener("DOMContentLoaded", () => {
         fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
           .then(res => res.json())
           .then(data => {
+            if (!Array.isArray(data)) {
+              console.warn("Danbooru API error for", tagQuery, data);
+              posts = [];
+              showPost(0);
+              return;
+            }
             // Filter for valid, non-deleted, non-banned, non-pending posts
             const validPosts = data.filter(post =>
               (post?.large_file_url || post?.file_url) &&
@@ -626,18 +636,28 @@ document.addEventListener("DOMContentLoaded", () => {
       artistGallery.appendChild(card);
     });
 
+    if (artistsToShow.length === 0 && currentArtistPage > 0) {
+      const endMsg = document.createElement("div");
+      endMsg.className = "end-of-gallery";
+      endMsg.textContent = "No more artists to show.";
+      artistGallery.appendChild(endMsg);
+    }
+
     currentArtistPage++;
   }
 
   // Infinite scroll event
+  let scrollTimeout = null;
   window.addEventListener("scroll", () => {
-    // If near bottom and more artists to load
-    if (
-      (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 300) &&
-      filtered.length > currentArtistPage * artistsPerPage
-    ) {
-      filterArtists(false); // Load next "page"
-    }
+    if (scrollTimeout) clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      if (
+        (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 300) &&
+        filtered.length > currentArtistPage * artistsPerPage
+      ) {
+        filterArtists(false);
+      }
+    }, 100);
   });
 
   // When filters/tags/search changes, call filterArtists(true) to reset

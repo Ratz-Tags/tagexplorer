@@ -902,3 +902,10 @@ input[type="text"]:focus, input[type="search"]:focus {
   outline: 2px solid #fd7bc5;
   box-shadow: 0 0 0 4px #ffd6f680;
 }
+
+.gallery-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 2em 0;
+}
