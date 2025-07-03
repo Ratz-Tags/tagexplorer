@@ -253,10 +253,15 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
         .then(r => r.json())
         .then(data => {
+          if (!Array.isArray(data)) {
+            console.warn("Danbooru API error for", tagQuery, data);
+            showNoEntries();
+            return;
+          }
           const validPosts = data.filter(post => {
             const url = post?.large_file_url || post?.file_url;
             const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-            const valid = isImage && !post.is_bannedl
+            const valid = isImage && !post.is_banned;
             if (!valid) {
               console.log("Filtered out post for artist", artist.artistName, post);
             }
