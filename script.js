@@ -1,5 +1,48 @@
 window._danbooruUnavailable = false;
 
+function handleArtistCopy(artist, imgSrc) {
+  // Remove underscores and copy as artist:artistTag
+  const artistTag = artist.artistName.replace(/_/g, " ");
+  const copyText = `artist:${artistTag}`;
+  navigator.clipboard.writeText(copyText)
+    .then(() => {
+      showToast(`Copied: ${copyText}`);
+      // Add to copied sidebar
+      if (!copiedArtists.has(artist.artistName)) {
+        copiedArtists.add(artist.artistName);
+        updateCopiedSidebar();
+      }
+    })
+    .catch(() => {
+      showToast("Failed to copy!");
+    });
+}
+
+function updateCopiedSidebar() {
+  if (!copiedSidebar) return;
+  copiedSidebar.innerHTML = "";
+  copiedArtists.forEach(name => {
+    const div = document.createElement("div");
+    div.className = "copied-artist";
+    div.textContent = name.replace(/_/g, " ");
+    copiedSidebar.appendChild(div);
+  });
+}
+
+function showNoEntriesMsg(element, msg = "No valid entries") {
+  element.style.display = "none";
+  let span = element.nextSibling;
+  if (!span || !span.classList || !span.classList.contains('no-entries-msg')) {
+    span = document.createElement("span");
+    span.className = "no-entries-msg";
+    span.style.color = "red";
+    span.style.fontWeight = "bold";
+    element.parentNode.insertBefore(span, element.nextSibling);
+  }
+  span.textContent = window._danbooruUnavailable ? "Danbooru unavailable" : msg;
+  span.style.display = "block";
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
     "femdom", "chastity_cage", "trap",
@@ -400,11 +443,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
   }
-  // Add event for live search
+  // Debounced search input for tags
   if (tagSearchInput) {
+    let searchTimeout;
     tagSearchInput.addEventListener("input", (e) => {
-      searchFilter = e.target.value;
-      renderTagButtons();
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        searchFilter = e.target.value;
+        renderTagButtons();
+        filterArtists(true);
+      }, 150);
     });
   }
 
@@ -413,14 +461,22 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTagsBtn.addEventListener("click", () => {
       activeTags.clear();
       renderTagButtons();
-      filterArtists();
+      filterArtists(true);
       setRandomBackground();
     });
   }
 
+  // Setup artist name filter input event listener only once
+  if (artistNameFilterInput) {
+    artistNameFilterInput.addEventListener("input", (e) => {
+      artistNameFilter = e.target.value.trim().toLowerCase();
+      filterArtists(true); // Always reset paging when searching
+    });
+  }
+
   let currentArtistPage = 0;
-  const artistsPerPage = 24; // How many to load per "page"
-  let filtered = []; // Store filtered artists for infinite scroll
+  const artistsPerPage = 24;
+  let filtered = [];
 
   function filterArtists(reset = true) {
     if (reset) {
@@ -430,6 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
       spinner.className = "gallery-spinner";
       spinner.innerHTML = "<img src='spinner.gif' alt='Loading...' />";
       artistGallery.appendChild(spinner);
+
       // Filtered and deduped artists
       const selected = Array.from(activeTags);
       const seen = new Set();
@@ -480,7 +537,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderArtistsPage();
   }
 
-  // Helper to render the current page of artists
   function renderArtistsPage() {
     // Remove spinner if present
     const spinner = artistGallery.querySelector('.gallery-spinner');
@@ -496,7 +552,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const img = document.createElement("img");
       img.className = "artist-image";
-      lazyLoadBestImage(artist, img); // Only this, do NOT call setBestImage directly here
+      lazyLoadBestImage(artist, img);
+
       img.addEventListener("click", () => {
         let currentIndex = 0;
         let posts = [];
@@ -549,11 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         function showPost(i) {
           if (posts.length === 0) {
-            zoomed.style.display = "none";
-            noEntriesMsg.style.display = "block";
-            noEntriesMsg.style.color = "red";
-            noEntriesMsg.style.fontWeight = "bold";
-            noEntriesMsg.textContent = "No valid entries";
+            showNoEntriesMsg(zoomed);
           } else {
             zoomed.style.display = "block";
             noEntriesMsg.style.display = "none";
@@ -569,11 +622,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let navTimeout;
         function tryShow(index, attempts = 0) {
           if (!posts.length || attempts >= posts.length) {
-            zoomed.style.display = "none";
-            noEntriesMsg.style.display = "block";
-            noEntriesMsg.style.color = "red";
-            noEntriesMsg.style.fontWeight = "bold";
-            noEntriesMsg.textContent = "No valid entries";
+            showNoEntriesMsg(zoomed);
             return;
           }
           const raw = posts[index];
@@ -612,9 +661,8 @@ document.addEventListener("DOMContentLoaded", () => {
           .then(res => res.json())
           .then(data => {
             if (!Array.isArray(data)) {
-              console.warn("Danbooru API error for", tagQuery, data);
               posts = [];
-              showPost(0);
+              showNoEntriesMsg(zoomed);
               return;
             }
             // Only filter for images, not banned, and must have all selected tags
@@ -624,21 +672,16 @@ document.addEventListener("DOMContentLoaded", () => {
               return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
             });
             posts = validPosts;
-            // Try each post until one loads, else show "No valid entries"
             function tryShow(index, attempts = 0) {
               if (!posts.length || attempts >= posts.length) {
-                zoomed.style.display = "none";
-                noEntriesMsg.style.display = "block";
-                noEntriesMsg.style.color = "red";
-                noEntriesMsg.style.fontWeight = "bold";
-                noEntriesMsg.textContent = "No valid entries";
+                showNoEntriesMsg(zoomed);
                 return;
               }
               const raw = posts[index];
               const url = raw?.large_file_url || raw?.file_url;
               const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
               zoomed.style.opacity = "0.5";
-              zoomed.src = ""; // Clear previous image
+              zoomed.src = "";
               noEntriesMsg.style.display = "none";
               zoomed.onerror = () => {
                 tryShow((index + 1) % posts.length, attempts + 1);
@@ -654,7 +697,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             currentIndex = 0;
             tryShow(currentIndex);
-            // Update navigation to use tryShow as well
             prevBtn.onclick = () => {
               currentIndex = (currentIndex - 1 + posts.length) % posts.length;
               tryShow(currentIndex);
@@ -673,27 +715,12 @@ document.addEventListener("DOMContentLoaded", () => {
       name.className = "artist-name";
       name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-      // Fetch image count for this artist with selected tags
-      const tagQuery = activeTags.size
-        ? [artist.artistName, ...activeTags].join(" ")
-        : artist.artistName;
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
-        .then(r => r.json())
-        .then(posts => {
-          // Count unique post IDs
-          const uniqueIds = new Set(posts.map(post => post.id));
-          name.textContent += ` [${uniqueIds.size}${uniqueIds.size === 1000 ? "+" : ""}]`;
-        })
-        .catch(err => {
-          if (!window._danbooruCountWarned) {
-            window._danbooruUnavailable = true;
-            console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
-            window._danbooruCountWarned = true;
-          }
-          if (!name.textContent.includes("Danbooru unavailable")) {
-            name.textContent += " [Danbooru unavailable]";
-          }
-        });
+      // Use cached image count
+      if (typeof artist._imageCount === "number") {
+        name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
+      } else {
+        name.textContent += " [Loading count…]";
+      }
 
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-button";
@@ -713,7 +740,6 @@ document.addEventListener("DOMContentLoaded", () => {
       showWithTagBtn.disabled = activeTags.size === 0;
       showWithTagBtn.onclick = () => {
         if (!activeTags.size) return;
-        // Fetch with only the artist name and order:score
         const tagQuery = `${artist.artistName}`;
         fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
           .then(r => r.json())
@@ -722,15 +748,12 @@ document.addEventListener("DOMContentLoaded", () => {
               showToast("No image found for this tag (API error or too many tags).");
               return;
             }
-            // Filter for images, not banned, and must have all selected tags
             const validPosts = data.filter(post => {
               const url = post?.large_file_url || post?.file_url;
               const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-              // Only show posts that have all selected tags
               return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
             });
             if (validPosts.length) {
-              // Show the first valid image in a popup
               const popup = document.createElement("div");
               popup.className = "tag-image-popup";
               const imgUrl = validPosts[0].large_file_url || validPosts[0].file_url;
@@ -751,7 +774,6 @@ document.addEventListener("DOMContentLoaded", () => {
             showToast("Failed to fetch image (network or API error).");
           });
       };
-      // Add the button to the card, e.g. after taglist:
       card.appendChild(showWithTagBtn);
 
       card.append(img, nameRow, taglist);
@@ -860,6 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
     console.error("Failed to load required data files:", err);
     // Optionally show a user-friendly message in the UI
   });
+
   // Add lipstick kiss watermark if not present
   if (!document.querySelector('.lipstick-kiss')) {
     const kiss = document.createElement('div');
@@ -867,33 +890,3 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.appendChild(kiss);
   }
 });
-
-function handleArtistCopy(artist, imgSrc) {
-  // Remove underscores and copy as artist:artistTag
-  const artistTag = artist.artistName.replace(/_/g, " ");
-  const copyText = `artist:${artistTag}`;
-  navigator.clipboard.writeText(copyText)
-    .then(() => {
-      showToast(`Copied: ${copyText}`);
-      // Add to copied sidebar
-      if (!copiedArtists.has(artist.artistName)) {
-        copiedArtists.add(artist.artistName);
-        updateCopiedSidebar();
-      }
-    })
-    .catch(() => {
-      showToast("Failed to copy!");
-    });
-}
-
-// Add this function to update the sidebar:
-function updateCopiedSidebar() {
-  if (!copiedSidebar) return;
-  copiedSidebar.innerHTML = "";
-  copiedArtists.forEach(name => {
-    const div = document.createElement("div");
-    div.className = "copied-artist";
-    div.textContent = name.replace(/_/g, " ");
-    copiedSidebar.appendChild(div);
-  });
-}
