@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
     clearTagsBtn.addEventListener("click", () => {
       activeTags.clear();
       renderTagButtons();
-      filterArtists(true); // This will fetch counts and sort by count
+      filterArtists(true);
       setRandomBackground();
     });
   }
@@ -478,7 +478,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const artistsPerPage = 24;
   let filtered = [];
 
-  function filterArtists(reset = true) {
+  async function filterArtists(reset = true) {
     if (reset) {
       artistGallery.innerHTML = "";
       // Add spinner
@@ -507,30 +507,40 @@ document.addEventListener("DOMContentLoaded", () => {
         return false;
       });
 
-      // Fetch image counts for all filtered artists in parallel
-      const countPromises = filtered.map(artist => {
+      // Fetch image counts for all filtered artists in batches
+      const batchSize = 5; // 5 artists per batch
+      const delayMs = 600; // 0.6 seconds between batches (stays under 10/sec)
+      async function fetchInBatches(items, batchSize, fetchFn, delayMs = 500) {
+        let results = [];
+        for (let i = 0; i < items.length; i += batchSize) {
+          const batch = items.slice(i, i + batchSize);
+          const batchResults = await Promise.all(batch.map(fetchFn));
+          results = results.concat(batchResults);
+          if (i + batchSize < items.length) {
+            await new Promise(res => setTimeout(res, delayMs));
+          }
+        }
+        return results;
+      }
+      await fetchInBatches(filtered, batchSize, async (artist) => {
         const tagQuery = activeTags.size
           ? [artist.artistName, ...activeTags].join(" ")
           : artist.artistName;
         return fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
           .then(r => r.json())
           .then(posts => {
-            // Count unique post IDs
             const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
             artist._imageCount = uniqueIds.size;
           })
           .catch(() => {
             artist._imageCount = 0;
           });
-      });
+      }, delayMs);
 
       // After all counts are fetched, sort and render
-      Promise.all(countPromises).then(() => {
-        // Sort by image count descending
-        filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
-        currentArtistPage = 0; // Reset paging
-        renderArtistsPage();
-      });
+      filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
+      currentArtistPage = 0;
+      renderArtistsPage();
       return; // Don't render until counts are ready
     }
 
@@ -715,11 +725,25 @@ document.addEventListener("DOMContentLoaded", () => {
       name.className = "artist-name";
       name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-      // Use cached image count
+      // Lazy fetch image count if not already present
       if (typeof artist._imageCount === "number") {
         name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
       } else {
         name.textContent += " [Loading count…]";
+        const tagQuery = activeTags.size
+          ? [artist.artistName, ...activeTags].join(" ")
+          : artist.artistName;
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
+          .then(r => r.json())
+          .then(posts => {
+            const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+            artist._imageCount = uniqueIds.size;
+            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
+          })
+          .catch(() => {
+            artist._imageCount = 0;
+            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [0]`;
+          });
       }
 
       const copyBtn = document.createElement("button");
