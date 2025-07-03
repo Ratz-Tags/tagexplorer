@@ -222,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem(cacheKey, url);
       };
       testImg.onerror = () => {
+        console.warn("Failed to load image for artist", artist.artistName, url);
         tryLoadUrls(urls, index + 1);
       };
       testImg.src = url;
@@ -255,7 +256,11 @@ document.addEventListener("DOMContentLoaded", () => {
           const validPosts = data.filter(post => {
             const url = post?.large_file_url || post?.file_url;
             const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-            return isImage && !post.is_deleted && !post.is_banned && !post.is_pending;
+            const valid = isImage && !post.is_deleted && !post.is_banned && !post.is_pending;
+            if (!valid) {
+              console.log("Filtered out post for artist", artist.artistName, post);
+            }
+            return valid;
           });
           const urls = validPosts.map(post => {
             const url = post.large_file_url || post.file_url;
