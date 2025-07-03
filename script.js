@@ -237,10 +237,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchAndTry() {
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=40`)
         .then(r => r.json())
         .then(data => {
-          // Filter for valid, non-deleted, non-banned, non-pending posts
           const validPosts = data.filter(post =>
             (post?.large_file_url || post?.file_url) &&
             !post.is_deleted &&
@@ -257,7 +256,14 @@ document.addEventListener("DOMContentLoaded", () => {
             showNoEntries();
           }
         })
-        .catch(showNoEntries);
+        .catch((err) => {
+          showNoEntries();
+          // Optionally, log only once:
+          if (!window._danbooruFetchWarned) {
+            console.warn("Could not fetch images from Danbooru. You may be rate limited or offline.", err);
+            window._danbooruFetchWarned = true;
+          }
+        });
     }
 
     fetchAndTry();
@@ -265,17 +271,22 @@ document.addEventListener("DOMContentLoaded", () => {
   function lazyLoadBestImage(artist, img) {
     if (img.dataset.loaded) return;
 
-    const observer = new IntersectionObserver((entries, observer) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          setBestImage(artist, img);
-          img.dataset.loaded = "true";
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { rootMargin: "100px" }); // Adjust as needed for preloading
-
-    observer.observe(img);
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setBestImage(artist, img);
+            img.dataset.loaded = "true";
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { rootMargin: "100px" });
+      observer.observe(img);
+    } else {
+      // Fallback: just load immediately
+      setBestImage(artist, img);
+      img.dataset.loaded = "true";
+    }
   }
 
   function renderTagButtons() {
@@ -385,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const img = document.createElement("img");
         img.className = "artist-image";
-        lazyLoadBestImage(artist, img);
+        lazyLoadBestImage(artist, img); // Only this, do NOT call setBestImage directly here
         img.addEventListener("click", () => {
           let currentIndex = 0;
           let posts = [];
