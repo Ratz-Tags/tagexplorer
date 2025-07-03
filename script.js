@@ -178,8 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setBestImage(artist, img) {
-    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const selectedTags = Array.from(activeTags);
+    const tagQuery = [artist.artistName, ...selectedTags].join(" ");
+    const cacheKey = `danbooru-image-${artist.artistName}-${selectedTags.join(",")}`;
     const cachedUrl = localStorage.getItem(cacheKey);
+
     const tryLoad = (url, retries = 2) => {
       const testImg = new Image();
       testImg.onload = () => {
@@ -210,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (cachedUrl) return tryLoad(cachedUrl);
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=200`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=200`)
       .then(r => r.json())
       .then(data => {
         const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
@@ -430,7 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
             showPost(currentIndex);
           };
 
-          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}+order:approval&limit=40`)
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent([artist.artistName, ...activeTags].join(" "))}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
               posts = data.filter(post => post?.large_file_url || post?.file_url);
@@ -444,6 +447,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const name = document.createElement("div");
         name.className = "artist-name";
         name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
+
+        // Fetch image count for this artist with selected tags
+        const tagQuery = [artist.artistName, ...activeTags].join(" ");
+        fetch(`https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(tagQuery)}`)
+          .then(r => r.json())
+          .then(countData => {
+            if (countData && typeof countData.count === "number") {
+              name.textContent += ` [${countData.count}]`;
+            }
+          });
 
         const copyBtn = document.createElement("button");
         copyBtn.className = "copy-button";
