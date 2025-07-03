@@ -1,5 +1,8 @@
 window._danbooruUnavailable = false;
 
+let copiedArtists = new Set();
+let copiedSidebar = null;
+
 function handleArtistCopy(artist, imgSrc) {
   // Remove underscores and copy as artist:artistTag
   const artistTag = artist.artistName.replace(/_/g, " ");
@@ -22,9 +25,19 @@ function updateCopiedSidebar() {
   if (!copiedSidebar) return;
   copiedSidebar.innerHTML = "";
   copiedArtists.forEach(name => {
+    const artist = allArtists.find(a => a.artistName === name);
     const div = document.createElement("div");
     div.className = "copied-artist";
-    div.textContent = name.replace(/_/g, " ");
+    if (artist && artist.thumbnailUrl) {
+      const img = document.createElement("img");
+      img.src = artist.thumbnailUrl;
+      img.style.width = "32px";
+      img.style.height = "32px";
+      img.style.borderRadius = "8px";
+      img.style.marginRight = "8px";
+      div.appendChild(img);
+    }
+    div.appendChild(document.createTextNode(name.replace(/_/g, " ")));
     copiedSidebar.appendChild(div);
   });
 }
@@ -70,14 +83,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const artistGallery = document.getElementById("artist-gallery");
   const jrpgBubbles = document.getElementById("jrpg-bubbles");
   const backgroundBlur = document.getElementById("background-blur");
-  const copiedSidebar = document.getElementById("copied-sidebar");
+  copiedSidebar = document.getElementById("copied-sidebar");
   const sidebarToggle = document.querySelector(".sidebar-toggle");
   const moanAudio = document.getElementById("moan-audio");
   const tagSearchInput = document.getElementById("tag-search");
   const artistNameFilterInput = document.getElementById("artist-name-filter");
   let artistNameFilter = "";
   const clearTagsBtn = document.getElementById("clear-tags");
-  let copiedArtists = new Set();
   let searchFilter = "";
 
   let currentTrack = 0;
