@@ -681,16 +681,21 @@ document.addEventListener("DOMContentLoaded", () => {
       showWithTagBtn.disabled = activeTags.size === 0;
       showWithTagBtn.onclick = () => {
         if (!activeTags.size) return;
-        // Use only one tag (the first selected)
-        const selectedTag = Array.from(activeTags)[0];
-        const tagQuery = `${artist.artistName} ${selectedTag}`;
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=20`)
+        // Fetch with only the artist name and order:score
+        const tagQuery = `${artist.artistName}`;
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
           .then(r => r.json())
           .then(data => {
+            if (!Array.isArray(data)) {
+              showToast("No image found for this tag (API error or too many tags).");
+              return;
+            }
+            // Filter for images, not banned, and must have all selected tags
             const validPosts = data.filter(post => {
               const url = post?.large_file_url || post?.file_url;
               const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-              return isImage && !post.is_banned;
+              // Only show posts that have all selected tags
+              return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
             });
             if (validPosts.length) {
               // Show the first valid image in a popup
@@ -707,6 +712,9 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
               showToast("No image found for this tag!");
             }
+          })
+          .catch(() => {
+            showToast("Failed to fetch image (network or API error).");
           });
       };
       // Add the button to the card, e.g. after taglist:
