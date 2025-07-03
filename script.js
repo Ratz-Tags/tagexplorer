@@ -144,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const query = "chastity_cage";
     const page = Math.floor(Math.random() * 5) + 1;
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:approval&limit=40&page=${page}`)
+    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}+order:score&limit=40&page=${page}`)
       .then(res => res.json())
       .then(data => {
         if (data.length) {
@@ -237,7 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchAndTry() {
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=40`)
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
         .then(r => r.json())
         .then(data => {
           const validPosts = data.filter(post =>
@@ -492,7 +492,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const tagQuery = activeTags.size
             ? [artist.artistName, ...activeTags].join(" ")
             : artist.artistName;
-          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=40`)
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
             .then(res => res.json())
             .then(data => {
               // Filter for valid, non-deleted, non-banned, non-pending posts
@@ -562,6 +562,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (countData && typeof countData.count === "number") {
               name.textContent += ` [${countData.count}]`;
             }
+          })
+          .catch(err => {
+            // Optionally, log only once to avoid spam
+            if (!window._danbooruCountWarned) {
+              console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
+              window._danbooruCountWarned = true;
+            }
+            // Optionally, show a fallback or nothing
+            // name.textContent += " [?]";
           });
 
         const copyBtn = document.createElement("button");
