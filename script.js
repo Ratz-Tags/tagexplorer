@@ -671,6 +671,10 @@ document.addEventListener("DOMContentLoaded", () => {
       artistGallery.appendChild(card);
     });
 
+    // Remove spinner after cards are added
+    const spinner = artistGallery.querySelector('.gallery-spinner');
+    if (spinner) spinner.remove();
+
     if (artistsToShow.length === 0 && currentArtistPage > 0) {
       const endMsg = document.createElement("div");
       endMsg.className = "end-of-gallery";
