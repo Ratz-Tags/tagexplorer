@@ -505,6 +505,24 @@ document.addEventListener("DOMContentLoaded", () => {
         zoomWrapper.append(closeBtn, prevBtn, nextBtn);
         document.body.appendChild(zoomWrapper);
 
+        // Add keyboard navigation for fullscreen
+        zoomWrapper.tabIndex = 0;
+        zoomWrapper.focus();
+        zoomWrapper.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowLeft") {
+            prevBtn.click();
+            e.preventDefault();
+          }
+          if (e.key === "ArrowRight") {
+            nextBtn.click();
+            e.preventDefault();
+          }
+          if (e.key === "Escape") {
+            closeBtn.click();
+            e.preventDefault();
+          }
+        });
+
         function showPost(i) {
           if (posts.length === 0) {
             zoomed.style.display = "none";
