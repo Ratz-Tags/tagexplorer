@@ -552,6 +552,21 @@ document.addEventListener("DOMContentLoaded", () => {
           .then(posts => {
             const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
             artist._imageCount = uniqueIds.size;
+            // If count is 0, try one more time after a short delay
+            if (artist._imageCount === 0 && !artist._retried) {
+              artist._retried = true;
+              return new Promise(resolve => setTimeout(resolve, 1000)).then(() =>
+                fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
+                  .then(r => r.json())
+                  .then(posts2 => {
+                    const uniqueIds2 = new Set(Array.isArray(posts2) ? posts2.map(post => post.id) : []);
+                    artist._imageCount = uniqueIds2.size;
+                  })
+                  .catch(() => {
+                    artist._imageCount = 0;
+                  })
+              );
+            }
           })
           .catch(() => {
             artist._imageCount = 0;
@@ -686,55 +701,64 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         const tagQuery = `${artist.artistName}`;
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
-          .then(res => res.json())
-          .then(data => {
-            if (!Array.isArray(data)) {
-              posts = [];
-              showNoEntriesMsg(zoomed);
-              return;
-            }
-            // Only filter for images, not banned, and must have all selected tags
-            const validPosts = data.filter(post => {
-              const url = post?.large_file_url || post?.file_url;
-              const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-              return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
-            });
-            posts = validPosts;
-            function tryShow(index, attempts = 0) {
-              if (!posts.length || attempts >= posts.length) {
+        let retried = false;
+        function fetchAndShow() {
+          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
+            .then(res => res.json())
+            .then(data => {
+              if (!Array.isArray(data)) {
+                posts = [];
                 showNoEntriesMsg(zoomed);
                 return;
               }
-              const raw = posts[index];
-              const url = raw?.large_file_url || raw?.file_url;
-              const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-              zoomed.style.opacity = "0.5";
-              zoomed.src = "";
-              noEntriesMsg.style.display = "none";
-              zoomed.onerror = () => {
-                tryShow((index + 1) % posts.length, attempts + 1);
-              };
-              zoomed.onload = () => {
-                zoomed.style.display = "block";
-                zoomed.style.opacity = "1";
+              const validPosts = data.filter(post => {
+                const url = post?.large_file_url || post?.file_url;
+                const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+                return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
+              });
+              posts = validPosts;
+              if (posts.length === 0 && !retried) {
+                retried = true;
+                setTimeout(fetchAndShow, 1000); // Try again after 1s
+                return;
+              }
+              // ...continue with tryShow logic...
+              function tryShow(index, attempts = 0) {
+                if (!posts.length || attempts >= posts.length) {
+                  showNoEntriesMsg(zoomed);
+                  return;
+                }
+                const raw = posts[index];
+                const url = raw?.large_file_url || raw?.file_url;
+                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+                zoomed.style.opacity = "0.5";
+                zoomed.src = "";
                 noEntriesMsg.style.display = "none";
-                zoomed.onerror = null;
-                zoomed.onload = null;
+                zoomed.onerror = () => {
+                  tryShow((index + 1) % posts.length, attempts + 1);
+                };
+                zoomed.onload = () => {
+                  zoomed.style.display = "block";
+                  zoomed.style.opacity = "1";
+                  noEntriesMsg.style.display = "none";
+                  zoomed.onerror = null;
+                  zoomed.onload = null;
+                };
+                zoomed.src = full;
+              }
+              currentIndex = 0;
+              tryShow(currentIndex);
+              prevBtn.onclick = () => {
+                currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+                tryShow(currentIndex);
               };
-              zoomed.src = full;
-            }
-            currentIndex = 0;
-            tryShow(currentIndex);
-            prevBtn.onclick = () => {
-              currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-              tryShow(currentIndex);
-            };
-            nextBtn.onclick = () => {
-              currentIndex = (currentIndex + 1) % posts.length;
-              tryShow(currentIndex);
-            };
-          });
+              nextBtn.onclick = () => {
+                currentIndex = (currentIndex + 1) % posts.length;
+                tryShow(currentIndex);
+              };
+            });
+        }
+        fetchAndShow();
       });
 
       const nameRow = document.createElement("div");
@@ -917,15 +941,5 @@ document.addEventListener("DOMContentLoaded", () => {
     const kiss = document.createElement('div');
     kiss.className = 'lipstick-kiss';
     document.body.appendChild(kiss);
-  }
-
-  const sortBtn = document.getElementById("sort-by-count");
-  if (sortBtn) {
-    sortBtn.addEventListener("click", () => {
-      // Only sort if counts have been fetched for at least some artists
-      filtered.sort((a, b) => (b._imageCount || 0) - (a._imageCount || 0));
-      currentArtistPage = 0;
-      renderArtistsPage();
-    });
   }
 });
