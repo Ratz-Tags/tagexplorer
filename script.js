@@ -725,27 +725,6 @@ document.addEventListener("DOMContentLoaded", () => {
       name.className = "artist-name";
       name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-      // Lazy fetch image count if not already present
-      if (typeof artist._imageCount === "number") {
-        name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
-      } else {
-        name.textContent += " [Loading count…]";
-        const tagQuery = activeTags.size
-          ? [artist.artistName, ...activeTags].join(" ")
-          : artist.artistName;
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
-          .then(r => r.json())
-          .then(posts => {
-            const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
-            artist._imageCount = uniqueIds.size;
-            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
-          })
-          .catch(() => {
-            artist._imageCount = 0;
-            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [0]`;
-          });
-      }
-
       const copyBtn = document.createElement("button");
       copyBtn.className = "copy-button";
       copyBtn.textContent = "📋";
