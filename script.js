@@ -185,7 +185,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const cacheKey = `danbooru-image-${artist.artistName}-${selectedTags.join(",")}`;
     const cachedUrl = localStorage.getItem(cacheKey);
 
-    const tryLoad = (url, retries = 2) => {
+    // Helper to show "No valid entries" message
+    function showNoEntries() {
+      img.style.display = 'none';
+      let msg = img.nextSibling;
+      if (!msg || !msg.classList.contains('no-entries-msg')) {
+        msg = document.createElement("span");
+        msg.className = "no-entries-msg";
+        msg.style.color = "red";
+        msg.style.fontWeight = "bold";
+        msg.textContent = "No valid entries";
+        img.parentNode.insertBefore(msg, img.nextSibling);
+      }
+    }
+
+    // Try loading a list of URLs in order
+    function tryLoadUrls(urls, index = 0) {
+      if (index >= urls.length) {
+        showNoEntries();
+        return;
+      }
+      const url = urls[index];
       const testImg = new Image();
       testImg.onload = () => {
         img.src = url;
@@ -196,59 +216,48 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem(cacheKey, url);
       };
       testImg.onerror = () => {
-        if (retries > 0) setTimeout(() => tryLoad(url, retries - 1), 500);
-        else {
-          img.style.display = 'none';
-          let msg = img.nextSibling;
-          if (!msg || !msg.classList.contains('no-entries-msg')) {
-            msg = document.createElement("span");
-            msg.className = "no-entries-msg";
-            msg.style.color = "red";
-            msg.style.fontWeight = "bold";
-            msg.textContent = "No valid entries";
-            img.parentNode.insertBefore(msg, img.nextSibling);
-          }
-        }
+        tryLoadUrls(urls, index + 1);
       };
       testImg.src = url;
-    };
+    }
 
-    if (cachedUrl) return tryLoad(cachedUrl);
+    if (cachedUrl) {
+      // Try cached URL first, but fall back to fetching if it fails
+      const testImg = new Image();
+      testImg.onload = () => {
+        img.src = cachedUrl;
+        img.style.display = '';
+        if (img.nextSibling && img.nextSibling.classList?.contains('no-entries-msg')) {
+          img.nextSibling.remove();
+        }
+      };
+      testImg.onerror = () => {
+        localStorage.removeItem(cacheKey);
+        fetchAndTry();
+      };
+      testImg.src = cachedUrl;
+      return;
+    }
 
-    fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=200`)
-      .then(r => r.json())
-      .then(data => {
-        const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
-        const raw = validPosts[0];
-        if (raw) {
-          const url = raw.large_file_url || raw.file_url;
-          const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-          tryLoad(full);
-        } else {
-          img.style.display = 'none';
-          let msg = img.nextSibling;
-          if (!msg || !msg.classList.contains('no-entries-msg')) {
-            msg = document.createElement("span");
-            msg.className = "no-entries-msg";
-            msg.style.color = "red";
-            msg.style.fontWeight = "bold";
-            msg.textContent = "No valid entries";
-            img.parentNode.insertBefore(msg, img.nextSibling);
+    function fetchAndTry() {
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=200`)
+        .then(r => r.json())
+        .then(data => {
+          const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+          const urls = validPosts.map(post => {
+            const url = post.large_file_url || post.file_url;
+            return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+          });
+          if (urls.length) {
+            tryLoadUrls(urls);
+          } else {
+            showNoEntries();
           }
-        }
-      })
-      .catch(() => {
-        img.style.display = 'none';
-        let msg = img.nextSibling;
-        if (!msg || !msg.classList.contains('no-entries-msg')) {
-          msg = document.createElement("span");
-          msg.className = "no-entries-msg";
-          msg.style.color = "red";
-          msg.style.fontWeight = "bold";
-          msg.textContent = "No valid entries";
-          img.parentNode.insertBefore(msg, img.nextSibling);
-        }
-      });
+        })
+        .catch(showNoEntries);
+    }
+
+    fetchAndTry();
   }
   function lazyLoadBestImage(artist, img) {
     if (img.dataset.loaded) return;
@@ -425,14 +434,45 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
 
+          let navTimeout;
+          function tryShow(index, attempts = 0) {
+            if (!posts.length || attempts >= posts.length) {
+              zoomed.style.display = "none";
+              noEntriesMsg.style.display = "block";
+              noEntriesMsg.style.color = "red";
+              noEntriesMsg.style.fontWeight = "bold";
+              noEntriesMsg.textContent = "No valid entries";
+              return;
+            }
+            const raw = posts[index];
+            const url = raw?.large_file_url || raw?.file_url;
+            const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+            zoomed.style.opacity = "0.5";
+            zoomed.src = ""; // Clear previous image
+            noEntriesMsg.style.display = "none";
+            zoomed.onerror = () => {
+              tryShow((index + 1) % posts.length, attempts + 1);
+            };
+            zoomed.onload = () => {
+              zoomed.style.display = "block";
+              zoomed.style.opacity = "1";
+              noEntriesMsg.style.display = "none";
+              zoomed.onerror = null;
+              zoomed.onload = null;
+            };
+            zoomed.src = full;
+          }
+          function debouncedShowPost(i) {
+            clearTimeout(navTimeout);
+            navTimeout = setTimeout(() => tryShow(i), 80);
+          }
           prevBtn.onclick = () => {
             currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-            showPost(currentIndex);
+            debouncedShowPost(currentIndex);
           };
-
           nextBtn.onclick = () => {
             currentIndex = (currentIndex + 1) % posts.length;
-            showPost(currentIndex);
+            debouncedShowPost(currentIndex);
           };
 
           const tagQuery = activeTags.size
@@ -441,8 +481,47 @@ document.addEventListener("DOMContentLoaded", () => {
           fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
-              posts = data.filter(post => post?.large_file_url || post?.file_url);
-              showPost(currentIndex);
+              const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+              posts = validPosts;
+              // Try each post until one loads, else show "No valid entries"
+              function tryShow(index, attempts = 0) {
+                if (!posts.length || attempts >= posts.length) {
+                  zoomed.style.display = "none";
+                  noEntriesMsg.style.display = "block";
+                  noEntriesMsg.style.color = "red";
+                  noEntriesMsg.style.fontWeight = "bold";
+                  noEntriesMsg.textContent = "No valid entries";
+                  return;
+                }
+                const raw = posts[index];
+                const url = raw?.large_file_url || raw?.file_url;
+                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+                zoomed.style.opacity = "0.5";
+                zoomed.src = ""; // Clear previous image
+                noEntriesMsg.style.display = "none";
+                zoomed.onerror = () => {
+                  tryShow((index + 1) % posts.length, attempts + 1);
+                };
+                zoomed.onload = () => {
+                  zoomed.style.display = "block";
+                  zoomed.style.opacity = "1";
+                  noEntriesMsg.style.display = "none";
+                  zoomed.onerror = null;
+                  zoomed.onload = null;
+                };
+                zoomed.src = full;
+              }
+              currentIndex = 0;
+              tryShow(currentIndex);
+              // Update navigation to use tryShow as well
+              prevBtn.onclick = () => {
+                currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+                tryShow(currentIndex);
+              };
+              nextBtn.onclick = () => {
+                currentIndex = (currentIndex + 1) % posts.length;
+                tryShow(currentIndex);
+              };
             });
         });
 
