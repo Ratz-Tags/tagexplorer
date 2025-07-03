@@ -185,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const cacheKey = `danbooru-image-${artist.artistName}-${selectedTags.join(",")}`;
     const cachedUrl = localStorage.getItem(cacheKey);
 
-    // Helper to show "No valid entries" message
     function showNoEntries() {
       img.style.display = 'none';
       let msg = img.nextSibling;
@@ -199,7 +198,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Try loading a list of URLs in order
     function tryLoadUrls(urls, index = 0) {
       if (index >= urls.length) {
         showNoEntries();
@@ -222,7 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (cachedUrl) {
-      // Try cached URL first, but fall back to fetching if it fails
       const testImg = new Image();
       testImg.onload = () => {
         img.src = cachedUrl;
@@ -240,10 +237,16 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function fetchAndTry() {
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=200`)
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
         .then(r => r.json())
         .then(data => {
-          const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+          // Filter for valid, non-deleted, non-banned, non-pending posts
+          const validPosts = data.filter(post =>
+            (post?.large_file_url || post?.file_url) &&
+            !post.is_deleted &&
+            !post.is_banned &&
+            !post.is_pending
+          );
           const urls = validPosts.map(post => {
             const url = post.large_file_url || post.file_url;
             return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
@@ -481,7 +484,13 @@ document.addEventListener("DOMContentLoaded", () => {
           fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:approval&limit=40`)
             .then(res => res.json())
             .then(data => {
-              const validPosts = data.filter(post => post?.large_file_url || post?.file_url);
+              // Filter for valid, non-deleted, non-banned, non-pending posts
+              const validPosts = data.filter(post =>
+                (post?.large_file_url || post?.file_url) &&
+                !post.is_deleted &&
+                !post.is_banned &&
+                !post.is_pending
+              );
               posts = validPosts;
               // Try each post until one loads, else show "No valid entries"
               function tryShow(index, attempts = 0) {
