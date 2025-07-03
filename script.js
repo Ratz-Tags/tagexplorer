@@ -252,12 +252,11 @@ document.addEventListener("DOMContentLoaded", () => {
       fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
         .then(r => r.json())
         .then(data => {
-          const validPosts = data.filter(post =>
-            (post?.large_file_url || post?.file_url) &&
-            !post.is_deleted &&
-            !post.is_banned &&
-            !post.is_pending
-          );
+          const validPosts = data.filter(post => {
+            const url = post?.large_file_url || post?.file_url;
+            const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+            return isImage && !post.is_deleted && !post.is_banned && !post.is_pending;
+          });
           const urls = validPosts.map(post => {
             const url = post.large_file_url || post.file_url;
             return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
@@ -398,14 +397,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const seen = new Set();
       filtered = allArtists.filter(artist => {
         const tags = artist.kinkTags || [];
-        return (
+        const name = artist.artistName;
+        if (
           selected.every(tag => tags.includes(tag)) &&
-          !seen.has(artist.artistName) &&
+          !seen.has(name) &&
           (
-            artist.artistName.toLowerCase().includes(artistNameFilter) ||
+            name.toLowerCase().includes(artistNameFilter) ||
             artistNameFilter === ""
           )
-        );
+        ) {
+          seen.add(name);
+          return true;
+        }
+        return false;
       });
     }
 
@@ -656,16 +660,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Setup back-to-top button functionality
   const backToTopBtn = document.getElementById("back-to-top");
-  window.addEventListener("scroll", () => {
-    if (window.scrollY > 200) {
-      backToTopBtn.style.display = "block";
-    } else {
-      backToTopBtn.style.display = "none";
-    }
-  });
-  backToTopBtn.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
+  if (backToTopBtn) {
+    window.addEventListener("scroll", () => {
+      if (window.scrollY > 200) {
+        backToTopBtn.style.display = "block";
+      } else {
+        backToTopBtn.style.display = "none";
+      }
+    });
+    backToTopBtn.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
 
   // Setup moan toggle event listener only once
