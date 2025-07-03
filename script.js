@@ -386,29 +386,30 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   let currentArtistPage = 0;
-  const artistsPerPage = 24; // Adjust as needed
+  const artistsPerPage = 24; // How many to load per "page"
+  let filtered = []; // Store filtered artists for infinite scroll
 
-  function filterArtists() {
-    artistGallery.innerHTML = "";
-    const selected = Array.from(activeTags);
-    const seen = new Set();
+  function filterArtists(reset = true) {
+    if (reset) {
+      artistGallery.innerHTML = "";
+      currentArtistPage = 0;
+      // Filtered and deduped artists
+      const selected = Array.from(activeTags);
+      const seen = new Set();
+      filtered = allArtists.filter(artist => {
+        const tags = artist.kinkTags || [];
+        return (
+          selected.every(tag => tags.includes(tag)) &&
+          !seen.has(artist.artistName) &&
+          (
+            artist.artistName.toLowerCase().includes(artistNameFilter) ||
+            artistNameFilter === ""
+          )
+        );
+      });
+    }
 
-    // Filtered and deduped artists
-    let filtered = allArtists.filter(artist => {
-      const tags = artist.kinkTags || [];
-      return (
-        selected.every(tag => tags.includes(tag)) &&
-        !seen.has(artist.artistName) &&
-        (
-          artist.artistName.toLowerCase().includes(artistNameFilter) ||
-          artistNameFilter === ""
-        )
-      );
-    });
-
-    // Pagination
-    const totalPages = Math.ceil(filtered.length / artistsPerPage);
-    if (currentArtistPage >= totalPages) currentArtistPage = 0;
+    // Load next "page" of artists
     const start = currentArtistPage * artistsPerPage;
     const end = start + artistsPerPage;
     const artistsToShow = filtered.slice(start, end);
@@ -613,85 +614,38 @@ document.addEventListener("DOMContentLoaded", () => {
       artistGallery.appendChild(card);
     });
 
-    // Pagination controls
-    let pagination = document.getElementById("artist-pagination");
-    if (!pagination) {
-      pagination = document.createElement("div");
-      pagination.id = "artist-pagination";
-      pagination.style.textAlign = "center";
-      pagination.style.margin = "16px 0";
-      artistGallery.parentNode.insertBefore(pagination, artistGallery.nextSibling);
-    }
-    pagination.innerHTML = "";
-
-    if (totalPages > 1) {
-      const prevBtn = document.createElement("button");
-      prevBtn.textContent = "Previous";
-      prevBtn.disabled = currentArtistPage === 0;
-      prevBtn.onclick = () => {
-        currentArtistPage--;
-        filterArtists();
-      };
-      pagination.appendChild(prevBtn);
-
-      const pageInfo = document.createElement("span");
-      pageInfo.textContent = ` Page ${currentArtistPage + 1} of ${totalPages} `;
-      pagination.appendChild(pageInfo);
-
-      const nextBtn = document.createElement("button");
-      nextBtn.textContent = "Next";
-      nextBtn.disabled = currentArtistPage >= totalPages - 1;
-      nextBtn.onclick = () => {
-        currentArtistPage++;
-        filterArtists();
-      };
-      pagination.appendChild(nextBtn);
-    }
+    currentArtistPage++;
   }
 
-  function handleArtistCopy(artist, previewUrl) {
-    const cleanName = artist.artistName.replaceAll("_", " ");
-    navigator.clipboard.writeText(cleanName);
-    showToast("Copied: " + cleanName);
-
-    if (!copiedArtists.has(artist.artistName)) {
-      copiedArtists.add(artist.artistName);
-
-      const container = document.createElement("div");
-      container.className = "sidebar-artist";
-      container.id = `copy-${artist.artistName}`;
-
-      const previewImg = document.createElement("img");
-      previewImg.src = previewUrl || "fallback.jpg";
-      container.appendChild(previewImg);
-
-      const span = document.createElement("span");
-      span.textContent = cleanName;
-      container.appendChild(span);
-
-      container.onclick = () => {
-        // Modal wrapper
-        const zoomWrapper = document.createElement("div");
-        zoomWrapper.className = "fullscreen-wrapper";
-
-        // Cloned image
-        const zoomed = previewImg.cloneNode();
-        zoomed.className = "fullscreen-img";
-        zoomWrapper.appendChild(zoomed);
-
-        // Close button
-        const closeBtn = document.createElement("button");
-        closeBtn.className = "zoom-close";
-        closeBtn.textContent = "×";
-        closeBtn.onclick = () => zoomWrapper.remove();
-        zoomWrapper.appendChild(closeBtn);
-
-        document.body.appendChild(zoomWrapper);
-      };
-
-      copiedSidebar.appendChild(container);
+  // Infinite scroll event
+  window.addEventListener("scroll", () => {
+    // If near bottom and more artists to load
+    if (
+      (window.innerHeight + window.scrollY) >= (document.body.offsetHeight - 300) &&
+      filtered.length > currentArtistPage * artistsPerPage
+    ) {
+      filterArtists(false); // Load next "page"
     }
+  });
+
+  // When filters/tags/search changes, call filterArtists(true) to reset
+  // For example, in your tag search input event:
+  if (tagSearchInput) {
+    tagSearchInput.addEventListener("input", (e) => {
+      searchFilter = e.target.value;
+      filterArtists(true);
+    });
   }
+  // And for clear tags, etc.
+  if (clearTagsBtn) {
+    clearTagsBtn.addEventListener("click", () => {
+      activeTags.clear();
+      renderTagButtons();
+      filterArtists(true);
+      setRandomBackground();
+    });
+  }
+
   // Setup artist name filter input event listener only once
   if (artistNameFilterInput) {
     artistNameFilterInput.addEventListener("input", (e) => {
