@@ -385,223 +385,269 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let currentArtistPage = 0;
+  const artistsPerPage = 24; // Adjust as needed
+
   function filterArtists() {
     artistGallery.innerHTML = "";
     const selected = Array.from(activeTags);
     const seen = new Set();
 
-    allArtists.forEach(artist => {
+    // Filtered and deduped artists
+    let filtered = allArtists.filter(artist => {
       const tags = artist.kinkTags || [];
-      if (
+      return (
         selected.every(tag => tags.includes(tag)) &&
         !seen.has(artist.artistName) &&
         (
           artist.artistName.toLowerCase().includes(artistNameFilter) ||
           artistNameFilter === ""
         )
-      ) {
-        seen.add(artist.artistName);
+      );
+    });
 
-        const card = document.createElement("div");
-        card.className = "artist-card";
+    // Pagination
+    const totalPages = Math.ceil(filtered.length / artistsPerPage);
+    if (currentArtistPage >= totalPages) currentArtistPage = 0;
+    const start = currentArtistPage * artistsPerPage;
+    const end = start + artistsPerPage;
+    const artistsToShow = filtered.slice(start, end);
 
-        const img = document.createElement("img");
-        img.className = "artist-image";
-        lazyLoadBestImage(artist, img); // Only this, do NOT call setBestImage directly here
-        img.addEventListener("click", () => {
-          let currentIndex = 0;
-          let posts = [];
-          const zoomWrapper = document.createElement("div");
-          zoomWrapper.className = "fullscreen-wrapper";
+    artistsToShow.forEach(artist => {
+      const card = document.createElement("div");
+      card.className = "artist-card";
 
-          const zoomed = document.createElement("img");
-          zoomed.className = "fullscreen-img";
-          zoomWrapper.appendChild(zoomed);
+      const img = document.createElement("img");
+      img.className = "artist-image";
+      lazyLoadBestImage(artist, img); // Only this, do NOT call setBestImage directly here
+      img.addEventListener("click", () => {
+        let currentIndex = 0;
+        let posts = [];
+        const zoomWrapper = document.createElement("div");
+        zoomWrapper.className = "fullscreen-wrapper";
 
-          const noEntriesMsg = document.createElement("span");
-          noEntriesMsg.style.display = "none";
-          noEntriesMsg.className = "no-entries-msg";
-          noEntriesMsg.textContent = "No valid entries";
-          zoomWrapper.appendChild(noEntriesMsg);
+        const zoomed = document.createElement("img");
+        zoomed.className = "fullscreen-img";
+        zoomWrapper.appendChild(zoomed);
 
-          const closeBtn = document.createElement("button");
-          closeBtn.className = "zoom-close";
-          closeBtn.textContent = "×";
-          closeBtn.onclick = () => zoomWrapper.remove();
+        const noEntriesMsg = document.createElement("span");
+        noEntriesMsg.style.display = "none";
+        noEntriesMsg.className = "no-entries-msg";
+        noEntriesMsg.textContent = "No valid entries";
+        zoomWrapper.appendChild(noEntriesMsg);
 
-          const prevBtn = document.createElement("button");
-          prevBtn.className = "zoom-prev";
-          prevBtn.textContent = "←";
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "zoom-close";
+        closeBtn.textContent = "×";
+        closeBtn.onclick = () => zoomWrapper.remove();
 
-          const nextBtn = document.createElement("button");
-          nextBtn.className = "zoom-next";
-          nextBtn.textContent = "→";
+        const prevBtn = document.createElement("button");
+        prevBtn.className = "zoom-prev";
+        prevBtn.textContent = "←";
 
-          zoomWrapper.append(closeBtn, prevBtn, nextBtn);
-          document.body.appendChild(zoomWrapper);
+        const nextBtn = document.createElement("button");
+        nextBtn.className = "zoom-next";
+        nextBtn.textContent = "→";
 
-          function showPost(i) {
-            if (posts.length === 0) {
-              zoomed.style.display = "none";
-              noEntriesMsg.style.display = "block";
-              noEntriesMsg.style.color = "red";
-              noEntriesMsg.style.fontWeight = "bold";
-              noEntriesMsg.textContent = "No valid entries";
-            } else {
-              zoomed.style.display = "block";
-              noEntriesMsg.style.display = "none";
-              const raw = posts[i];
-              if (raw) {
-                const url = raw?.large_file_url || raw?.file_url;
-                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-                zoomed.src = full;
-              }
-            }
-          }
+        zoomWrapper.append(closeBtn, prevBtn, nextBtn);
+        document.body.appendChild(zoomWrapper);
 
-          let navTimeout;
-          function tryShow(index, attempts = 0) {
-            if (!posts.length || attempts >= posts.length) {
-              zoomed.style.display = "none";
-              noEntriesMsg.style.display = "block";
-              noEntriesMsg.style.color = "red";
-              noEntriesMsg.style.fontWeight = "bold";
-              noEntriesMsg.textContent = "No valid entries";
-              return;
-            }
-            const raw = posts[index];
-            const url = raw?.large_file_url || raw?.file_url;
-            const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-            zoomed.style.opacity = "0.5";
-            zoomed.src = ""; // Clear previous image
+        function showPost(i) {
+          if (posts.length === 0) {
+            zoomed.style.display = "none";
+            noEntriesMsg.style.display = "block";
+            noEntriesMsg.style.color = "red";
+            noEntriesMsg.style.fontWeight = "bold";
+            noEntriesMsg.textContent = "No valid entries";
+          } else {
+            zoomed.style.display = "block";
             noEntriesMsg.style.display = "none";
-            zoomed.onerror = () => {
-              tryShow((index + 1) % posts.length, attempts + 1);
-            };
-            zoomed.onload = () => {
-              zoomed.style.display = "block";
-              zoomed.style.opacity = "1";
-              noEntriesMsg.style.display = "none";
-              zoomed.onerror = null;
-              zoomed.onload = null;
-            };
-            zoomed.src = full;
+            const raw = posts[i];
+            if (raw) {
+              const url = raw?.large_file_url || raw?.file_url;
+              const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+              zoomed.src = full;
+            }
           }
-          function debouncedShowPost(i) {
-            clearTimeout(navTimeout);
-            navTimeout = setTimeout(() => tryShow(i), 80);
+        }
+
+        let navTimeout;
+        function tryShow(index, attempts = 0) {
+          if (!posts.length || attempts >= posts.length) {
+            zoomed.style.display = "none";
+            noEntriesMsg.style.display = "block";
+            noEntriesMsg.style.color = "red";
+            noEntriesMsg.style.fontWeight = "bold";
+            noEntriesMsg.textContent = "No valid entries";
+            return;
           }
-          prevBtn.onclick = () => {
-            currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-            debouncedShowPost(currentIndex);
+          const raw = posts[index];
+          const url = raw?.large_file_url || raw?.file_url;
+          const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+          zoomed.style.opacity = "0.5";
+          zoomed.src = ""; // Clear previous image
+          noEntriesMsg.style.display = "none";
+          zoomed.onerror = () => {
+            tryShow((index + 1) % posts.length, attempts + 1);
           };
-          nextBtn.onclick = () => {
-            currentIndex = (currentIndex + 1) % posts.length;
-            debouncedShowPost(currentIndex);
+          zoomed.onload = () => {
+            zoomed.style.display = "block";
+            zoomed.style.opacity = "1";
+            noEntriesMsg.style.display = "none";
+            zoomed.onerror = null;
+            zoomed.onload = null;
           };
+          zoomed.src = full;
+        }
+        function debouncedShowPost(i) {
+          clearTimeout(navTimeout);
+          navTimeout = setTimeout(() => tryShow(i), 80);
+        }
+        prevBtn.onclick = () => {
+          currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+          debouncedShowPost(currentIndex);
+        };
+        nextBtn.onclick = () => {
+          currentIndex = (currentIndex + 1) % posts.length;
+          debouncedShowPost(currentIndex);
+        };
 
-          const tagQuery = activeTags.size
-            ? [artist.artistName, ...activeTags].join(" ")
-            : artist.artistName;
-          fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
-            .then(res => res.json())
-            .then(data => {
-              // Filter for valid, non-deleted, non-banned, non-pending posts
-              const validPosts = data.filter(post =>
-                (post?.large_file_url || post?.file_url) &&
-                !post.is_deleted &&
-                !post.is_banned &&
-                !post.is_pending
-              );
-              posts = validPosts;
-              // Try each post until one loads, else show "No valid entries"
-              function tryShow(index, attempts = 0) {
-                if (!posts.length || attempts >= posts.length) {
-                  zoomed.style.display = "none";
-                  noEntriesMsg.style.display = "block";
-                  noEntriesMsg.style.color = "red";
-                  noEntriesMsg.style.fontWeight = "bold";
-                  noEntriesMsg.textContent = "No valid entries";
-                  return;
-                }
-                const raw = posts[index];
-                const url = raw?.large_file_url || raw?.file_url;
-                const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-                zoomed.style.opacity = "0.5";
-                zoomed.src = ""; // Clear previous image
-                noEntriesMsg.style.display = "none";
-                zoomed.onerror = () => {
-                  tryShow((index + 1) % posts.length, attempts + 1);
-                };
-                zoomed.onload = () => {
-                  zoomed.style.display = "block";
-                  zoomed.style.opacity = "1";
-                  noEntriesMsg.style.display = "none";
-                  zoomed.onerror = null;
-                  zoomed.onload = null;
-                };
-                zoomed.src = full;
-              }
-              currentIndex = 0;
-              tryShow(currentIndex);
-              // Update navigation to use tryShow as well
-              prevBtn.onclick = () => {
-                currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-                tryShow(currentIndex);
-              };
-              nextBtn.onclick = () => {
-                currentIndex = (currentIndex + 1) % posts.length;
-                tryShow(currentIndex);
-              };
-            });
-        });
-
-        const nameRow = document.createElement("div");
-        nameRow.className = "name-row";
-
-        const name = document.createElement("div");
-        name.className = "artist-name";
-        name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
-
-        // Fetch image count for this artist with selected tags
         const tagQuery = activeTags.size
           ? [artist.artistName, ...activeTags].join(" ")
           : artist.artistName;
-        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
-          .then(r => r.json())
-          .then(posts => {
-            // Count unique post IDs
-            const uniqueIds = new Set(posts.map(post => post.id));
-            name.textContent += ` [${uniqueIds.size}${uniqueIds.size === 1000 ? "+" : ""}]`;
-          })
-          .catch(err => {
-            if (!window._danbooruCountWarned) {
-              window._danbooruUnavailable = true;
-              console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
-              window._danbooruCountWarned = true;
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
+          .then(res => res.json())
+          .then(data => {
+            // Filter for valid, non-deleted, non-banned, non-pending posts
+            const validPosts = data.filter(post =>
+              (post?.large_file_url || post?.file_url) &&
+              !post.is_deleted &&
+              !post.is_banned &&
+              !post.is_pending
+            );
+            posts = validPosts;
+            // Try each post until one loads, else show "No valid entries"
+            function tryShow(index, attempts = 0) {
+              if (!posts.length || attempts >= posts.length) {
+                zoomed.style.display = "none";
+                noEntriesMsg.style.display = "block";
+                noEntriesMsg.style.color = "red";
+                noEntriesMsg.style.fontWeight = "bold";
+                noEntriesMsg.textContent = "No valid entries";
+                return;
+              }
+              const raw = posts[index];
+              const url = raw?.large_file_url || raw?.file_url;
+              const full = url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+              zoomed.style.opacity = "0.5";
+              zoomed.src = ""; // Clear previous image
+              noEntriesMsg.style.display = "none";
+              zoomed.onerror = () => {
+                tryShow((index + 1) % posts.length, attempts + 1);
+              };
+              zoomed.onload = () => {
+                zoomed.style.display = "block";
+                zoomed.style.opacity = "1";
+                noEntriesMsg.style.display = "none";
+                zoomed.onerror = null;
+                zoomed.onload = null;
+              };
+              zoomed.src = full;
             }
-            if (!name.textContent.includes("Danbooru unavailable")) {
-              name.textContent += " [Danbooru unavailable]";
-            }
+            currentIndex = 0;
+            tryShow(currentIndex);
+            // Update navigation to use tryShow as well
+            prevBtn.onclick = () => {
+              currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+              tryShow(currentIndex);
+            };
+            nextBtn.onclick = () => {
+              currentIndex = (currentIndex + 1) % posts.length;
+              tryShow(currentIndex);
+            };
           });
+      });
 
-        const copyBtn = document.createElement("button");
-        copyBtn.className = "copy-button";
-        copyBtn.textContent = "📋";
-        copyBtn.title = "Copy name";
-        copyBtn.onclick = () => handleArtistCopy(artist, img.src);
+      const nameRow = document.createElement("div");
+      nameRow.className = "name-row";
 
-        nameRow.append(name, copyBtn);
+      const name = document.createElement("div");
+      name.className = "artist-name";
+      name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-        const taglist = document.createElement("div");
-        taglist.className = "artist-tags";
-        taglist.textContent = artist.kinkTags.join(", ");
+      // Fetch image count for this artist with selected tags
+      const tagQuery = activeTags.size
+        ? [artist.artistName, ...activeTags].join(" ")
+        : artist.artistName;
+      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
+        .then(r => r.json())
+        .then(posts => {
+          // Count unique post IDs
+          const uniqueIds = new Set(posts.map(post => post.id));
+          name.textContent += ` [${uniqueIds.size}${uniqueIds.size === 1000 ? "+" : ""}]`;
+        })
+        .catch(err => {
+          if (!window._danbooruCountWarned) {
+            window._danbooruUnavailable = true;
+            console.warn("Could not fetch image count from Danbooru. You may be rate limited or offline.", err);
+            window._danbooruCountWarned = true;
+          }
+          if (!name.textContent.includes("Danbooru unavailable")) {
+            name.textContent += " [Danbooru unavailable]";
+          }
+        });
 
-        card.append(img, nameRow, taglist);
-        artistGallery.appendChild(card);
-      }
-    }); // <-- closes forEach
-  } // <-- closes filterArtists
+      const copyBtn = document.createElement("button");
+      copyBtn.className = "copy-button";
+      copyBtn.textContent = "📋";
+      copyBtn.title = "Copy name";
+      copyBtn.onclick = () => handleArtistCopy(artist, img.src);
+
+      nameRow.append(name, copyBtn);
+
+      const taglist = document.createElement("div");
+      taglist.className = "artist-tags";
+      taglist.textContent = artist.kinkTags.join(", ");
+
+      card.append(img, nameRow, taglist);
+      artistGallery.appendChild(card);
+    });
+
+    // Pagination controls
+    let pagination = document.getElementById("artist-pagination");
+    if (!pagination) {
+      pagination = document.createElement("div");
+      pagination.id = "artist-pagination";
+      pagination.style.textAlign = "center";
+      pagination.style.margin = "16px 0";
+      artistGallery.parentNode.insertBefore(pagination, artistGallery.nextSibling);
+    }
+    pagination.innerHTML = "";
+
+    if (totalPages > 1) {
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "Previous";
+      prevBtn.disabled = currentArtistPage === 0;
+      prevBtn.onclick = () => {
+        currentArtistPage--;
+        filterArtists();
+      };
+      pagination.appendChild(prevBtn);
+
+      const pageInfo = document.createElement("span");
+      pageInfo.textContent = ` Page ${currentArtistPage + 1} of ${totalPages} `;
+      pagination.appendChild(pageInfo);
+
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentArtistPage >= totalPages - 1;
+      nextBtn.onclick = () => {
+        currentArtistPage++;
+        filterArtists();
+      };
+      pagination.appendChild(nextBtn);
+    }
+  }
 
   function handleArtistCopy(artist, previewUrl) {
     const cleanName = artist.artistName.replaceAll("_", " ");
