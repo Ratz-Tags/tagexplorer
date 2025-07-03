@@ -2,7 +2,7 @@ window._danbooruUnavailable = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
-    "femdom", "chastity_cage", "trap", "pegging", "futanari", "netorare", "netorase", "tentacle_sex",
+    "femdom", "chastity_cage", "trap",
     "anal_object_insertion", "prostate_milking", "gagged", "dominatrix", "humiliation", "lactation",
     "flat_chastity_cage", "used_condom", "orgasm_denial", "mind_break", "shibari", "object_insertion",
     "penis_milking", "small_penis_humiliation", "sex_machine", "foot_worship", "dildo_riding",
@@ -187,6 +187,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const cacheKey = `danbooru-image-${artist.artistName}-${selectedTags.join(",")}`;
     const cachedUrl = localStorage.getItem(cacheKey);
 
+    // --- Add sessionStorage cache for Danbooru API results ---
+    const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(",")}`;
+    function getApiCache() {
+      const cached = sessionStorage.getItem(apiCacheKey);
+      if (!cached) return null;
+      try {
+        return JSON.parse(cached);
+      } catch {
+        return null;
+      }
+    }
+    function setApiCache(data) {
+      try {
+        sessionStorage.setItem(apiCacheKey, JSON.stringify(data));
+      } catch {}
+    }
+    // ---------------------------------------------------------
+
     function showNoEntries() {
       img.style.display = 'none';
       let msg = img.nextSibling;
@@ -250,6 +268,15 @@ document.addEventListener("DOMContentLoaded", () => {
         showNoEntries();
         return;
       }
+
+      // --- Use sessionStorage cache if available ---
+      const cachedApiData = getApiCache();
+      if (cachedApiData && Array.isArray(cachedApiData)) {
+        processApiData(cachedApiData);
+        return;
+      }
+      // --------------------------------------------
+
       fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=200`)
         .then(r => r.json())
         .then(data => {
@@ -258,24 +285,8 @@ document.addEventListener("DOMContentLoaded", () => {
             showNoEntries();
             return;
           }
-          const validPosts = data.filter(post => {
-            const url = post?.large_file_url || post?.file_url;
-            const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-            const valid = isImage && !post.is_banned;
-            if (!valid) {
-              console.log("Filtered out post for artist", artist.artistName, post);
-            }
-            return valid;
-          });
-          const urls = validPosts.map(post => {
-            const url = post.large_file_url || post.file_url;
-            return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-          });
-          if (urls.length) {
-            tryLoadUrls(urls);
-          } else {
-            showNoEntries();
-          }
+          setApiCache(data); // Cache the API result
+          processApiData(data);
         })
         .catch((err) => {
           showNoEntries();
@@ -285,6 +296,29 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
     }
+
+    // --- Extracted logic for processing API data ---
+    function processApiData(data) {
+      const validPosts = data.filter(post => {
+        const url = post?.large_file_url || post?.file_url;
+        const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+        const valid = isImage && !post.is_banned;
+        if (!valid) {
+          console.log("Filtered out post for artist", artist.artistName, post);
+        }
+        return valid;
+      });
+      const urls = validPosts.map(post => {
+        const url = post.large_file_url || post.file_url;
+        return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+      });
+      if (urls.length) {
+        tryLoadUrls(urls);
+      } else {
+        showNoEntries();
+      }
+    }
+    // ------------------------------------------------
 
     fetchAndTry();
   }
@@ -543,11 +577,12 @@ document.addEventListener("DOMContentLoaded", () => {
               showPost(0);
               return;
             }
-            // Filter for valid, non-deleted, non-banned, non-pending posts
-            const validPosts = data.filter(post =>
-              (post?.large_file_url || post?.file_url) &&
-              !post.is_banned
-            );
+            // Only filter for images and not banned
+            const validPosts = data.filter(post => {
+              const url = post?.large_file_url || post?.file_url;
+              const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+              return isImage && !post.is_banned;
+            });
             posts = validPosts;
             // Try each post until one loads, else show "No valid entries"
             function tryShow(index, attempts = 0) {
@@ -745,3 +780,14 @@ if (!document.querySelector('.lipstick-kiss')) {
   document.body.appendChild(kiss);
 }
 });
+
+function handleArtistCopy(artist, imgSrc) {
+  // Copy artist name to clipboard
+  navigator.clipboard.writeText(artist.artistName)
+    .then(() => {
+      showToast(`Copied: ${artist.artistName}`);
+    })
+    .catch(() => {
+      showToast("Failed to copy!");
+    });
+}
