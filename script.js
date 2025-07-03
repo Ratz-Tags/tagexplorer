@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const validPosts = data.filter(post => {
         const url = post?.large_file_url || post?.file_url;
         const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-        const valid = isImage && !post.is_banned;
+        const valid = isImage && !post.is_banned && postHasAllTags(post, selectedTags);
         if (!valid) {
           console.log("Filtered out post for artist", artist.artistName, post);
         }
@@ -595,11 +595,11 @@ document.addEventListener("DOMContentLoaded", () => {
               showPost(0);
               return;
             }
-            // Only filter for images and not banned
+            // Only filter for images, not banned, and must have all selected tags
             const validPosts = data.filter(post => {
               const url = post?.large_file_url || post?.file_url;
               const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-              return isImage && !post.is_banned;
+              return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
             });
             posts = validPosts;
             // Try each post until one loads, else show "No valid entries"
@@ -812,4 +812,11 @@ function handleArtistCopy(artist, imgSrc) {
     .catch(() => {
       showToast("Failed to copy!");
     });
+}
+
+function postHasAllTags(post, tags) {
+  if (!tags.length) return true;
+  // Danbooru returns tags as a space-separated string in tag_string
+  const tagString = post.tag_string || "";
+  return tags.every(tag => tagString.includes(tag));
 }
