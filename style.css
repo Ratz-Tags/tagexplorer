@@ -936,15 +936,15 @@ input[type="text"]:focus, input[type="search"]:focus {
 }
 
 .gallery-spinner img {
-  width: 12vw;
-  height: 12vw;
-  max-width: 64px;
-  max-height: 64px;
-  min-width: 32px;
-  min-height: 32px;
+  width: 18vw;
+  height: 18vw;
+  max-width: 512px;
+  max-height: 512px;
+  min-width: 128px;
+  min-height: 128px;
   display: block;
   margin: 40px auto;
-  opacity: 0.8;
+  opacity: 0.85;
 }
 
 .tag-image-popup {
