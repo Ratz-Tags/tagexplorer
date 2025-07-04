@@ -6,7 +6,7 @@ The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering N
 
 - 🔘 Dynamic Kink Tag Filters
 - 🖼 Live Artist Card Fetching from Danbooru + Zele
-- 🎧 Embedded Femdom Hypnosis (10 rotating tracks)
+- 🎧 Embedded Femdom Hypnosis (6 rotating tracks)
 - 💬 Taunting JRPG-style Bubble Insults
 - 🎀 Feminine UI Design (coming soon)
 
