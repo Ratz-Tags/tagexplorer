@@ -781,7 +781,37 @@ document.addEventListener("DOMContentLoaded", () => {
       copyBtn.title = "Copy name";
       copyBtn.onclick = () => handleArtistCopy(artist, img.src);
 
-      nameRow.append(name, copyBtn);
+      // --- Add this for reload ---
+      const reloadBtn = document.createElement("button");
+      reloadBtn.className = "reload-button";
+      reloadBtn.textContent = "⟳";
+      reloadBtn.title = "Reload artist images/count";
+      reloadBtn.onclick = (e) => {
+        e.stopPropagation();
+        // Remove cached image/count for this artist
+        artist._imageCount = undefined;
+        artist._retried = false;
+        localStorage.removeItem(`danbooru-image-${artist.artistName}`);
+        sessionStorage.removeItem(`danbooru-api-${artist.artistName}-`);
+        // Re-fetch image and count
+        setBestImage(artist, img);
+        // Re-fetch count
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(artist.artistName)}&limit=1000`)
+          .then(r => r.json())
+          .then(posts => {
+            const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+            artist._imageCount = uniqueIds.size;
+            // Update the count display
+            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
+          })
+          .catch(() => {
+            artist._imageCount = 0;
+            name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [0]`;
+          });
+      };
+      // --- end reload button ---
+
+      nameRow.append(name, copyBtn, reloadBtn);
 
       const taglist = document.createElement("div");
       taglist.className = "artist-tags";
