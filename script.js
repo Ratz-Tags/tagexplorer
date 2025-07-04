@@ -655,12 +655,10 @@ if (typeof document !== "undefined") {
           filtered,
           batchSize,
           async (artist) => {
-            const tagQuery = activeTags.size
-              ? [artist.artistName, ...activeTags].join(" ")
-              : artist.artistName;
-            return fetch(
+            // Always fetch total count for the artist
+            const totalCountPromise = fetch(
               `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                tagQuery
+                artist.artistName
               )}&limit=1000`
             )
               .then((r) => r.json())
@@ -668,36 +666,36 @@ if (typeof document !== "undefined") {
                 const uniqueIds = new Set(
                   Array.isArray(posts) ? posts.map((post) => post.id) : []
                 );
-                artist._imageCount = uniqueIds.size;
-                // If count is 0, try one more time after a short delay
-                if (artist._imageCount === 0 && !artist._retried) {
-                  artist._retried = true;
-                  return new Promise((resolve) =>
-                    setTimeout(resolve, 1000)
-                  ).then(() =>
-                    fetch(
-                      `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                        tagQuery
-                      )}&limit=1000`
-                    )
-                      .then((r) => r.json())
-                      .then((posts2) => {
-                        const uniqueIds2 = new Set(
-                          Array.isArray(posts2)
-                            ? posts2.map((post) => post.id)
-                            : []
-                        );
-                        artist._imageCount = uniqueIds2.size;
-                      })
-                      .catch(() => {
-                        artist._imageCount = 0;
-                      })
-                  );
-                }
+                artist._totalImageCount = uniqueIds.size;
               })
               .catch(() => {
-                artist._imageCount = 0;
+                artist._totalImageCount = 0;
               });
+
+            // Fetch filtered count (artist + activeTags)
+            let filteredCountPromise = Promise.resolve();
+            if (activeTags.size) {
+              const tagQuery = [artist.artistName, ...activeTags].join(" ");
+              filteredCountPromise = fetch(
+                `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                  tagQuery
+                )}&limit=1000`
+              )
+                .then((r) => r.json())
+                .then((posts) => {
+                  const uniqueIds = new Set(
+                    Array.isArray(posts) ? posts.map((post) => post.id) : []
+                  );
+                  artist._imageCount = uniqueIds.size;
+                })
+                .catch(() => {
+                  artist._imageCount = 0;
+                });
+            } else {
+              artist._imageCount = undefined;
+            }
+
+            return Promise.all([totalCountPromise, filteredCountPromise]);
           },
           delayMs
         ).then(() => {
@@ -866,9 +864,16 @@ if (typeof document !== "undefined") {
         })`;
 
         // --- Fix for delayed [Loading count…] and live update ---
-        if (typeof artist._imageCount === "number") {
-          name.textContent += ` [${artist._imageCount}${
-            artist._imageCount === 1000 ? "+" : ""
+        if (
+          typeof artist._imageCount === "number" &&
+          typeof artist._totalImageCount === "number"
+        ) {
+          name.textContent += ` [${artist._imageCount}/${
+            artist._totalImageCount
+          }${artist._totalImageCount === 1000 ? "+" : ""}]`;
+        } else if (typeof artist._totalImageCount === "number") {
+          name.textContent += ` [${artist._totalImageCount}${
+            artist._totalImageCount === 1000 ? "+" : ""
           }]`;
         } else {
           // Only define the property ONCE
