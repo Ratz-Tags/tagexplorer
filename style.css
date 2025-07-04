@@ -214,6 +214,11 @@ html {
   max-width: 340px;
   animation: pop-in 0.3s ease;
   z-index: 9999;
+  pointer-events: none;
+}
+
+.jrpg-bubble * {
+  pointer-events: auto;
 }
 
 .jrpg-bubble .chibi {
@@ -533,7 +538,7 @@ audio#moan-audio { display: none; }
   border-radius: 16px;
   padding: 1em;
   box-shadow: 0 0 18px rgba(255, 0, 255, 0.4);
-  z-index: 10000;
+  z-index: 10010;
   width: 270px;
   display: flex;
   flex-direction: column;
@@ -1073,4 +1078,22 @@ input[type="text"]:focus, input[type="search"]:focus {
   /* ... */
   /* Add this if not present: */
   position: relative;
+}
+
+/* Make sure the audio panel is above other content and doesn't block the toggle */
+#audio-panel {
+  z-index: 10010;
+  /* Add position if not already set */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /* ...other styles... */
+}
+
+#audio-panel-toggle {
+  position: fixed;
+  bottom: 70px; /* or adjust so it's above the panel */
+  right: 16px;
+  z-index: 10020;
 }

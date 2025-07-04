@@ -59,6 +59,13 @@ function updateCopiedSidebar() {
     const artist = allArtists.find((a) => a.artistName === name);
     const div = document.createElement("div");
     div.className = "copied-artist";
+    div.style.display = "flex";
+    div.style.alignItems = "center";
+    div.style.cursor = "pointer";
+    let tooltip =
+      artist && artist.tooltip
+        ? artist.tooltip
+        : artist?.artistName.replace(/_/g, " ");
     if (artist && artist.thumbnailUrl) {
       const img = document.createElement("img");
       img.src = artist.thumbnailUrl;
@@ -66,13 +73,150 @@ function updateCopiedSidebar() {
       img.style.height = "32px";
       img.style.borderRadius = "8px";
       img.style.marginRight = "8px";
+      img.title = tooltip;
+      img.onclick = (e) => {
+        e.stopPropagation();
+        openArtistZoom(artist);
+      };
       div.appendChild(img);
     }
-    div.appendChild(document.createTextNode(name.replace(/_/g, " ")));
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = name.replace(/_/g, " ");
+    nameSpan.title = tooltip;
+    nameSpan.onclick = () => openArtistZoom(artist);
+    div.appendChild(nameSpan);
     copiedSidebar.appendChild(div);
   });
 }
 
+// Add this helper if not present
+function openArtistZoom(artist) {
+  let currentIndex = 0;
+  let posts = [];
+  const zoomWrapper = document.createElement("div");
+  zoomWrapper.className = "fullscreen-wrapper";
+
+  const zoomed = document.createElement("img");
+  zoomed.className = "fullscreen-img";
+  zoomWrapper.appendChild(zoomed);
+
+  const noEntriesMsg = document.createElement("span");
+  noEntriesMsg.style.display = "none";
+  noEntriesMsg.className = "no-entries-msg";
+  noEntriesMsg.textContent = "No valid entries";
+  zoomWrapper.appendChild(noEntriesMsg);
+
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "zoom-close";
+  closeBtn.textContent = "×";
+  closeBtn.onclick = () => zoomWrapper.remove();
+
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "zoom-prev";
+  prevBtn.textContent = "←";
+
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "zoom-next";
+  nextBtn.textContent = "→";
+
+  zoomWrapper.append(closeBtn, prevBtn, nextBtn);
+  document.body.appendChild(zoomWrapper);
+
+  // Keyboard navigation
+  zoomWrapper.tabIndex = 0;
+  zoomWrapper.focus();
+  zoomWrapper.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowLeft") {
+      prevBtn.click();
+      e.preventDefault();
+    }
+    if (e.key === "ArrowRight") {
+      nextBtn.click();
+      e.preventDefault();
+    }
+    if (e.key === "Escape") {
+      closeBtn.click();
+      e.preventDefault();
+    }
+  });
+
+  function showNoEntries() {
+    zoomed.style.display = "none";
+    noEntriesMsg.style.display = "block";
+  }
+
+  function tryShow(index, attempts = 0) {
+    if (!posts.length || attempts >= posts.length) {
+      showNoEntries();
+      return;
+    }
+    const raw = posts[index];
+    const url = raw?.large_file_url || raw?.file_url;
+    const full = url?.startsWith("http")
+      ? url
+      : `https://danbooru.donmai.us${url}`;
+    zoomed.style.opacity = "0.5";
+    zoomed.src = "";
+    noEntriesMsg.style.display = "none";
+    zoomed.onerror = () => {
+      tryShow((index + 1) % posts.length, attempts + 1);
+    };
+    zoomed.onload = () => {
+      zoomed.style.display = "block";
+      zoomed.style.opacity = "1";
+      noEntriesMsg.style.display = "none";
+      zoomed.onerror = null;
+      zoomed.onload = null;
+    };
+    zoomed.src = full;
+  }
+
+  let navTimeout;
+  function debouncedShowPost(i) {
+    clearTimeout(navTimeout);
+    navTimeout = setTimeout(() => tryShow(i), 80);
+  }
+  prevBtn.onclick = () => {
+    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+    debouncedShowPost(currentIndex);
+  };
+  nextBtn.onclick = () => {
+    currentIndex = (currentIndex + 1) % posts.length;
+    debouncedShowPost(currentIndex);
+  };
+
+  const tagQuery = artist.artistName;
+  let retried = false;
+  function fetchAndShow() {
+    fetch(
+      `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+        tagQuery
+      )}+order:score&limit=1000`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (!Array.isArray(data)) {
+          posts = [];
+          showNoEntries();
+          return;
+        }
+        const validPosts = data.filter((post) => {
+          const url = post?.large_file_url || post?.file_url;
+          const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+          return isImage && !post.is_banned;
+        });
+        posts = validPosts;
+        if (posts.length === 0 && !retried) {
+          retried = true;
+          setTimeout(fetchAndShow, 1000);
+          return;
+        }
+        currentIndex = 0;
+        tryShow(currentIndex);
+      });
+  }
+  fetchAndShow();
+}
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
     updateCopiedSidebar,
@@ -938,8 +1082,9 @@ if (typeof document !== "undefined") {
             }
           }
           keysToRemove.forEach((key) => sessionStorage.removeItem(key));
-          setBestImage(artist, img);
-          fetch(
+
+          // Fetch both total and filtered counts
+          const totalCountPromise = fetch(
             `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
               artist.artistName
             )}&limit=1000`
@@ -949,19 +1094,57 @@ if (typeof document !== "undefined") {
               const uniqueIds = new Set(
                 Array.isArray(posts) ? posts.map((post) => post.id) : []
               );
-              artist._imageCount = uniqueIds.size;
-              name.textContent = `${artist.artistName} (${artist.nsfwLevel}${
-                artist.artStyle ? `, ${artist.artStyle}` : ""
-              }) [${artist._imageCount}${
-                artist._imageCount === 1000 ? "+" : ""
-              }]`;
+              artist._totalImageCount = uniqueIds.size;
             })
             .catch(() => {
-              artist._imageCount = 0;
+              artist._totalImageCount = 0;
+            });
+
+          let filteredCountPromise = Promise.resolve();
+          if (activeTags.size) {
+            const tagQuery = [artist.artistName, ...activeTags].join(" ");
+            filteredCountPromise = fetch(
+              `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                tagQuery
+              )}&limit=1000`
+            )
+              .then((r) => r.json())
+              .then((posts) => {
+                const uniqueIds = new Set(
+                  Array.isArray(posts) ? posts.map((post) => post.id) : []
+                );
+                artist._imageCount = uniqueIds.size;
+              })
+              .catch(() => {
+                artist._imageCount = 0;
+              });
+          } else {
+            artist._imageCount = undefined;
+          }
+
+          Promise.all([totalCountPromise, filteredCountPromise]).then(() => {
+            // Update the DOM after both counts are fetched
+            if (
+              typeof artist._imageCount === "number" &&
+              typeof artist._totalImageCount === "number"
+            ) {
               name.textContent = `${artist.artistName} (${artist.nsfwLevel}${
                 artist.artStyle ? `, ${artist.artStyle}` : ""
-              }) [0]`;
-            });
+              }) [${artist._imageCount}/${artist._totalImageCount}${
+                artist._totalImageCount === 1000 ? "+" : ""
+              }]`;
+            } else if (typeof artist._totalImageCount === "number") {
+              name.textContent = `${artist.artistName} (${artist.nsfwLevel}${
+                artist.artStyle ? `, ${artist.artStyle}` : ""
+              }) [${artist._totalImageCount}${
+                artist._totalImageCount === 1000 ? "+" : ""
+              }]`;
+            } else {
+              name.textContent = `${artist.artistName} (${artist.nsfwLevel}${
+                artist.artStyle ? `, ${artist.artStyle}` : ""
+              }) [Loading count…]`;
+            }
+          });
         };
 
         nameRow.append(name, copyBtn, reloadBtn);
