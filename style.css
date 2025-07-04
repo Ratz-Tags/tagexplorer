@@ -1040,3 +1040,37 @@ input[type="text"]:focus, input[type="search"]:focus {
   background: #fd7bc5;
   color: #fff;
 }
+
+.copied-sidebar-close {
+  position: absolute;
+  top: 1.2rem;
+  right: 1.2rem;
+  z-index: 10100;
+  background: #ffd6f6;
+  color: #a0005a;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 2rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 10px #fd7bc540;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.copied-sidebar-close:hover {
+  background: #fd7bc5;
+  color: #fff;
+}
+#copied-sidebar {
+  position: fixed;
+  /* ...existing styles... */
+  /* Make sure position: relative for absolute close button */
+  position: fixed;
+  /* ... */
+  /* Add this if not present: */
+  position: relative;
+}
