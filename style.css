@@ -920,37 +920,80 @@ input[type="text"]:focus, input[type="search"]:focus {
   .sidebar-toggle {
     position: fixed !important;
     right: 1.2rem !important;
-    width: 48px !important;
-    height: 48px !important;
-    min-width: 48px !important;
-    min-height: 48px !important;
-    max-width: 48px !important;
-    max-height: 48px !important;
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    min-height: 54px !important;
+    max-width: 54px !important;
+    max-height: 54px !important;
     border-radius: 50% !important;
     padding: 0 !important;
-    font-size: 1.7rem !important;
+    font-size: 2rem !important;
     box-shadow: 0 2px 10px #fd7bc540;
     z-index: 10020;
     text-align: center;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
+    border: 2px solid #ffb6d5 !important;
+    color: #a0005a;
   }
   .audio-toggle {
-    bottom: 5.2rem !important; /* Audio button above copied artists */
+    bottom: 5.6rem !important; /* Audio button above copied artists, with gap */
   }
   .sidebar-toggle {
     bottom: 1.2rem !important;
   }
   .audio-toggle::after,
   .sidebar-toggle::after {
-    display: none !important; /* Hide text/emoji after for compactness */
+    display: none !important;
   }
   .audio-toggle span,
   .sidebar-toggle span {
     display: none !important;
   }
-  /* Optional: use only icon/emoji as button content */
+}
+
+/* Portrait mobile: make audio & copied artists buttons small, circular, and stacked, with spacing */
+@media (max-width: 600px) and (orientation: portrait) {
+  .audio-toggle,
+  .sidebar-toggle {
+    position: fixed !important;
+    right: 1.2rem !important;
+    width: 54px !important;
+    height: 54px !important;
+    min-width: 54px !important;
+    min-height: 54px !important;
+    max-width: 54px !important;
+    max-height: 54px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    font-size: 2rem !important;
+    box-shadow: 0 2px 10px #fd7bc540;
+    z-index: 10020;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
+    border: 2px solid #ffb6d5 !important;
+    color: #a0005a;
+  }
+  .audio-toggle {
+    bottom: 5.6rem !important; /* Audio button above copied artists, with gap */
+  }
+  .sidebar-toggle {
+    bottom: 1.2rem !important;
+  }
+  .audio-toggle::after,
+  .sidebar-toggle::after {
+    display: none !important;
+  }
+  .audio-toggle span,
+  .sidebar-toggle span {
+    display: none !important;
+  }
 }
 
 #back-to-top {
