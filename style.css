@@ -385,19 +385,25 @@ audio#moan-audio { display: none; }
   right: 0;
   height: 100vh;
   max-width: 90vw;
-  width: 300px;
+  /* width: 300px; Removed for responsive sizing */
   background: linear-gradient(120deg, #32163a 0%, #4b004a 100%);
   border-left: 2.5px solid #fd7bc5;
   padding: 18px 14px;
-  display: none;
+  opacity: 0;
+  pointer-events: none;
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
   z-index: 10030;
   box-shadow: -2px 0 16px #fd7bc550;
+  transition: opacity 0.35s cubic-bezier(0.4,0,0.2,1);
 }
 
-#copied-sidebar.visible { display: flex; }
+#copied-sidebar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  display: flex;
+}
 
 #copied-sidebar::before {
   content: "🎀";
@@ -630,7 +636,7 @@ body .lipstick-kiss {
   bottom: 1.2rem;
   width: 64px;
   height: 64px;
-  z-index: 10030;
+  z-index: 10020;
   opacity: 0.18;
   background: url('https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/1f48b.png') no-repeat center/contain;
   pointer-events: none;
