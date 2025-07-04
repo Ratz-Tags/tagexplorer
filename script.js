@@ -195,9 +195,12 @@ if (typeof document !== "undefined") {
   loadTrack(currentTrack);
 
 
-  if (sidebarToggle && copiedSidebar) {
-    sidebarToggle.addEventListener("click", () => {
-      copiedSidebar.classList.toggle("visible");
+  const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
+  if (sidebarToggles && copiedSidebar) {
+    sidebarToggles.forEach(btn => {
+      btn.addEventListener("click", () => {
+        copiedSidebar.classList.toggle("visible");
+      });
     });
   }
 

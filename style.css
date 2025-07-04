@@ -450,31 +450,35 @@ audio#moan-audio { display: none; }
 .name-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 7px;
+  position: relative; /* Remove if not needed */
 }
 
-.copy-button {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
-  background: linear-gradient(135deg, #ff63a5 70%, #fd7bc5 100%);
-  border-radius: 50%;
-  padding: 10px;
-  color: #fff;
+.copy-button,
+.reload-button {
+  position: static;
+  margin-left: 6px;
   border: none;
-  font-size: 1.35rem;
+  background: #ffd6f6;
+  color: #a0005a;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 1.1em;
   cursor: pointer;
-  z-index: 2;
-  box-shadow: 0 1px 5px #ff63a540;
-  transition: color 0.3s, background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 4px #fd7bc540;
+  transition: background 0.2s;
+  vertical-align: middle;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.copy-button:hover {
-  color: #fd7bc5;
-  background: #2a0030;
-  box-shadow: 0 2px 14px #ff63a540;
+.copy-button:hover,
+.reload-button:hover {
+  background: #fd7bc5;
+  color: #fff;
 }
 
 .moan-toggle {
