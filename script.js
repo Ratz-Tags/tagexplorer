@@ -756,7 +756,23 @@ if (typeof document !== "undefined") {
       if (typeof artist._imageCount === "number") {
       name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
       } else {
-      name.textContent += " [Loading count…]";
+        // Delay showing [Loading count…] by 400ms
+        const loadingTimeout = setTimeout(() => {
+          if (typeof artist._imageCount !== "number") {
+            name.textContent += " [Loading count…]";
+          }
+        }, 400);
+        // If the count loads before the timeout, clear it
+        Object.defineProperty(artist, "_imageCount", {
+          set(val) {
+            clearTimeout(loadingTimeout);
+            this.__imageCount = val;
+          },
+          get() {
+            return this.__imageCount;
+          },
+          configurable: true
+        });
       }
 
       const copyBtn = document.createElement("button");
