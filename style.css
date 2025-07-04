@@ -11,7 +11,6 @@ body {
   background: linear-gradient(135deg, #ffe0f6 0%, #ffd6f6 40%, #fff0fa 100%);
   color: #a0005a;
   overflow-x: hidden;
-  box-shadow: 0 0 0 20px #ffb6d522 inset, 0 0 80px 0 #ff63a522 inset;
 }
 
 html, body {
@@ -385,7 +384,6 @@ audio#moan-audio { display: none; }
   right: 0;
   height: 100vh;
   max-width: 90vw;
-  /* width: 300px; Removed for responsive sizing */
   background: linear-gradient(120deg, #32163a 0%, #4b004a 100%);
   border-left: 2.5px solid #fd7bc5;
   padding: 18px 14px;
@@ -452,9 +450,8 @@ audio#moan-audio { display: none; }
   align-items: center;
   gap: 8px;
   margin-bottom: 7px;
-  position: relative; /* Remove if not needed */
+  position: relative;
 }
-
 .copy-button,
 .reload-button {
   position: static;
@@ -691,7 +688,7 @@ button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle, #back-to-top {
   box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
   border: 2px solid #ffb6d5 !important;
   background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
-  color: #a0005a;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   font-weight: bold;
   letter-spacing: 0.5px;
   transition: box-shadow 0.2s, background 0.2s, color 0.2s;
@@ -852,7 +849,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
 }
 
-/* Portrait mobile: stack everything, full width */
+/* Portrait mobile: stack everything, full width and style floating buttons */
 @media (max-width: 600px) and (orientation: portrait) {
   #artist-gallery {
     grid-template-columns: 1fr !important;
@@ -912,10 +909,6 @@ input[type="text"]:focus, input[type="search"]:focus {
     height: 40px;
     font-size: 1.5rem;
   }
-}
-
-/* Portrait mobile: make audio & copied artists buttons small, circular, and stacked */
-@media (max-width: 600px) and (orientation: portrait) {
   .audio-toggle,
   .sidebar-toggle {
     position: fixed !important;
