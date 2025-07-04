@@ -269,6 +269,25 @@ document.addEventListener("DOMContentLoaded", () => {
         sessionStorage.setItem(apiCacheKey, JSON.stringify(data));
       } catch { }
     }
+
+    function processApiData(data) {
+      // Only filter for non-banned image posts and load the first valid one
+      const validPosts = Array.isArray(data) ? data.filter(post => {
+        const url = post?.large_file_url || post?.file_url;
+        const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+        return isImage && !post.is_banned;
+      }) : [];
+
+      const urls = validPosts.map(post => {
+        const url = post.large_file_url || post.file_url;
+        return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+      });
+      if (urls.length) {
+        tryLoadUrls(urls);
+      } else {
+        showNoEntries();
+      }
+    }
     // ---------------------------------------------------------
 
     function showNoEntries() {
@@ -343,31 +362,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       // --------------------------------------------
 
-      // Only fetch with artist name and order:score
-      fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
-        .then(r => r.json())
-        .then(data => {
-          if (!Array.isArray(data)) {
-            showNoEntries();
-            return;
-          }
-          // Only filter for images, not banned
-          const validPosts = data.filter(post => {
-            const url = post?.large_file_url || post?.file_url;
-            const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-            return isImage && !post.is_banned;
-          });
-          const urls = validPosts.map(post => {
-            const url = post.large_file_url || post.file_url;
-            return url?.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
-          });
-          if (urls.length) {
-            tryLoadUrls(urls);
-          } else {
-            showNoEntries();
-          }
-        })
-        .catch(() => showNoEntries());
+        // Only fetch with artist name and order:score
+        fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}+order:score&limit=1000`)
+          .then(r => r.json())
+          .then(data => {
+            if (!Array.isArray(data)) {
+              showNoEntries();
+              return;
+            }
+            setApiCache(data);
+            processApiData(data);
+          })
+          .catch(() => showNoEntries());
     }
 
     fetchAndTry();
@@ -894,31 +900,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 100);
   });
 
-  // When filters/tags/search changes, call filterArtists(true) to reset
-  // For example, in your tag search input event:
-  if (tagSearchInput) {
-    tagSearchInput.addEventListener("input", (e) => {
-      searchFilter = e.target.value;
-      filterArtists(true);
-    });
-  }
-  // And for clear tags, etc.
-  if (clearTagsBtn) {
-    clearTagsBtn.addEventListener("click", () => {
-      activeTags.clear();
-      renderTagButtons();
-      filterArtists(true);
-      setRandomBackground();
-    });
-  }
 
-  // Setup artist name filter input event listener only once
-  if (artistNameFilterInput) {
-    artistNameFilterInput.addEventListener("input", (e) => {
-      artistNameFilter = e.target.value.trim().toLowerCase();
-      filterArtists(true); // Always reset paging when searching
-    });
-  }
 
   // Setup back-to-top button functionality
   const backToTopBtn = document.getElementById("back-to-top");
