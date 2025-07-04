@@ -501,6 +501,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentArtistPage = 0;
   const artistsPerPage = 24;
   let filtered = [];
+  let countsFetched = false;
 
   async function filterArtists(reset = true) {
     if (reset) {
