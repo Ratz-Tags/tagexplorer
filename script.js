@@ -779,12 +779,12 @@ if (typeof document !== "undefined") {
 
         // Fetch image counts in the background, but don't block rendering
         const batchSize = 5;
-        const delayMs = 600;
+        const delayMs = 1500;
         async function fetchInBatches(
           items,
           batchSize,
           fetchFn,
-          delayMs = 500
+          delayMs = 600
         ) {
           let results = [];
           for (let i = 0; i < items.length; i += batchSize) {
@@ -1055,7 +1055,7 @@ if (typeof document !== "undefined") {
               if (typeof artist._imageCount !== "number") {
                 name.textContent += " [Loading count…]";
               }
-            }, 400);
+            }, 1500);
           }
         }
 
