@@ -74,7 +74,7 @@ html {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-bottom: 0.5em !important;
+  margin-bottom: 0.2em !important;
   width: 95vw;
   left: 50%;
   right: 0;
@@ -274,7 +274,10 @@ html {
   max-width: 1200px;
   margin: 0 auto;
   gap: 1.4rem;
-  padding: 2rem;
+  padding-top: 0.5rem;
+  padding-right: 2rem;
+  padding-bottom: 2rem;
+  padding-left: 2rem;
   overflow-x: auto;
 }
 
@@ -914,35 +917,7 @@ input[type="text"]:focus, input[type="search"]:focus {
 
 /* Portrait mobile: make audio & copied artists buttons small, circular, and stacked, with spacing */
 @media (max-width: 600px) and (orientation: portrait) {
-  .audio-toggle,
-  .sidebar-toggle {
-    position: fixed !important;
-    bottom: 1.2rem !important;
-    width: 54px !important;
-    height: 54px !important;
-    min-width: 54px !important;
-    min-height: 54px !important;
-    max-width: 54px !important;
-    max-height: 54px !important;
-    border-radius: 50% !important;
-    padding: 0 !important;
-    font-size: 2rem !important;
-    box-shadow: 0 2px 10px #fd7bc540;
-    z-index: 10020;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
-    border: 2px solid #ffb6d5 !important;
-    color: #a0005a;
-  }
-  .audio-toggle {
-    right: 5.6rem !important; /* left of copied artists button */
-  }
-  .sidebar-toggle {
-    right: 1.2rem !important;
-  }
+  
   .audio-toggle::after,
   .sidebar-toggle::after,
   .audio-toggle span,
@@ -953,6 +928,25 @@ input[type="text"]:focus, input[type="search"]:focus {
 
 /* Copied artists sidebar covers full screen on mobile portrait */
 @media (max-width: 600px) and (orientation: portrait) {
+  .audio-toggle, .sidebar-toggle {
+  bottom: 1rem;
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  min-height: 54px;
+  max-width: 54px;
+  max-height: 54px;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  }
+  .audio-toggle {
+    right: 5.6rem; /* Space them evenly */
+  }
+  .sidebar-toggle {
+    right: 1rem;
+  }
   #copied-sidebar {
     position: fixed !important;
     top: 0 !important;
@@ -1083,7 +1077,7 @@ input[type="text"]:focus, input[type="search"]:focus {
 
 /* Make sure the audio panel is above other content and doesn't block the toggle */
 #audio-panel {
-  z-index: 10010;
+  z-index: 10020;
   /* Add position if not already set */
   position: fixed;
   bottom: 0;
