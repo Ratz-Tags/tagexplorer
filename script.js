@@ -781,7 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
       copyBtn.title = "Copy name";
       copyBtn.onclick = () => handleArtistCopy(artist, img.src);
 
-      // --- Add this for reload ---
+
       const reloadBtn = document.createElement("button");
       reloadBtn.className = "reload-button";
       reloadBtn.textContent = "⟳";
@@ -792,7 +792,14 @@ document.addEventListener("DOMContentLoaded", () => {
         artist._imageCount = undefined;
         artist._retried = false;
         localStorage.removeItem(`danbooru-image-${artist.artistName}`);
-        sessionStorage.removeItem(`danbooru-api-${artist.artistName}-`);
+        // Remove all sessionStorage keys for this artist (with any tag combinations)
+        const prefix = `danbooru-api-${artist.artistName}-`;
+        for (let i = sessionStorage.length - 1; i >= 0; i--) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith(prefix)) {
+            sessionStorage.removeItem(key);
+          }
+        }
         // Re-fetch image and count
         setBestImage(artist, img);
         // Re-fetch count
