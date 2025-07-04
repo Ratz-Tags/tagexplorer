@@ -287,6 +287,8 @@ if (typeof document !== "undefined") {
       "object_insertion_from_behind",
       "pouring_from_condom",
       "forced_feminization",
+      "netorare",
+      "netorase",
     ];
 
     const tagIcons = {
