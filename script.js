@@ -752,27 +752,41 @@ if (typeof document !== "undefined") {
       name.className = "artist-name";
       name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""})`;
 
-      // Add image count if available
+      // --- Fix for delayed [Loading count…] and live update ---
       if (typeof artist._imageCount === "number") {
-      name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
+        name.textContent += ` [${artist._imageCount}${artist._imageCount === 1000 ? "+" : ""}]`;
       } else {
-        // Delay showing [Loading count…] by 400ms
-        const loadingTimeout = setTimeout(() => {
-          if (typeof artist._imageCount !== "number") {
-            name.textContent += " [Loading count…]";
-          }
-        }, 400);
-        // If the count loads before the timeout, clear it
-        Object.defineProperty(artist, "_imageCount", {
-          set(val) {
-            clearTimeout(loadingTimeout);
-            this.__imageCount = val;
-          },
-          get() {
-            return this.__imageCount;
-          },
-          configurable: true
-        });
+        // Only define the property ONCE
+        if (!artist._countPropertyDefined) {
+          let loadingTimeout = setTimeout(() => {
+            if (typeof artist._imageCount !== "number") {
+              name.textContent += " [Loading count…]";
+            }
+          }, 400);
+
+          Object.defineProperty(artist, "_imageCount", {
+            set(val) {
+              clearTimeout(loadingTimeout);
+              this.__imageCount = val;
+              // Update the DOM node if it exists
+              if (typeof val === "number") {
+                name.textContent = `${artist.artistName} (${artist.nsfwLevel}${artist.artStyle ? `, ${artist.artStyle}` : ""}) [${val}${val === 1000 ? "+" : ""}]`;
+              }
+            },
+            get() {
+              return this.__imageCount;
+            },
+            configurable: true
+          });
+          artist._countPropertyDefined = true;
+        } else {
+          // If already defined, just set up the delayed loading message
+          setTimeout(() => {
+            if (typeof artist._imageCount !== "number") {
+              name.textContent += " [Loading count…]";
+            }
+          }, 400);
+        }
       }
 
       const copyBtn = document.createElement("button");
