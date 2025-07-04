@@ -728,9 +728,9 @@ if (typeof document !== "undefined") {
           return;
           }
           const validPosts = data.filter(post => {
-          const url = post?.large_file_url || post?.file_url;
-          const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-          return isImage && !post.is_banned && postHasAllTags(post, Array.from(activeTags));
+            const url = post?.large_file_url || post?.file_url;
+            const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+            return isImage && !post.is_banned;
           });
           posts = validPosts;
           if (posts.length === 0 && !retried) {
