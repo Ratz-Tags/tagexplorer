@@ -2,6 +2,7 @@ window._danbooruUnavailable = false;
 
 let copiedArtists = new Set();
 let copiedSidebar = null;
+let allArtists = [];
 
 function showToast(message) {
   const toast = document.createElement("div");
@@ -196,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   let activeTags = new Set();
-  let allArtists = [];
+  allArtists = [];
   let tagTooltips = {};
   let tagTaunts = {};
   let taunts = [];
