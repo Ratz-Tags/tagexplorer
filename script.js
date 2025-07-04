@@ -1,3 +1,6 @@
+if (typeof window === 'undefined') {
+  global.window = {};
+}
 window._danbooruUnavailable = false;
 
 let copiedArtists = new Set();
@@ -61,6 +64,15 @@ function updateCopiedSidebar() {
   });
 }
 
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    updateCopiedSidebar,
+    _setAllArtists: (val) => { allArtists = val; },
+    _setCopiedArtists: (val) => { copiedArtists = val; },
+    _setCopiedSidebar: (val) => { copiedSidebar = val; }
+  };
+}
+
 function showNoEntriesMsg(element, msg = "No valid entries") {
   element.style.display = "none";
   let span = element.nextSibling;
@@ -75,7 +87,8 @@ function showNoEntriesMsg(element, msg = "No valid entries") {
   span.style.display = "block";
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
   const kinkTags = [
     "femdom", "chastity_cage", "trap",
     "anal_object_insertion", "prostate_milking", "gagged", "dominatrix", "humiliation", "lactation",
@@ -962,4 +975,5 @@ document.addEventListener("DOMContentLoaded", () => {
     kiss.className = 'lipstick-kiss';
     document.body.appendChild(kiss);
   }
-});
+  });
+}
