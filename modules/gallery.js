@@ -11,6 +11,7 @@ let currentArtistPage = 0;
 const artistsPerPage = 24;
 let filtered = [];
 let countsFetched = false;
+let isFetching = false;
 
 // DOM references
 let artistGallery = null;
@@ -411,18 +412,34 @@ function renderArtistsPage() {
  */
 async function filterArtists(reset = true) {
   if (!artistGallery) return;
-  
-  if (reset) {
-    currentArtistPage = 0;
-    artistGallery.innerHTML = "";
 
-    // Reset counts so they are refetched for new filters
-    countsFetched = false;
-    
-    // Add spinner
-    const spinner = createSpinner();
-    artistGallery.appendChild(spinner);
+  if (isFetching) {
+    const existing = artistGallery.querySelector(".gallery-spinner");
+    if (!existing) {
+      artistGallery.appendChild(createSpinner());
+    }
+    return;
   }
+
+  let spinner;
+  try {
+    if (reset) {
+      currentArtistPage = 0;
+      artistGallery.innerHTML = "";
+
+      // Reset counts so they are refetched for new filters
+      countsFetched = false;
+    }
+
+    if (reset || !countsFetched) {
+      spinner = artistGallery.querySelector(".gallery-spinner");
+      if (!spinner) {
+        spinner = createSpinner();
+        artistGallery.appendChild(spinner);
+      }
+    }
+
+    isFetching = true;
 
   // Get active tags and filters
   const activeTags = getActiveTags ? getActiveTags() : new Set();
@@ -488,13 +505,24 @@ async function filterArtists(reset = true) {
       }
     }
     
-    fetchInBatches(filtered).catch(console.warn);
+    await fetchInBatches(filtered).catch(console.warn);
   }
 
   renderArtistsPage();
 
   if (filtered.length > currentArtistPage * artistsPerPage) {
     currentArtistPage++;
+  }
+
+  const spinEl = artistGallery.querySelector(".gallery-spinner");
+  if (spinEl) spinEl.remove();
+  isFetching = false;
+  } catch (error) {
+    console.warn('filterArtists failed', error);
+  } finally {
+    const remaining = artistGallery.querySelector('.gallery-spinner');
+    if (remaining) remaining.remove();
+    isFetching = false;
   }
 }
 
