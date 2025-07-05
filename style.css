@@ -153,8 +153,91 @@ header {
   right: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   z-index: var(--z-floating);
+  align-items: center;
+}
+
+.floating-controls button {
+  min-width: 60px;
+  min-height: 60px;
+  border-radius: var(--border-radius-lg);
+  border: 2px solid var(--secondary-pink);
+  background: linear-gradient(135deg, var(--pale-pink) 0%, var(--secondary-pink) 100%);
+  color: var(--dark-pink);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-sm);
+  box-sizing: border-box;
+}
+
+.floating-controls button:hover {
+  background: linear-gradient(135deg, var(--primary-pink) 0%, var(--accent-pink) 100%);
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.floating-controls button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Control labels - hidden by default, shown on hover or mobile */
+.control-label {
+  display: none;
+  font-size: var(--font-size-sm);
+  margin-left: var(--spacing-xs);
+  white-space: nowrap;
+}
+
+/* Mobile responsive floating controls */
+@media (max-width: 768px) {
+  .floating-controls {
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+  
+  .floating-controls button {
+    min-width: 52px;
+    min-height: 52px;
+    font-size: var(--font-size-base);
+  }
+  
+  .control-label {
+    display: inline;
+  }
+}
+
+/* Very small screens - make buttons even more compact */
+@media (max-width: 480px) {
+  .floating-controls {
+    flex-direction: row;
+    bottom: var(--spacing-sm);
+    right: 50%;
+    transform: translateX(50%);
+    gap: var(--spacing-sm);
+  }
+  
+  .floating-controls button {
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    padding: var(--spacing-xs);
+  }
+  
+  .control-label {
+    display: none;
+  }
 }
 
 /* Input fields */
@@ -249,6 +332,37 @@ header {
 #clear-tags:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+/* Filter results summary */
+#filtered-results {
+  margin: var(--spacing-md) auto;
+  max-width: 800px;
+  padding: 0 var(--spacing-md);
+  display: none; /* Hidden by default */
+}
+
+.filter-summary {
+  background: linear-gradient(135deg, var(--cream-pink) 0%, var(--pale-pink) 100%);
+  border: 2px solid var(--secondary-pink);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-count {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--dark-pink);
+  margin-bottom: var(--spacing-xs);
+}
+
+.filter-details {
+  font-size: var(--font-size-sm);
+  color: var(--dark-pink);
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* Main content */
@@ -625,28 +739,25 @@ audio#moan-audio { display: none; }
   padding: 0;
 }
 
-.sidebar-toggle {
-  position: fixed;
-  bottom: 1rem;
-  right: 10.5rem; /* Increased from 6.5rem to 10.5rem for more space */
-  background: #d63384;
-  color: white;
-  border: none;
-  padding: 0.6em 1.2em;
-  border-radius: 1.5rem;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: 0 0 12px rgba(214, 51, 132, 0.7);
-  z-index: 10020;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-  width: auto;
-  text-align: center;
+/* Simplified button styles - most styling now handled by .floating-controls */
+.audio-toggle, .sidebar-toggle {
+  background: inherit;
+  border: inherit;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  cursor: inherit;
+  transition: inherit;
 }
 
-.sidebar-toggle:hover {
-  background: #c22170;
-  transform: scale(1.05);
+.audio-toggle:hover, .sidebar-toggle:hover {
+  background: inherit;
+  transform: inherit;
+}
+
+#back-to-top {
+  display: none; /* Hidden by default, shown via JavaScript */
 }
 
 #copied-sidebar {
@@ -773,28 +884,6 @@ audio#moan-audio { display: none; }
 }
 
 /* === Audio Control Panel === */
-.audio-toggle {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: #d63384;
-  color: white;
-  border: none;
-  padding: 0.6em 1.2em;
-  border-radius: 1.5rem;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: 0 0 12px rgba(214, 51, 132, 0.7);
-  z-index: 10000;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.audio-toggle:hover {
-  background: #c22170;
-  transform: scale(1.05);
-}
-
 .audio-panel {
   position: fixed;
   bottom: 4.5rem;
@@ -954,17 +1043,16 @@ input,
   border-radius: 2rem !important;
 }
 
-/* Pink glow and border for all interactive elements */
-button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle, #back-to-top {
+/* Pink glow and border for most interactive elements - floating-controls buttons handle their own styling */
+button:not(.floating-controls button), .tag-btn, .tag-button {
   box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
   border: 2px solid #ffb6d5 !important;
-  background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   font-weight: bold;
   letter-spacing: 0.5px;
   transition: box-shadow 0.2s, background 0.2s, color 0.2s;
 }
-button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-toggle:hover, #back-to-top:hover {
+button:not(.floating-controls button):hover, .tag-btn:hover, .tag-button:hover {
   box-shadow: 0 0 12px 4px #ff63a580, 0 2px 16px #fd7bc580;
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   color: #fff;
@@ -1177,38 +1265,18 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
 }
 
-/* Portrait mobile: make audio & copied artists buttons small, circular, and stacked, with spacing */
+/* Remove outdated mobile override styles that conflict with new floating-controls */
 @media (max-width: 600px) and (orientation: portrait) {
+  .floating-controls button {
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 50%;
+  }
   
-  .audio-toggle::after,
-  .sidebar-toggle::after,
-  .audio-toggle span,
-  .sidebar-toggle span {
-    display: none !important;
+  .control-label {
+    display: none;
   }
 }
-
-/* Copied artists sidebar covers full screen on mobile portrait */
-@media (max-width: 600px) and (orientation: portrait) {
-  .audio-toggle,
-  .sidebar-toggle {
-    display: inline-flex !important;  /* Force show */
-    position: fixed !important;
-    bottom: 1rem !important;
-    min-width: 54px !important;
-    min-height: 54px !important;
-    width: 54px !important;
-    height: 54px !important;
-    border-radius: 50% !important;
-    z-index: 10050 !important;
-    background: #d63384;
-    box-shadow: 0 0 12px rgba(214,51,132,0.7);
-    align-items: center;
-    justify-content: center;
-  }
-  .audio-toggle { right: 6.5rem !important; }
-  .sidebar-toggle { right: 1rem !important; }
-  }
   #copied-sidebar {
     position: fixed !important;
     top: 0 !important;
@@ -1356,43 +1424,4 @@ input[type="text"]:focus, input[type="search"]:focus {
 }
 
 
-/* Desktop: hide flex wrapper, use current positioning */
-.floating-buttons {
-  display: none;
-}
-
-/* Mobile: show flex wrapper, buttons side by side, fixed bottom */
-@media (max-width: 600px) {
-  .floating-buttons {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 1rem;
-    z-index: 10020;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    width: 100vw;
-    pointer-events: none; /* let buttons handle pointer events */
-  }
-  .floating-buttons button {
-    pointer-events: all;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    font-size: 2rem;
-    box-shadow: 0 2px 10px #fd7bc540;
-    border: 2px solid #ffb6d5 !important;
-    background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
-    color: #a0005a;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  /* Hide original fixed buttons in mobile */
-  .audio-toggle, .sidebar-toggle {
-    display: none !important;
-  }
-}
+/* Cleaned up - old floating-buttons styles removed to avoid conflicts */

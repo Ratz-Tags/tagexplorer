@@ -293,7 +293,8 @@ function renderArtistsPage() {
       Object.defineProperty(artist, "_imageCount", {
         set(val) {
           if (typeof val === "number") {
-            name.textContent = `${artist.artistName.replace(/_/g, " ")} (${val})`;
+            this._count = val;
+            this._updateCountDisplay();
           }
         },
         get() {
@@ -301,11 +302,42 @@ function renderArtistsPage() {
         },
         configurable: true,
       });
+      
+      Object.defineProperty(artist, "_totalImageCount", {
+        set(val) {
+          if (typeof val === "number") {
+            this._totalCount = val;
+            this._updateCountDisplay();
+          }
+        },
+        get() {
+          return this._totalCount;
+        },
+        configurable: true,
+      });
+      
+      // Method to update the display based on available counts
+      artist._updateCountDisplay = function() {
+        const activeTags = getActiveTags ? getActiveTags() : new Set();
+        const hasActiveTagsFilter = activeTags.size > 0;
+        
+        if (hasActiveTagsFilter && typeof this._count === "number" && typeof this._totalCount === "number") {
+          // Show filtered / total format when tags are active
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count} / ${this._totalCount})`;
+        } else if (typeof this._totalCount === "number") {
+          // Show just total count when no tags active or only total is available
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._totalCount})`;
+        } else if (typeof this._count === "number") {
+          // Fallback to showing just the count we have
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count})`;
+        }
+      };
+      
       artist._countPropertyDefined = true;
     } else {
       // If already defined, just set up the delayed loading message
       setTimeout(() => {
-        if (typeof artist._imageCount !== "number") {
+        if (typeof artist._imageCount !== "number" && typeof artist._totalImageCount !== "number") {
           name.textContent += " [Loading count…]";
         }
       }, 1500);
@@ -324,17 +356,35 @@ function renderArtistsPage() {
     reloadBtn.onclick = (e) => {
       e.stopPropagation();
       artist._imageCount = undefined;
+      artist._totalImageCount = undefined;
       artist._retried = false;
       clearArtistCache(artist.artistName);
       setBestImage(artist, img);
       
-      // Re-fetch count
+      // Re-fetch both counts
+      const activeTags = getActiveTags ? getActiveTags() : new Set();
+      
+      // Fetch total count (without tags)
       getArtistImageCount(artist.artistName)
-        .then(count => {
-          artist._imageCount = count;
+        .then(totalCount => {
+          artist._totalImageCount = totalCount;
+          
+          // If tags are active, fetch filtered count
+          if (activeTags.size > 0) {
+            const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(' ');
+            return fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
+              .then(response => response.json())
+              .then(posts => {
+                const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+                artist._imageCount = uniqueIds.size;
+              });
+          } else {
+            artist._imageCount = totalCount;
+          }
         })
         .catch(() => {
           artist._imageCount = 0;
+          artist._totalImageCount = 0;
         });
     };
 
@@ -389,13 +439,36 @@ async function filterArtists(reset = true) {
       for (let i = 0; i < artists.length; i += batchSize) {
         const batch = artists.slice(i, i + batchSize);
         const promises = batch.map(async (artist) => {
-          if (typeof artist._imageCount === "undefined" && !artist._retried) {
+          if ((typeof artist._imageCount === "undefined" || typeof artist._totalImageCount === "undefined") && !artist._retried) {
             try {
-              const count = await getArtistImageCount(artist.artistName);
-              artist._imageCount = count;
+              const activeTags = getActiveTags ? getActiveTags() : new Set();
+              
+              // Always fetch total count for the artist (without tags)
+              const totalCount = await getArtistImageCount(artist.artistName);
+              artist._totalImageCount = totalCount;
+              
+              // If tags are active, fetch filtered count (artist + tags)
+              if (activeTags.size > 0) {
+                const { fetchArtistImages } = await import('./api.js');
+                const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(' ');
+                
+                try {
+                  // Use danbooru API to get filtered count
+                  const response = await fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`);
+                  const posts = await response.json();
+                  const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+                  artist._imageCount = uniqueIds.size;
+                } catch (error) {
+                  artist._imageCount = 0;
+                }
+              } else {
+                // No tags active, so filtered count is same as total
+                artist._imageCount = totalCount;
+              }
             } catch (error) {
               artist._retried = true;
               artist._imageCount = 0;
+              artist._totalImageCount = 0;
             }
           }
         });
