@@ -518,57 +518,16 @@ async function filterArtists(reset = true) {
 
     // Always fetch counts for the current filtered artists
     async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
+      const { getArtistImageCount } = await import("./api.js");
       for (let i = 0; i < artists.length; i += batchSize) {
         const batch = artists.slice(i, i + batchSize);
-        const promises = batch.map(async (artist) => {
-          if (
-            (typeof artist._imageCount === "undefined" ||
-              typeof artist._totalImageCount === "undefined") &&
-            !artist._retried
-          ) {
-            try {
-              const activeTags = getActiveTags ? getActiveTags() : new Set();
-
-              // Always fetch total count for the artist (without tags)
-              const totalCount = await getArtistImageCount(artist.artistName);
-              artist._totalImageCount = totalCount;
-
-              // If tags are active, fetch filtered count (artist + tags)
-              if (activeTags.size > 0) {
-                const tagQuery = [
-                  artist.artistName,
-                  ...Array.from(activeTags),
-                ].join(" ");
-
-                try {
-                  // Use danbooru API to get filtered count
-                  const response = await fetch(
-                    `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                      tagQuery
-                    )}&limit=1000`
-                  );
-                  const posts = await response.json();
-                  const uniqueIds = new Set(
-                    Array.isArray(posts) ? posts.map((post) => post.id) : []
-                  );
-                  artist._imageCount = uniqueIds.size;
-                } catch (error) {
-                  artist._imageCount = 0;
-                }
-              } else {
-                // No tags active, so filtered count is same as total
-                artist._imageCount = totalCount;
-              }
-            } catch (error) {
-              artist._retried = true;
-              artist._imageCount = 0;
-              artist._totalImageCount = 0;
+        await Promise.all(
+          batch.map(async (artist) => {
+            if (typeof artist._imageCount !== "number") {
+              artist._imageCount = await getArtistImageCount(artist.artistName);
             }
-          }
-        });
-
-        await Promise.all(promises);
-
+          })
+        );
         if (i + batchSize < artists.length) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
