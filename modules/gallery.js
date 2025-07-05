@@ -323,84 +323,50 @@ function renderArtistsPage() {
     name.className = "artist-name";
     name.textContent = artist.artistName.replace(/_/g, " ");
 
-    // Set up image count display with lazy loading
-    if (!artist._countPropertyDefined) {
-      Object.defineProperty(artist, "_imageCount", {
-        set(val) {
-          if (typeof val === "number") {
-            this._count = val;
-            if (typeof this._updateCountDisplay === "function") {
-              this._updateCountDisplay();
-            }
-          }
-        },
-        get() {
-          return this._count;
-        },
-        configurable: true,
-      });
+    // Helper to update count display
+    artist._updateCountDisplay = function () {
+      if (
+        typeof this._imageCount === "number" &&
+        typeof this._totalImageCount === "number"
+      ) {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [${
+          this._imageCount
+        }/${this._totalImageCount}]`;
+      } else if (typeof this._totalImageCount === "number") {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [${
+          this._totalImageCount
+        }]`;
+      } else {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
+      }
+    };
 
-      Object.defineProperty(artist, "_totalImageCount", {
-        set(val) {
-          if (typeof val === "number") {
-            this._totalCount = val;
-            if (typeof this._updateCountDisplay === "function") {
-              this._updateCountDisplay();
-            }
-          }
-        },
-        get() {
-          return this._totalCount;
-        },
-        configurable: true,
-      });
+    // Initial display
+    artist._updateCountDisplay();
 
-      // Method to update the display based on available counts
-      artist._updateCountDisplay = function () {
-        const activeTags = getActiveTags ? getActiveTags() : new Set();
-        const hasActiveTagsFilter = activeTags && activeTags.size > 0;
-
-        // Ensure 'name' exists before updating textContent
-        if (!name) return;
-
-        if (
-          hasActiveTagsFilter &&
-          typeof this._count === "number" &&
-          typeof this._totalCount === "number"
-        ) {
-          // Show filtered / total format when tags are active
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
-            this._count
-          } / ${this._totalCount})`;
-        } else if (typeof this._totalCount === "number") {
-          // Show just total count when no tags active or only total is available
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
-            this._totalCount
-          })`;
-        } else if (typeof this._count === "number") {
-          // Fallback to showing just the count we have
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
-            this._count
-          })`;
-        } else {
-          name.textContent = this.artistName.replace(/_/g, " ");
-        }
-      };
-
-      artist._countPropertyDefined = true;
-    } else {
-      // If already defined, just set up the delayed loading message
-      setTimeout(() => {
-        if (
-          typeof artist._imageCount !== "number" &&
-          typeof artist._totalImageCount !== "number"
-        ) {
-          if (name) {
-            name.textContent += " [Loading count…]";
-          }
-        }
-      }, 400);
-    }
+    // When counts are set later, call this function
+    Object.defineProperty(artist, "_imageCount", {
+      set(val) {
+        this.__imageCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__imageCount;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(artist, "_totalImageCount", {
+      set(val) {
+        this.__totalImageCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__totalImageCount;
+      },
+      configurable: true,
+    });
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "copy-button";
@@ -412,49 +378,57 @@ function renderArtistsPage() {
     reloadBtn.className = "reload-button";
     reloadBtn.textContent = "⟳";
     reloadBtn.title = "Reload artist images/count";
-    reloadBtn.onclick = (e) => {
+    reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      // Clear cache for this artist
+      if (typeof clearArtistCache === "function")
+        clearArtistCache(artist.artistName);
+
+      // Reset counts
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
-      artist._retried = false;
-      clearArtistCache(artist.artistName);
-      setBestImage(artist, img);
 
-      // Re-fetch both counts
+      // Optionally show loading state
+      name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
+
+      // Fetch new counts
+      const { getArtistImageCount } = await import("./api.js");
+      const totalCount = await getArtistImageCount(artist.artistName);
+      artist._totalImageCount = totalCount;
+
       const activeTags = getActiveTags ? getActiveTags() : new Set();
+      if (activeTags && activeTags.size > 0) {
+        const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(
+          " "
+        );
+        const response = await fetch(
+          `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+            tagQuery
+          )}&limit=1000`
+        );
+        const posts = await response.json();
+        const uniqueIds = new Set(
+          Array.isArray(posts) ? posts.map((post) => post.id) : []
+        );
+        artist._imageCount = uniqueIds.size;
+      } else {
+        artist._imageCount = totalCount;
+      }
 
-      // Fetch total count (without tags)
-      getArtistImageCount(artist.artistName)
-        .then((totalCount) => {
-          artist._totalImageCount = totalCount;
-
-          // If tags are active, fetch filtered count
-          if (activeTags.size > 0) {
-            const tagQuery = [
-              artist.artistName,
-              ...Array.from(activeTags),
-            ].join(" ");
-            return fetch(
-              `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                tagQuery
-              )}&limit=1000`
-            )
-              .then((response) => response.json())
-              .then((posts) => {
-                const uniqueIds = new Set(
-                  Array.isArray(posts) ? posts.map((post) => post.id) : []
-                );
-                artist._imageCount = uniqueIds.size;
-              });
-          } else {
-            artist._imageCount = totalCount;
-          }
-        })
-        .catch(() => {
-          artist._imageCount = 0;
-          artist._totalImageCount = 0;
-        });
-    };
+      // Update display
+      if (
+        typeof artist._imageCount === "number" &&
+        typeof artist._totalImageCount === "number"
+      ) {
+        name.textContent = `${artist.artistName.replace(/_/g, " ")} [${
+          artist._imageCount
+        }/${artist._totalImageCount}]`;
+      } else if (typeof artist._totalImageCount === "number") {
+        name.textContent = `${artist.artistName.replace(/_/g, " ")} [${
+          artist._totalImageCount
+        }]`;
+      }
+    });
 
     // Show tags if available
     if (artist.kinkTags && artist.kinkTags.length > 0) {
