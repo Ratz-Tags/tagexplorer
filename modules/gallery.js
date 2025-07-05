@@ -15,7 +15,6 @@ import { handleArtistCopy } from "./sidebar.js";
 let currentArtistPage = 0;
 const artistsPerPage = 24;
 let filtered = [];
-let countsFetched = false;
 let isFetching = false;
 
 // DOM references
@@ -488,15 +487,12 @@ async function filterArtists(reset = true) {
     if (reset) {
       currentArtistPage = 0;
       artistGallery.innerHTML = "";
-      countsFetched = false;
     }
 
-    if (reset || !countsFetched) {
-      spinner = artistGallery.querySelector(".gallery-spinner");
-      if (!spinner) {
-        spinner = createSpinner();
-        artistGallery.appendChild(spinner);
-      }
+    spinner = artistGallery.querySelector(".gallery-spinner");
+    if (!spinner) {
+      spinner = createSpinner();
+      artistGallery.appendChild(spinner);
     }
 
     isFetching = true;
@@ -520,82 +516,72 @@ async function filterArtists(reset = true) {
       filtered.map((a) => a.artistName)
     );
 
-    // Fetch counts in batches if not done yet
-    if (!countsFetched) {
-      countsFetched = true;
+    // Always fetch counts for the current filtered artists
+    async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
+      for (let i = 0; i < artists.length; i += batchSize) {
+        const batch = artists.slice(i, i + batchSize);
+        const promises = batch.map(async (artist) => {
+          if (
+            (typeof artist._imageCount === "undefined" ||
+              typeof artist._totalImageCount === "undefined") &&
+            !artist._retried
+          ) {
+            try {
+              const activeTags = getActiveTags ? getActiveTags() : new Set();
 
-      async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
-        for (let i = 0; i < artists.length; i += batchSize) {
-          const batch = artists.slice(i, i + batchSize);
-          const promises = batch.map(async (artist) => {
-            if (
-              (typeof artist._imageCount === "undefined" ||
-                typeof artist._totalImageCount === "undefined") &&
-              !artist._retried
-            ) {
-              try {
-                const activeTags = getActiveTags ? getActiveTags() : new Set();
+              // Always fetch total count for the artist (without tags)
+              const totalCount = await getArtistImageCount(artist.artistName);
+              artist._totalImageCount = totalCount;
 
-                // Always fetch total count for the artist (without tags)
-                const totalCount = await getArtistImageCount(artist.artistName);
-                artist._totalImageCount = totalCount;
+              // If tags are active, fetch filtered count (artist + tags)
+              if (activeTags.size > 0) {
+                const tagQuery = [
+                  artist.artistName,
+                  ...Array.from(activeTags),
+                ].join(" ");
 
-                // If tags are active, fetch filtered count (artist + tags)
-                if (activeTags.size > 0) {
-                  const tagQuery = [
-                    artist.artistName,
-                    ...Array.from(activeTags),
-                  ].join(" ");
-
-                  try {
-                    // Use danbooru API to get filtered count
-                    const response = await fetch(
-                      `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                        tagQuery
-                      )}&limit=1000`
-                    );
-                    const posts = await response.json();
-                    const uniqueIds = new Set(
-                      Array.isArray(posts) ? posts.map((post) => post.id) : []
-                    );
-                    artist._imageCount = uniqueIds.size;
-                  } catch (error) {
-                    artist._imageCount = 0;
-                  }
-                } else {
-                  // No tags active, so filtered count is same as total
-                  artist._imageCount = totalCount;
+                try {
+                  // Use danbooru API to get filtered count
+                  const response = await fetch(
+                    `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                      tagQuery
+                    )}&limit=1000`
+                  );
+                  const posts = await response.json();
+                  const uniqueIds = new Set(
+                    Array.isArray(posts) ? posts.map((post) => post.id) : []
+                  );
+                  artist._imageCount = uniqueIds.size;
+                } catch (error) {
+                  artist._imageCount = 0;
                 }
-              } catch (error) {
-                artist._retried = true;
-                artist._imageCount = 0;
-                artist._totalImageCount = 0;
+              } else {
+                // No tags active, so filtered count is same as total
+                artist._imageCount = totalCount;
               }
+            } catch (error) {
+              artist._retried = true;
+              artist._imageCount = 0;
+              artist._totalImageCount = 0;
             }
-          });
-
-          await Promise.all(promises);
-
-          if (i + batchSize < artists.length) {
-            await new Promise((resolve) => setTimeout(resolve, delayMs));
           }
+        });
+
+        await Promise.all(promises);
+
+        if (i + batchSize < artists.length) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
       }
-
-      await fetchInBatches(filtered)
-        .then(() => {
-          countsFetched = true;
-        })
-        .catch(console.warn);
     }
+
+    await fetchInBatches(filtered);
 
     renderArtistsPage();
 
     if (filtered.length > (currentArtistPage + 1) * artistsPerPage) {
       currentArtistPage++;
     }
-
-    // Cleanup logic moved to the finally block to avoid duplication.
   } catch (error) {
     console.warn("filterArtists failed", error);
   } finally {
