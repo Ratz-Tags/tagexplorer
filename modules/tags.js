@@ -207,6 +207,7 @@ function renderTagButtons() {
       renderTagButtons();
       if (renderArtists) renderArtists();
       if (setRandomBackground) setRandomBackground();
+      if (navigator.vibrate) navigator.vibrate(50);
     };
     tagButtonsContainer.appendChild(btn);
   });
@@ -221,6 +222,7 @@ function renderTagButtons() {
 function clearAllTags() {
   activeTags.clear();
   renderTagButtons();
+  if (navigator.vibrate) navigator.vibrate(50);
   if (renderArtists) renderArtists(true);
   if (setRandomBackground) setRandomBackground();
 }
