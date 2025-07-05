@@ -1375,7 +1375,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   position: absolute;
   top: 1.2rem;
   right: 1.2rem;
-  z-index: 10100;
+  z-index: 10;
   background: #ffd6f6;
   color: #a0005a;
   border: none;
@@ -1396,12 +1396,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   color: #fff;
 }
 #copied-sidebar {
-  position: fixed;
-  /* ...existing styles... */
-  /* Make sure position: relative for absolute close button */
-  position: fixed;
-  /* ... */
-  /* Add this if not present: */
   position: relative;
 }
 
