@@ -1292,7 +1292,9 @@ input[type="text"]:focus, input[type="search"]:focus {
 }
 
 .reload-button {
-  margin-left: 6px;
+  position: absolute;
+  top: var(--spacing-sm);
+  right: 44px; /* Place it left of .copy-button (which is at right: var(--spacing-sm)) */
   border: none;
   background: #ffd6f6;
   color: #a0005a;
@@ -1304,10 +1306,10 @@ input[type="text"]:focus, input[type="search"]:focus {
   box-shadow: 0 1px 4px #fd7bc540;
   transition: background 0.2s;
   vertical-align: middle;
-}
-.reload-button:hover {
-  background: #fd7bc5;
-  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
 }
 
 .copied-sidebar-close {
