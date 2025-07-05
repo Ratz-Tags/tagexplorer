@@ -285,6 +285,11 @@ async function openArtistZoom(artist) {
 function renderArtistsPage() {
   if (!artistGallery) return;
 
+  // Always reset to first page for a new filter
+  if (currentArtistPage === 0) {
+    currentArtistPage = 0;
+  }
+
   // Remove spinner if present
   const spinner = artistGallery.querySelector(".gallery-spinner");
   if (spinner) spinner.remove();
@@ -483,8 +488,6 @@ async function filterArtists(reset = true) {
     if (reset) {
       currentArtistPage = 0;
       artistGallery.innerHTML = "";
-
-      // Reset counts so they are refetched for new filters
       countsFetched = false;
     }
 
@@ -588,7 +591,7 @@ async function filterArtists(reset = true) {
 
     renderArtistsPage();
 
-    if (filtered.length > currentArtistPage * artistsPerPage) {
+    if (filtered.length > (currentArtistPage + 1) * artistsPerPage) {
       currentArtistPage++;
     }
 
