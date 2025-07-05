@@ -284,16 +284,17 @@ async function openArtistZoom(artist) {
 function renderArtistsPage() {
   if (!artistGallery) return;
 
-  // Always reset to first page for a new filter
+  // Only clear on first page
   if (currentArtistPage === 0) {
-    artistGallery.innerHTML = ""; // Only clear on first page
+    artistGallery.innerHTML = "";
   }
 
   // Remove spinner if present
   const spinner = artistGallery.querySelector(".gallery-spinner");
   if (spinner) spinner.remove();
 
-  artistGallery.innerHTML = ""; // Clear previous content
+  // DO NOT clear artistGallery here!
+  // artistGallery.innerHTML = ""; // <-- REMOVE THIS LINE
 
   if (filtered.length === 0) {
     const msg = document.createElement("div");
