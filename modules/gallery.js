@@ -2,9 +2,14 @@
  * Gallery module - Handles artist gallery display and image management
  */
 
-import { createFullscreenViewer, createSpinner } from './ui.js';
-import { fetchArtistImages, clearArtistCache, getArtistImageCount, buildImageUrl } from './api.js';
-import { handleArtistCopy } from './sidebar.js';
+import { createFullscreenViewer, createSpinner } from "./ui.js";
+import {
+  fetchArtistImages,
+  clearArtistCache,
+  getArtistImageCount,
+  buildImageUrl,
+} from "./api.js";
+import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
 let currentArtistPage = 0;
@@ -27,11 +32,11 @@ let getArtistNameFilter = null;
  */
 async function setRandomBackground() {
   if (!backgroundBlur) return;
-  
+
   try {
-    const { getRandomBackgroundImage } = await import('./api.js');
+    const { getRandomBackgroundImage } = await import("./api.js");
     const imageUrl = await getRandomBackgroundImage();
-    
+
     if (imageUrl) {
       backgroundBlur.style.backgroundImage = `url(${imageUrl})`;
     } else {
@@ -54,8 +59,10 @@ function setBestImage(artist, img) {
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
   // Session storage cache for API results
-  const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(",")}`;
-  
+  const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(
+    ","
+  )}`;
+
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
     if (!cached) return null;
@@ -65,7 +72,7 @@ function setBestImage(artist, img) {
       return null;
     }
   }
-  
+
   function setApiCache(data) {
     try {
       sessionStorage.setItem(apiCacheKey, JSON.stringify(data));
@@ -191,7 +198,7 @@ function lazyLoadBestImage(artist, img) {
 async function openArtistZoom(artist) {
   const viewer = createFullscreenViewer();
   const { wrapper, img: zoomed, noEntriesMsg, prevBtn, nextBtn } = viewer;
-  
+
   let currentIndex = 0;
   let posts = [];
 
@@ -234,7 +241,7 @@ async function openArtistZoom(artist) {
     currentIndex = (currentIndex - 1 + posts.length) % posts.length;
     debouncedShowPost(currentIndex);
   };
-  
+
   nextBtn.onclick = () => {
     currentIndex = (currentIndex + 1) % posts.length;
     debouncedShowPost(currentIndex);
@@ -251,19 +258,19 @@ async function openArtistZoom(artist) {
       showNoEntries();
       return;
     }
-    
+
     const validPosts = data.filter((post) => {
       const url = post?.large_file_url || post?.file_url;
       const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
       return isImage && !post.is_banned;
     });
-    
+
     posts = validPosts;
     if (posts.length === 0) {
       showNoEntries();
       return;
     }
-    
+
     currentIndex = 0;
     tryShow(currentIndex);
   } catch (error) {
@@ -277,7 +284,7 @@ async function openArtistZoom(artist) {
  */
 function renderArtistsPage() {
   if (!artistGallery) return;
-  
+
   // Remove spinner if present
   const spinner = artistGallery.querySelector(".gallery-spinner");
   if (spinner) spinner.remove();
@@ -315,7 +322,7 @@ function renderArtistsPage() {
         },
         configurable: true,
       });
-      
+
       Object.defineProperty(artist, "_totalImageCount", {
         set(val) {
           if (typeof val === "number") {
@@ -328,32 +335,45 @@ function renderArtistsPage() {
         },
         configurable: true,
       });
-      
+
       // Method to update the display based on available counts
-      artist._updateCountDisplay = function() {
+      artist._updateCountDisplay = function () {
         const activeTags = getActiveTags ? getActiveTags() : new Set();
         const hasActiveTagsFilter = activeTags.size > 0;
         // Inside artist._updateCountDisplay or the place where you set the artist name
 
-        if (hasActiveTagsFilter && typeof this._count === "number" && typeof this._totalCount === "number") {
+        if (
+          hasActiveTagsFilter &&
+          typeof this._count === "number" &&
+          typeof this._totalCount === "number"
+        ) {
           // Show filtered / total format when tags are active
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count} / ${this._totalCount})`;
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
+            this._count
+          } / ${this._totalCount})`;
         } else if (typeof this._totalCount === "number") {
           // Show just total count when no tags active or only total is available
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._totalCount})`;
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
+            this._totalCount
+          })`;
         } else if (typeof this._count === "number") {
           // Fallback to showing just the count we have
-          name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count})`;
+          name.textContent = `${this.artistName.replace(/_/g, " ")} (${
+            this._count
+          })`;
         } else {
           name.textContent = this.artistName.replace(/_/g, " ");
         }
       };
-      
+
       artist._countPropertyDefined = true;
     } else {
       // If already defined, just set up the delayed loading message
       setTimeout(() => {
-        if (typeof artist._imageCount !== "number" && typeof artist._totalImageCount !== "number") {
+        if (
+          typeof artist._imageCount !== "number" &&
+          typeof artist._totalImageCount !== "number"
+        ) {
           name.textContent += " [Loading count…]";
         }
       }, 400);
@@ -376,22 +396,31 @@ function renderArtistsPage() {
       artist._retried = false;
       clearArtistCache(artist.artistName);
       setBestImage(artist, img);
-      
+
       // Re-fetch both counts
       const activeTags = getActiveTags ? getActiveTags() : new Set();
-      
+
       // Fetch total count (without tags)
       getArtistImageCount(artist.artistName)
-        .then(totalCount => {
+        .then((totalCount) => {
           artist._totalImageCount = totalCount;
-          
+
           // If tags are active, fetch filtered count
           if (activeTags.size > 0) {
-            const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(' ');
-            return fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`)
-              .then(response => response.json())
-              .then(posts => {
-                const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
+            const tagQuery = [
+              artist.artistName,
+              ...Array.from(activeTags),
+            ].join(" ");
+            return fetch(
+              `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                tagQuery
+              )}&limit=1000`
+            )
+              .then((response) => response.json())
+              .then((posts) => {
+                const uniqueIds = new Set(
+                  Array.isArray(posts) ? posts.map((post) => post.id) : []
+                );
                 artist._imageCount = uniqueIds.size;
               });
           } else {
@@ -450,89 +479,102 @@ async function filterArtists(reset = true) {
     }
 
     isFetching = true;
-  }
-  // Get active tags and filters
-  const activeTags = getActiveTags ? getActiveTags() : new Set();
-  const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
-  // Filter artists
-  filtered = allArtists.filter((artist) => {
-    const tags = artist.kinkTags || [];
-    return (
-      Array.from(activeTags).every((tag) => tags.includes(tag)) &&
-      (artist.artistName.toLowerCase().includes(artistNameFilter) ||
-        artistNameFilter === "")
-    );
-  });
+    // Get active tags and filters
+    const activeTags = getActiveTags ? getActiveTags() : new Set();
+    const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
-  // Fetch counts in batches if not done yet
-  if (!countsFetched) {
-    countsFetched = true;
-    
-    async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
-      for (let i = 0; i < artists.length; i += batchSize) {
-        const batch = artists.slice(i, i + batchSize);
-        const promises = batch.map(async (artist) => {
-          if ((typeof artist._imageCount === "undefined" || typeof artist._totalImageCount === "undefined") && !artist._retried) {
-            try {
-              const activeTags = getActiveTags ? getActiveTags() : new Set();
-              
-              // Always fetch total count for the artist (without tags)
-              const totalCount = await getArtistImageCount(artist.artistName);
-              artist._totalImageCount = totalCount;
-              
-              // If tags are active, fetch filtered count (artist + tags)
-              if (activeTags.size > 0) {
-                const { fetchArtistImages } = await import('./api.js');
-                const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(' ');
-                
-                try {
-                  // Use danbooru API to get filtered count
-                  const response = await fetch(`https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(tagQuery)}&limit=1000`);
-                  const posts = await response.json();
-                  const uniqueIds = new Set(Array.isArray(posts) ? posts.map(post => post.id) : []);
-                  artist._imageCount = uniqueIds.size;
-                } catch (error) {
-                  artist._imageCount = 0;
+    // Filter artists
+    filtered = allArtists.filter((artist) => {
+      const tags = artist.kinkTags || [];
+      return (
+        Array.from(activeTags).every((tag) => tags.includes(tag)) &&
+        (artist.artistName.toLowerCase().includes(artistNameFilter) ||
+          artistNameFilter === "")
+      );
+    });
+
+    // Fetch counts in batches if not done yet
+    if (!countsFetched) {
+      countsFetched = true;
+
+      async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
+        for (let i = 0; i < artists.length; i += batchSize) {
+          const batch = artists.slice(i, i + batchSize);
+          const promises = batch.map(async (artist) => {
+            if (
+              (typeof artist._imageCount === "undefined" ||
+                typeof artist._totalImageCount === "undefined") &&
+              !artist._retried
+            ) {
+              try {
+                const activeTags = getActiveTags ? getActiveTags() : new Set();
+
+                // Always fetch total count for the artist (without tags)
+                const totalCount = await getArtistImageCount(artist.artistName);
+                artist._totalImageCount = totalCount;
+
+                // If tags are active, fetch filtered count (artist + tags)
+                if (activeTags.size > 0) {
+                  const { fetchArtistImages } = await import("./api.js");
+                  const tagQuery = [
+                    artist.artistName,
+                    ...Array.from(activeTags),
+                  ].join(" ");
+
+                  try {
+                    // Use danbooru API to get filtered count
+                    const response = await fetch(
+                      `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                        tagQuery
+                      )}&limit=1000`
+                    );
+                    const posts = await response.json();
+                    const uniqueIds = new Set(
+                      Array.isArray(posts) ? posts.map((post) => post.id) : []
+                    );
+                    artist._imageCount = uniqueIds.size;
+                  } catch (error) {
+                    artist._imageCount = 0;
+                  }
+                } else {
+                  // No tags active, so filtered count is same as total
+                  artist._imageCount = totalCount;
                 }
-              } else {
-                // No tags active, so filtered count is same as total
-                artist._imageCount = totalCount;
+              } catch (error) {
+                artist._retried = true;
+                artist._imageCount = 0;
+                artist._totalImageCount = 0;
               }
-            } catch (error) {
-              artist._retried = true;
-              artist._imageCount = 0;
-              artist._totalImageCount = 0;
             }
+          });
+
+          await Promise.all(promises);
+
+          if (i + batchSize < artists.length) {
+            await new Promise((resolve) => setTimeout(resolve, delayMs));
           }
-        });
-        
-        await Promise.all(promises);
-        
-        if (i + batchSize < artists.length) {
-          await new Promise(resolve => setTimeout(resolve, delayMs));
         }
       }
+
+      await fetchInBatches(filtered)
+        .then(() => {
+          countsFetched = true;
+        })
+        .catch(console.warn);
     }
-    
-    await fetchInBatches(filtered)
-      .then(() => {
-        countsFetched = true;
-      })
-      .catch(console.warn);
-  }
 
-  renderArtistsPage();
+    renderArtistsPage();
 
-  if (filtered.length > currentArtistPage * artistsPerPage) {
-    currentArtistPage++;
-  }
+    if (filtered.length > currentArtistPage * artistsPerPage) {
+      currentArtistPage++;
+    }
 
-  // Cleanup logic moved to the finally block to avoid duplication.
+    // Cleanup logic moved to the finally block to avoid duplication.
   } catch (error) {
-    console.warn('filterArtists failed', error);
+    console.warn("filterArtists failed", error);
   } finally {
-    const remaining = artistGallery.querySelector('.gallery-spinner');
+    const remaining = artistGallery.querySelector(".gallery-spinner");
     if (remaining) remaining.remove();
     isFetching = false;
   }
@@ -582,7 +624,7 @@ function getPaginationInfo() {
     currentPage: currentArtistPage,
     perPage: artistsPerPage,
     total: filtered.length,
-    hasMore: filtered.length > currentArtistPage * artistsPerPage
+    hasMore: filtered.length > currentArtistPage * artistsPerPage,
   };
 }
 
@@ -597,5 +639,5 @@ export {
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
   getFilteredArtists,
-  getPaginationInfo
+  getPaginationInfo,
 };
