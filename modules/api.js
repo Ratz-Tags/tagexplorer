@@ -128,27 +128,23 @@ async function fetchArtistImages(artistName, selectedTags = []) {
 /**
  * Gets artist image count with caching
  */
-async function getArtistImageCount(artistName) {
+export async function getArtistImageCount(artistName) {
   try {
-    let page = 1;
-    const uniqueIds = new Set();
-
-    while (true) {
-      const posts = await fetchPosts(artistName, {
-        limit: 200,
-        page,
-        useCache: false,
-      });
-
-      posts.forEach((post) => uniqueIds.add(post.id));
-
-      if (posts.length < 200) break;
-      page += 1;
-    }
-
-    return uniqueIds.size;
-  } catch (error) {
-    console.warn("Failed to get artist image count:", error);
+    const response = await fetch(
+      `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+        artistName
+      )}&limit=1000`
+    );
+    const posts = await response.json();
+    if (!Array.isArray(posts)) return 0;
+    // Filter for images only
+    const validPosts = posts.filter((post) => {
+      const url = post?.large_file_url || post?.file_url;
+      return url && /\.(jpg|jpeg|png|gif)$/i.test(url) && !post.is_banned;
+    });
+    return validPosts.length;
+  } catch (e) {
+    console.warn("getArtistImageCount failed:", e);
     return 0;
   }
 }
