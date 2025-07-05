@@ -518,9 +518,7 @@ async function filterArtists(reset = true) {
     currentArtistPage++;
   }
 
-  const spinEl = artistGallery.querySelector(".gallery-spinner");
-  if (spinEl) spinEl.remove();
-  isFetching = false;
+  // Cleanup logic moved to the finally block to avoid duplication.
   } catch (error) {
     console.warn('filterArtists failed', error);
   } finally {
