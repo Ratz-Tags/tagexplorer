@@ -289,6 +289,16 @@ function renderArtistsPage() {
   const spinner = artistGallery.querySelector(".gallery-spinner");
   if (spinner) spinner.remove();
 
+  artistGallery.innerHTML = ""; // Clear previous content
+
+  if (filtered.length === 0) {
+    const msg = document.createElement("div");
+    msg.className = "no-artists-msg";
+    msg.textContent = "No artists found for this filter.";
+    artistGallery.appendChild(msg);
+    return;
+  }
+
   const start = currentArtistPage * artistsPerPage;
   const end = start + artistsPerPage;
   const artistsToShow = filtered.slice(start, end);
@@ -501,6 +511,11 @@ async function filterArtists(reset = true) {
           artistNameFilter === "")
       );
     });
+    console.log(
+      "Filtered artists:",
+      filtered.length,
+      filtered.map((a) => a.artistName)
+    );
 
     // Fetch counts in batches if not done yet
     if (!countsFetched) {
