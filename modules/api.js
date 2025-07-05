@@ -200,7 +200,6 @@ export {
   filterValidImagePosts,
   getRandomBackgroundImage,
   fetchArtistImages,
-  getArtistImageCount,
   clearArtistCache,
   loadAppData,
 };
