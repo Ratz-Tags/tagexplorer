@@ -423,7 +423,6 @@ function renderArtistsPage() {
  */
 async function filterArtists(reset = true) {
   if (!artistGallery) return;
-
   if (isFetching) {
     const existing = artistGallery.querySelector(".gallery-spinner");
     if (!existing) {
@@ -432,23 +431,26 @@ async function filterArtists(reset = true) {
     return;
   }
 
-  if (reset) {
-    currentArtistPage = 0;
-    artistGallery.innerHTML = "";
+  let spinner;
+  try {
+    if (reset) {
+      currentArtistPage = 0;
+      artistGallery.innerHTML = "";
 
-    // Reset counts so they are refetched for new filters
-    countsFetched = false;
-  }
-
-  if (reset || !countsFetched) {
-    let spinner = artistGallery.querySelector(".gallery-spinner");
-    if (!spinner) {
-      spinner = createSpinner();
-      artistGallery.appendChild(spinner);
+      // Reset counts so they are refetched for new filters
+      countsFetched = false;
     }
-  }
-  isFetching = true;
 
+    if (reset || !countsFetched) {
+      spinner = artistGallery.querySelector(".gallery-spinner");
+      if (!spinner) {
+        spinner = createSpinner();
+        artistGallery.appendChild(spinner);
+      }
+    }
+
+    isFetching = true;
+  }
   // Get active tags and filters
   const activeTags = getActiveTags ? getActiveTags() : new Set();
   const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
@@ -513,7 +515,11 @@ async function filterArtists(reset = true) {
       }
     }
     
-    await fetchInBatches(filtered).catch(console.warn);
+    await fetchInBatches(filtered)
+      .then(() => {
+        countsFetched = true;
+      })
+      .catch(console.warn);
   }
 
   renderArtistsPage();
@@ -522,9 +528,14 @@ async function filterArtists(reset = true) {
     currentArtistPage++;
   }
 
-  const spinEl = artistGallery.querySelector(".gallery-spinner");
-  if (spinEl) spinEl.remove();
-  isFetching = false;
+  // Cleanup logic moved to the finally block to avoid duplication.
+  } catch (error) {
+    console.warn('filterArtists failed', error);
+  } finally {
+    const remaining = artistGallery.querySelector('.gallery-spinner');
+    if (remaining) remaining.remove();
+    isFetching = false;
+  }
 }
 
 /**
