@@ -320,7 +320,8 @@ function renderArtistsPage() {
       artist._updateCountDisplay = function() {
         const activeTags = getActiveTags ? getActiveTags() : new Set();
         const hasActiveTagsFilter = activeTags.size > 0;
-        
+        // Inside artist._updateCountDisplay or the place where you set the artist name
+
         if (hasActiveTagsFilter && typeof this._count === "number" && typeof this._totalCount === "number") {
           // Show filtered / total format when tags are active
           name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count} / ${this._totalCount})`;
@@ -330,6 +331,8 @@ function renderArtistsPage() {
         } else if (typeof this._count === "number") {
           // Fallback to showing just the count we have
           name.textContent = `${this.artistName.replace(/_/g, " ")} (${this._count})`;
+        } else {
+          name.textContent = this.artistName.replace(/_/g, " ");
         }
       };
       
@@ -340,7 +343,7 @@ function renderArtistsPage() {
         if (typeof artist._imageCount !== "number" && typeof artist._totalImageCount !== "number") {
           name.textContent += " [Loading count…]";
         }
-      }, 1500);
+      }, 400);
     }
 
     const copyBtn = document.createElement("button");
