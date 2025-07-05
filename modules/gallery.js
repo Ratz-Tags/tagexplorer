@@ -286,7 +286,7 @@ function renderArtistsPage() {
 
   // Always reset to first page for a new filter
   if (currentArtistPage === 0) {
-    currentArtistPage = 0;
+    artistGallery.innerHTML = ""; // Only clear on first page
   }
 
   // Remove spinner if present
@@ -559,10 +559,6 @@ async function filterArtists(reset = true) {
     fetchInBatches(filtered).catch((e) => {
       console.error("Batch fetch failed:", e);
     });
-
-    if (filtered.length > (currentArtistPage + 1) * artistsPerPage) {
-      currentArtistPage++;
-    }
   } catch (error) {
     console.warn("filterArtists failed", error);
   } finally {
@@ -646,3 +642,18 @@ export {
   getPaginationInfo,
   getArtistImageCountWithTimeout,
 };
+
+function setupInfiniteScroll() {
+  window.addEventListener("scroll", () => {
+    if (
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
+      (currentArtistPage + 1) * artistsPerPage < filtered.length
+    ) {
+      currentArtistPage++;
+      renderArtistsPage();
+    }
+  });
+}
+
+// Call this after initGallery()
+setupInfiniteScroll();
