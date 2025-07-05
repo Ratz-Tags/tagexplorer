@@ -575,7 +575,9 @@ async function filterArtists(reset = true) {
       }
     }
 
-    await fetchInBatches(filtered);
+    await fetchInBatches(filtered).catch((e) => {
+      console.error("Batch fetch failed:", e);
+    });
 
     renderArtistsPage();
 
@@ -639,6 +641,18 @@ function getPaginationInfo() {
   };
 }
 
+/**
+ * Gets the artist image count with a timeout
+ */
+function getArtistImageCountWithTimeout(name, ms = 8000) {
+  return Promise.race([
+    getArtistImageCount(name),
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("Timeout")), ms)
+    ),
+  ]);
+}
+
 // Export functions for ES modules
 export {
   initGallery,
@@ -651,4 +665,5 @@ export {
   setGetArtistNameFilterCallback,
   getFilteredArtists,
   getPaginationInfo,
+  getArtistImageCountWithTimeout,
 };
