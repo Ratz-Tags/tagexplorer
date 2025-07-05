@@ -70,37 +70,42 @@ function updateCopiedSidebar() {
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.cursor = "pointer";
+    div.style.padding = "1em 0.5em"; // More tap area
+    div.style.gap = "12px"; // More space between image and text
+    div.style.fontSize = "1.15em"; // Larger text
+
     let tooltip =
       artist && artist.tooltip
         ? artist.tooltip
         : artist?.artistName.replace(/_/g, " ");
+
     if (artist && artist.thumbnailUrl) {
       const img = document.createElement("img");
       img.src = artist.thumbnailUrl;
-      img.style.width = "32px";
-      img.style.height = "32px";
-      img.style.borderRadius = "8px";
-      img.style.marginRight = "8px";
+      img.style.width = "44px";
+      img.style.height = "44px";
+      img.style.borderRadius = "12px";
+      img.style.marginRight = "10px";
       img.title = tooltip;
-      img.onclick = (e) => {
-        e.stopPropagation();
-        // Import and call openArtistZoom from gallery module
-        import('./gallery.js').then(gallery => {
-          gallery.openArtistZoom(artist);
-        }).catch(console.warn);
-      };
       div.appendChild(img);
     }
+
     const nameSpan = document.createElement("span");
     nameSpan.textContent = name.replace(/_/g, " ");
     nameSpan.title = tooltip;
-    nameSpan.onclick = () => {
-      // Import and call openArtistZoom from gallery module
-      import('./gallery.js').then(gallery => {
-        gallery.openArtistZoom(artist);
-      }).catch(console.warn);
-    };
+    nameSpan.style.flex = "1";
+    nameSpan.style.fontWeight = "bold";
     div.appendChild(nameSpan);
+
+    // Make the whole row tappable
+    div.onclick = () => {
+      import("./gallery.js")
+        .then((gallery) => {
+          gallery.openArtistZoom(artist);
+        })
+        .catch(console.warn);
+    };
+
     copiedSidebar.appendChild(div);
   });
 }
@@ -110,7 +115,7 @@ function updateCopiedSidebar() {
  */
 function initSidebar() {
   copiedSidebar = document.getElementById("copied-sidebar");
-  
+
   const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
   if (sidebarToggles && copiedSidebar) {
     sidebarToggles.forEach((btn) => {
@@ -162,7 +167,7 @@ export {
   setAllArtists,
   setCopiedArtists,
   setCopiedSidebar,
-  showToast
+  showToast,
 };
 
 // Legacy CommonJS exports for existing tests
