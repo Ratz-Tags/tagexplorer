@@ -554,11 +554,11 @@ async function filterArtists(reset = true) {
       }
     }
 
-    await fetchInBatches(filtered).catch((e) => {
+    renderArtistsPage(); // Render immediately
+
+    fetchInBatches(filtered).catch((e) => {
       console.error("Batch fetch failed:", e);
     });
-
-    renderArtistsPage();
 
     if (filtered.length > (currentArtistPage + 1) * artistsPerPage) {
       currentArtistPage++;
