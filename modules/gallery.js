@@ -314,7 +314,9 @@ function renderArtistsPage() {
         set(val) {
           if (typeof val === "number") {
             this._count = val;
-            this._updateCountDisplay();
+            if (typeof this._updateCountDisplay === "function") {
+              this._updateCountDisplay();
+            }
           }
         },
         get() {
@@ -327,7 +329,9 @@ function renderArtistsPage() {
         set(val) {
           if (typeof val === "number") {
             this._totalCount = val;
-            this._updateCountDisplay();
+            if (typeof this._updateCountDisplay === "function") {
+              this._updateCountDisplay();
+            }
           }
         },
         get() {
@@ -339,8 +343,10 @@ function renderArtistsPage() {
       // Method to update the display based on available counts
       artist._updateCountDisplay = function () {
         const activeTags = getActiveTags ? getActiveTags() : new Set();
-        const hasActiveTagsFilter = activeTags.size > 0;
-        // Inside artist._updateCountDisplay or the place where you set the artist name
+        const hasActiveTagsFilter = activeTags && activeTags.size > 0;
+
+        // Ensure 'name' exists before updating textContent
+        if (!name) return;
 
         if (
           hasActiveTagsFilter &&
@@ -374,7 +380,9 @@ function renderArtistsPage() {
           typeof artist._imageCount !== "number" &&
           typeof artist._totalImageCount !== "number"
         ) {
-          name.textContent += " [Loading count…]";
+          if (name) {
+            name.textContent += " [Loading count…]";
+          }
         }
       }, 400);
     }
@@ -516,7 +524,6 @@ async function filterArtists(reset = true) {
 
                 // If tags are active, fetch filtered count (artist + tags)
                 if (activeTags.size > 0) {
-                  const { fetchArtistImages } = await import("./api.js");
                   const tagQuery = [
                     artist.artistName,
                     ...Array.from(activeTags),
