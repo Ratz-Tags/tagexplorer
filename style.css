@@ -1334,9 +1334,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   background: #fd7bc5;
   color: #fff;
 }
-#copied-sidebar {
-  position: relative;
-}
 
 /* Make sure the audio panel is above other content and doesn't block the toggle */
 #audio-panel {
