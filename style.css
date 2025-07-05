@@ -1043,17 +1043,16 @@ input,
   border-radius: 2rem !important;
 }
 
-/* Pink glow and border for all interactive elements */
-button, .tag-btn, .tag-button, .audio-toggle, .sidebar-toggle, #back-to-top {
+/* Pink glow and border for most interactive elements - floating-controls buttons handle their own styling */
+button:not(.floating-controls button), .tag-btn, .tag-button {
   box-shadow: 0 0 0 0 #ff63a540, 0 2px 8px #ff63a540;
   border: 2px solid #ffb6d5 !important;
-  background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   font-weight: bold;
   letter-spacing: 0.5px;
   transition: box-shadow 0.2s, background 0.2s, color 0.2s;
 }
-button:hover, .tag-btn:hover, .tag-button:hover, .audio-toggle:hover, .sidebar-toggle:hover, #back-to-top:hover {
+button:not(.floating-controls button):hover, .tag-btn:hover, .tag-button:hover {
   box-shadow: 0 0 12px 4px #ff63a580, 0 2px 16px #fd7bc580;
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   color: #fff;
@@ -1266,38 +1265,18 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
 }
 
-/* Portrait mobile: make audio & copied artists buttons small, circular, and stacked, with spacing */
+/* Remove outdated mobile override styles that conflict with new floating-controls */
 @media (max-width: 600px) and (orientation: portrait) {
+  .floating-controls button {
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 50%;
+  }
   
-  .audio-toggle::after,
-  .sidebar-toggle::after,
-  .audio-toggle span,
-  .sidebar-toggle span {
-    display: none !important;
+  .control-label {
+    display: none;
   }
 }
-
-/* Copied artists sidebar covers full screen on mobile portrait */
-@media (max-width: 600px) and (orientation: portrait) {
-  .audio-toggle,
-  .sidebar-toggle {
-    display: inline-flex !important;  /* Force show */
-    position: fixed !important;
-    bottom: 1rem !important;
-    min-width: 54px !important;
-    min-height: 54px !important;
-    width: 54px !important;
-    height: 54px !important;
-    border-radius: 50% !important;
-    z-index: 10050 !important;
-    background: #d63384;
-    box-shadow: 0 0 12px rgba(214,51,132,0.7);
-    align-items: center;
-    justify-content: center;
-  }
-  .audio-toggle { right: 6.5rem !important; }
-  .sidebar-toggle { right: 1rem !important; }
-  }
   #copied-sidebar {
     position: fixed !important;
     top: 0 !important;
@@ -1445,43 +1424,4 @@ input[type="text"]:focus, input[type="search"]:focus {
 }
 
 
-/* Desktop: hide flex wrapper, use current positioning */
-.floating-buttons {
-  display: none;
-}
-
-/* Mobile: show flex wrapper, buttons side by side, fixed bottom */
-@media (max-width: 600px) {
-  .floating-buttons {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 1rem;
-    z-index: 10020;
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    width: 100vw;
-    pointer-events: none; /* let buttons handle pointer events */
-  }
-  .floating-buttons button {
-    pointer-events: all;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    font-size: 2rem;
-    box-shadow: 0 2px 10px #fd7bc540;
-    border: 2px solid #ffb6d5 !important;
-    background: linear-gradient(90deg, #ffb6d5 0%, #fd7bc5 100%);
-    color: #a0005a;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  /* Hide original fixed buttons in mobile */
-  .audio-toggle, .sidebar-toggle {
-    display: none !important;
-  }
-}
+/* Cleaned up - old floating-buttons styles removed to avoid conflicts */
