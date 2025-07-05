@@ -523,8 +523,28 @@ async function filterArtists(reset = true) {
         const batch = artists.slice(i, i + batchSize);
         await Promise.all(
           batch.map(async (artist) => {
-            if (typeof artist._imageCount !== "number") {
-              artist._imageCount = await getArtistImageCount(artist.artistName);
+            // Always fetch and set total count
+            const totalCount = await getArtistImageCount(artist.artistName);
+            artist._totalImageCount = totalCount;
+            // If tags are active, fetch filtered count, else use total
+            const activeTags = getActiveTags ? getActiveTags() : new Set();
+            if (activeTags && activeTags.size > 0) {
+              const tagQuery = [
+                artist.artistName,
+                ...Array.from(activeTags),
+              ].join(" ");
+              const response = await fetch(
+                `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
+                  tagQuery
+                )}&limit=1000`
+              );
+              const posts = await response.json();
+              const uniqueIds = new Set(
+                Array.isArray(posts) ? posts.map((post) => post.id) : []
+              );
+              artist._imageCount = uniqueIds.size;
+            } else {
+              artist._imageCount = totalCount;
             }
           })
         );
