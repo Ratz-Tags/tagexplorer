@@ -133,8 +133,22 @@ async function fetchArtistImages(artistName, selectedTags = []) {
  */
 async function getArtistImageCount(artistName) {
   try {
-    const posts = await fetchPosts(artistName, { limit: 1000 });
-    const uniqueIds = new Set(posts.map(post => post.id));
+    let page = 1;
+    const uniqueIds = new Set();
+
+    while (true) {
+      const posts = await fetchPosts(artistName, {
+        limit: 200,
+        page,
+        useCache: false,
+      });
+
+      posts.forEach((post) => uniqueIds.add(post.id));
+
+      if (posts.length < 200) break;
+      page += 1;
+    }
+
     return uniqueIds.size;
   } catch (error) {
     console.warn("Failed to get artist image count:", error);
