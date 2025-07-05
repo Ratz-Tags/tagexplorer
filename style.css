@@ -153,8 +153,91 @@ header {
   right: var(--spacing-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-md);
   z-index: var(--z-floating);
+  align-items: center;
+}
+
+.floating-controls button {
+  min-width: 60px;
+  min-height: 60px;
+  border-radius: var(--border-radius-lg);
+  border: 2px solid var(--secondary-pink);
+  background: linear-gradient(135deg, var(--pale-pink) 0%, var(--secondary-pink) 100%);
+  color: var(--dark-pink);
+  font-family: var(--font-family-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--spacing-sm);
+  box-sizing: border-box;
+}
+
+.floating-controls button:hover {
+  background: linear-gradient(135deg, var(--primary-pink) 0%, var(--accent-pink) 100%);
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+
+.floating-controls button:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Control labels - hidden by default, shown on hover or mobile */
+.control-label {
+  display: none;
+  font-size: var(--font-size-sm);
+  margin-left: var(--spacing-xs);
+  white-space: nowrap;
+}
+
+/* Mobile responsive floating controls */
+@media (max-width: 768px) {
+  .floating-controls {
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    gap: var(--spacing-sm);
+  }
+  
+  .floating-controls button {
+    min-width: 52px;
+    min-height: 52px;
+    font-size: var(--font-size-base);
+  }
+  
+  .control-label {
+    display: inline;
+  }
+}
+
+/* Very small screens - make buttons even more compact */
+@media (max-width: 480px) {
+  .floating-controls {
+    flex-direction: row;
+    bottom: var(--spacing-sm);
+    right: 50%;
+    transform: translateX(50%);
+    gap: var(--spacing-sm);
+  }
+  
+  .floating-controls button {
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 50%;
+    padding: var(--spacing-xs);
+  }
+  
+  .control-label {
+    display: none;
+  }
 }
 
 /* Input fields */
@@ -249,6 +332,37 @@ header {
 #clear-tags:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
+}
+
+/* Filter results summary */
+#filtered-results {
+  margin: var(--spacing-md) auto;
+  max-width: 800px;
+  padding: 0 var(--spacing-md);
+  display: none; /* Hidden by default */
+}
+
+.filter-summary {
+  background: linear-gradient(135deg, var(--cream-pink) 0%, var(--pale-pink) 100%);
+  border: 2px solid var(--secondary-pink);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-count {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--dark-pink);
+  margin-bottom: var(--spacing-xs);
+}
+
+.filter-details {
+  font-size: var(--font-size-sm);
+  color: var(--dark-pink);
+  opacity: 0.8;
+  font-style: italic;
 }
 
 /* Main content */
@@ -625,28 +739,25 @@ audio#moan-audio { display: none; }
   padding: 0;
 }
 
-.sidebar-toggle {
-  position: fixed;
-  bottom: 1rem;
-  right: 10.5rem; /* Increased from 6.5rem to 10.5rem for more space */
-  background: #d63384;
-  color: white;
-  border: none;
-  padding: 0.6em 1.2em;
-  border-radius: 1.5rem;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: 0 0 12px rgba(214, 51, 132, 0.7);
-  z-index: 10020;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-  width: auto;
-  text-align: center;
+/* Simplified button styles - most styling now handled by .floating-controls */
+.audio-toggle, .sidebar-toggle {
+  background: inherit;
+  border: inherit;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  cursor: inherit;
+  transition: inherit;
 }
 
-.sidebar-toggle:hover {
-  background: #c22170;
-  transform: scale(1.05);
+.audio-toggle:hover, .sidebar-toggle:hover {
+  background: inherit;
+  transform: inherit;
+}
+
+#back-to-top {
+  display: none; /* Hidden by default, shown via JavaScript */
 }
 
 #copied-sidebar {
@@ -773,28 +884,6 @@ audio#moan-audio { display: none; }
 }
 
 /* === Audio Control Panel === */
-.audio-toggle {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: #d63384;
-  color: white;
-  border: none;
-  padding: 0.6em 1.2em;
-  border-radius: 1.5rem;
-  font-weight: bold;
-  font-size: 1rem;
-  box-shadow: 0 0 12px rgba(214, 51, 132, 0.7);
-  z-index: 10000;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.audio-toggle:hover {
-  background: #c22170;
-  transform: scale(1.05);
-}
-
 .audio-panel {
   position: fixed;
   bottom: 4.5rem;

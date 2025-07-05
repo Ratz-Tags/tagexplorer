@@ -108,6 +108,34 @@ function spawnBubble(tag) {
 }
 
 /**
+ * Updates the filtered results summary section
+ */
+function updateFilteredResultsSummary(filteredCount, totalCount) {
+  const filteredResultsEl = document.getElementById('filtered-results');
+  if (!filteredResultsEl) return;
+  
+  if (activeTags.size > 0 || artistNameFilter) {
+    // Show summary when filters are active
+    const tagText = activeTags.size > 0 ? 
+      `Tags: ${Array.from(activeTags).join(', ')}` : '';
+    const nameText = artistNameFilter ? 
+      `Name filter: "${artistNameFilter}"` : '';
+    const filterText = [tagText, nameText].filter(t => t).join(' | ');
+    
+    filteredResultsEl.innerHTML = `
+      <div class="filter-summary">
+        <div class="filter-count">Showing ${filteredCount} of ${totalCount} artists</div>
+        <div class="filter-details">${filterText}</div>
+      </div>
+    `;
+    filteredResultsEl.style.display = 'block';
+  } else {
+    // Hide summary when no filters are active
+    filteredResultsEl.style.display = 'none';
+  }
+}
+
+/**
  * Renders the tag filter buttons based on current state
  */
 function renderTagButtons() {
@@ -124,6 +152,9 @@ function renderTagButtons() {
         artistNameFilter === "")
     );
   });
+
+  // Update filtered results summary
+  updateFilteredResultsSummary(filteredArtists.length, allArtists.length);
 
   // Get all tags present in filtered artists
   let possibleTags = new Set();
@@ -208,6 +239,7 @@ function handleTagSearch(value) {
  */
 function handleArtistNameFilter(value) {
   artistNameFilter = value.trim().toLowerCase();
+  renderTagButtons(); // Update the summary display
   if (renderArtists) renderArtists(true);
 }
 
