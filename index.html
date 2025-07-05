@@ -4,69 +4,139 @@
 <head>
   <meta charset="UTF-8">
   <title>Artist Explorer</title>
+  <meta name="description" content="Discover NSFW artists on Danbooru with kink tag filtering">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" type="image/png" href="favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 
 <body>
-  <div id="background-blur"></div>
-  <div id="tag-filter">
-    <input type="text" id="tag-search" placeholder="Type to filter tags..." />
-    <input type="text" id="artist-name-filter" placeholder="Filter by artist name...">
-    <div id="tag-buttons"></div>
-    <button id="clear-tags" style="display:none;">Clear All</button>
-  </div>
-  <div id="filtered-results"></div>
-
-  <!-- Copied Artists Sidebar -->
-  <div class="sidebar-wrapper">
-    <div id="copied-sidebar"></div>
-  </div>
-
-  <div id="artist-gallery"></div>
-
-  <div id="jrpg-bubbles"></div>
-
-  <div id="lightbox">
-    <button class="close">×</button>
-    <button id="prev-img">◀</button>
-    <img id="lightbox-img" src="" alt="Artwork">
-    <button id="next-img">▶</button>
-    <div id="lightbox-caption"></div>
-  </div>
-
-
-  <!-- Audio Control Panel -->
-  <div id="audio-panel" class="audio-panel hidden">
-    <div class="audio-header">
-      🎧 <span id="audio-track-name">No track playing</span>
-    </div>
-    <div class="audio-controls">
-      <button id="audio-prev">⏮️</button>
-      <button id="audio-toggle">⏯️</button>
-      <button id="audio-next">⏭️</button>
-      <button id="moan-mute">🔇 Moan</button>
-    </div>
-  </div>
-
-  <!-- Toggle Button -->
-  <button id="audio-panel-toggle" class="audio-toggle">🎵</button>
-  <button class="sidebar-toggle">🎀</button>
-
-  <!-- Moan Audio -->
-  <audio id="moan-audio" preload="auto">
-    <source src="moan.mp3" type="audio/mpeg">
-  </audio>
+  <!-- Background decoration -->
+  <div id="background-blur" aria-hidden="true"></div>
   
-  <button id="back-to-top" title="Back to top">↑</button>
-  <div class="floating-buttons">
-  <button class="audio-toggle">...</button>
-  <button class="sidebar-toggle">...</button>
+  <!-- Main application header -->
+  <header role="banner">
+    <h1 class="visually-hidden">Artist Explorer</h1>
+    
+    <!-- Tag filtering controls -->
+    <nav role="navigation" aria-label="Tag filters">
+      <div id="tag-filter">
+        <div class="filter-inputs">
+          <label for="tag-search" class="visually-hidden">Filter tags</label>
+          <input 
+            type="text" 
+            id="tag-search" 
+            placeholder="Type to filter tags..."
+            aria-describedby="tag-search-help" 
+          />
+          
+          <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
+          <input 
+            type="text" 
+            id="artist-name-filter" 
+            placeholder="Filter by artist name..."
+            aria-describedby="artist-filter-help"
+          >
+        </div>
+        
+        <div id="tag-buttons" role="group" aria-label="Available tags"></div>
+        
+        <button 
+          id="clear-tags" 
+          style="display:none;"
+          aria-label="Clear all selected tags"
+        >
+          Clear All
+        </button>
+        
+        <!-- Screen reader helpers -->
+        <div id="tag-search-help" class="visually-hidden">
+          Type to search and filter available tags
+        </div>
+        <div id="artist-filter-help" class="visually-hidden">
+          Type to filter artists by name
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main content area -->
+  <main role="main">
+    <!-- Filter results summary -->
+    <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
+
+    <!-- Artist gallery -->
+    <section id="artist-gallery" aria-label="Artist gallery" role="region">
+      <h2 class="visually-hidden">Artists</h2>
+    </section>
+  </main>
+
+  <!-- Sidebar for copied artists -->
+  <aside class="sidebar-wrapper" aria-label="Copied artists">
+    <div id="copied-sidebar" role="complementary" aria-label="Artists you've copied">
+      <h2 class="visually-hidden">Copied Artists</h2>
+    </div>
+  </aside>
+
+  <!-- Interactive elements overlay -->
+  <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
+
+  <!-- Lightbox modal -->
+  <div id="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lightbox-caption">
+    <button class="close" aria-label="Close lightbox">×</button>
+    <button id="prev-img" aria-label="Previous image">◀</button>
+    <img id="lightbox-img" src="" alt="Artwork" role="img">
+    <button id="next-img" aria-label="Next image">▶</button>
+    <div id="lightbox-caption" role="img" aria-label="Image caption"></div>
   </div>
-  <!-- Hypnosis Audio -->
-  <audio id="hypnoAudio" preload="auto"></audio>
-  <script src="script.js"></script>
+
+  <!-- Audio controls -->
+  <section id="audio-section" aria-label="Audio controls">
+    <!-- Audio Control Panel -->
+    <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
+      <div class="audio-header">
+        <span aria-label="Audio indicator">🎧</span>
+        <span id="audio-track-name">No track playing</span>
+      </div>
+      <div class="audio-controls" role="group" aria-label="Audio playback controls">
+        <button id="audio-prev" aria-label="Previous track">⏮️</button>
+        <button id="audio-toggle" aria-label="Play/pause">⏯️</button>
+        <button id="audio-next" aria-label="Next track">⏭️</button>
+        <button id="moan-mute" aria-label="Toggle moan sound">🔇 Moan</button>
+      </div>
+    </div>
+
+    <!-- Audio elements -->
+    <audio id="moan-audio" preload="auto" aria-label="Moan sound effects">
+      <source src="moan.mp3" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    
+    <audio id="hypnoAudio" preload="auto" aria-label="Hypnosis audio tracks">
+      Your browser does not support the audio element.
+    </audio>
+  </section>
+
+  <!-- Floating controls -->
+  <nav class="floating-controls" aria-label="Quick access controls">
+    <button id="audio-panel-toggle" class="audio-toggle" aria-label="Toggle audio panel">
+      <span aria-hidden="true">🎵</span>
+      <span class="control-label">Audio</span>
+    </button>
+    
+    <button class="sidebar-toggle" aria-label="Toggle copied artists sidebar">
+      <span aria-hidden="true">🎀</span>
+      <span class="control-label">Copied</span>
+    </button>
+    
+    <button id="back-to-top" title="Back to top" aria-label="Scroll to top">
+      <span aria-hidden="true">↑</span>
+      <span class="control-label">Top</span>
+    </button>
+  </nav>
+
+  <!-- Load the modular JavaScript -->
+  <script type="module" src="main.js"></script>
 </body>
 
 </html>
