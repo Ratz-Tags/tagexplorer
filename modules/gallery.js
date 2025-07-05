@@ -19,6 +19,7 @@ let backgroundBlur = null;
 // External dependencies
 let allArtists = [];
 let getActiveTags = null;
+let getArtistNameFilter = null;
 
 /**
  * Sets the background image with a random image
@@ -414,6 +415,9 @@ async function filterArtists(reset = true) {
   if (reset) {
     currentArtistPage = 0;
     artistGallery.innerHTML = "";
+
+    // Reset counts so they are refetched for new filters
+    countsFetched = false;
     
     // Add spinner
     const spinner = createSpinner();
@@ -422,7 +426,7 @@ async function filterArtists(reset = true) {
 
   // Get active tags and filters
   const activeTags = getActiveTags ? getActiveTags() : new Set();
-  const artistNameFilter = ""; // Will be injected by tags module
+  const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
   // Filter artists
   filtered = allArtists.filter((artist) => {
@@ -517,6 +521,13 @@ function setGetActiveTagsCallback(callback) {
 }
 
 /**
+ * Sets the callback to get artist name filter
+ */
+function setGetArtistNameFilterCallback(callback) {
+  getArtistNameFilter = callback;
+}
+
+/**
  * Gets the current filtered artists
  */
 function getFilteredArtists() {
@@ -544,6 +555,7 @@ export {
   setRandomBackground,
   setAllArtists,
   setGetActiveTagsCallback,
+  setGetArtistNameFilterCallback,
   getFilteredArtists,
   getPaginationInfo
 };

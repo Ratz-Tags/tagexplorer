@@ -13,6 +13,7 @@ import {
   setTagTaunts,
   setTaunts,
   getActiveTags,
+  getArtistNameFilter,
   renderTagButtons
 } from './modules/tags.js';
 import { 
@@ -20,7 +21,8 @@ import {
   filterArtists,
   setRandomBackground,
   setAllArtists as setGalleryArtists,
-  setGetActiveTagsCallback
+  setGetActiveTagsCallback,
+  setGetArtistNameFilterCallback
 } from './modules/gallery.js';
 import { 
   initUI, 
@@ -53,6 +55,7 @@ async function initApp() {
     setRenderArtistsCallback(filterArtists);
     setRandomBackgroundCallback(setRandomBackground);
     setGetActiveTagsCallback(getActiveTags);
+    setGetArtistNameFilterCallback(getArtistNameFilter);
     
     // Configure data
     setTagTooltips(tooltips);
