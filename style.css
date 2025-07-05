@@ -1,16 +1,86 @@
-/* Feminized, girly, immersive DARK MODE style.css */
+/* Feminized, girly, immersive style.css - Modernized with CSS Variables */
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap');
 
+/* CSS Custom Properties (Variables) */
+:root {
+  /* Color palette */
+  --primary-pink: #fd7bc5;
+  --secondary-pink: #ffb6d5;
+  --light-pink: #ffe0f6;
+  --pale-pink: #ffd6f6;
+  --cream-pink: #fff0fa;
+  --dark-pink: #a0005a;
+  --accent-pink: #d63384;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-xxl: 3rem;
+  
+  /* Border radius */
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  
+  /* Typography */
+  --font-family-primary: "Hi Melody", sans-serif;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(160, 0, 90, 0.1);
+  --shadow-md: 0 4px 6px rgba(160, 0, 90, 0.1);
+  --shadow-lg: 0 10px 15px rgba(160, 0, 90, 0.1);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+  
+  /* Z-index scale */
+  --z-background: -1;
+  --z-base: 1;
+  --z-floating: 1000;
+  --z-modal: 10000;
+  --z-tooltip: 10001;
+}
+
+/* Accessibility helpers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus indicators for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--accent-pink);
+  outline-offset: 2px;
+}
+
+/* Base styles */
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: "Hi Melody", sans-serif;
-  background: linear-gradient(135deg, #ffe0f6 0%, #ffd6f6 40%, #fff0fa 100%);
-  color: #a0005a;
+  font-family: var(--font-family-primary);
+  background: linear-gradient(135deg, var(--light-pink) 0%, var(--pale-pink) 40%, var(--cream-pink) 100%);
+  color: var(--dark-pink);
   overflow-x: hidden;
+  line-height: 1.6;
 }
 
 html, body {
@@ -22,15 +92,7 @@ html, body {
   box-sizing: border-box;
 }
 
-#artist-gallery,
-#tag-buttons,
-body,
-html {
-  overflow-x: hidden !important;
-  max-width: 100vw !important;
-  padding-top: 0em !important;
-}
-
+/* Background */
 #background-blur {
   position: fixed;
   inset: 0;
@@ -38,16 +100,62 @@ html {
   background-size: cover;
   background-position: center;
   filter: blur(1px) brightness(0.9) saturate(1.2);
-  z-index: -1;
-  transition: background-image 2s ease-in-out;
-  background: linear-gradient(120deg, #ffd6f6 0%, #ffb6d5 60%, #fd7bc5 100%);
+  z-index: var(--z-background);
+  transition: background-image var(--transition-slow);
+  background: linear-gradient(120deg, var(--pale-pink) 0%, var(--secondary-pink) 60%, var(--primary-pink) 100%);
   opacity: 0.95;
 }
 
+/* Header and navigation */
+header {
+  position: relative;
+  z-index: var(--z-base);
+}
+
+/* Tag filter section */
 #tag-filter {
-  margin-bottom: 0.5em !important;
+  margin-bottom: var(--spacing-md);
   width: 100vw;
   box-sizing: border-box;
+  padding: var(--spacing-md);
+}
+
+.filter-inputs {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .filter-inputs {
+    flex-direction: column;
+  }
+}
+
+/* Control labels for floating buttons */
+.control-label {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .control-label {
+    display: inline;
+    font-size: var(--font-size-sm);
+    margin-left: var(--spacing-xs);
+  }
+}
+
+/* Floating controls */
+.floating-controls {
+  position: fixed;
+  bottom: var(--spacing-lg);
+  right: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  z-index: var(--z-floating);
+}
 }
 
 #tag-search, #artist-name-filter {

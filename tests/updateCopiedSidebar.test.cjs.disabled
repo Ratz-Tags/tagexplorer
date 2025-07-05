@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const sidebarModule = require('../script.js');
+const sidebarModule = require('../modules/sidebar.js');
 const { updateCopiedSidebar, _setAllArtists, _setCopiedArtists, _setCopiedSidebar } = sidebarModule;
 
 function createStubDocument() {
