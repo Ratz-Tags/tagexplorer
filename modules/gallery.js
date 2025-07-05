@@ -505,7 +505,11 @@ async function filterArtists(reset = true) {
       }
     }
     
-    await fetchInBatches(filtered).catch(console.warn);
+    await fetchInBatches(filtered)
+      .then(() => {
+        countsFetched = true;
+      })
+      .catch(console.warn);
   }
 
   renderArtistsPage();
