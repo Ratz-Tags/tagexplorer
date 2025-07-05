@@ -45,7 +45,9 @@ test('updateCopiedSidebar creates images with correct src', () => {
 
   updateCopiedSidebar();
 
-  assert.equal(sidebar.children.length, 2);
-  assert.equal(sidebar.children[0].children[0].src, 'img/foo.jpg');
-  assert.equal(sidebar.children[1].children[0].src, 'img/baz.jpg');
+  // Expect 3 children: 1 close button + 2 artist divs
+  assert.equal(sidebar.children.length, 3);
+  // First child is close button, artist divs start at index 1
+  assert.equal(sidebar.children[1].children[0].src, 'img/foo.jpg');
+  assert.equal(sidebar.children[2].children[0].src, 'img/baz.jpg');
 });
