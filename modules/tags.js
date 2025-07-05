@@ -75,13 +75,10 @@ const tagIcons = {
   gagged: "icons/gagged.png",
   tentacle_sex: "icons/tentacle_sex.png",
   bukkake: "icons/bukkake.png",
-  futa_with_futa: "icons/futa_with_futa.png",
-  lactation: "icons/lactation.png",
   footjob: "icons/footjob.png",
   anal: "icons/anal.png",
   mind_break: "icons/mind_break.png",
   hypnosis: "icons/hypnosis.png",
-  cum_in_mouth: "icons/cum_in_mouth.png",
   inflation: "icons/inflation.png",
   pregnant: "icons/pregnant.png",
 };
