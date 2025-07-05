@@ -436,48 +436,34 @@ main {
 }
 
 /* Control buttons */
-.copy-button, .reload-button {
+.copy-button {
   position: absolute;
   top: var(--spacing-sm);
+  right: var(--spacing-sm);
   width: 32px;
   height: 32px;
   border: none;
-  border-radius: var(--border-radius-sm);
-  background: rgba(253, 123, 197, 0.9);
-  color: white;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--font-size-base);
-}
-
-.copy-button {
-  right: var(--spacing-sm);
-}
-
-.reload-button {
-  right: calc(var(--spacing-sm) + 40px);
-}
-
-.copy-button:hover, .reload-button:hover {
-  background: var(--accent-pink);
-  transform: scale(1.1);
   border-radius: 2em !important;
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   color: #d63384;
   cursor: pointer;
   transition: background 0.25s, color 0.22s, border 0.22s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 1.1em;
   font-family: inherit;
   margin: 0;
   outline: none;
   position: relative;
   text-align: center;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+}
+
+.copy-button:hover {
+  background: var(--accent-pink);
+  color: #fff;
+  transform: scale(1.1);
+  box-shadow: 0 2px 10px #fd7bc540;
 }
 
 .tag-btn:hover, .tag-btn:focus-visible,
@@ -833,57 +819,9 @@ audio#moan-audio { display: none; }
   margin-bottom: 7px;
   position: relative;
 }
-.copy-button,
-.reload-button {
-  position: static;
-  margin-left: 6px;
-  border: none;
-  background: #ffd6f6;
-  color: #a0005a;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  font-size: 1.1em;
-  cursor: pointer;
-  box-shadow: 0 1px 4px #fd7bc540;
-  transition: background 0.2s;
-  vertical-align: middle;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.copy-button:hover,
-.reload-button:hover {
-  background: #fd7bc5;
-  color: #fff;
-}
-
-.moan-toggle {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  background: #ff66cc;
-  color: white;
-  border: none;
-  padding: 0.6em 1em;
-  font-size: 1rem;
-  font-weight: bold;
-  border-radius: 10px;
-  z-index: 9999;
-  cursor: pointer;
-  box-shadow: 0 0 10px rgba(255, 102, 204, 0.6);
-  transition: background 0.2s ease;
-}
-
-.moan-toggle:hover { background: #ff3399; }
-.moan-toggle:active {
-  background: #ff66cc;
-  box-shadow: inset 0 0 5px rgba(255, 102, 204, 0.8);
-}
 
 /* === Audio Control Panel === */
-.audio-panel {
+#audio-panel {
   position: fixed;
   bottom: 4.5rem;
   right: 1rem;
@@ -892,17 +830,17 @@ audio#moan-audio { display: none; }
   border-radius: 16px;
   padding: 1em;
   box-shadow: 0 0 18px rgba(255, 0, 255, 0.4);
-  z-index: 10010;
+  z-index: 10020;
   width: 270px;
   display: flex;
   flex-direction: column;
   gap: 0.6em;
   font-family: "Fira Sans", sans-serif;
   backdrop-filter: blur(6px);
-  border: 1px solid #ff69c4;
+  border: 2.5px solid #ffb6d5 !important;
 }
 
-.audio-panel.hidden { display: none; }
+#audio-panel.hidden { display: none; }
 
 .audio-controls {
   display: flex;
@@ -1059,7 +997,7 @@ button:not(.floating-controls button):hover, .tag-btn:hover, .tag-button:hover {
 
 /* Add a faint pink border to main panels */
 #copied-sidebar,
-.audio-panel {
+#audio-panel {
   border: 2.5px solid #ffb6d5 !important;
 }
 
