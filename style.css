@@ -464,7 +464,6 @@ main {
 .copy-button:hover, .reload-button:hover {
   background: var(--accent-pink);
   transform: scale(1.1);
-}
   border-radius: 2em !important;
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   color: #d63384;
@@ -1276,7 +1275,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   .control-label {
     display: none;
   }
-}
   #copied-sidebar {
     position: fixed !important;
     top: 0 !important;
