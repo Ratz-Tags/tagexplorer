@@ -72,7 +72,15 @@ function setBestImage(artist, img) {
     } catch {}
   }
 
-  function processApiData(data) {
+  function showNoEntries() {
+    img.style.display = "none";
+    img.src = "fallback.jpg";
+    setTimeout(() => {
+      img.style.display = "block";
+    }, 100);
+  }
+
+  function processApiData(data, isFallback = false) {
     const validPosts = Array.isArray(data)
       ? data.filter((post) => {
           const url = post?.large_file_url || post?.file_url;
@@ -82,16 +90,19 @@ function setBestImage(artist, img) {
       : [];
 
     if (validPosts.length === 0) {
-      showNoEntries();
+      if (!isFallback && selectedTags.length > 0) {
+        // Retry using only the artist name ordered by score
+        fetchArtistImages(artist.artistName)
+          .then((fallbackData) => {
+            processApiData(fallbackData, true);
+          })
+          .catch(() => {
+            showNoEntries();
+          });
+      } else {
+        showNoEntries();
+      }
       return;
-    }
-
-    function showNoEntries() {
-      img.style.display = "none";
-      img.src = "fallback.jpg";
-      setTimeout(() => {
-        img.style.display = "block";
-      }, 100);
     }
 
     function tryLoadUrls(urls, index = 0) {
