@@ -1319,7 +1319,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   position: absolute;
   top: 1.2rem;
   right: 1.2rem;
-  z-index: 10;
+  z-index: 10100; /* higher than sidebar */
   background: #ffd6f6;
   color: #a0005a;
   border: none;
@@ -1334,10 +1334,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.copied-sidebar-close:hover {
-  background: #fd7bc5;
-  color: #fff;
 }
 
 /* Make sure the audio panel is above other content and doesn't block the toggle */
@@ -1416,13 +1412,23 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
   .floating-controls {
     flex-direction: row;
-    bottom: 2rem;
-    right: 2rem;
-    gap: 1rem;
+    gap: 1.5rem; /* increase if needed */
     align-items: flex-end;
+    right: 2rem;
+    bottom: 2rem;
   }
   body.sidebar-open .floating-controls {
     right: 360px; /* 340px sidebar + 20px gap */
     transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
   }
+}
+
+.toggle-buttons-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  z-index: 10110;
 }
