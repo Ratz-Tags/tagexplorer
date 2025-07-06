@@ -1383,3 +1383,39 @@ input[type="text"]:focus, input[type="search"]:focus {
   background: #fff0fa;
   border: 2px solid #fd7bc5;
 }
+
+/* Desktop sidebar: fixed width, slides in/out, pushes gallery */
+@media (min-width: 769px) {
+  #copied-sidebar {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 340px;
+    max-width: 90vw;
+    height: 100vh;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.35s;
+    opacity: 0;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    z-index: 10030;
+  }
+  #copied-sidebar.visible {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  /* When sidebar is open, push the gallery left */
+  body.sidebar-open #artist-gallery {
+    margin-right: 340px !important;
+    transition: margin-right 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  .floating-controls {
+    flex-direction: row;
+    bottom: 2rem;
+    right: 2rem;
+    gap: 1rem;
+    align-items: flex-end;
+  }
+}
