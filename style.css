@@ -755,8 +755,10 @@ audio#moan-audio { display: none; }
   position: fixed;
   top: 0;
   right: 0;
-  height: 100vh;
+  width: var(--sidebar-width);
   max-width: 90vw;
+  height: 100vh;
+  padding-top: 4.5rem; /* Add space for close button */
   background: linear-gradient(120deg, #32163a 0%, #4b004a 100%);
   border-left: 2.5px solid #fd7bc5;
   padding: 18px 14px;
@@ -829,15 +831,16 @@ audio#moan-audio { display: none; }
 /* === Audio Control Panel === */
 #audio-panel {
   position: fixed;
-  bottom: 4.5rem;
-  right: 1rem;
+  bottom: 2rem;
+  right: 2rem;
+  left: auto;
+  width: 320px;
+  z-index: 10040; /* Above sidebar */
   background: #1a001a;
   color: #fff;
   border-radius: 16px;
   padding: 1em;
   box-shadow: 0 0 18px rgba(255, 0, 255, 0.4);
-  z-index: 10020;
-  width: 270px;
   display: flex;
   flex-direction: column;
   gap: 0.6em;
@@ -1319,7 +1322,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   position: absolute;
   top: 1.2rem;
   right: 1.2rem;
-  z-index: 10100; /* higher than sidebar */
+  z-index: 10100;
   background: #ffd6f6;
   color: #a0005a;
   border: none;
@@ -1335,25 +1338,6 @@ input[type="text"]:focus, input[type="search"]:focus {
   align-items: center;
   justify-content: center;
 }
-
-/* Make sure the audio panel is above other content and doesn't block the toggle */
-#audio-panel {
-  z-index: 10020;
-  /* Add position if not already set */
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  /* ...other styles... */
-}
-
-#audio-panel-toggle {
-  position: fixed;
-  bottom: 70px; /* or adjust so it's above the panel */
-  right: 16px;
-  z-index: 10020;
-}
-
 
 /* Cleaned up - old floating-buttons styles removed to avoid conflicts */
 

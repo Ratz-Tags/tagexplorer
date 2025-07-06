@@ -74,7 +74,9 @@
   <!-- Sidebar for copied artists -->
   <aside class="sidebar-wrapper" aria-label="Copied artists">
     <div id="copied-sidebar" role="complementary" aria-label="Artists you've copied">
+      <button class="copied-sidebar-close" aria-label="Close sidebar">×</button>
       <h2 class="visually-hidden">Copied Artists</h2>
+      <!-- Copied artists will be injected here -->
     </div>
   </aside>
 
@@ -92,7 +94,6 @@
 
   <!-- Audio controls -->
   <section id="audio-section" aria-label="Audio controls">
-    <!-- Audio Control Panel -->
     <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
       <div class="audio-header">
         <span aria-label="Audio indicator">🎧</span>
@@ -120,8 +121,8 @@
   <!-- Floating controls -->
   <nav class="floating-controls" aria-label="Quick access controls">
     <div class="toggle-buttons-container">
-      <button class="sidebar-toggle">🎀</button>
-      <button class="audio-toggle">🎶</button>
+      <button class="sidebar-toggle" aria-label="Show copied artists sidebar">🎀</button>
+      <button class="audio-toggle" aria-label="Show audio panel">🎶</button>
     </div>
     
     <button id="back-to-top" title="Back to top" aria-label="Scroll to top">
