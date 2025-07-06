@@ -19,6 +19,9 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-xxl: 3rem;
+
+  /* Sidebar width */
+  --sidebar-width: 340px;
   
   /* Border radius */
   --border-radius-sm: 4px;
@@ -1390,7 +1393,7 @@ input[type="text"]:focus, input[type="search"]:focus {
     position: fixed;
     top: 0;
     right: 0;
-    width: 340px;
+    width: var(--sidebar-width);
     max-width: 90vw;
     height: 100vh;
     transform: translateX(100%);
@@ -1408,7 +1411,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
   /* When sidebar is open, push the gallery left */
   body.sidebar-open #artist-gallery {
-    margin-right: 340px !important;
+    margin-right: var(--sidebar-width) !important;
     transition: margin-right 0.35s cubic-bezier(0.4,0,0.2,1);
   }
   .floating-controls {
@@ -1417,5 +1420,9 @@ input[type="text"]:focus, input[type="search"]:focus {
     right: 2rem;
     gap: 1rem;
     align-items: flex-end;
+  }
+  body.sidebar-open .floating-controls {
+    right: 360px; /* 340px sidebar + 20px gap */
+    transition: right 0.35s cubic-bezier(0.4,0,0.2,1);
   }
 }
