@@ -64,6 +64,7 @@ const kinkTags = [
   "forced_feminization",
   "netorare",
   "netorase",
+  "futanari",
 ];
 
 // Tag icons mapping
@@ -88,7 +89,7 @@ const tagIcons = {
  */
 function spawnBubble(tag) {
   if (!jrpgBubbles) return;
-  
+
   const div = document.createElement("div");
   div.className = "jrpg-bubble";
   const chibi = document.createElement("img");
@@ -108,27 +109,28 @@ function spawnBubble(tag) {
  * Updates the filtered results summary section
  */
 function updateFilteredResultsSummary(filteredCount, totalCount) {
-  const filteredResultsEl = document.getElementById('filtered-results');
+  const filteredResultsEl = document.getElementById("filtered-results");
   if (!filteredResultsEl) return;
-  
+
   if (activeTags.size > 0 || artistNameFilter) {
     // Show summary when filters are active
-    const tagText = activeTags.size > 0 ? 
-      `Tags: ${Array.from(activeTags).join(', ')}` : '';
-    const nameText = artistNameFilter ? 
-      `Name filter: "${artistNameFilter}"` : '';
-    const filterText = [tagText, nameText].filter(t => t).join(' | ');
-    
+    const tagText =
+      activeTags.size > 0 ? `Tags: ${Array.from(activeTags).join(", ")}` : "";
+    const nameText = artistNameFilter
+      ? `Name filter: "${artistNameFilter}"`
+      : "";
+    const filterText = [tagText, nameText].filter((t) => t).join(" | ");
+
     filteredResultsEl.innerHTML = `
       <div class="filter-summary">
         <div class="filter-count">Showing ${filteredCount} of ${totalCount} artists</div>
         <div class="filter-details">${filterText}</div>
       </div>
     `;
-    filteredResultsEl.style.display = 'block';
+    filteredResultsEl.style.display = "block";
   } else {
     // Hide summary when no filters are active
-    filteredResultsEl.style.display = 'none';
+    filteredResultsEl.style.display = "none";
   }
 }
 
@@ -137,7 +139,7 @@ function updateFilteredResultsSummary(filteredCount, totalCount) {
  */
 function renderTagButtons() {
   if (!tagButtonsContainer) return;
-  
+
   tagButtonsContainer.innerHTML = "";
 
   // Get artists matching current filters
@@ -209,8 +211,7 @@ function renderTagButtons() {
     tagButtonsContainer.appendChild(btn);
   });
 
-  if (clearTagsBtn)
-    clearTagsBtn.style.display = activeTags.size ? "" : "none";
+  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
 }
 
 /**
@@ -364,5 +365,5 @@ export {
   getSearchFilter,
   getArtistNameFilter,
   getKinkTags,
-  spawnBubble
+  spawnBubble,
 };
