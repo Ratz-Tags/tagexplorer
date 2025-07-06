@@ -832,8 +832,8 @@ audio#moan-audio { display: none; }
 #audio-panel {
   position: fixed;
   bottom: 2rem;
-  right: 2rem;
-  left: auto;
+  left: 2rem;
+  right: auto;
   width: 320px;
   z-index: 10040; /* Above sidebar */
   background: #1a001a;
@@ -1200,10 +1200,10 @@ input[type="text"]:focus, input[type="search"]:focus {
     padding: 0.5rem;
   }
   .audio-panel {
-    right: auto !important;
-    left: 1rem !important;
-    bottom: 1.2rem !important;
-    width: 95vw !important;
+    right: auto;
+    left: 1rem;
+    bottom: 1.2rem;
+    width: 95vw;
     max-width: 420px;
     min-width: 0;
     border-radius: 2rem !important;
