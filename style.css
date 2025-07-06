@@ -385,7 +385,7 @@ main {
   padding-bottom: 0.5rem;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
   #artist-gallery {
     grid-template-columns: repeat(auto-fill, minmax(250px, 2fr));
     gap: var(--spacing-md);
