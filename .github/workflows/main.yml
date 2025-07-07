@@ -8,15 +8,12 @@ on:
 jobs:
   update:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./kexplorer
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main  # start from latest main
+          ref: main
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
