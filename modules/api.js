@@ -128,31 +128,27 @@ async function fetchArtistImages(artistName, selectedTags = []) {
 /**
  * Gets artist image count with caching
  */
-export async function getArtistImageCount(artistName) {
-  let page = 1;
-  let total = 0;
+let artistsCache = null;
+
+async function loadArtists() {
+  if (artistsCache) return artistsCache;
   try {
-    while (page <= 50) {
-      const response = await fetch(
-        `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-          artistName
-        )}&limit=200&page=${page}`
-      );
-      const posts = await response.json();
-      if (!Array.isArray(posts) || posts.length === 0) break;
-      const validPosts = posts.filter((post) => {
-        const url = post?.large_file_url || post?.file_url;
-        return url && /\.(jpg|jpeg|png|gif)$/i.test(url) && !post.is_banned;
-      });
-      total += validPosts.length;
-      if (posts.length < 200) break;
-      page++;
-    }
-    return total;
+    const response = await fetch("artists.json");
+    artistsCache = await response.json();
   } catch (e) {
-    console.warn("getArtistImageCount failed:", e);
-    return total;
+    console.warn("Failed to load artists.json:", e);
+    artistsCache = [];
   }
+  return artistsCache;
+}
+
+export async function getArtistImageCount(artistName) {
+  const artists = await loadArtists();
+  const artist = artists.find((a) => a.artistName === artistName);
+  if (artist && typeof artist.postCount === "number") {
+    return artist.postCount;
+  }
+  return 0;
 }
 
 /**
