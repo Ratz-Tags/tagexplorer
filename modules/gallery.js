@@ -571,25 +571,19 @@ async function filterArtists(reset = true, force = false) {
         done += batch.length;
         if (spin && spin.updateProgress) spin.updateProgress(done);
 
-        if (gen !== filterGeneration) return;
-        if (sortMode === "count") {
-          filtered.sort(
-            (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-          );
-        } else {
-          filtered.sort((a, b) =>
-            a.artistName.localeCompare(b.artistName, undefined, {
-              sensitivity: "base",
-            })
-          );
-        }
-        currentArtistPage = 0;
-        renderArtistsPage();
-
         if (i + batchSize < artists.length) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
       }
+
+      if (gen !== filterGeneration) return;
+      if (sortMode === "count") {
+        filtered.sort(
+          (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+        );
+        currentArtistPage = 0;
+      }
+      renderArtistsPage();
     }
 
     renderArtistsPage(); // Render immediately
