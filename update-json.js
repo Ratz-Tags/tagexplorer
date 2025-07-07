@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { getArtistImageCount } from '../modules/api.js';
+import { getArtistImageCount } from './modules/api.js';
 
 async function updateCounts() {
   const filePath = new URL('../artists.json', import.meta.url);
