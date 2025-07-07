@@ -154,9 +154,12 @@ export async function getArtistImageCount(artistName) {
         artistName
       )}`
     );
+    if (!resp.ok) throw new Error(`status ${resp.status}`);
     const data = await resp.json();
-    if (typeof data?.counts?.posts === "number") {
-      return data.counts.posts;
+    const count = data?.counts?.posts;
+    // If the returned count seems unreasonably high, treat as a failure
+    if (typeof count === "number" && count < 1_000_000) {
+      return count;
     }
   } catch (e) {
     console.warn("getArtistImageCount fetch failed:", e);
