@@ -2,6 +2,10 @@
  * API module - Handles Danbooru API interactions and caching
  */
 
+// Use node-fetch when running under Node.js without a global fetch
+import fetchImpl from 'node-fetch';
+const fetchFn = typeof fetch === 'function' ? fetch : fetchImpl;
+
 /**
  * Checks if a post has all the specified tags
  */
@@ -50,7 +54,7 @@ async function fetchPosts(tags, options = {}) {
   )}+order:${order}&limit=${limit}&page=${page}`;
 
   try {
-    const response = await fetch(url);
+    const response = await fetchFn(url);
     const data = await response.json();
 
     // Cache the result if enabled
@@ -143,7 +147,7 @@ async function loadArtists() {
       const data = await fs.readFile(filePath, "utf8");
       artistsCache = JSON.parse(data);
     } else {
-      const response = await fetch("artists.json");
+      const response = await fetchFn("artists.json");
       artistsCache = await response.json();
     }
   } catch (e) {
@@ -160,7 +164,7 @@ export async function getArtistImageCount(artistName) {
     return artist.postCount;
   }
   try {
-    const resp = await fetch(
+    const resp = await fetchFn(
       `https://danbooru.donmai.us/counts/posts.json?search[tags]=${encodeURIComponent(
         artistName
       )}`
@@ -168,8 +172,7 @@ export async function getArtistImageCount(artistName) {
     if (!resp.ok) throw new Error(`status ${resp.status}`);
     const data = await resp.json();
     const count = data?.counts?.posts;
-    // If the returned count seems unreasonably high, treat as a failure
-    if (typeof count === "number" && count < 1_000_000) {
+    if (typeof count === "number") {
       return count;
     }
   } catch (e) {
@@ -203,10 +206,10 @@ function clearArtistCache(artistName) {
 async function loadAppData() {
   try {
     const [artists, tooltips, generalTaunts, tagTaunts] = await Promise.all([
-      fetch("artists.json").then((r) => r.json()),
-      fetch("tag-tooltips.json").then((r) => r.json()),
-      fetch("taunts.json").then((r) => r.json()),
-      fetch("tag-taunts.json").then((r) => r.json()),
+      fetchFn("artists.json").then((r) => r.json()),
+      fetchFn("tag-tooltips.json").then((r) => r.json()),
+      fetchFn("taunts.json").then((r) => r.json()),
+      fetchFn("tag-taunts.json").then((r) => r.json()),
     ]);
 
     return {
