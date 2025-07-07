@@ -16,14 +16,18 @@
   
   <!-- Main application header -->
   <header role="banner">
-    <div class="top-bar">
-      <h1 class="brand">Kink Artist Explorer</h1>
-      <button id="open-tag-explorer" type="button" class="browse-btn">Browse Tags</button>
-    </div>
+    <div class="container">
+      <div class="top-bar">
+        <h1 class="brand">Kink Artist Explorer</h1>
+        <div class="top-actions">
+          <button id="toggle-filters" type="button" class="filter-toggle" aria-expanded="true">Hide Filters</button>
+          <button id="open-tag-explorer" type="button" class="browse-btn">Browse Tags</button>
+        </div>
+      </div>
 
-    <!-- Tag filtering controls -->
-    <nav role="navigation" aria-label="Tag filters">
-      <div id="tag-filter">
+      <!-- Tag filtering controls -->
+      <nav class="filter-bar" role="navigation" aria-label="Tag filters">
+        <div id="tag-filter">
         <div class="filter-inputs">
           <label for="tag-search" class="visually-hidden">Filter tags</label>
           <input 
@@ -48,7 +52,6 @@
           </select>
 
 
-          <button id="open-tag-explorer" type="button">Browse Tags</button>
         </div>
         
         <div id="tag-buttons" role="group" aria-label="Available tags"></div>
@@ -70,10 +73,11 @@
         </div>
       </div>
     </nav>
+    </div>
   </header>
 
   <!-- Main content area -->
-  <main role="main">
+  <main role="main" class="container">
     <!-- Filter results summary -->
     <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
 
