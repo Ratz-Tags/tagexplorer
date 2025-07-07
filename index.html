@@ -16,8 +16,11 @@
   
   <!-- Main application header -->
   <header role="banner">
-    <h1 class="visually-hidden">Artist Explorer</h1>
-    
+    <div class="top-bar">
+      <h1 class="brand">Kink Artist Explorer</h1>
+      <button id="open-tag-explorer" type="button" class="browse-btn">Browse Tags</button>
+    </div>
+
     <!-- Tag filtering controls -->
     <nav role="navigation" aria-label="Tag filters">
       <div id="tag-filter">
@@ -43,6 +46,7 @@
             <option value="name">Sort: Name</option>
             <option value="count">Sort: Total Images</option>
           </select>
+
 
           <button id="open-tag-explorer" type="button">Browse Tags</button>
         </div>

@@ -1,5 +1,5 @@
 /* Feminized, girly, immersive style.css - Modernized with CSS Variables */
-@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Poppins:wght@400;700&display=swap');
 
 /* CSS Custom Properties (Variables) */
 :root {
@@ -43,7 +43,8 @@
   --border-radius-lg: 12px;
   
   /* Typography */
-  --font-family-primary: "Hi Melody", sans-serif;
+  --font-family-primary: "Poppins", sans-serif;
+  --font-family-heading: "Hi Melody", cursive;
   --font-size-sm: 0.875rem;
   --font-size-base: 1rem;
   --font-size-lg: 1.125rem;
@@ -177,6 +178,42 @@ html, body {
 header {
   position: relative;
   z-index: var(--z-base);
+}
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-md) var(--spacing-lg);
+  backdrop-filter: blur(6px);
+  background: rgba(255, 255, 255, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-floating);
+}
+
+.brand {
+  font-family: var(--font-family-heading);
+  font-size: 2rem;
+  margin: 0;
+  background: linear-gradient(90deg, var(--primary-pink), var(--dark-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.browse-btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: bold;
+  border-radius: var(--border-radius-md);
+  border: none;
+  background: var(--accent-pink);
+  color: #fff;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.browse-btn:hover {
+  background: var(--dark-pink);
 }
 
 /* Tag filter section */
@@ -933,7 +970,7 @@ audio#moan-audio { display: none; }
   display: flex;
   flex-direction: column;
   gap: 0.6em;
-  font-family: "Fira Sans", sans-serif;
+  font-family: var(--font-family-primary);
   backdrop-filter: blur(6px);
   border: 2.5px solid #ffb6d5 !important;
 }
@@ -1522,7 +1559,7 @@ input[type="text"]:focus, input[type="search"]:focus {
   border: 2px solid #fd7bc5;
   border-radius: 2em;
   padding: 0.7em 2.5em 0.7em 1.5em;
-  font-family: "Hi Melody", sans-serif;
+  font-family: var(--font-family-heading);
   font-size: 1.1em;
   font-weight: bold;
   box-shadow: 0 2px 8px #fd7bc540;
