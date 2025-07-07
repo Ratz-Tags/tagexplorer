@@ -668,6 +668,22 @@ main {
   justify-content: center;
 }
 
+.zoom-content {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  max-height: 92vh;
+}
+
+.zoom-tags {
+  overflow-y: auto;
+  max-height: 92vh;
+  color: #fff0f6;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  max-width: 20vw;
+}
+
 .fullscreen-img {
   max-width: 92%;
   max-height: 92%;

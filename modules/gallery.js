@@ -16,6 +16,7 @@ let currentArtistPage = 0;
 const artistsPerPage = 24;
 let filtered = [];
 let isFetching = false;
+let sortMode = "name";
 
 // DOM references
 let artistGallery = null;
@@ -196,7 +197,7 @@ function lazyLoadBestImage(artist, img) {
  */
 async function openArtistZoom(artist) {
   const viewer = createFullscreenViewer();
-  const { wrapper, img: zoomed, noEntriesMsg, prevBtn, nextBtn } = viewer;
+  const { wrapper, img: zoomed, tagList, noEntriesMsg, prevBtn, nextBtn } = viewer;
 
   let currentIndex = 0;
   let posts = [];
@@ -226,6 +227,9 @@ async function openArtistZoom(artist) {
       noEntriesMsg.style.display = "none";
       zoomed.onerror = null;
       zoomed.onload = null;
+      if (tagList && raw.tag_string) {
+        tagList.textContent = raw.tag_string.split(" ").join(", ");
+      }
     };
     zoomed.src = full;
   }
@@ -485,6 +489,15 @@ async function filterArtists(reset = true) {
           artistNameFilter === "")
       );
     });
+    if (sortMode === "count") {
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" })
+      );
+    }
     console.log(
       "Filtered artists:",
       filtered.length,
@@ -531,9 +544,18 @@ async function filterArtists(reset = true) {
 
     renderArtistsPage(); // Render immediately
 
-    fetchInBatches(filtered).catch((e) => {
-      console.error("Batch fetch failed:", e);
-    });
+    if (reset) {
+      await fetchInBatches(filtered).catch((e) => {
+        console.error("Batch fetch failed:", e);
+      });
+      if (sortMode === "count") {
+        filtered.sort(
+          (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+        );
+        currentArtistPage = 0;
+      }
+      renderArtistsPage();
+    }
   } catch (error) {
     console.warn("filterArtists failed", error);
   } finally {
@@ -570,6 +592,13 @@ function setGetActiveTagsCallback(callback) {
  */
 function setGetArtistNameFilterCallback(callback) {
   getArtistNameFilter = callback;
+}
+
+/**
+ * Sets sort mode ("name" or "count")
+ */
+function setSortMode(mode) {
+  sortMode = mode === "count" ? "count" : "name";
 }
 
 /**
@@ -613,22 +642,8 @@ export {
   setAllArtists,
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
+  setSortMode,
   getFilteredArtists,
   getPaginationInfo,
   getArtistImageCountWithTimeout,
 };
-
-function setupInfiniteScroll() {
-  window.addEventListener("scroll", () => {
-    if (
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - 200 &&
-      (currentArtistPage + 1) * artistsPerPage < filtered.length
-    ) {
-      currentArtistPage++;
-      renderArtistsPage();
-    }
-  });
-}
-
-// Call this after initGallery()
-setupInfiniteScroll();
