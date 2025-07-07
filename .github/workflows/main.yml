@@ -1,3 +1,10 @@
+name: Update JSON File
+
+on:
+  workflow_dispatch:  # run manually
+  schedule:
+    - cron: '0 0 * * *'  # runs daily at midnight UTC
+    
 jobs:
   update:
     runs-on: ubuntu-latest
