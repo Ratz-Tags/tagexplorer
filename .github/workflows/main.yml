@@ -1,0 +1,36 @@
+name: Update JSON File
+
+on:
+  workflow_dispatch:  # run manually
+  schedule:
+    - cron: '0 0 * * *'  # runs daily at midnight UTC
+
+jobs:
+  update-json:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # or whatever version you use
+
+      - name: Install dependencies
+        run: npm install  # skip if no package.json
+
+      - name: Run update script
+        run: node update-json.js
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data.json
+          git commit -m "Auto-update data.json [skip ci]" || echo "No changes to commit"
+          git push
+        env:
+          # Allow the action to push using GitHub's token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
