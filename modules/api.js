@@ -2,9 +2,8 @@
  * API module - Handles Danbooru API interactions and caching
  */
 
-// Use node-fetch when running under Node.js without a global fetch
-import fetchImpl from 'node-fetch';
-const fetchFn = typeof fetch === 'function' ? fetch : fetchImpl;
+// Use the global fetch implementation (available in modern browsers and Node 18+)
+const fetchFn = fetch;
 
 /**
  * Checks if a post has all the specified tags
