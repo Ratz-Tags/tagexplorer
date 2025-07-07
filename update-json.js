@@ -15,7 +15,7 @@ async function updateCounts() {
 
   for (const artist of data) {
     try {
-      const count = await getArtistImageCount(artist.artistName);
+      const count = await getArtistImageCount(artist.artistName, { forceFetch: true });
       artist.postCount = count;
       console.log(`${artist.artistName}: ${count}`);
     } catch (err) {

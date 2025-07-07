@@ -2,9 +2,8 @@
  * API module - Handles Danbooru API interactions and caching
  */
 
-// Use node-fetch when running under Node.js without a global fetch
-import fetchImpl from 'node-fetch';
-const fetchFn = typeof fetch === 'function' ? fetch : fetchImpl;
+// Use the global fetch implementation (available in modern browsers and Node 18+)
+const fetchFn = fetch;
 
 /**
  * Checks if a post has all the specified tags
@@ -157,15 +156,21 @@ async function loadArtists() {
   return artistsCache;
 }
 
-export async function getArtistImageCount(artistName) {
-  const artists = await loadArtists();
-  const artist = artists.find((a) => a.artistName === artistName);
-  if (artist && typeof artist.postCount === "number") {
-    return artist.postCount;
+export async function getArtistImageCount(
+  artistName,
+  options = {}
+) {
+  const { forceFetch = false } = options;
+  if (!forceFetch) {
+    const artists = await loadArtists();
+    const artist = artists.find((a) => a.artistName === artistName);
+    if (artist && typeof artist.postCount === "number") {
+      return artist.postCount;
+    }
   }
   try {
     const resp = await fetchFn(
-      `https://danbooru.donmai.us/counts/posts.json?search[tags]=${encodeURIComponent(
+      `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
       )}`
     );
