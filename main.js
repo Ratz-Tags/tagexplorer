@@ -145,3 +145,24 @@ if (sortSelect) {
     filterArtists(true);
   });
 }
+
+// Theme toggling
+const themeToggle = document.querySelector(".theme-toggle");
+const bodyEl = document.body;
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "incognito") {
+  bodyEl.classList.add("incognito-theme");
+  bodyEl.classList.remove("fem-theme");
+  setRandomBackground();
+}
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    bodyEl.classList.toggle("incognito-theme");
+    bodyEl.classList.toggle("fem-theme");
+    const current = bodyEl.classList.contains("incognito-theme")
+      ? "incognito"
+      : "fem";
+    localStorage.setItem("theme", current);
+    setRandomBackground();
+  });
+}

@@ -1,6 +1,6 @@
 # Kink Artist Explorer
 
-The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering NSFW artists on Danbooru based on humiliating kink tags like femdom, chastity, and sissy training.
+The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering NSFW artists on Danbooru. The interface has been rebuilt with a modern aesthetic and improved accessibility.
 
 ## 💦 Features
 
@@ -8,7 +8,9 @@ The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering N
 - 🖼 Live Artist Card Fetching from Danbooru + Zele
 - 🎧 Embedded Femdom Hypnosis (6 rotating tracks)
 - 💬 Taunting JRPG-style Bubble Insults
-- 🎀 Feminine UI Design (coming soon)
+- 🎀 Feminine and Incognito Themes
+- ✨ Modern Responsive UI with Animations
+- ↕️ Sort artists by name or post count
 
 ## 🚀 Use
 
@@ -27,3 +29,4 @@ node scripts/updateCounts.js
 - CDN: Zele
 
 Made by degenerates, for degenerates.
+
