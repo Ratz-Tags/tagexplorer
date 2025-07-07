@@ -34,7 +34,7 @@ jobs:
           git checkout -B auto/update-artists
 
       - name: Run update script
-        run: node scripts/updateCounts.js
+        run: node update-json.js
 
       - name: Commit changes
         run: |
