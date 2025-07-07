@@ -53,6 +53,30 @@
   --z-tooltip: 10001;
 }
 
+/* Incognito theme overrides */
+body.incognito-theme {
+  --primary-pink: #555555;
+  --secondary-pink: #666666;
+  --light-pink: #333333;
+  --pale-pink: #222222;
+  --cream-pink: #444444;
+  --dark-pink: #f0f0f0;
+  --accent-pink: #888888;
+  background: #111111;
+  color: #f0f0f0;
+}
+
+/* Fem theme for explicit toggling */
+body.fem-theme {
+  --primary-pink: #fd7bc5;
+  --secondary-pink: #ffb6d5;
+  --light-pink: #ffe0f6;
+  --pale-pink: #ffd6f6;
+  --cream-pink: #fff0fa;
+  --dark-pink: #a0005a;
+  --accent-pink: #d63384;
+}
+
 /* Accessibility helpers */
 .visually-hidden {
   position: absolute;
@@ -84,6 +108,7 @@ body {
   color: var(--dark-pink);
   overflow-x: hidden;
   line-height: 1.6;
+  animation: fade-in 0.4s ease-out;
 }
 
 html, body {
@@ -992,6 +1017,14 @@ body .lipstick-kiss {
   filter: drop-shadow(0 0 2px #ffb6d5);
   pointer-events: none;
 }
+.theme-toggle::after {
+  content: " 🌗";
+  font-size: 1.2em;
+  margin-left: 0.3em;
+  vertical-align: middle;
+  filter: drop-shadow(0 0 2px #ffb6d5);
+  pointer-events: none;
+}
 #back-to-top::after {
   content: " 💋";
   font-size: 1.1em;
@@ -1480,4 +1513,13 @@ input[type="text"]:focus, input[type="search"]:focus {
   background-size: 1.3em;
   background-position: right 1em center;
   padding-right: 3em;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
