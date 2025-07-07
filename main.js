@@ -33,6 +33,7 @@ import {
   setupInfiniteScroll,
   setupBackgroundRotation,
 } from "./modules/ui.js";
+import { openTagExplorer, setAllArtists as setExplorerArtists } from "./modules/tag-explorer.js";
 import { loadAppData } from "./modules/api.js";
 
 /**
@@ -54,6 +55,7 @@ async function initApp() {
     setSidebarArtists(artists);
     setTagsArtists(artists);
     setGalleryArtists(artists);
+    setExplorerArtists(artists);
 
     // Set up callback dependencies
     setRenderArtistsCallback(filterArtists);
@@ -119,6 +121,7 @@ window.kexplorer = {
   setRandomBackground,
   getActiveTags,
   renderTagButtons,
+  openTagExplorer,
 };
 
 const audioToggleBtn = document.querySelector(".audio-toggle");
@@ -143,6 +146,13 @@ if (sortSelect) {
   sortSelect.addEventListener("change", (e) => {
     setSortMode(e.target.value);
     filterArtists(true);
+  });
+}
+
+const tagExplorerBtn = document.getElementById("open-tag-explorer");
+if (tagExplorerBtn) {
+  tagExplorerBtn.addEventListener("click", () => {
+    openTagExplorer();
   });
 }
 
