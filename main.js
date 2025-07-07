@@ -164,5 +164,6 @@ if (themeToggle) {
       : "fem";
     localStorage.setItem("theme", current);
     setRandomBackground();
+
   });
 }

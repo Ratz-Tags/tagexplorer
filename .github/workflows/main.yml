@@ -21,30 +21,27 @@ jobs:
           node-version: '18'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --ignore-scripts
 
-      - name: Create or switch to update branch
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -B auto/update-artists
 
       - name: Run update script
-        run: node update-json.js
+        run: node scripts/updateCounts.js
 
       - name: Commit changes
         run: |
           git add artists.json
           git diff --cached --quiet || git commit -m "Auto-update artists.json [skip ci]"
 
-      - name: Push branch
-        run: git push --set-upstream origin auto/update-artists
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Auto-update artists.json"
+          commit-message: "Auto-update artists.json [skip ci]"
           branch: auto/update-artists
           title: "🔄 Auto-update artists.json"
           body: |
