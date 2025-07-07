@@ -14,6 +14,12 @@ The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering N
 
 Upload contents to GitHub Pages and open the site. Click your kinks. Get degraded. Try to stop.
 
+To refresh artist post counts stored in `artists.json`, run:
+
+```bash
+node scripts/updateCounts.js
+```
+
 ## 🖤 Credits
 
 - Audio: SoundCloud
