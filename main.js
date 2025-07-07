@@ -156,6 +156,16 @@ if (tagExplorerBtn) {
   });
 }
 
+const filterToggle = document.getElementById("toggle-filters");
+if (filterToggle) {
+  const filterBar = document.querySelector(".filter-bar");
+  filterToggle.addEventListener("click", () => {
+    const collapsed = filterBar.classList.toggle("collapsed");
+    filterToggle.textContent = collapsed ? "Show Filters" : "Hide Filters";
+    filterToggle.setAttribute("aria-expanded", (!collapsed).toString());
+  });
+}
+
 // Theme toggling
 const themeToggle = document.querySelector(".theme-toggle");
 const bodyEl = document.body;

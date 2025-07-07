@@ -1,21 +1,22 @@
-/* Modern minimalist theme */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+/* Feminine default theme */
+@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap');
 
 :root {
-  --background: #121212;
-  --background-alt: #1e1e1e;
-  --text: #eaeaea;
-  --border: #333;
-  --accent: #58a6ff;
+  --background: #fff0fa;
+  --background-alt: #ffe0f6;
+  --text: #3a0a24;
+  --border: #f9badd;
+  --accent: #d63384;
   --radius: 6px;
   --padding: 0.75rem;
+  --heading-font: 'Hi Melody', cursive;
 }
 
 body.incognito-theme {
-  --background: #000;
-  --background-alt: #111;
-  --text: #ccc;
-  --accent: #888;
+  --background: #121212;
+  --background-alt: #1e1e1e;
+  --text: #eaeaea;
+  --accent: #58a6ff;
 }
 
 * {
@@ -66,6 +67,12 @@ header {
   margin: 0;
   font-weight: 600;
   color: var(--text);
+  font-family: var(--heading-font);
+}
+
+.top-actions {
+  display: flex;
+  gap: var(--padding);
 }
 
 .browse-btn {
@@ -77,8 +84,21 @@ header {
   cursor: pointer;
 }
 
+.filter-toggle {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
 #tag-filter {
   padding: var(--padding);
+}
+
+.filter-bar.collapsed {
+  display: none;
 }
 
 .filter-inputs {

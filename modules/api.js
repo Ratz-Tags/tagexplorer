@@ -148,6 +148,19 @@ export async function getArtistImageCount(artistName) {
   if (artist && typeof artist.postCount === "number") {
     return artist.postCount;
   }
+  try {
+    const resp = await fetch(
+      `https://danbooru.donmai.us/counts/posts.json?search[tags]=${encodeURIComponent(
+        artistName
+      )}`
+    );
+    const data = await resp.json();
+    if (typeof data?.counts?.posts === "number") {
+      return data.counts.posts;
+    }
+  } catch (e) {
+    console.warn("getArtistImageCount fetch failed:", e);
+  }
   return 0;
 }
 
