@@ -172,8 +172,7 @@ export async function getArtistImageCount(artistName) {
     if (!resp.ok) throw new Error(`status ${resp.status}`);
     const data = await resp.json();
     const count = data?.counts?.posts;
-    // If the returned count seems unreasonably high, treat as a failure
-    if (typeof count === "number" && count < 1_000_000) {
+    if (typeof count === "number") {
       return count;
     }
   } catch (e) {
