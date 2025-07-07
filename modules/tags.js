@@ -226,6 +226,22 @@ function clearAllTags() {
 }
 
 /**
+ * Toggles a single tag on or off
+ */
+function toggleTag(tag) {
+  if (activeTags.has(tag)) {
+    activeTags.delete(tag);
+  } else {
+    activeTags.add(tag);
+    spawnBubble(tag);
+  }
+  renderTagButtons();
+  if (renderArtists) renderArtists(true);
+  if (setRandomBackground) setRandomBackground();
+  if (navigator.vibrate) navigator.vibrate(50);
+}
+
+/**
  * Handles tag search input with debouncing
  */
 function handleTagSearch(value) {
@@ -365,5 +381,6 @@ export {
   getSearchFilter,
   getArtistNameFilter,
   getKinkTags,
+  toggleTag,
   spawnBubble,
 };

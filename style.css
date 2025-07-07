@@ -1572,3 +1572,46 @@ input[type="text"]:focus, input[type="search"]:focus {
     transform: translateY(0);
   }
 }
+
+/* Modal styles for tag explorer */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10050;
+}
+.modal-content {
+  background: var(--cream-pink);
+  color: var(--dark-pink);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+}
+
+.tag-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  min-width: 260px;
+}
+.tag-explorer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+.tag-explorer-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+  justify-content: center;
+}
+.tag-explorer-tags .tag-button {
+  flex: 0 1 auto;
+}
