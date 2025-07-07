@@ -31,12 +31,18 @@
           />
           
           <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
-          <input 
-            type="text" 
-            id="artist-name-filter" 
+          <input
+            type="text"
+            id="artist-name-filter"
             placeholder="Filter by artist name..."
             aria-describedby="artist-filter-help"
           >
+
+          <label for="sort-by" class="visually-hidden">Sort artists</label>
+          <select id="sort-by" aria-label="Sort artists">
+            <option value="name">Sort: Name</option>
+            <option value="count">Sort: Total Images</option>
+          </select>
         </div>
         
         <div id="tag-buttons" role="group" aria-label="Available tags"></div>

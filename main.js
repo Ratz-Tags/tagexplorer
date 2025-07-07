@@ -26,6 +26,7 @@ import {
   setAllArtists as setGalleryArtists,
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
+  setSortMode,
 } from "./modules/gallery.js";
 import {
   initUI,
@@ -134,5 +135,13 @@ if (sidebarCloseBtn && copiedSidebar) {
   sidebarCloseBtn.addEventListener("click", () => {
     copiedSidebar.classList.remove("visible");
     document.body.classList.remove("sidebar-open");
+  });
+}
+
+const sortSelect = document.getElementById("sort-by");
+if (sortSelect) {
+  sortSelect.addEventListener("change", (e) => {
+    setSortMode(e.target.value);
+    filterArtists(true);
   });
 }

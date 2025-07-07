@@ -161,10 +161,18 @@ function createModal(content, className = "modal") {
 function createFullscreenViewer() {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
-  
+
+  const content = document.createElement("div");
+  content.className = "zoom-content";
+
+  const tagList = document.createElement("div");
+  tagList.className = "zoom-tags";
+
   const img = document.createElement("img");
   img.className = "fullscreen-img";
-  wrapper.appendChild(img);
+
+  content.append(tagList, img);
+  wrapper.appendChild(content);
 
   const noEntriesMsg = document.createElement("span");
   noEntriesMsg.style.display = "none";
@@ -207,6 +215,7 @@ function createFullscreenViewer() {
   return {
     wrapper,
     img,
+    tagList,
     noEntriesMsg,
     closeBtn,
     prevBtn,
