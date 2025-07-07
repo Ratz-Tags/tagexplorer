@@ -1,13 +1,16 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getArtistImageCount } from './modules/api.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const filePath = path.join(__dirname, 'artists.json');
+// Get absolute path to the current script file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+// Since artists.json is in the same folder as update-json.js
+const filePath = path.resolve(__dirname, 'artists.json');
 
 async function updateCounts() {
-  const filePath = new URL('../artists.json', import.meta.url);
   const data = JSON.parse(await fs.readFile(filePath, 'utf8'));
 
   for (const artist of data) {
