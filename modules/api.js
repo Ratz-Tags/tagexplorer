@@ -133,8 +133,19 @@ let artistsCache = null;
 async function loadArtists() {
   if (artistsCache) return artistsCache;
   try {
-    const response = await fetch("artists.json");
-    artistsCache = await response.json();
+    if (typeof window === "undefined") {
+      const fs = await import("fs/promises");
+      const { fileURLToPath } = await import("url");
+      const { dirname, resolve } = await import("path");
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const filePath = resolve(__dirname, "../artists.json");
+      const data = await fs.readFile(filePath, "utf8");
+      artistsCache = JSON.parse(data);
+    } else {
+      const response = await fetch("artists.json");
+      artistsCache = await response.json();
+    }
   } catch (e) {
     console.warn("Failed to load artists.json:", e);
     artistsCache = [];
@@ -148,6 +159,24 @@ export async function getArtistImageCount(artistName) {
   if (artist && typeof artist.postCount === "number") {
     return artist.postCount;
   }
+
+  try {
+    const resp = await fetch(
+      `https://danbooru.donmai.us/counts/posts.json?search[tags]=${encodeURIComponent(
+        artistName
+      )}`
+    );
+    if (!resp.ok) throw new Error(`status ${resp.status}`);
+    const data = await resp.json();
+    const count = data?.counts?.posts;
+    // If the returned count seems unreasonably high, treat as a failure
+    if (typeof count === "number" && count < 1_000_000) {
+      return count;
+    }
+  } catch (e) {
+    console.warn("getArtistImageCount fetch failed:", e);
+  }
+
   return 0;
 }
 
