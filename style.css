@@ -1296,6 +1296,7 @@ input[type="text"]:focus, input[type="search"]:focus {
 
 .gallery-spinner {
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   margin: 2em 0;
@@ -1311,6 +1312,13 @@ input[type="text"]:focus, input[type="search"]:focus {
   display: block;
   margin: 40px auto;
   opacity: 0.85;
+}
+
+.gallery-spinner .loading-bar {
+  width: 80%;
+  max-width: 300px;
+  height: 8px;
+  margin-top: 1rem;
 }
 
 .tag-image-popup {
