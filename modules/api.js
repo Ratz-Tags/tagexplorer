@@ -133,8 +133,19 @@ let artistsCache = null;
 async function loadArtists() {
   if (artistsCache) return artistsCache;
   try {
-    const response = await fetch("artists.json");
-    artistsCache = await response.json();
+    if (typeof window === "undefined") {
+      const fs = await import("fs/promises");
+      const { fileURLToPath } = await import("url");
+      const { dirname, resolve } = await import("path");
+      const __filename = fileURLToPath(import.meta.url);
+      const __dirname = dirname(__filename);
+      const filePath = resolve(__dirname, "../artists.json");
+      const data = await fs.readFile(filePath, "utf8");
+      artistsCache = JSON.parse(data);
+    } else {
+      const response = await fetch("artists.json");
+      artistsCache = await response.json();
+    }
   } catch (e) {
     console.warn("Failed to load artists.json:", e);
     artistsCache = [];
