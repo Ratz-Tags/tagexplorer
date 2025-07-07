@@ -210,6 +210,3 @@ export {
   loadAppData,
 };
 
-getArtistImageCount("any_known_artist_name")
-  .then(console.log)
-  .catch(console.error);
