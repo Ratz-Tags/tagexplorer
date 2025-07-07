@@ -164,7 +164,7 @@ export async function getArtistImageCount(artistName) {
   }
   try {
     const resp = await fetchFn(
-      `https://danbooru.donmai.us/counts/posts.json?search[tags]=${encodeURIComponent(
+      `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
       )}`
     );
