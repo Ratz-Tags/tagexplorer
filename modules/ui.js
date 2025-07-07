@@ -85,7 +85,19 @@ function addLipstickKiss() {
 function createSpinner(className = "gallery-spinner") {
   const spinner = document.createElement("div");
   spinner.className = className;
-  spinner.innerHTML = `<img src="spinner.gif" alt="Loading..." />`;
+  spinner.innerHTML =
+    `<img src="spinner.gif" alt="Loading..." />` +
+    `<progress class="loading-bar" value="0" max="1"></progress>`;
+
+  spinner.setTotal = (total) => {
+    const bar = spinner.querySelector(".loading-bar");
+    if (bar) bar.max = total;
+  };
+  spinner.updateProgress = (val) => {
+    const bar = spinner.querySelector(".loading-bar");
+    if (bar) bar.value = val;
+  };
+
   return spinner;
 }
 

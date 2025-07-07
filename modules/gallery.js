@@ -17,6 +17,7 @@ const artistsPerPage = 24;
 let filtered = [];
 let isFetching = false;
 let sortMode = "name";
+let filterGeneration = 0;
 
 // DOM references
 let artistGallery = null;
@@ -453,6 +454,7 @@ function renderArtistsPage() {
 
     artistGallery.appendChild(card);
   });
+  currentArtistPage++;
 }
 
 /**
@@ -460,12 +462,14 @@ function renderArtistsPage() {
  */
 async function filterArtists(reset = true, force = false) {
   if (!artistGallery) return;
+  const generation = ++filterGeneration;
   if (isFetching) {
     const existing = artistGallery.querySelector(".gallery-spinner");
     if (!existing) {
       artistGallery.appendChild(createSpinner());
     }
-    return;
+    // Do not return; allow new filtering to proceed but results from prior
+    // generations will be ignored
   }
 
   let spinner;
@@ -477,6 +481,10 @@ async function filterArtists(reset = true, force = false) {
 
     spinner = artistGallery.querySelector(".gallery-spinner");
     if (!spinner) {
+      spinner = createSpinner();
+      artistGallery.appendChild(spinner);
+    } else if (!spinner.updateProgress) {
+      spinner.remove();
       spinner = createSpinner();
       artistGallery.appendChild(spinner);
     }
@@ -496,17 +504,14 @@ async function filterArtists(reset = true, force = false) {
           artistNameFilter === "")
       );
     });
-    if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
-    } else {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
-    }
+    // Initial alphabetical sort; counts may reorder later
+    filtered.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+    if (spinner.setTotal) spinner.setTotal(filtered.length);
+    if (spinner.updateProgress) spinner.updateProgress(0);
     console.log(
       "Filtered artists:",
       filtered.length,
@@ -514,9 +519,17 @@ async function filterArtists(reset = true, force = false) {
     );
 
     // Always fetch counts for the current filtered artists
-    async function fetchInBatches(artists, batchSize = 5, delayMs = 1000) {
+    async function fetchInBatches(
+      artists,
+      batchSize = 5,
+      delayMs = 1000,
+      gen,
+      spin
+    ) {
       const { getArtistImageCount } = await import("./api.js");
+      let done = 0;
       for (let i = 0; i < artists.length; i += batchSize) {
+        if (gen !== filterGeneration) return;
         const batch = artists.slice(i, i + batchSize);
         await Promise.all(
           batch.map(async (artist) => {
@@ -543,8 +556,30 @@ async function filterArtists(reset = true, force = false) {
             } else {
               artist._imageCount = totalCount;
             }
+            if (gen !== filterGeneration) {
+              return;
+            }
           })
         );
+
+        done += batch.length;
+        if (spin && spin.updateProgress) spin.updateProgress(done);
+
+        if (gen !== filterGeneration) return;
+        if (sortMode === "count") {
+          filtered.sort(
+            (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+          );
+        } else {
+          filtered.sort((a, b) =>
+            a.artistName.localeCompare(b.artistName, undefined, {
+              sensitivity: "base",
+            })
+          );
+        }
+        currentArtistPage = 0;
+        renderArtistsPage();
+
         if (i + batchSize < artists.length) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
@@ -554,9 +589,10 @@ async function filterArtists(reset = true, force = false) {
     renderArtistsPage(); // Render immediately
 
     if (reset) {
-      await fetchInBatches(filtered).catch((e) => {
+      await fetchInBatches(filtered, 5, 1000, generation, spinner).catch((e) => {
         console.error("Batch fetch failed:", e);
       });
+      if (generation !== filterGeneration) return;
       if (sortMode === "count") {
         filtered.sort(
           (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
@@ -566,14 +602,25 @@ async function filterArtists(reset = true, force = false) {
       renderArtistsPage();
     } else if (force) {
       // Reset and fetch new counts
-      fetchInBatches(filtered);
+      fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
+        if (generation !== filterGeneration) return;
+        if (sortMode === "count") {
+          filtered.sort(
+            (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+          );
+          currentArtistPage = 0;
+        }
+        renderArtistsPage();
+      });
     }
   } catch (error) {
     console.warn("filterArtists failed", error);
   } finally {
-    const remaining = artistGallery.querySelector(".gallery-spinner");
-    if (remaining) remaining.remove();
-    isFetching = false;
+    if (generation === filterGeneration) {
+      const remaining = artistGallery.querySelector(".gallery-spinner");
+      if (remaining) remaining.remove();
+      isFetching = false;
+    }
   }
 }
 
