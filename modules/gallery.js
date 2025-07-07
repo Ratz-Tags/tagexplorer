@@ -603,6 +603,7 @@ async function filterArtists(reset = true, force = false) {
     } else if (force) {
       // Reset and fetch new counts
       fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
+
         if (generation !== filterGeneration) return;
         if (sortMode === "count") {
           filtered.sort(
