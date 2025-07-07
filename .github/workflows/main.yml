@@ -6,8 +6,11 @@ on:
     - cron: '0 0 * * *'  # runs daily at midnight UTC
 
 jobs:
-  update-json:
+  update:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./kexplorer  # 👈 match your repo folder name
 
     steps:
       - name: Checkout repository
