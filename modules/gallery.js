@@ -611,6 +611,21 @@ function setGetArtistNameFilterCallback(callback) {
  */
 function setSortMode(mode) {
   sortMode = mode === "count" ? "count" : "name";
+  // Resort and rerender if already filtered
+  if (filtered.length > 0) {
+    if (sortMode === "count") {
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
+      );
+    }
+    renderArtistsPage();
+  }
 }
 
 /**
