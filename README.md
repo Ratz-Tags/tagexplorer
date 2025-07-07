@@ -12,6 +12,8 @@ The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering N
 - 🌗 Incognito Theme Toggle
 - 🖤 Plain Backgrounds in Incognito Mode
 - ✨ Animated Gallery Cards
+- 🗂 Tag Explorer modal for browsing all tags
+- 🆕 Modern responsive layout with sticky navigation
 
 ## 🚀 Use
 
