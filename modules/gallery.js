@@ -197,7 +197,14 @@ function lazyLoadBestImage(artist, img) {
  */
 async function openArtistZoom(artist) {
   const viewer = createFullscreenViewer();
-  const { wrapper, img: zoomed, tagList, noEntriesMsg, prevBtn, nextBtn } = viewer;
+  const {
+    wrapper,
+    img: zoomed,
+    tagList,
+    noEntriesMsg,
+    prevBtn,
+    nextBtn,
+  } = viewer;
 
   let currentIndex = 0;
   let posts = [];
@@ -451,7 +458,7 @@ function renderArtistsPage() {
 /**
  * Filters and displays artists based on current criteria
  */
-async function filterArtists(reset = true) {
+async function filterArtists(reset = true, force = false) {
   if (!artistGallery) return;
   if (isFetching) {
     const existing = artistGallery.querySelector(".gallery-spinner");
@@ -495,7 +502,9 @@ async function filterArtists(reset = true) {
       );
     } else {
       filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" })
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
       );
     }
     console.log(
@@ -555,6 +564,9 @@ async function filterArtists(reset = true) {
         currentArtistPage = 0;
       }
       renderArtistsPage();
+    } else if (force) {
+      // Reset and fetch new counts
+      fetchInBatches(filtered);
     }
   } catch (error) {
     console.warn("filterArtists failed", error);

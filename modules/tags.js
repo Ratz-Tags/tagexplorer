@@ -204,7 +204,7 @@ function renderTagButtons() {
         spawnBubble(tag);
       }
       renderTagButtons();
-      if (renderArtists) renderArtists();
+      if (renderArtists) renderArtists(true); // <-- force full update
       if (setRandomBackground) setRandomBackground();
       if (navigator.vibrate) navigator.vibrate(50);
     };
@@ -221,7 +221,7 @@ function clearAllTags() {
   activeTags.clear();
   renderTagButtons();
   if (navigator.vibrate) navigator.vibrate(50);
-  if (renderArtists) renderArtists(true);
+  if (renderArtists) renderArtists(true); // <-- force full update
   if (setRandomBackground) setRandomBackground();
 }
 
