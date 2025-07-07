@@ -35,6 +35,12 @@ async function setRandomBackground() {
   if (!backgroundBlur) return;
 
   try {
+    if (document.body.classList.contains("incognito-theme")) {
+      backgroundBlur.style.backgroundImage = "none";
+      backgroundBlur.style.backgroundColor = "#111";
+      return;
+    }
+
     const { getRandomBackgroundImage } = await import("./api.js");
     const imageUrl = await getRandomBackgroundImage();
 

@@ -11,6 +11,20 @@
   --cream-pink: #fff0fa;
   --dark-pink: #a0005a;
   --accent-pink: #d63384;
+
+  /* Backgrounds */
+  --bg-gradient: linear-gradient(
+    120deg,
+    var(--pale-pink) 0%,
+    var(--secondary-pink) 60%,
+    var(--primary-pink) 100%
+  );
+  --overlay-gradient: linear-gradient(
+    120deg,
+    rgba(255, 182, 213, 0.7) 0%,
+    rgba(253, 123, 197, 0.5) 60%,
+    rgba(160, 0, 90, 0.5) 100%
+  );
   
   /* Spacing */
   --spacing-xs: 0.25rem;
@@ -62,6 +76,8 @@ body.incognito-theme {
   --cream-pink: #444444;
   --dark-pink: #f0f0f0;
   --accent-pink: #888888;
+  --bg-gradient: linear-gradient(120deg, #222 0%, #111 100%);
+  --overlay-gradient: none;
   background: #111111;
   color: #f0f0f0;
 }
@@ -75,6 +91,18 @@ body.fem-theme {
   --cream-pink: #fff0fa;
   --dark-pink: #a0005a;
   --accent-pink: #d63384;
+  --bg-gradient: linear-gradient(
+    120deg,
+    var(--pale-pink) 0%,
+    var(--secondary-pink) 60%,
+    var(--primary-pink) 100%
+  );
+  --overlay-gradient: linear-gradient(
+    120deg,
+    rgba(255, 182, 213, 0.7) 0%,
+    rgba(253, 123, 197, 0.5) 60%,
+    rgba(160, 0, 90, 0.5) 100%
+  );
 }
 
 /* Accessibility helpers */
@@ -104,11 +132,12 @@ body.fem-theme {
 body {
   margin: 0;
   font-family: var(--font-family-primary);
-  background: linear-gradient(135deg, var(--light-pink) 0%, var(--pale-pink) 40%, var(--cream-pink) 100%);
+  background: var(--bg-gradient);
   color: var(--dark-pink);
   overflow-x: hidden;
   line-height: 1.6;
   animation: fade-in 0.4s ease-out;
+  transition: background var(--transition-slow), color var(--transition-slow);
 }
 
 html, body {
@@ -129,8 +158,8 @@ html, body {
   background-position: center;
   filter: blur(3px) brightness(0.85) saturate(1.1);
   z-index: var(--z-background);
-  transition: background-image var(--transition-slow);
-  background: linear-gradient(120deg, var(--pale-pink) 0%, var(--secondary-pink) 60%, var(--primary-pink) 100%);
+  transition: background-image var(--transition-slow), background var(--transition-slow);
+  background: var(--bg-gradient);
   opacity: 0.95;
   pointer-events: none;
 }
@@ -139,7 +168,7 @@ html, body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(120deg, rgba(255,182,213,0.7) 0%, rgba(253,123,197,0.5) 60%, rgba(160,0,90,0.5) 100%);
+  background: var(--overlay-gradient);
   opacity: 0.7;
   z-index: 1;
 }
@@ -440,6 +469,9 @@ main {
   transition: all var(--transition-normal);
   position: relative;
   overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fade-up 0.4s ease forwards;
 }
 
 .artist-card:hover {
@@ -506,6 +538,9 @@ main {
   transform: scale(1.1);
   box-shadow: 0 2px 10px #fd7bc540;
 }
+.copy-button:active {
+  transform: scale(0.9) rotate(-3deg);
+}
 
 .tag-btn:hover, .tag-btn:focus-visible,
 .tag-button:hover, .tag-button:focus-visible {
@@ -569,6 +604,9 @@ main {
   text-align: center;
   color: #ffd6f6;
   transition: transform 0.2s, box-shadow 0.2s;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fade-up 0.4s ease forwards;
 }
 
 .artist-card:hover {
@@ -1521,5 +1559,16 @@ input[type="text"]:focus, input[type="search"]:focus {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

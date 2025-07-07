@@ -153,6 +153,7 @@ const savedTheme = localStorage.getItem("theme");
 if (savedTheme === "incognito") {
   bodyEl.classList.add("incognito-theme");
   bodyEl.classList.remove("fem-theme");
+  setRandomBackground();
 }
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
@@ -162,5 +163,7 @@ if (themeToggle) {
       ? "incognito"
       : "fem";
     localStorage.setItem("theme", current);
+    setRandomBackground();
+
   });
 }

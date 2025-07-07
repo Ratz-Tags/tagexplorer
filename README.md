@@ -10,6 +10,8 @@ The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering N
 - 💬 Taunting JRPG-style Bubble Insults
 - 🎀 Feminine UI Design
 - 🌗 Incognito Theme Toggle
+- 🖤 Plain Backgrounds in Incognito Mode
+- ✨ Animated Gallery Cards
 
 ## 🚀 Use
 
