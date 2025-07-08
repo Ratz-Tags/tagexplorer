@@ -589,9 +589,11 @@ async function filterArtists(reset = true, force = false) {
     renderArtistsPage(); // Render immediately
 
     if (reset) {
-      await fetchInBatches(filtered, 5, 1000, generation, spinner).catch((e) => {
-        console.error("Batch fetch failed:", e);
-      });
+      await fetchInBatches(filtered, 5, 1000, generation, spinner).catch(
+        (e) => {
+          console.error("Batch fetch failed:", e);
+        }
+      );
       if (generation !== filterGeneration) return;
       if (sortMode === "count") {
         filtered.sort(
@@ -603,7 +605,6 @@ async function filterArtists(reset = true, force = false) {
     } else if (force) {
       // Reset and fetch new counts
       fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
-
         if (generation !== filterGeneration) return;
         if (sortMode === "count") {
           filtered.sort(
@@ -659,12 +660,9 @@ function setGetArtistNameFilterCallback(callback) {
  */
 function setSortMode(mode) {
   sortMode = mode === "count" ? "count" : "name";
-  // Resort and rerender if already filtered
   if (filtered.length > 0) {
     if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
+      filtered.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
     } else {
       filtered.sort((a, b) =>
         a.artistName.localeCompare(b.artistName, undefined, {
