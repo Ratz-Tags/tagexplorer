@@ -33,7 +33,10 @@ import {
   setupInfiniteScroll,
   setupBackgroundRotation,
 } from "./modules/ui.js";
-import { openTagExplorer, setAllArtists as setExplorerArtists } from "./modules/tag-explorer.js";
+import {
+  openTagExplorer,
+  setAllArtists as setExplorerArtists,
+} from "./modules/tag-explorer.js";
 import { loadAppData } from "./modules/api.js";
 
 /**
@@ -151,9 +154,7 @@ if (sortSelect) {
 
 const tagExplorerBtn = document.getElementById("open-tag-explorer");
 if (tagExplorerBtn) {
-  tagExplorerBtn.addEventListener("click", () => {
-    openTagExplorer();
-  });
+  tagExplorerBtn.addEventListener("click", openTagExplorer);
 }
 
 const filterToggle = document.getElementById("toggle-filters");
@@ -184,6 +185,5 @@ if (themeToggle) {
       : "fem";
     localStorage.setItem("theme", current);
     setRandomBackground();
-
   });
 }
