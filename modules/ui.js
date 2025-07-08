@@ -27,10 +27,9 @@ function setupInfiniteScroll(callback) {
   window.addEventListener("scroll", () => {
     if (scrollTimeout) clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      const isNearBottom = 
-        window.innerHeight + window.scrollY >= 
-        document.body.offsetHeight - 300;
-      
+      const isNearBottom =
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+
       if (isNearBottom && callback) {
         callback();
       }
@@ -125,7 +124,7 @@ function throttle(func, wait) {
     if (!inThrottle) {
       func.apply(this, args);
       inThrottle = true;
-      setTimeout(() => inThrottle = false, wait);
+      setTimeout(() => (inThrottle = false), wait);
     }
   };
 }
@@ -136,25 +135,25 @@ function throttle(func, wait) {
 function createModal(content, className = "modal") {
   const modal = document.createElement("div");
   modal.className = className;
-  
+
   const modalContent = document.createElement("div");
   modalContent.className = `${className}-content`;
-  
+
   if (typeof content === "string") {
     modalContent.innerHTML = content;
   } else {
     modalContent.appendChild(content);
   }
-  
+
   modal.appendChild(modalContent);
-  
+
   // Close on click outside
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
       modal.remove();
     }
   });
-  
+
   // Close on Escape key
   const handleEscape = (e) => {
     if (e.key === "Escape") {
@@ -163,7 +162,7 @@ function createModal(content, className = "modal") {
     }
   };
   document.addEventListener("keydown", handleEscape);
-  
+
   return modal;
 }
 
@@ -231,7 +230,7 @@ function createFullscreenViewer() {
     noEntriesMsg,
     closeBtn,
     prevBtn,
-    nextBtn
+    nextBtn,
   };
 }
 
@@ -244,15 +243,17 @@ function setupKeyboardShortcuts(shortcuts = {}) {
     if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
       return;
     }
-    
+
     const key = e.key.toLowerCase();
     const combo = [
       e.ctrlKey && "ctrl",
-      e.altKey && "alt", 
+      e.altKey && "alt",
       e.shiftKey && "shift",
-      key
-    ].filter(Boolean).join("+");
-    
+      key,
+    ]
+      .filter(Boolean)
+      .join("+");
+
     if (shortcuts[combo]) {
       e.preventDefault();
       shortcuts[combo]();
@@ -281,5 +282,5 @@ export {
   createModal,
   createFullscreenViewer,
   setupKeyboardShortcuts,
-  initUI
+  initUI,
 };

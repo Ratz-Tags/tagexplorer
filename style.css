@@ -385,13 +385,20 @@ main {
 }
 
 .zoom-tags {
-  margin-top: 0.5rem;
+  margin-top: 1.5rem;
+  max-width: 90vw;
   max-height: 20vh;
   overflow-y: auto;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 1.1rem;
   text-align: center;
-  padding: 0 1rem;
+  padding: 0.75em 1.5em;
+  background: rgba(40, 0, 40, 0.85);
+  border-radius: 1em;
+  box-shadow: 0 2px 16px #fd7bc540;
+  z-index: 10;
+  position: relative;
+  display: inline-block;
 }
 
 .fullscreen-wrapper button.zoom-prev,

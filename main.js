@@ -109,6 +109,22 @@ if (document.readyState === "loading") {
   initApp();
 }
 
+// Load tag-tooltips.json and set a random quote as the tagline
+fetch("tag-tooltips.json")
+  .then((res) => res.json())
+  .then((tooltips) => {
+    // tooltips is expected to be an object: { tag: "tooltip", ... }
+    const quotes = Object.values(tooltips).filter(Boolean);
+    if (quotes.length > 0) {
+      const random = quotes[Math.floor(Math.random() * quotes.length)];
+      const taglineElem = document.getElementById("tagline");
+      if (taglineElem) taglineElem.textContent = random;
+    }
+  })
+  .catch(() => {
+    // fallback: do nothing or keep default tagline
+  });
+
 // Global error handling
 window.addEventListener("error", (event) => {
   console.error("Unhandled error:", event.error);
