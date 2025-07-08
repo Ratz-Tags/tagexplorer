@@ -1,5 +1,4 @@
 import { getActiveTags, getKinkTags, toggleTag } from './tags.js';
-import { createModal } from './ui.js';
 
 let allArtists = [];
 
@@ -18,11 +17,21 @@ function getTagCounts() {
 }
 
 function openTagExplorer() {
+  // Close any existing tag explorer
+  const existingWrapper = document.querySelector('.fullscreen-wrapper.tag-explorer-wrapper');
+  if (existingWrapper) {
+    existingWrapper.remove();
+  }
+
   const counts = getTagCounts();
   const allTags = getKinkTags();
   const active = getActiveTags();
 
   let sortMode = 'name';
+
+  // Create fullscreen wrapper similar to zoom viewer
+  const wrapper = document.createElement('div');
+  wrapper.className = 'fullscreen-wrapper tag-explorer-wrapper';
 
   const container = document.createElement('div');
   container.className = 'tag-explorer';
@@ -31,8 +40,14 @@ function openTagExplorer() {
   header.className = 'tag-explorer-header';
 
   const title = document.createElement('h3');
-  title.textContent = 'Tags';
+  title.textContent = 'Browse Tags';
   header.appendChild(title);
+
+  // Add close button in header
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'zoom-close';
+  closeBtn.textContent = '×';
+  closeBtn.onclick = () => wrapper.remove();
 
   const sortSelect = document.createElement('select');
   sortSelect.innerHTML = `<option value="name">Sort: Name</option><option value="count">Sort: Count</option>`;
@@ -75,8 +90,21 @@ function openTagExplorer() {
     });
   }
 
-  const modal = createModal(container, 'modal');
-  document.body.appendChild(modal);
+  // Add keyboard handling (Escape key)
+  wrapper.tabIndex = 0;
+  wrapper.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeBtn.click();
+      e.preventDefault();
+    }
+  });
+
+  // Assemble the modal
+  wrapper.appendChild(container);
+  wrapper.appendChild(closeBtn);
+  
+  document.body.appendChild(wrapper);
+  wrapper.focus();
   renderList();
 }
 
