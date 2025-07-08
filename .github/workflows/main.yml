@@ -46,7 +46,7 @@ jobs:
 
       - name: Push changes
         if: ${{ steps.commit.outputs.no_changes == 'false' }}
-        run: git push --set-upstream origin auto/update-artists
+        run: git push --force --set-upstream origin auto/update-artists
 
       - name: Create Pull Request
         if: ${{ steps.commit.outputs.no_changes == 'false' }}
