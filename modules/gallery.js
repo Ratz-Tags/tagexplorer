@@ -341,25 +341,31 @@ function renderArtistsPage() {
     name.className = "artist-name";
     name.textContent = artist.artistName.replace(/_/g, " ");
 
-    // Helper to update count display
+    // Improved count display logic
     artist._updateCountDisplay = function () {
-      if (
-        typeof this._imageCount === "number" &&
+      const hasTagFilter = getActiveTags && getActiveTags().size > 0;
+      const total =
         typeof this._totalImageCount === "number"
+          ? this._totalImageCount
+          : typeof this.postCount === "number"
+          ? this.postCount
+          : undefined;
+
+      if (
+        hasTagFilter &&
+        typeof this._imageCount === "number" &&
+        typeof total === "number"
       ) {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${
           this._imageCount
-        }/${this._totalImageCount}]`;
-      } else if (typeof this._totalImageCount === "number") {
-        name.textContent = `${this.artistName.replace(/_/g, " ")} [${
-          this._totalImageCount
-        }]`;
+        }/${total}]`;
+      } else if (typeof total === "number") {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
       }
     };
 
-    // Initial display
     artist._updateCountDisplay();
 
     // When counts are set later, call this function

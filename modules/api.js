@@ -234,9 +234,3 @@ export {
   clearArtistCache,
   loadAppData,
 };
-
-artist._updateCountDisplay = function () {
-  name.textContent = `${this.artistName.replace(/_/g, " ")} [${
-    this.postCount ?? "?"
-  }]`;
-};
