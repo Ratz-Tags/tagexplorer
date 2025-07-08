@@ -59,6 +59,7 @@ const kinkTags = [
   "restraints",
   "sockjob",
   "tentacle_pit",
+  "tentacle_sex",
   "object_insertion_from_behind",
   "pouring_from_condom",
   "forced_feminization",
