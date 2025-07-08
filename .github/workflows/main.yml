@@ -3,14 +3,11 @@ name: Update artists.json with post counts
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # every day at midnight UTC
+    - cron: "0 0 * * *"
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./kexplorer
 
     steps:
       - name: Checkout repository
@@ -24,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: npm install || echo "No dependencies"
 
-      - name: Run update-json.js
+      - name: Run update script
         run: node update-json.js
 
       - name: Create Pull Request
