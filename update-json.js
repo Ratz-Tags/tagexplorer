@@ -5,7 +5,7 @@ import { getArtistImageCount } from "./modules/api.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const filePath = path.join(__dirname, "artists.json"); // 👈 THIS is the file you are modifying
+const filePath = path.join(__dirname, "artists.json");
 
 async function updateCounts() {
   const data = JSON.parse(await fs.readFile(filePath, "utf8"));
@@ -16,9 +16,11 @@ async function updateCounts() {
     console.log(`${artist.artistName}: ${count}`);
   }
 
-  console.log("✅ Writing updated JSON to:", filePath);
+  console.log("✅ Updating file:", filePath);
+  console.log("Sample output:", JSON.stringify(data.slice(0, 1), null, 2));
+
   await fs.writeFile(filePath, JSON.stringify(data, null, 2) + "\n");
+  console.log("✅ artists.json written successfully");
 }
-console.log("✅ Updating file:", filePath);
-console.log("Sample output:", JSON.stringify(data.slice(0, 1), null, 2));
+
 updateCounts();
