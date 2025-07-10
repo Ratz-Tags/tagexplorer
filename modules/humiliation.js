@@ -1,8 +1,7 @@
 // Humiliation module - periodic taunt popups
 
-import { showToast, getCopiedCount } from './sidebar.js';
-import { getActiveTags } from './tags.js';
-
+import { showToast, getCopiedCount } from "./sidebar.js";
+import { getActiveTags } from "./tags.js";
 
 let tauntPool = [];
 let timer = null;

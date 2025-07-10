@@ -3,11 +3,7 @@
  */
 
 import { createFullscreenViewer, createSpinner } from "./ui.js";
-import {
-  fetchArtistImages,
-  clearArtistCache,
-  buildImageUrl,
-} from "./api.js";
+import { fetchArtistImages, clearArtistCache, buildImageUrl } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
@@ -677,7 +673,6 @@ function getPaginationInfo() {
     hasMore: filtered.length > currentArtistPage * artistsPerPage,
   };
 }
-
 // Export functions for ES modules
 export {
   initGallery,
@@ -691,4 +686,5 @@ export {
   setSortMode,
   getFilteredArtists,
   getPaginationInfo,
+  getArtistImageCountWithTimeout,
 };
