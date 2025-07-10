@@ -176,16 +176,21 @@ function createFullscreenViewer() {
   const content = document.createElement("div");
   content.className = "zoom-content";
 
-  const tagList = document.createElement("div");
-  tagList.className = "zoom-tags";
-
-  const topTags = document.createElement("div");
-  topTags.className = "artist-top-tags";
-
+  const left = document.createElement("div");
+  left.className = "zoom-left";
   const img = document.createElement("img");
   img.className = "fullscreen-img";
+  left.appendChild(img);
 
-  content.append(tagList, img, topTags);
+  const right = document.createElement("div");
+  right.className = "zoom-right";
+  const tagList = document.createElement("div");
+  tagList.className = "zoom-tags";
+  const topTags = document.createElement("div");
+  topTags.className = "artist-top-tags";
+  right.append(tagList, topTags);
+
+  content.append(left, right);
   wrapper.appendChild(content);
 
   const noEntriesMsg = document.createElement("span");

@@ -365,56 +365,88 @@ main {
 .fullscreen-wrapper {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.9);
+  background: rgba(0, 0, 0, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 200;
 }
 
-.fullscreen-img {
-  max-width: 90%;
-  max-height: 90%;
+.zoom-content {
+  display: flex;
+  width: 90vw;
+  height: 90vh;
+  background: transparent;
+  border-radius: 1em;
+  overflow: hidden;
+  box-shadow: 0 4px 32px #000a;
 }
 
-.zoom-content {
-  position: relative;
+.zoom-left, .zoom-right {
+  height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+}
+
+.zoom-left {
+  width: 50%;
   align-items: center;
+  background: transparent;
+  justify-content: center;
+  display: flex;
+}
+
+.zoom-right {
+  width: 50%;
+  background: rgba(40,0,40,0.85);
+  color: #fff;
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.fullscreen-img {
+  max-width: 100%;
+  max-height: 90vh;
+  border-radius: 1em;
+  box-shadow: 0 2px 16px #00000040;
 }
 
 .zoom-tags {
-  margin-top: 1.5rem;
-  max-width: 90vw;
-  max-height: 20vh;
-  overflow-y: auto;
-  color: #fff;
   font-size: 1.1rem;
-  text-align: center;
-  padding: 0.75em 1.5em;
-  background: rgba(40, 0, 40, 0.85);
-  border-radius: 1em;
-  box-shadow: 0 2px 16px #fd7bc540;
-  z-index: 10;
-  position: relative;
-  display: inline-block;
+  margin-bottom: 2rem;
+  word-break: break-word;
 }
 
 .artist-top-tags {
-  margin-top: 0.5rem;
-  max-width: 90vw;
-  max-height: 20vh;
-  overflow-y: auto;
-  color: #fff;
   font-size: 1rem;
-  text-align: center;
-  padding: 0.5em 1em;
-  background: rgba(0, 0, 0, 0.65);
-  border-radius: 0.75em;
-  box-shadow: 0 2px 16px #00000040;
-  position: relative;
-  display: inline-block;
+  opacity: 0.85;
+  word-break: break-word;
+}
+
+/* Responsive: stack on mobile */
+@media (max-width: 900px) {
+  .zoom-content {
+    flex-direction: column;
+    width: 98vw;
+    height: 98vh;
+  }
+  .zoom-left, .zoom-right {
+    width: 100%;
+    height: auto;
+  }
+  .zoom-right {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .fullscreen-img {
+    max-height: 50vh;
+  }
 }
 
 .fullscreen-wrapper button.zoom-prev,
