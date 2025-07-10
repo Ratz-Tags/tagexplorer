@@ -1,4 +1,9 @@
-import { getActiveTags, getKinkTags, toggleTag } from './tags.js';
+import {
+  getActiveTags,
+  getKinkTags,
+  toggleTag,
+  getArtistNameFilter,
+} from './tags.js';
 
 let allArtists = [];
 
@@ -6,10 +11,14 @@ function setAllArtists(artists) {
   allArtists = Array.isArray(artists) ? artists : [];
 }
 
-function getTagCounts() {
+function getFilteredCounts(active) {
+  const nameFilter = (getArtistNameFilter && getArtistNameFilter()) || '';
   const counts = {};
   allArtists.forEach((a) => {
-    (a.kinkTags || []).forEach((t) => {
+    const tags = a.kinkTags || [];
+    if (![...active].every((t) => tags.includes(t))) return;
+    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return;
+    tags.forEach((t) => {
       counts[t] = (counts[t] || 0) + 1;
     });
   });
@@ -23,11 +32,11 @@ function openTagExplorer() {
     existingWrapper.remove();
   }
 
-  const counts = getTagCounts();
   const allTags = getKinkTags();
-  const active = getActiveTags();
+  let active = getActiveTags();
 
   let sortMode = 'name';
+  let searchText = '';
 
   // Create fullscreen wrapper similar to zoom viewer
   const wrapper = document.createElement('div');
@@ -55,6 +64,14 @@ function openTagExplorer() {
     sortMode = sortSelect.value;
     renderList();
   };
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.placeholder = 'Search tags';
+  searchInput.oninput = () => {
+    searchText = searchInput.value.toLowerCase();
+    renderList();
+  };
+  header.appendChild(searchInput);
   header.appendChild(sortSelect);
 
   container.appendChild(header);
@@ -65,12 +82,22 @@ function openTagExplorer() {
 
   function renderList() {
     list.innerHTML = '';
-    const tags = allTags.slice().sort((a, b) => {
+    active = getActiveTags();
+    const counts = getFilteredCounts(active);
+    let tags = allTags.filter((t) =>
+      t.toLowerCase().includes(searchText)
+    );
+    tags = tags.filter((t) => counts[t] || active.has(t));
+    tags.sort((a, b) => {
       if (sortMode === 'count') {
         return (counts[b] || 0) - (counts[a] || 0);
       }
       return a.localeCompare(b);
     });
+    if (tags.length === 0) {
+      list.textContent = 'No tags';
+      return;
+    }
     tags.forEach((tag) => {
       const btn = document.createElement('button');
       btn.className = 'tag-button';
@@ -78,13 +105,7 @@ function openTagExplorer() {
       if (active.has(tag)) btn.classList.add('active');
       btn.onclick = () => {
         toggleTag(tag);
-        if (active.has(tag)) {
-          active.delete(tag);
-          btn.classList.remove('active');
-        } else {
-          active.add(tag);
-          btn.classList.add('active');
-        }
+        renderList();
       };
       list.appendChild(btn);
     });
