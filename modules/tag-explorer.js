@@ -3,6 +3,8 @@ import {
   getKinkTags,
   toggleTag,
   getArtistNameFilter,
+  handleArtistNameFilter,
+  
 } from './tags.js';
 
 let allArtists = [];
@@ -64,6 +66,7 @@ function openTagExplorer() {
     sortMode = sortSelect.value;
     renderList();
   };
+
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.placeholder = 'Search tags';
@@ -71,7 +74,19 @@ function openTagExplorer() {
     searchText = searchInput.value.toLowerCase();
     renderList();
   };
+
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.placeholder = 'Filter artists';
+  nameInput.value = getArtistNameFilter ? getArtistNameFilter() : '';
+  nameInput.oninput = () => {
+    handleArtistNameFilter(nameInput.value);
+    renderList();
+  };
+
   header.appendChild(searchInput);
+  header.appendChild(nameInput);
+
   header.appendChild(sortSelect);
 
   container.appendChild(header);

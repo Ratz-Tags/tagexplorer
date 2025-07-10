@@ -486,6 +486,15 @@ main {
   border-radius: var(--radius);
 }
 
+.tag-explorer-header input {
+  background: var(--background);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.5rem;
+  border-radius: var(--radius);
+  margin-right: 0.5rem;
+}
+
 .tag-explorer-tags {
   display: flex;
   flex-wrap: wrap;

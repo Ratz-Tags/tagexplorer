@@ -1,5 +1,8 @@
 // Humiliation module - periodic taunt popups
-import { showToast } from './sidebar.js';
+
+import { showToast, getCopiedCount } from './sidebar.js';
+import { getActiveTags } from './tags.js';
+
 
 let tauntPool = [];
 let timer = null;
@@ -9,7 +12,17 @@ function startTauntTicker(taunts = [], intervalMs = 30000) {
   if (timer) clearInterval(timer);
   if (tauntPool.length === 0) return;
   timer = setInterval(() => {
-    const msg = tauntPool[Math.floor(Math.random() * tauntPool.length)];
+    const active = getActiveTags ? getActiveTags() : new Set();
+    const copies = getCopiedCount ? getCopiedCount() : 0;
+    const dynamic = [];
+    if (active.size > 0) {
+      dynamic.push(`Still drooling over ${active.size} filthy tags?`);
+    }
+    if (copies > 0) {
+      dynamic.push(`Copied ${copies} artists already? Desperate much?`);
+    }
+    const pool = tauntPool.concat(dynamic);
+    const msg = pool[Math.floor(Math.random() * pool.length)];
     if (msg) showToast(msg);
   }, intervalMs);
 }
