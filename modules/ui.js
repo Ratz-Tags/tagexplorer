@@ -179,10 +179,13 @@ function createFullscreenViewer() {
   const tagList = document.createElement("div");
   tagList.className = "zoom-tags";
 
+  const topTags = document.createElement("div");
+  topTags.className = "artist-top-tags";
+
   const img = document.createElement("img");
   img.className = "fullscreen-img";
 
-  content.append(tagList, img);
+  content.append(tagList, img, topTags);
   wrapper.appendChild(content);
 
   const noEntriesMsg = document.createElement("span");
@@ -227,6 +230,7 @@ function createFullscreenViewer() {
     wrapper,
     img,
     tagList,
+    topTags,
     noEntriesMsg,
     closeBtn,
     prevBtn,
