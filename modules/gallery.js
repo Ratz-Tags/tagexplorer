@@ -677,6 +677,7 @@ function getPaginationInfo() {
     hasMore: filtered.length > currentArtistPage * artistsPerPage,
   };
 }
+
 // Export functions for ES modules
 export {
   initGallery,

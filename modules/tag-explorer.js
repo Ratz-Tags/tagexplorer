@@ -4,6 +4,7 @@ import {
   toggleTag,
   getArtistNameFilter,
   handleArtistNameFilter,
+  
 } from './tags.js';
 
 let allArtists = [];
@@ -85,6 +86,7 @@ function openTagExplorer() {
 
   header.appendChild(searchInput);
   header.appendChild(nameInput);
+
   header.appendChild(sortSelect);
 
   container.appendChild(header);
