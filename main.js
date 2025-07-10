@@ -38,6 +38,7 @@ import {
   setAllArtists as setExplorerArtists,
 } from "./modules/tag-explorer.js";
 import { loadAppData } from "./modules/api.js";
+import { startTauntTicker } from "./modules/humiliation.js";
 
 /**
  * Initialize the application
@@ -70,6 +71,7 @@ async function initApp() {
     setTagTooltips(tooltips);
     setTagTaunts(tagTaunts);
     setTaunts(generalTaunts);
+    startTauntTicker(generalTaunts, 30000);
 
     // Initial render
     renderTagButtons();

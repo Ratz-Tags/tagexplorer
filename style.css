@@ -493,3 +493,22 @@ main {
   max-height: 60vh;
   overflow-y: auto;
 }
+
+.toast-popup {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  z-index: 250;
+  opacity: 0;
+  animation: toastfade 0.3s forwards;
+}
+
+@keyframes toastfade {
+  to {
+    opacity: 1;
+  }
+}

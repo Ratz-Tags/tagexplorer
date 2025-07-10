@@ -678,10 +678,6 @@ function getPaginationInfo() {
   };
 }
 
-/**
- * Gets the artist image count with a timeout
- */
-
 // Export functions for ES modules
 export {
   initGallery,
