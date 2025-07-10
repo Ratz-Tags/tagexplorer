@@ -7,6 +7,13 @@ let copiedSidebar = null;
 let allArtists = [];
 
 /**
+ * Returns the count of copied artists
+ */
+function getCopiedCount() {
+  return copiedArtists.size;
+}
+
+/**
  * Shows a toast notification message
  */
 function showToast(message) {
@@ -174,6 +181,7 @@ export {
   setCopiedArtists,
   setCopiedSidebar,
   showToast,
+  getCopiedCount,
 };
 
 // Legacy CommonJS exports for existing tests
