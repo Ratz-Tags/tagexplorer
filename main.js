@@ -38,6 +38,7 @@ import {
   setAllArtists as setExplorerArtists,
 } from "./modules/tag-explorer.js";
 import { loadAppData } from "./modules/api.js";
+import { startTauntTicker } from "./modules/humiliation.js";
 
 /**
  * Initialize the application
@@ -70,6 +71,7 @@ async function initApp() {
     setTagTooltips(tooltips);
     setTagTaunts(tagTaunts);
     setTaunts(generalTaunts);
+    startTauntTicker(generalTaunts, 30000);
 
     // Initial render
     renderTagButtons();
@@ -168,18 +170,10 @@ if (sortSelect) {
   });
 }
 
-const tagExplorerBtn = document.getElementById("open-tag-explorer");
-if (tagExplorerBtn) {
-  tagExplorerBtn.addEventListener("click", openTagExplorer);
-}
-
 const filterToggle = document.getElementById("toggle-filters");
 if (filterToggle) {
-  const filterBar = document.querySelector(".filter-bar");
   filterToggle.addEventListener("click", () => {
-    const collapsed = filterBar.classList.toggle("collapsed");
-    filterToggle.textContent = collapsed ? "Show Filters" : "Hide Filters";
-    filterToggle.setAttribute("aria-expanded", (!collapsed).toString());
+    openTagExplorer();
   });
 }
 
