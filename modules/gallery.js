@@ -6,7 +6,6 @@ import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
   fetchArtistImages,
   clearArtistCache,
-  getArtistImageCount,
   buildImageUrl,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
@@ -132,6 +131,7 @@ function setBestImage(artist, img) {
         if (index === 0) {
           localStorage.setItem(cacheKey, url);
         }
+        artist._thumbnailPostId = validPosts[index]?.id;
       };
       img.src = url;
     }
@@ -208,6 +208,7 @@ async function openArtistZoom(artist) {
     wrapper,
     img: zoomed,
     tagList,
+    topTags,
     noEntriesMsg,
     prevBtn,
     nextBtn,
@@ -288,7 +289,26 @@ async function openArtistZoom(artist) {
       return;
     }
 
-    currentIndex = 0;
+    // compute artist top tags
+    try {
+      const { getKinkTags } = await import("./tags.js");
+      const allowed = new Set(getKinkTags());
+      const counts = {};
+      posts.forEach((p) => {
+        (p.tag_string || "").split(" ").forEach((t) => {
+          if (allowed.has(t)) counts[t] = (counts[t] || 0) + 1;
+        });
+      });
+      const top = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
+      if (topTags) topTags.textContent = top.length ? top.join(", ") : "";
+    } catch {}
+
+    const startId = artist._thumbnailPostId;
+    const idx = startId ? posts.findIndex((p) => p.id === startId) : -1;
+    currentIndex = idx >= 0 ? idx : 0;
     tryShow(currentIndex);
   } catch (error) {
     console.warn("Failed to fetch artist images:", error);
@@ -415,29 +435,9 @@ function renderArtistsPage() {
       // Optionally show loading state
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
 
-      // Fetch new counts
-      const { getArtistImageCount } = await import("./api.js");
-      const totalCount = await getArtistImageCount(artist.artistName);
+      const totalCount = artist.postCount || 0;
       artist._totalImageCount = totalCount;
-
-      const activeTags = getActiveTags ? getActiveTags() : new Set();
-      if (activeTags && activeTags.size > 0) {
-        const tagQuery = [artist.artistName, ...Array.from(activeTags)].join(
-          " "
-        );
-        const response = await fetch(
-          `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-            tagQuery
-          )}&limit=1000`
-        );
-        const posts = await response.json();
-        const uniqueIds = new Set(
-          Array.isArray(posts) ? posts.map((post) => post.id) : []
-        );
-        artist._imageCount = uniqueIds.size;
-      } else {
-        artist._imageCount = totalCount;
-      }
+      artist._imageCount = totalCount;
 
       // Update display
       if (
@@ -538,36 +538,15 @@ async function filterArtists(reset = true, force = false) {
       gen,
       spin
     ) {
-      const { getArtistImageCount } = await import("./api.js");
       let done = 0;
       for (let i = 0; i < artists.length; i += batchSize) {
         if (gen !== filterGeneration) return;
         const batch = artists.slice(i, i + batchSize);
         await Promise.all(
           batch.map(async (artist) => {
-            // Always fetch and set total count
-            const totalCount = await getArtistImageCount(artist.artistName);
+            const totalCount = artist.postCount || 0;
             artist._totalImageCount = totalCount;
-            // If tags are active, fetch filtered count, else use total
-            const activeTags = getActiveTags ? getActiveTags() : new Set();
-            if (activeTags && activeTags.size > 0) {
-              const tagQuery = [
-                artist.artistName,
-                ...Array.from(activeTags),
-              ].join(" ");
-              const response = await fetch(
-                `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
-                  tagQuery
-                )}&limit=1000`
-              );
-              const posts = await response.json();
-              const uniqueIds = new Set(
-                Array.isArray(posts) ? posts.map((post) => post.id) : []
-              );
-              artist._imageCount = uniqueIds.size;
-            } else {
-              artist._imageCount = totalCount;
-            }
+            artist._imageCount = totalCount;
             if (gen !== filterGeneration) {
               return;
             }
@@ -702,14 +681,6 @@ function getPaginationInfo() {
 /**
  * Gets the artist image count with a timeout
  */
-function getArtistImageCountWithTimeout(name, ms = 8000) {
-  return Promise.race([
-    getArtistImageCount(name),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error("Timeout")), ms)
-    ),
-  ]);
-}
 
 // Export functions for ES modules
 export {
@@ -724,5 +695,4 @@ export {
   setSortMode,
   getFilteredArtists,
   getPaginationInfo,
-  getArtistImageCountWithTimeout,
 };
