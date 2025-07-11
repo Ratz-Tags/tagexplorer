@@ -653,7 +653,16 @@ function setSortMode(mode) {
   sortMode = mode === "count" ? "count" : "name";
   if (filtered.length > 0) {
     if (sortMode === "count") {
-      filtered.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+      currentArtistPage = 0;
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
+      );
       currentArtistPage = 0;
     }
     renderArtistsPage();

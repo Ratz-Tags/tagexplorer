@@ -11,7 +11,7 @@
   --accent3: #f9badd;
   --radius: 2em;
   --padding: 1rem;
-  --heading-font: 'Hi Melody', cursive;
+  --heading-font: 'Hi Melody', sans-serif;
   --sparkle: url('icons/sparkle.png');
   --bow: url('icons/bow.png');
 }
