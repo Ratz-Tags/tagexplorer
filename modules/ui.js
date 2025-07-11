@@ -173,20 +173,32 @@ function createFullscreenViewer() {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
 
+  // Create zoom-content container
+  const content = document.createElement("div");
+  content.className = "zoom-content";
+
+  // Left side: image
+  const left = document.createElement("div");
+  left.className = "zoom-left";
   const img = document.createElement("img");
   img.className = "fullscreen-img";
-  wrapper.appendChild(img);
+  left.appendChild(img);
 
+  // Right side: tags
+  const right = document.createElement("div");
+  right.className = "zoom-right";
   const tagList = document.createElement("div");
   tagList.className = "zoom-tags";
   tagList.style.display = "none";
-  wrapper.appendChild(tagList);
-
   const topTags = document.createElement("div");
   topTags.className = "artist-top-tags";
   topTags.style.display = "none";
-  wrapper.appendChild(topTags);
+  right.append(tagList, topTags);
 
+  content.append(left, right);
+  wrapper.appendChild(content);
+
+  // Controls
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
