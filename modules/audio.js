@@ -234,6 +234,20 @@ async function loadAudio() {
   }
 }
 
+/**
+ * Returns the current track index
+ */
+function getCurrentTrack() {
+  return currentTrack;
+}
+
+/**
+ * Returns a copy of the audio files array
+ */
+function getAudioFiles() {
+  return [...audioFiles];
+}
+
 // Export functions for ES modules
 export {
   initAudio,
