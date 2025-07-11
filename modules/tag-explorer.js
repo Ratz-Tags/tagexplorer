@@ -49,7 +49,28 @@ function getFilteredCounts(active) {
   return counts;
 }
 
-function openTagExplorer() {
+// Add spinner and error handling for tag loading
+function showTagLoadingError(container, errorMsg = "Error loading tags.") {
+  container.textContent = errorMsg;
+  container.style.display = "block";
+  container.setAttribute("aria-live", "assertive");
+  // Add Retry button if not present
+  if (!container.querySelector(".retry-btn")) {
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "retry-btn";
+    retryBtn.textContent = "Retry";
+    retryBtn.setAttribute("aria-label", "Retry loading tags");
+    retryBtn.onclick = () => {
+      container.textContent = "Retrying...";
+      // Invalidate cache and re-fetch tags
+      if (typeof invalidateTagCache === "function") invalidateTagCache();
+      if (typeof fetchTagsAndCounts === "function") fetchTagsAndCounts();
+    };
+    container.appendChild(retryBtn);
+  }
+}
+
+async function filterTags() {
   // Close any existing tag explorer
   const existingWrapper = document.querySelector(
     ".fullscreen-wrapper.tag-explorer-wrapper"
@@ -89,6 +110,7 @@ function openTagExplorer() {
   const clearTagsBtn = document.createElement("button");
   clearTagsBtn.className = "tag-explorer-clear";
   clearTagsBtn.textContent = "Clear Tags";
+  clearTagsBtn.setAttribute("id", "clear-tags-btn");
   clearTagsBtn.onclick = () => {
     if (typeof window.clearAllTags === "function") window.clearAllTags();
     searchInput.value = "";
@@ -129,6 +151,7 @@ function openTagExplorer() {
 
   const list = document.createElement("div");
   list.className = "tag-explorer-tags";
+  list.setAttribute("id", "tag-list");
   container.appendChild(list);
 
   function renderList() {
@@ -188,7 +211,27 @@ function openTagExplorer() {
 
   document.body.appendChild(wrapper);
   wrapper.focus();
+  try {
+    // Fetch tag counts, handle errors
+    const counts = await fetchTagCounts();
+    if (!counts) throw new Error("No tag counts");
+  } catch (err) {
+    showTagLoadingError(list, "Error loading tags.");
+    console.warn("Failed to fetch tag counts:", err);
+  }
   renderList();
+}
+
+// Add ARIA attributes and keyboard shortcuts for tag controls
+function enhanceTagControls(tagControls) {
+  tagControls.setAttribute("role", "toolbar");
+  tagControls.setAttribute("aria-label", "Tag controls");
+  // Keyboard shortcut: Clear tags (Ctrl+Shift+C)
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey && e.shiftKey && e.code === "KeyC") {
+      if (typeof clearTags === "function") clearTags();
+    }
+  });
 }
 
 export { openTagExplorer, setAllArtists };

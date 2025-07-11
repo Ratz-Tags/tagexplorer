@@ -239,6 +239,25 @@ async function openArtistZoom(artist) {
   function showNoEntries() {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
+    noEntriesMsg.textContent = "No tags found.";
+    // Add Retry button if not present
+    if (!noEntriesMsg.querySelector(".retry-btn")) {
+      const retryBtn = document.createElement("button");
+      retryBtn.className = "retry-btn";
+      retryBtn.textContent = "Retry";
+      retryBtn.setAttribute("aria-label", "Retry loading tags");
+      retryBtn.onclick = () => {
+        // Clear sessionStorage for this artist's tags
+        const cacheKey = `allPosts-${artist.artistName}-${
+          getActiveTags ? Array.from(getActiveTags()).join(",") : ""
+        }`;
+        sessionStorage.removeItem(cacheKey);
+        noEntriesMsg.textContent = "Retrying...";
+        // Re-run the zoom modal logic
+        openArtistZoom(artist);
+      };
+      noEntriesMsg.appendChild(retryBtn);
+    }
   }
 
   function tryShow(index, attempts = 0) {
@@ -366,12 +385,10 @@ async function openArtistZoom(artist) {
   // After you set tagList.textContent and topTags.textContent:
   tagList.style.display = "block";
   topTags.style.display = "block";
-
-  // Add a click/tap handler to the image:
-  zoomed.onclick = () => {
-    tagList.style.display = tagList.style.display === "none" ? "block" : "none";
-    topTags.style.display = topTags.style.display === "none" ? "block" : "none";
-  };
+  tagList.setAttribute("aria-live", "polite");
+  topTags.setAttribute("aria-live", "polite");
+  zoomed.setAttribute("tabindex", "0");
+  zoomed.setAttribute("aria-label", "Artist image, click to toggle tags");
 }
 
 /**
@@ -485,18 +502,19 @@ function renderArtistsPage() {
       // Clear cache for this artist
       if (typeof clearArtistCache === "function")
         clearArtistCache(artist.artistName);
-
+      // Also clear sessionStorage for top tags
+      const cacheKey = `allPosts-${artist.artistName}-${
+        getActiveTags ? Array.from(getActiveTags()).join(",") : ""
+      }`;
+      sessionStorage.removeItem(cacheKey);
       // Reset counts
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
-
       // Optionally show loading state
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
-
       const totalCount = artist.postCount || 0;
       artist._totalImageCount = totalCount;
       artist._imageCount = totalCount;
-
       // Update display
       if (
         typeof artist._imageCount === "number" &&

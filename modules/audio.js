@@ -138,6 +138,23 @@ function initAudio() {
   hypnoAudio = document.getElementById("hypnoAudio");
   moanAudio = document.getElementById("moan-audio");
 
+  // ARIA and feedback improvements for audio controls
+  const audioPlayer = document.getElementById("audio-player");
+  if (audioPlayer) {
+    audioPlayer.setAttribute("aria-label", "Audio player");
+    audioPlayer.setAttribute("role", "region");
+  }
+  const muteBtn = document.getElementById("mute-btn");
+  if (muteBtn) {
+    muteBtn.setAttribute("aria-label", "Mute audio");
+    muteBtn.setAttribute("role", "button");
+  }
+  const playBtn = document.getElementById("play-btn");
+  if (playBtn) {
+    playBtn.setAttribute("aria-label", "Play audio");
+    playBtn.setAttribute("role", "button");
+  }
+
   // Set up event listeners
   if (toggleBtn) {
     toggleBtn.addEventListener("click", togglePlayback);
@@ -180,17 +197,41 @@ function initAudio() {
 }
 
 /**
- * Gets the current track index
+ * Shows an error message for audio loading issues
  */
-function getCurrentTrack() {
-  return currentTrack;
+function showAudioError(container, errorMsg = "Error loading audio.") {
+  container.textContent = errorMsg;
+  container.style.display = "block";
+  container.setAttribute("aria-live", "assertive");
+  // Add Retry button if not present
+  if (!container.querySelector(".retry-btn")) {
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "retry-btn";
+    retryBtn.textContent = "Retry";
+    retryBtn.setAttribute("aria-label", "Retry loading audio");
+    retryBtn.onclick = () => {
+      container.textContent = "Retrying...";
+      // Invalidate cache and re-fetch audio
+      if (typeof invalidateAudioCache === "function") invalidateAudioCache();
+      if (typeof fetchAudio === "function") fetchAudio();
+    };
+    container.appendChild(retryBtn);
+  }
 }
 
 /**
- * Gets the list of available audio files
+ * Loads audio and handles errors
  */
-function getAudioFiles() {
-  return [...audioFiles];
+async function loadAudio() {
+  try {
+    // Fetch audio, handle errors
+    const audioSrc = await fetchAudioSrc();
+    if (!audioSrc) throw new Error("No audio source");
+    // ...existing code...
+  } catch (err) {
+    showAudioError("Error loading audio.");
+    console.warn("Failed to load audio:", err);
+  }
 }
 
 // Export functions for ES modules

@@ -141,6 +141,13 @@ function initSidebar() {
       }
     });
   }
+
+  // ARIA improvements for sidebar controls
+  const copyArtistBtn = document.getElementById("copy-artist-btn");
+  if (copyArtistBtn) {
+    copyArtistBtn.setAttribute("aria-label", "Copy artist name");
+    copyArtistBtn.setAttribute("role", "button");
+  }
 }
 
 /**
@@ -162,6 +169,40 @@ function setCopiedArtists(artists) {
  */
 function setCopiedSidebar(element) {
   copiedSidebar = element;
+}
+
+// Add spinner and error handling for sidebar actions
+function showSidebarError(container, errorMsg = "Error loading sidebar.") {
+  container.textContent = errorMsg;
+  container.style.display = "block";
+  container.setAttribute("aria-live", "assertive");
+  // Add Retry button if not present
+  if (!container.querySelector(".retry-btn")) {
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "retry-btn";
+    retryBtn.textContent = "Retry";
+    retryBtn.setAttribute("aria-label", "Retry loading sidebar");
+    retryBtn.onclick = () => {
+      container.textContent = "Retrying...";
+      // Invalidate cache and re-fetch sidebar data
+      if (typeof invalidateSidebarCache === "function")
+        invalidateSidebarCache();
+      if (typeof fetchSidebarData === "function") fetchSidebarData();
+    };
+    container.appendChild(retryBtn);
+  }
+}
+
+async function updateSidebar() {
+  try {
+    // Fetch sidebar data, handle errors
+    const data = await fetchSidebarData();
+    if (!data) throw new Error("No sidebar data");
+    // ...existing code...
+  } catch (err) {
+    showSidebarError("Error loading sidebar.");
+    console.warn("Failed to fetch sidebar data:", err);
+  }
 }
 
 // Export functions for ES modules
