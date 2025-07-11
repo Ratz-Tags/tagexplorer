@@ -217,21 +217,22 @@ async function openArtistZoom(artist) {
   let posts = [];
 
   // In openArtistZoom:
-  async function fetchAllArtistImages(artistName) {
-    let allPosts = [];
-    let page = 1;
-    let hasMore = true;
-    while (hasMore) {
-      const pagePosts = await fetchArtistImages(artistName, [], page); // Add pagination argument if needed
-      if (!Array.isArray(pagePosts) || pagePosts.length === 0) {
-        hasMore = false;
-      } else {
-        allPosts = allPosts.concat(pagePosts);
-        page++;
-      }
+  async function fetchAllArtistImages(artistName, selectedTags = []) {
+  let allPosts = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const pagePosts = await fetchArtistImages(artistName, selectedTags, { page, limit: 100 });
+    if (!Array.isArray(pagePosts) || pagePosts.length === 0) {
+      hasMore = false;
+    } else {
+      allPosts = allPosts.concat(pagePosts);
+      page++;
+      // Optional: break if API rate-limits or pagePosts.length < limit
     }
-    return allPosts;
   }
+  return allPosts;
+}
 
   function showNoEntries() {
     zoomed.style.display = "none";
@@ -311,13 +312,15 @@ async function openArtistZoom(artist) {
     // compute artist top tags
     try {
       // Count all tags
-      const counts = {};
-      posts.forEach((p) => {
-        (p.tag_string || "").split(" ").forEach((t) => {
-          counts[t] = (counts[t] || 0) + 1;
-        });
-      });
+      const allPosts = await fetchAllArtistImages(artist.artistName);
+// or: const allPosts = await fetchAllArtistImages(artist.artistName, selectedTags);
 
+const counts = {};
+allPosts.forEach((p) => {
+  (p.tag_string || "").split(" ").forEach((t) => {
+    counts[t] = (counts[t] || 0) + 1;
+  });
+});
       // Get selected tags from filter (if any)
       const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
       const selectedCounts = selectedTags
