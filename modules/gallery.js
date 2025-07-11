@@ -691,5 +691,4 @@ export {
   setSortMode,
   getFilteredArtists,
   getPaginationInfo,
-  getArtistImageCountWithTimeout,
 };
