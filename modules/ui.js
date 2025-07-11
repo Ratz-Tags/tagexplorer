@@ -237,6 +237,10 @@ function createFullscreenViewer() {
     }
   });
 
+  wrapper.addEventListener("click", (e) => {
+    if (e.target === wrapper) wrapper.remove();
+  });
+
   return {
     wrapper,
     img,
