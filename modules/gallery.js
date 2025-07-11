@@ -219,7 +219,7 @@ async function openArtistZoom(artist) {
   // In openArtistZoom:
   async function fetchAllArtistImages(artistName, selectedTags = []) {
     let allPosts = [];
-    const MAX_PAGES = 5; // Limit to 5 pages (500 posts)
+    const MAX_PAGES = 10; // Limit to 5 pages (500 posts)
     const LIMIT = 200; // 100 posts per page
     for (let page = 1; page <= MAX_PAGES; page++) {
       const pagePosts = await fetchArtistImages(artistName, selectedTags, {
