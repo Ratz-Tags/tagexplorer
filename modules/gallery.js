@@ -647,14 +647,35 @@ function setAllArtists(artists) {
   allArtists = artists;
 }
 
+function setSortMode(mode) {
+  sortMode = mode === "count" ? "count" : "name";
+  if (filtered.length > 0) {
+    if (sortMode === "count") {
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
+      );
+    }
+    currentArtistPage = 0;
+    renderArtistsPage();
+  }
+}
+
 export {
-  openArtistZoom,
-  renderArtistsPage,
+  initGallery,
   filterArtists,
-  setSortMode,
+  renderArtistsPage,
+  openArtistZoom,
+  setRandomBackground,
   setAllArtists,
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
-  setRandomBackground,
+  setSortMode,
+  getFilteredArtists,
   getPaginationInfo,
 };
