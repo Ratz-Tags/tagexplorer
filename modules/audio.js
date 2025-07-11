@@ -3,7 +3,7 @@
  */
 
 let currentTrack = 0;
-let moansMuted = true;
+let moansMuted = false;
 let moanPlaying = false;
 
 // Audio file list
@@ -169,6 +169,14 @@ function initAudio() {
 
   // Load initial track
   loadTrack(currentTrack);
+
+  moansMuted = true;
+  if (moanAudio) {
+    moanAudio.muted = true;
+  }
+  if (moanBtn) {
+    moanBtn.textContent = "🔇 Moan";
+  }
 }
 
 /**
