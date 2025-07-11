@@ -199,6 +199,9 @@ function lazyLoadBestImage(artist, img) {
  * Opens the fullscreen artist zoom view
  */
 async function openArtistZoom(artist) {
+  // Remove any existing fullscreen viewer
+  document.querySelectorAll(".fullscreen-wrapper").forEach((el) => el.remove());
+
   const viewer = createFullscreenViewer();
   const {
     wrapper,
