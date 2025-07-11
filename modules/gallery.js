@@ -564,11 +564,6 @@ async function filterArtists(reset = true, force = false) {
       );
     });
     // Initial alphabetical sort; counts may reorder later
-    filtered.sort((a, b) =>
-      a.artistName.localeCompare(b.artistName, undefined, {
-        sensitivity: "base",
-      })
-    );
     if (spinner.setTotal) spinner.setTotal(filtered.length);
     if (spinner.updateProgress) spinner.updateProgress(0);
     console.log(
