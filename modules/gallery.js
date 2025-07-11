@@ -216,6 +216,24 @@ async function openArtistZoom(artist) {
   let currentIndex = 0;
   let posts = [];
 
+  // In openArtistZoom:
+async function fetchAllArtistImages(artistName) {
+  let allPosts = [];
+  let page = 1;
+  let hasMore = true;
+  while (hasMore) {
+    const pagePosts = await fetchArtistImages(artistName, [], page); // Add pagination argument if needed
+    if (!Array.isArray(pagePosts) || pagePosts.length === 0) {
+      hasMore = false;
+    } else {
+      allPosts = allPosts.concat(pagePosts);
+      page++;
+    }
+  }
+  return allPosts;
+}
+
+
   function showNoEntries() {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
@@ -291,21 +309,24 @@ async function openArtistZoom(artist) {
       showNoEntries();
       return;
     }
-
     // compute artist top tags
-    try {
-      const counts = {};
-      posts.forEach((p) => {
-        (p.tag_string || "").split(" ").forEach((t) => {
-          counts[t] = (counts[t] || 0) + 1;
-        });
-      });
-      const top = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
-      if (topTags) topTags.textContent = top.length ? top.join(", ") : "";
-    } catch {}
+    // compute artist top tags, excluding artist name/group tag
+try {
+  const artistTag = artist.artistName.replace(/_/g, " ").toLowerCase();
+  const counts = {};
+  posts.forEach((p) => {
+    (p.tag_string || "").split(" ").forEach((t) => {
+      if (t.replace(/_/g, " ").toLowerCase() !== artistTag) {
+        counts[t] = (counts[t] || 0) + 1;
+      }
+    });
+  });
+  const top = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
+  if (topTags) topTags.textContent = top.length ? top.join(", ") : "";
+} catch {}
 
     const startId = artist._thumbnailPostId;
     const idx = startId ? posts.findIndex((p) => p.id === startId) : -1;
