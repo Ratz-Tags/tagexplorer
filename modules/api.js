@@ -114,20 +114,16 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
   }
 }
 
-/**
- * Fetches artist image data with caching
- */
-async function fetchArtistImages(artistName, selectedTags = []) {
+// Accept paging options for fetchArtistImages
+async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   const apiCacheKey = `danbooru-api-${artistName}-${selectedTags.join(",")}`;
-
   const posts = await fetchPosts(artistName, {
     cacheKey: apiCacheKey,
-    limit: 1000,
+    limit: options.limit || 1000,
+    page: options.page || 1,
   });
-
   return filterValidImagePosts(posts, selectedTags);
 }
-
 /**
  * Gets artist image count with caching
  */
