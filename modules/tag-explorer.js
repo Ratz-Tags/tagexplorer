@@ -8,6 +8,9 @@ import {
 
 let allArtists = [];
 let allArtistsCache = null;
+let lastCountsCache = null;
+let lastActiveCache = null;
+let lastNameFilterCache = null;
 
 function setAllArtists(artists) {
   if (
@@ -17,10 +20,20 @@ function setAllArtists(artists) {
     return;
   allArtists = Array.isArray(artists) ? artists : [];
   allArtistsCache = artists;
+  lastCountsCache = null; // Invalidate tag counts cache
 }
 
 function getFilteredCounts(active) {
   const nameFilter = (getArtistNameFilter && getArtistNameFilter()) || "";
+  // Use cache if active tags and nameFilter haven't changed
+  if (
+    lastCountsCache &&
+    lastActiveCache &&
+    lastNameFilterCache === nameFilter &&
+    JSON.stringify([...active]) === JSON.stringify([...lastActiveCache])
+  ) {
+    return lastCountsCache;
+  }
   const counts = {};
   allArtists.forEach((a) => {
     const tags = a.kinkTags || [];
@@ -30,6 +43,9 @@ function getFilteredCounts(active) {
       counts[t] = (counts[t] || 0) + 1;
     });
   });
+  lastCountsCache = counts;
+  lastActiveCache = new Set(active);
+  lastNameFilterCache = nameFilter;
   return counts;
 }
 
@@ -138,7 +154,15 @@ function openTagExplorer() {
       closeBtn.click();
       e.preventDefault();
     }
+    // Feature: quick search focus with "/"
+    if (e.key === "/") {
+      searchInput.focus();
+      e.preventDefault();
+    }
   });
+
+  // Feature: auto-focus search on open
+  setTimeout(() => searchInput.focus(), 100);
 
   // Assemble the modal
   wrapper.appendChild(container);
