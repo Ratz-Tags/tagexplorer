@@ -294,12 +294,10 @@ async function openArtistZoom(artist) {
 
     // compute artist top tags
     try {
-      const { getKinkTags } = await import("./tags.js");
-      const allowed = new Set(getKinkTags());
       const counts = {};
       posts.forEach((p) => {
         (p.tag_string || "").split(" ").forEach((t) => {
-          if (allowed.has(t)) counts[t] = (counts[t] || 0) + 1;
+          counts[t] = (counts[t] || 0) + 1;
         });
       });
       const top = Object.entries(counts)
