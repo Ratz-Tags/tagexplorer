@@ -200,8 +200,6 @@ if (themeToggle) {
   });
 }
 
-import { setSortPreference, forceSortAndRender } from "./modules/gallery.js";
-
 document.getElementById("sort-preference").addEventListener("change", (e) => {
   setSortPreference(e.target.value);
 });
