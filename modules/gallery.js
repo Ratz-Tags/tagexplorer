@@ -315,38 +315,43 @@ async function openArtistZoom(artist) {
     try {
       // Count all tags
       const allPosts = await fetchAllArtistImages(artist.artistName);
-      // or: const allPosts = await fetchAllArtistImages(artist.artistName, selectedTags);
-
-      const counts = {};
-      allPosts.forEach((p) => {
-        (p.tag_string || "").split(" ").forEach((t) => {
-          counts[t] = (counts[t] || 0) + 1;
+      if (!Array.isArray(allPosts) || allPosts.length === 0) {
+        if (topTags) topTags.textContent = "No tags found.";
+      } else {
+        const counts = {};
+        allPosts.forEach((p) => {
+          (p.tag_string || "").split(" ").forEach((t) => {
+            counts[t] = (counts[t] || 0) + 1;
+          });
         });
-      });
-      // Get selected tags from filter (if any)
-      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-      const selectedCounts = selectedTags
-        .map((tag) => {
-          const count = counts[tag] || 0;
-          return `${tag.replace(/_/g, " ")} (${count})`;
-        })
-        .filter((str) => !str.startsWith(" (0)")); // Hide tags with 0 count
+        // Get selected tags from filter (if any)
+        const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+        const selectedCounts = selectedTags
+          .map((tag) => {
+            const count = counts[tag] || 0;
+            return `${tag.replace(/_/g, " ")} (${count})`;
+          })
+          .filter((str) => !str.startsWith(" (0)")); // Hide tags with 0 count
 
-      // Top 20 overall tags (excluding selected tags)
-      const top = Object.entries(counts)
-        .filter(([t]) => !selectedTags.includes(t))
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
+        // Top 20 overall tags (excluding selected tags)
+        const top = Object.entries(counts)
+          .filter(([t]) => !selectedTags.includes(t))
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 20)
+          .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
 
-      // Combine selected tags first, then top tags
-      const tagString = [
-        ...(selectedCounts.length ? selectedCounts : []),
-        ...(top.length ? top : []),
-      ].join(", ");
+        // Combine selected tags first, then top tags
+        const tagString = [
+          ...(selectedCounts.length ? selectedCounts : []),
+          ...(top.length ? top : []),
+        ].join(", ");
 
-      if (topTags) topTags.textContent = tagString;
-    } catch {}
+        if (topTags) topTags.textContent = tagString || "No tags found.";
+      }
+    } catch (err) {
+      if (topTags) topTags.textContent = "Error loading tags.";
+      console.warn("Failed to compute top tags:", err);
+    }
 
     const startId = artist._thumbnailPostId;
     const idx = startId ? posts.findIndex((p) => p.id === startId) : -1;
@@ -355,6 +360,7 @@ async function openArtistZoom(artist) {
   } catch (error) {
     console.warn("Failed to fetch artist images:", error);
     showNoEntries();
+    if (topTags) topTags.textContent = "Error loading tags.";
   }
 
   // After you set tagList.textContent and topTags.textContent:
