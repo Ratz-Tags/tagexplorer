@@ -631,6 +631,10 @@ async function filterArtists(reset = true, force = false) {
   }
 }
 
+function initGallery() {
+  artistGallery = document.getElementById("artist-gallery");
+  backgroundBlur = document.getElementById("background-blur");
+}
 function getPaginationInfo() {
   const total = filtered.length;
   const shown = currentArtistPage * artistsPerPage;
@@ -645,6 +649,17 @@ function getPaginationInfo() {
 
 function setAllArtists(artists) {
   allArtists = artists;
+}
+
+function setGetActiveTagsCallback(callback) {
+  getActiveTags = callback;
+}
+
+/**
+ * Sets the callback to get artist name filter
+ */
+function setGetArtistNameFilterCallback(callback) {
+  getArtistNameFilter = callback;
 }
 
 function setSortMode(mode) {
@@ -666,6 +681,21 @@ function setSortMode(mode) {
   }
 }
 
+function getFilteredArtists() {
+  return [...filtered];
+}
+
+/**
+ * Gets pagination info
+ */
+function getPaginationInfo() {
+  return {
+    currentPage: currentArtistPage,
+    perPage: artistsPerPage,
+    total: filtered.length,
+    hasMore: filtered.length > currentArtistPage * artistsPerPage,
+  };
+}
 export {
   initGallery,
   filterArtists,
