@@ -310,6 +310,16 @@ async function openArtistZoom(artist) {
     console.warn("Failed to fetch artist images:", error);
     showNoEntries();
   }
+
+  // After you set tagList.textContent and topTags.textContent:
+  tagList.style.display = "none";
+  topTags.style.display = "none";
+
+  // Add a click/tap handler to the image:
+  zoomed.onclick = () => {
+    tagList.style.display = tagList.style.display === "none" ? "block" : "none";
+    topTags.style.display = topTags.style.display === "none" ? "block" : "none";
+  };
 }
 
 /**
@@ -644,12 +654,7 @@ function setSortMode(mode) {
   if (filtered.length > 0) {
     if (sortMode === "count") {
       filtered.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
-    } else {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
+      currentArtistPage = 0;
     }
     renderArtistsPage();
   }

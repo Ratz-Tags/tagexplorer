@@ -2,14 +2,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap');
 
 :root {
-  --background: #fff0fa;
+  --background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
   --background-alt: #ffe0f6;
-  --text: #3a0a24;
-  --border: #f9badd;
-  --accent: #d63384;
-  --radius: 6px;
-  --padding: 0.75rem;
+  --text: #a0005a;
+  --border: #fd7bc5;
+  --accent: #fd7bc5;
+  --accent2: #ff63a5;
+  --accent3: #f9badd;
+  --radius: 2em;
+  --padding: 1rem;
   --heading-font: 'Hi Melody', cursive;
+  --sparkle: url('icons/sparkle.png');
+  --bow: url('icons/bow.png');
 }
 
 body.incognito-theme {
@@ -30,6 +34,7 @@ body {
   margin: 0;
   line-height: 1.5;
   min-height: 100vh;
+  letter-spacing: 0.03em;
 }
 
 .container {
@@ -64,17 +69,35 @@ header {
 
 .tagline {
   font-family: var(--heading-font);
-  font-size: 1.25rem;
-  color: var(--accent);
-  margin-left: 0.5rem;
+  font-size: 1.3rem;
+  color: var(--accent2);
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  padding: 0.3em 1em;
+  border-radius: 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  position: relative;
+}
+
+.tagline::before {
+  content: "✨";
+  margin-right: 0.5em;
 }
 
 .brand {
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   margin: 0;
   font-weight: 600;
-  color: var(--text);
+  color: var(--accent2);
   font-family: var(--heading-font);
+  position: relative;
+  letter-spacing: 0.08em;
+  text-shadow: 0 2px 8px #fd7bc540;
+}
+
+.brand::after {
+  content: " 💖";
+  font-size: 1.5rem;
+  vertical-align: middle;
 }
 
 .top-actions {
@@ -83,12 +106,21 @@ header {
 }
 
 .browse-btn {
-  background: var(--accent);
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border: none;
   color: #fff;
   padding: 0.5rem 1rem;
-  border-radius: var(--radius);
+  border-radius: 2em;
   cursor: pointer;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.browse-btn:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  box-shadow: 0 4px 16px #fd7bc540;
 }
 
 .filter-toggle {
@@ -142,13 +174,15 @@ header {
 
 .tag-btn,
 .tag-button {
-  background: var(--background-alt);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.4rem 0.8rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: background 0.2s;
+  background: #fff0fa;
+  border: 2px solid #fd7bc5;
+  color: #a0005a;
+  border-radius: 2em;
+  font-family: var(--heading-font);
+  font-size: 1em;
+  padding: 0.5em 1.2em;
+  margin: 0.2em;
+  transition: background 0.2s, color 0.2s;
 }
 
 .tag-btn:hover,
@@ -159,8 +193,9 @@ header {
 
 .tag-btn.active,
 .tag-button.active {
-  background: var(--accent);
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   color: #fff;
+  border-color: #ff63a5;
 }
 
 #clear-tags {
@@ -184,10 +219,17 @@ main {
 }
 
 .artist-card {
-  background: var(--background-alt);
-  border-radius: var(--radius);
+  border: 2px solid #fd7bc5;
+  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
+  border-radius: 2em;
+  box-shadow: 0 2px 16px #fd7bc540;
   overflow: hidden;
   position: relative;
+  transition: box-shadow 0.2s;
+}
+
+.artist-card:hover {
+  box-shadow: 0 8px 32px #fd7bc540;
 }
 
 .artist-image {
@@ -197,14 +239,24 @@ main {
 }
 
 .artist-name {
-  font-weight: 600;
-  padding: var(--padding);
+  font-family: var(--heading-font);
+  font-size: 1.2em;
+  color: var(--accent2);
+  padding: 1em;
+  background: #fff0fa;
+  border-radius: 1em;
+  margin: 0.5em;
+  text-align: center;
 }
 
 .artist-tags {
-  font-size: 0.875rem;
-  padding: 0 var(--padding) var(--padding);
-  opacity: 0.8;
+  font-size: 1em;
+  color: var(--accent2);
+  background: #ffd6f6;
+  border-radius: 1em;
+  padding: 0.5em 1em;
+  margin: 0.5em;
+  text-align: center;
 }
 
 .copy-button {
@@ -415,18 +467,55 @@ main {
   max-height: 90vh;
   border-radius: 1em;
   box-shadow: 0 2px 16px #00000040;
+  border: 4px solid #fd7bc5;
 }
 
-.zoom-tags {
-  font-size: 1.1rem;
-  margin-bottom: 2rem;
-  word-break: break-word;
+.zoom-tags, .artist-top-tags {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #a0005a;
+  border-radius: 2em;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  padding: 1em 2em;
+  margin: 1em 0;
+  box-shadow: 0 2px 16px #fd7bc540;
+  text-align: center;
 }
 
-.artist-top-tags {
-  font-size: 1rem;
-  opacity: 0.85;
-  word-break: break-word;
+.toast-popup {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #a0005a;
+  padding: 1em 2em 1em 3.5em;
+  border-radius: 2em;
+  z-index: 250;
+  font-family: var(--heading-font);
+  font-size: 1.2em;
+  box-shadow: 0 2px 16px #fd7bc540;
+  opacity: 0;
+  animation: toastfade 0.3s forwards;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+
+.toast-popup::before {
+  content: "";
+  display: inline-block;
+  width: 2.5em;
+  height: 2.5em;
+  background: url('icons/chibi.png') center/cover no-repeat;
+  border-radius: 50%;
+  margin-right: 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+}
+
+@keyframes toastfade {
+  to {
+    opacity: 1;
+  }
 }
 
 /* Responsive: stack on mobile */
@@ -478,6 +567,26 @@ main {
   top: 50%;
   right: 1rem;
   transform: translateY(-50%);
+}
+
+/* Add this to style.css */
+.fullscreen-wrapper.tag-explorer-wrapper .zoom-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 2rem;
+  z-index: 220;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 8px #fd7bc540;
+  cursor: pointer;
+}
+.tag-explorer {
+  position: relative;
 }
 
 /* Tag Explorer Modal Styles */
@@ -537,15 +646,31 @@ main {
 
 .toast-popup {
   position: fixed;
-  bottom: 1.5rem;
-  right: 1.5rem;
-  background: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
+  bottom: 2rem;
+  right: 2rem;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #a0005a;
+  padding: 1em 2em 1em 3.5em;
+  border-radius: 2em;
   z-index: 250;
+  font-family: var(--heading-font);
+  font-size: 1.2em;
+  box-shadow: 0 2px 16px #fd7bc540;
   opacity: 0;
   animation: toastfade 0.3s forwards;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+}
+.toast-popup::before {
+  content: "";
+  display: inline-block;
+  width: 2.5em;
+  height: 2.5em;
+  background: url('icons/chibi.png') center/cover no-repeat;
+  border-radius: 50%;
+  margin-right: 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
 }
 
 @keyframes toastfade {

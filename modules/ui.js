@@ -173,31 +173,19 @@ function createFullscreenViewer() {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
 
-  const content = document.createElement("div");
-  content.className = "zoom-content";
-
-  const left = document.createElement("div");
-  left.className = "zoom-left";
   const img = document.createElement("img");
   img.className = "fullscreen-img";
-  left.appendChild(img);
+  wrapper.appendChild(img);
 
-  const right = document.createElement("div");
-  right.className = "zoom-right";
   const tagList = document.createElement("div");
   tagList.className = "zoom-tags";
+  tagList.style.display = "none";
+  wrapper.appendChild(tagList);
+
   const topTags = document.createElement("div");
   topTags.className = "artist-top-tags";
-  right.append(tagList, topTags);
-
-  content.append(left, right);
-  wrapper.appendChild(content);
-
-  const noEntriesMsg = document.createElement("span");
-  noEntriesMsg.style.display = "none";
-  noEntriesMsg.className = "no-entries-msg";
-  noEntriesMsg.textContent = "No valid entries";
-  wrapper.appendChild(noEntriesMsg);
+  topTags.style.display = "none";
+  wrapper.appendChild(topTags);
 
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
@@ -213,6 +201,12 @@ function createFullscreenViewer() {
   nextBtn.textContent = "→";
 
   wrapper.append(closeBtn, prevBtn, nextBtn);
+
+  // Tap/click image to show tags
+  img.addEventListener("click", () => {
+    tagList.style.display = tagList.style.display === "none" ? "block" : "none";
+    topTags.style.display = topTags.style.display === "none" ? "block" : "none";
+  });
 
   // Keyboard navigation
   wrapper.tabIndex = 0;
@@ -236,7 +230,6 @@ function createFullscreenViewer() {
     img,
     tagList,
     topTags,
-    noEntriesMsg,
     closeBtn,
     prevBtn,
     nextBtn,
