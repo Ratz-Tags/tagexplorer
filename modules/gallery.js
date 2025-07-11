@@ -643,6 +643,10 @@ function getPaginationInfo() {
   };
 }
 
+function setAllArtists(artists) {
+  allArtists = artists;
+}
+
 export {
   openArtistZoom,
   renderArtistsPage,
