@@ -294,17 +294,37 @@ async function openArtistZoom(artist) {
 
     // compute artist top tags
     try {
+      // Count all tags
       const counts = {};
       posts.forEach((p) => {
         (p.tag_string || "").split(" ").forEach((t) => {
           counts[t] = (counts[t] || 0) + 1;
         });
       });
+
+      // Get selected tags from filter (if any)
+      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+      const selectedCounts = selectedTags
+        .map((tag) => {
+          const count = counts[tag] || 0;
+          return `${tag.replace(/_/g, " ")} (${count})`;
+        })
+        .filter((str) => !str.startsWith(" (0)")); // Hide tags with 0 count
+
+      // Top 20 overall tags (excluding selected tags)
       const top = Object.entries(counts)
+        .filter(([t]) => !selectedTags.includes(t))
         .sort((a, b) => b[1] - a[1])
         .slice(0, 20)
         .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
-      if (topTags) topTags.textContent = top.length ? top.join(", ") : "";
+
+      // Combine selected tags first, then top tags
+      const tagString = [
+        ...(selectedCounts.length ? selectedCounts : []),
+        ...(top.length ? top : []),
+      ].join(", ");
+
+      if (topTags) topTags.textContent = tagString;
     } catch {}
 
     const startId = artist._thumbnailPostId;
@@ -634,7 +654,7 @@ function initGallery() {
  * Sets the reference to all artists data
  */
 function setAllArtists(artists) {
-  allArtists = artists;
+  allArtists = artists.map((a, i) => ({ ...a, _originalIndex: i }));
 }
 
 /**
@@ -655,21 +675,25 @@ function setGetArtistNameFilterCallback(callback) {
  * Sets sort mode ("name" or "count")
  */
 function setSortMode(mode) {
-  sortMode = mode === "count" ? "count" : "name";
+  sortMode = mode;
   if (filtered.length > 0) {
     if (sortMode === "count") {
       filtered.sort(
         (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
       );
-      currentArtistPage = 0;
-    } else {
+    } else if (sortMode === "name") {
       filtered.sort((a, b) =>
         a.artistName.localeCompare(b.artistName, undefined, {
           sensitivity: "base",
         })
       );
-      currentArtistPage = 0;
+    } else if (sortMode === "default") {
+      // Restore to original JSON order
+      filtered.sort(
+        (a, b) => (a._originalIndex || 0) - (b._originalIndex || 0)
+      );
     }
+    currentArtistPage = 0;
     renderArtistsPage();
   }
 }
