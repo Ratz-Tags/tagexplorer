@@ -216,6 +216,23 @@ async function openArtistZoom(artist) {
   let currentIndex = 0;
   let posts = [];
 
+  // In openArtistZoom:
+  async function fetchAllArtistImages(artistName) {
+    let allPosts = [];
+    let page = 1;
+    let hasMore = true;
+    while (hasMore) {
+      const pagePosts = await fetchArtistImages(artistName, [], page); // Add pagination argument if needed
+      if (!Array.isArray(pagePosts) || pagePosts.length === 0) {
+        hasMore = false;
+      } else {
+        allPosts = allPosts.concat(pagePosts);
+        page++;
+      }
+    }
+    return allPosts;
+  }
+
   function showNoEntries() {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
@@ -291,7 +308,6 @@ async function openArtistZoom(artist) {
       showNoEntries();
       return;
     }
-
     // compute artist top tags
     try {
       // Count all tags
