@@ -597,8 +597,7 @@ async function filterArtists(reset = true, force = false) {
       }
 
       if (gen !== filterGeneration) return;
-      // REMOVE ALL SORTING FROM HERE
-      // Just render after sorting is applied via setSortMode
+
       setSortMode(sortMode);
       renderArtistsPage();
     }
