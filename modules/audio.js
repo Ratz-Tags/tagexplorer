@@ -3,7 +3,7 @@
  */
 
 let currentTrack = 0;
-let moansMuted = false;
+let moansMuted = true;
 let moanPlaying = false;
 
 // Audio file list
@@ -41,7 +41,7 @@ function getAudioSrc(index) {
  */
 function loadTrack(index) {
   if (!hypnoAudio || !trackName) return;
-  
+
   hypnoAudio.src = getAudioSrc(index);
   trackName.textContent = audioFiles[index].replace(/\.mp3$/, "");
   hypnoAudio.play().catch(console.warn);
@@ -52,7 +52,7 @@ function loadTrack(index) {
  */
 function togglePlayback() {
   if (!hypnoAudio || !toggleBtn) return;
-  
+
   if (hypnoAudio.paused) {
     hypnoAudio.play();
     toggleBtn.textContent = "⏸️";
@@ -83,7 +83,7 @@ function previousTrack() {
  */
 function toggleMoan() {
   if (!moanAudio || !moanBtn) return;
-  
+
   moansMuted = !moansMuted;
   moanAudio.muted = moansMuted;
   moanBtn.textContent = moansMuted ? "🔇 Moan" : "🔊 Moan";
@@ -94,7 +94,7 @@ function toggleMoan() {
  */
 function toggleMoanPlayback() {
   if (!moanAudio || !moanToggle) return;
-  
+
   if (moanPlaying) {
     moanAudio.pause();
     moanAudio.currentTime = 0;
@@ -196,5 +196,5 @@ export {
   toggleMoanPlayback,
   togglePanel,
   getCurrentTrack,
-  getAudioFiles
+  getAudioFiles,
 };
