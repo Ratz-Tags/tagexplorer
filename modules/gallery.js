@@ -243,6 +243,10 @@ async function openArtistZoom(artist) {
       zoomed.onload = null;
       if (tagList && raw.tag_string) {
         tagList.textContent = raw.tag_string.split(" ").join(", ");
+        tagList.style.display = "block";
+      }
+      if (topTags && topTags.textContent) {
+        topTags.style.display = "block";
       }
     };
     zoomed.src = full;
@@ -315,8 +319,8 @@ async function openArtistZoom(artist) {
   }
 
   // After you set tagList.textContent and topTags.textContent:
-  tagList.style.display = "none";
-  topTags.style.display = "none";
+  tagList.style.display = "block";
+  topTags.style.display = "block";
 
   // Add a click/tap handler to the image:
   zoomed.onclick = () => {
