@@ -83,6 +83,19 @@ function openTagExplorer() {
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
   closeBtn.onclick = () => wrapper.remove();
+  closeBtn.title = "Close (Esc)";
+
+  // Feature: Add clear tags button for quick reset
+  const clearTagsBtn = document.createElement("button");
+  clearTagsBtn.className = "tag-explorer-clear";
+  clearTagsBtn.textContent = "Clear Tags";
+  clearTagsBtn.onclick = () => {
+    if (typeof window.clearAllTags === "function") window.clearAllTags();
+    searchInput.value = "";
+    nameInput.value = "";
+    renderList();
+  };
+  header.appendChild(clearTagsBtn);
 
   const sortSelect = document.createElement("select");
   sortSelect.innerHTML = `<option value="name">Sort: Name</option><option value="count">Sort: Count</option>`;
@@ -157,6 +170,11 @@ function openTagExplorer() {
     // Feature: quick search focus with "/"
     if (e.key === "/") {
       searchInput.focus();
+      e.preventDefault();
+    }
+    // Feature: clear tags with Ctrl+Backspace
+    if (e.ctrlKey && e.key === "Backspace") {
+      clearTagsBtn.click();
       e.preventDefault();
     }
   });
