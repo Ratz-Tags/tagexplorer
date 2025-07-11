@@ -218,21 +218,19 @@ async function openArtistZoom(artist) {
 
   // In openArtistZoom:
   async function fetchAllArtistImages(artistName, selectedTags = []) {
-  let allPosts = [];
-  let page = 1;
-  let hasMore = true;
-  while (hasMore) {
-    const pagePosts = await fetchArtistImages(artistName, selectedTags, { page, limit: 100 });
-    if (!Array.isArray(pagePosts) || pagePosts.length === 0) {
-      hasMore = false;
-    } else {
+    let allPosts = [];
+    const MAX_PAGES = 5; // Limit to 5 pages (500 posts)
+    const LIMIT = 200; // 100 posts per page
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      const pagePosts = await fetchArtistImages(artistName, selectedTags, {
+        page,
+        limit: LIMIT,
+      });
+      if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
-      page++;
-      // Optional: break if API rate-limits or pagePosts.length < limit
     }
+    return allPosts;
   }
-  return allPosts;
-}
 
   function showNoEntries() {
     zoomed.style.display = "none";
@@ -313,14 +311,14 @@ async function openArtistZoom(artist) {
     try {
       // Count all tags
       const allPosts = await fetchAllArtistImages(artist.artistName);
-// or: const allPosts = await fetchAllArtistImages(artist.artistName, selectedTags);
+      // or: const allPosts = await fetchAllArtistImages(artist.artistName, selectedTags);
 
-const counts = {};
-allPosts.forEach((p) => {
-  (p.tag_string || "").split(" ").forEach((t) => {
-    counts[t] = (counts[t] || 0) + 1;
-  });
-});
+      const counts = {};
+      allPosts.forEach((p) => {
+        (p.tag_string || "").split(" ").forEach((t) => {
+          counts[t] = (counts[t] || 0) + 1;
+        });
+      });
       // Get selected tags from filter (if any)
       const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
       const selectedCounts = selectedTags
