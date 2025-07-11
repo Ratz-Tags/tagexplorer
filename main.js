@@ -200,10 +200,16 @@ if (themeToggle) {
   });
 }
 
-document.getElementById("sort-preference").addEventListener("change", (e) => {
-  setSortPreference(e.target.value);
-});
+const sortPreferenceElem = document.getElementById("sort-preference");
+if (sortPreferenceElem) {
+  sortPreferenceElem.addEventListener("change", (e) => {
+    setSortPreference(e.target.value);
+  });
+}
 
-document.getElementById("sort-button").addEventListener("click", () => {
-  forceSortAndRender();
-});
+const sortButtonElem = document.getElementById("sort-button");
+if (sortButtonElem) {
+  sortButtonElem.addEventListener("click", () => {
+    forceSortAndRender();
+  });
+}
