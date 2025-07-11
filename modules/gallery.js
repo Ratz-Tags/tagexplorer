@@ -680,6 +680,13 @@ function setSortMode(mode) {
     renderArtistsPage();
   }
 }
+function setSortPreference(preference) {
+  sortMode = preference === "count" ? "count" : "name";
+}
+
+function forceSortAndRender() {
+  setSortMode(sortMode);
+}
 
 function getFilteredArtists() {
   return [...filtered];
@@ -690,6 +697,8 @@ export {
   filterArtists,
   renderArtistsPage,
   openArtistZoom,
+  setSortPreference,
+  forceSortAndRender,
   setRandomBackground,
   setAllArtists,
   setGetActiveTagsCallback,

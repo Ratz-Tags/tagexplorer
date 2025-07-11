@@ -64,7 +64,13 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--padding);
+}
+
+.sort-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
 }
 
 .tagline {

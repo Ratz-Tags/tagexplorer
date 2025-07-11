@@ -27,6 +27,8 @@ import {
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
   setSortMode,
+  setSortPreference,
+  forceSortAndRender,
 } from "./modules/gallery.js";
 import {
   initUI,
@@ -197,3 +199,13 @@ if (themeToggle) {
     setRandomBackground();
   });
 }
+
+import { setSortPreference, forceSortAndRender } from "./modules/gallery.js";
+
+document.getElementById("sort-preference").addEventListener("change", (e) => {
+  setSortPreference(e.target.value);
+});
+
+document.getElementById("sort-button").addEventListener("click", () => {
+  forceSortAndRender();
+});
