@@ -5,6 +5,7 @@
 let copiedArtists = new Set();
 let copiedSidebar = null;
 let allArtists = [];
+let copiedArtistsCache = null;
 
 /**
  * Returns the count of copied artists
@@ -22,36 +23,27 @@ function showToast(message) {
   toast.textContent = message;
   document.body.appendChild(toast);
 
-  if (Math.random() < 0.4) {
-    const moanAudio = document.getElementById("moan-audio");
-    if (moanAudio) {
-      moanAudio.currentTime = 0;
-      moanAudio.play().catch(() => {});
-    }
-  }
-
   setTimeout(() => toast.remove(), 3000);
 }
 
 /**
  * Handles copying an artist name to clipboard and adding to sidebar
+ * Uses cache to avoid duplicate sidebar updates
  */
 function handleArtistCopy(artist, imgSrc) {
-  // Remove underscores and copy as artist:artistTag
   const artistTag = artist.artistName.replace(/_/g, " ");
   const copyText = `artist:${artistTag}`;
+  if (copiedArtistsCache && copiedArtistsCache.has(copyText)) return;
   navigator.clipboard
     .writeText(copyText)
     .then(() => {
+      copiedArtists.add(copyText);
+      copiedArtistsCache = new Set(copiedArtists);
+      updateCopiedSidebar();
       showToast(`Copied: ${copyText}`);
-      // Add to copied sidebar
-      if (!copiedArtists.has(artist.artistName)) {
-        copiedArtists.add(artist.artistName);
-        updateCopiedSidebar();
-      }
     })
     .catch(() => {
-      showToast("Failed to copy!");
+      showToast("Failed to copy artist name");
     });
 }
 

@@ -216,11 +216,14 @@ async function openArtistZoom(artist) {
   let currentIndex = 0;
   let posts = [];
 
-  // In openArtistZoom:
+  // Caching for all posts for top tags
   async function fetchAllArtistImages(artistName, selectedTags = []) {
+    const cacheKey = `allPosts-${artistName}-${selectedTags.join(",")}`;
+    const cached = sessionStorage.getItem(cacheKey);
+    if (cached) return JSON.parse(cached);
     let allPosts = [];
-    const MAX_PAGES = 10; // Limit to 5 pages (500 posts)
-    const LIMIT = 200; // 100 posts per page
+    const MAX_PAGES = 5; // Limit to 5 pages (500 posts)
+    const LIMIT = 100; // 100 posts per page
     for (let page = 1; page <= MAX_PAGES; page++) {
       const pagePosts = await fetchArtistImages(artistName, selectedTags, {
         page,
@@ -229,6 +232,7 @@ async function openArtistZoom(artist) {
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
     }
+    sessionStorage.setItem(cacheKey, JSON.stringify(allPosts));
     return allPosts;
   }
 

@@ -7,9 +7,16 @@ import {
 } from "./tags.js";
 
 let allArtists = [];
+let allArtistsCache = null;
 
 function setAllArtists(artists) {
+  if (
+    allArtistsCache &&
+    JSON.stringify(allArtistsCache) === JSON.stringify(artists)
+  )
+    return;
   allArtists = Array.isArray(artists) ? artists : [];
+  allArtistsCache = artists;
 }
 
 function getFilteredCounts(active) {
