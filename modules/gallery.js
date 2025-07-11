@@ -527,8 +527,6 @@ async function filterArtists(reset = true, force = false) {
     if (!existing) {
       artistGallery.appendChild(createSpinner());
     }
-    // Do not return; allow new filtering to proceed but results from prior
-    // generations will be ignored
   }
 
   let spinner;
@@ -563,14 +561,9 @@ async function filterArtists(reset = true, force = false) {
           artistNameFilter === "")
       );
     });
-    // Initial alphabetical sort; counts may reorder later
+
     if (spinner.setTotal) spinner.setTotal(filtered.length);
     if (spinner.updateProgress) spinner.updateProgress(0);
-    console.log(
-      "Filtered artists:",
-      filtered.length,
-      filtered.map((a) => a.artistName)
-    );
 
     // Always fetch counts for the current filtered artists
     async function fetchInBatches(
@@ -604,12 +597,9 @@ async function filterArtists(reset = true, force = false) {
       }
 
       if (gen !== filterGeneration) return;
-      if (sortMode === "count") {
-        filtered.sort(
-          (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-        );
-        currentArtistPage = 0;
-      }
+      // REMOVE ALL SORTING FROM HERE
+      // Just render after sorting is applied via setSortMode
+      setSortMode(sortMode);
       renderArtistsPage();
     }
 
@@ -622,23 +612,12 @@ async function filterArtists(reset = true, force = false) {
         }
       );
       if (generation !== filterGeneration) return;
-      if (sortMode === "count") {
-        filtered.sort(
-          (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-        );
-        currentArtistPage = 0;
-      }
+      setSortMode(sortMode);
       renderArtistsPage();
     } else if (force) {
-      // Reset and fetch new counts
       fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
         if (generation !== filterGeneration) return;
-        if (sortMode === "count") {
-          filtered.sort(
-            (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-          );
-          currentArtistPage = 0;
-        }
+        setSortMode(sortMode);
         renderArtistsPage();
       });
     }
@@ -652,92 +631,3 @@ async function filterArtists(reset = true, force = false) {
     }
   }
 }
-
-/**
- * Initializes the gallery module
- */
-function initGallery() {
-  artistGallery = document.getElementById("artist-gallery");
-  backgroundBlur = document.getElementById("background-blur");
-}
-
-/**
- * Sets the reference to all artists data
- */
-function setAllArtists(artists) {
-  allArtists = artists.map((a, i) => ({ ...a, _originalIndex: i }));
-}
-
-/**
- * Sets the callback to get active tags
- */
-function setGetActiveTagsCallback(callback) {
-  getActiveTags = callback;
-}
-
-/**
- * Sets the callback to get artist name filter
- */
-function setGetArtistNameFilterCallback(callback) {
-  getArtistNameFilter = callback;
-}
-
-/**
- * Sets sort mode ("name" or "count")
- */
-function setSortMode(mode) {
-  sortMode = mode;
-  if (filtered.length > 0) {
-    if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
-    } else if (sortMode === "name") {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
-    } else if (sortMode === "default") {
-      // Restore to original JSON order
-      filtered.sort(
-        (a, b) => (a._originalIndex || 0) - (b._originalIndex || 0)
-      );
-    }
-    currentArtistPage = 0;
-    renderArtistsPage();
-  }
-}
-
-/**
- * Gets the current filtered artists
- */
-function getFilteredArtists() {
-  return [...filtered];
-}
-
-/**
- * Gets pagination info
- */
-function getPaginationInfo() {
-  return {
-    currentPage: currentArtistPage,
-    perPage: artistsPerPage,
-    total: filtered.length,
-    hasMore: filtered.length > currentArtistPage * artistsPerPage,
-  };
-}
-// Export functions for ES modules
-export {
-  initGallery,
-  filterArtists,
-  renderArtistsPage,
-  openArtistZoom,
-  setRandomBackground,
-  setAllArtists,
-  setGetActiveTagsCallback,
-  setGetArtistNameFilterCallback,
-  setSortMode,
-  getFilteredArtists,
-  getPaginationInfo,
-};
