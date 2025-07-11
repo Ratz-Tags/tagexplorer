@@ -234,4 +234,8 @@ function enhanceTagControls(tagControls) {
   });
 }
 
+function openTagExplorer() {
+  filterTags();
+}
+
 export { openTagExplorer, setAllArtists };
