@@ -184,6 +184,13 @@ function createFullscreenViewer() {
   img.className = "fullscreen-img";
   left.appendChild(img);
 
+  // Add noEntriesMsg element (hidden by default)
+  const noEntriesMsg = document.createElement("div");
+  noEntriesMsg.className = "no-entries-msg";
+  noEntriesMsg.textContent = "No images found for this artist.";
+  noEntriesMsg.style.display = "none";
+  left.appendChild(noEntriesMsg);
+
   // Right side: tags
   const right = document.createElement("div");
   right.className = "zoom-right";
@@ -246,6 +253,7 @@ function createFullscreenViewer() {
     img,
     tagList,
     topTags,
+    noEntriesMsg,
     closeBtn,
     prevBtn,
     nextBtn,
