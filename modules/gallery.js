@@ -685,17 +685,6 @@ function getFilteredArtists() {
   return [...filtered];
 }
 
-/**
- * Gets pagination info
- */
-function getPaginationInfo() {
-  return {
-    currentPage: currentArtistPage,
-    perPage: artistsPerPage,
-    total: filtered.length,
-    hasMore: filtered.length > currentArtistPage * artistsPerPage,
-  };
-}
 export {
   initGallery,
   filterArtists,
