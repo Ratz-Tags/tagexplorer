@@ -630,3 +630,15 @@ async function filterArtists(reset = true, force = false) {
     }
   }
 }
+
+export {
+  openArtistZoom,
+  renderArtistsPage,
+  filterArtists,
+  setSortMode,
+  setAllArtists,
+  setGetActiveTagsCallback,
+  setGetArtistNameFilterCallback,
+  setRandomBackground,
+  getPaginationInfo,
+};
