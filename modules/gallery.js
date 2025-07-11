@@ -631,6 +631,18 @@ async function filterArtists(reset = true, force = false) {
   }
 }
 
+function getPaginationInfo() {
+  const total = filtered.length;
+  const shown = currentArtistPage * artistsPerPage;
+  return {
+    total,
+    shown,
+    hasMore: shown < total,
+    currentPage: currentArtistPage,
+    artistsPerPage,
+  };
+}
+
 export {
   openArtistZoom,
   renderArtistsPage,
