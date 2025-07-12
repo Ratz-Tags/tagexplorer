@@ -503,31 +503,19 @@ function renderArtistsPage() {
       if (typeof clearArtistCache === "function")
         clearArtistCache(artist.artistName);
       // Also clear sessionStorage for top tags
-      const cacheKey = `allPosts-${artist.artistName}-${
-        getActiveTags ? Array.from(getActiveTags()).join(",") : ""
-      }`;
+      const cacheKey = `allPosts-${artist.artistName}-${(getActiveTags ? Array.from(getActiveTags()).join(",") : "")}`;
       sessionStorage.removeItem(cacheKey);
       // Reset counts
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
       // Optionally show loading state
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
-      const totalCount = artist.postCount || 0;
-      artist._totalImageCount = totalCount;
-      artist._imageCount = totalCount;
-      // Update display
-      if (
-        typeof artist._imageCount === "number" &&
-        typeof artist._totalImageCount === "number"
-      ) {
-        name.textContent = `${artist.artistName.replace(/_/g, " ")} [${
-          artist._imageCount
-        }/${artist._totalImageCount}]`;
-      } else if (typeof artist._totalImageCount === "number") {
-        name.textContent = `${artist.artistName.replace(/_/g, " ")} [${
-          artist._totalImageCount
-        }]`;
-      }
+      // Force re-fetch and re-render
+      setTimeout(() => {
+        if (typeof filterArtists === "function") {
+          filterArtists(true, true); // force reload and re-render
+        }
+      }, 100);
     });
 
     // Show tags if available
