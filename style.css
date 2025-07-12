@@ -649,3 +649,201 @@ main {
     opacity: 1;
   }
 }
+
+/* Mobile styles */
+@media (max-width: 600px) {
+  body, .container {
+    padding: 0;
+    max-width: 100vw;
+    font-size: 1.08em;
+  }
+  .top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5em;
+  }
+  .sort-controls {
+    width: 100%;
+    justify-content: flex-end;
+    margin-left: 0;
+    gap: 0.3em;
+  }
+  .tagline {
+    font-size: 1.1rem;
+    padding: 0.2em 0.7em;
+    margin-bottom: 0.5em;
+  }
+  .brand {
+    font-size: 1.5rem;
+    text-align: left;
+    margin-bottom: 0.3em;
+  }
+  .top-actions {
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+  .filter-bar {
+    padding: 0.5em 0.2em;
+  }
+  .filter-inputs {
+    flex-direction: column;
+    gap: 0.5em;
+    margin-bottom: 0.5em;
+  }
+  .filter-inputs input,
+  .filter-inputs select {
+    font-size: 1em;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  #tag-buttons {
+    flex-wrap: wrap;
+    gap: 0.3em;
+  }
+  .tag-btn, .tag-button {
+    font-size: 0.95em;
+    padding: 0.3em 0.7em;
+    border-radius: 1.2em;
+    margin-bottom: 0.2em;
+  }
+  #artist-gallery {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5em;
+    padding: 0.5em 0.2em;
+  }
+  .artist-card {
+    padding: 0.5em 0.2em;
+    font-size: 1em;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .artist-image {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border-radius: 1em;
+  }
+  .artist-name {
+    font-size: 1em;
+    margin-top: 0.2em;
+  }
+  .artist-tags {
+    font-size: 0.95em;
+    margin-top: 0.1em;
+  }
+  .copy-button, .reload-button {
+    font-size: 1.1em;
+    padding: 0.3em 0.7em;
+    margin: 0.1em 0.2em;
+  }
+  .sidebar-wrapper {
+    width: 100vw;
+    left: 0;
+    right: 0;
+    max-width: 100vw;
+    padding: 0.2em;
+  }
+  #copied-sidebar {
+    width: 100vw;
+    max-width: 100vw;
+    font-size: 1em;
+    padding: 0.5em 0.2em;
+  }
+  .copied-artist {
+    font-size: 1em;
+    padding: 0.7em 0.2em;
+    gap: 0.7em;
+  }
+  .fullscreen-wrapper, .fullscreen-wrapper.tag-explorer-wrapper {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+    padding: 0.2em;
+    overflow-y: auto;
+  }
+  .zoom-content {
+    flex-direction: column;
+    gap: 0.5em;
+    padding: 0.2em;
+  }
+  .zoom-left, .zoom-right {
+    width: 100%;
+    min-width: 0;
+    padding: 0.2em;
+  }
+  .fullscreen-img {
+    width: 100%;
+    max-width: 100vw;
+    height: auto;
+    border-radius: 1em;
+  }
+  .zoom-tags, .artist-top-tags {
+    font-size: 0.95em;
+    padding: 0.2em 0;
+  }
+  .zoom-close, .zoom-prev, .zoom-next {
+    font-size: 1.3em;
+    padding: 0.3em 0.7em;
+    border-radius: 1.2em;
+    margin: 0.2em;
+  }
+  .tag-explorer {
+    padding: 0.2em;
+    font-size: 1em;
+    max-width: 100vw;
+    overflow-x: auto;
+  }
+  .tag-explorer-header {
+    flex-direction: column;
+    gap: 0.3em;
+    padding: 0.2em;
+  }
+  .tag-explorer-header input,
+  .tag-explorer-header select {
+    font-size: 1em;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 0.2em;
+  }
+  .tag-explorer-tags {
+    font-size: 0.95em;
+    gap: 0.2em;
+    flex-wrap: wrap;
+  }
+  .audio-panel {
+    width: 100vw;
+    max-width: 100vw;
+    padding: 0.2em;
+    font-size: 1em;
+  }
+  .audio-controls {
+    flex-direction: row;
+    gap: 0.3em;
+    padding: 0.2em;
+  }
+  .audio-controls button {
+    font-size: 1.1em;
+    padding: 0.3em 0.7em;
+    border-radius: 1.2em;
+  }
+  #back-to-top {
+    font-size: 1.1em;
+    padding: 0.3em 0.7em;
+    border-radius: 1.2em;
+    margin: 0.2em;
+  }
+  .toast-popup {
+    font-size: 1em;
+    padding: 0.5em 1em;
+    border-radius: 1em;
+    max-width: 90vw;
+    left: 5vw;
+    right: 5vw;
+  }
+}
