@@ -216,14 +216,16 @@ async function openArtistZoom(artist) {
   let currentIndex = 0;
   let posts = [];
 
-  // Caching for all posts for top tags
+  // In-memory cache for top tags (limit to 20 artists per session)
+  const topTagsCache = new Map();
+  const TOP_TAGS_CACHE_LIMIT = 20;
+
   async function fetchAllArtistImages(artistName, selectedTags = []) {
-    const cacheKey = `allPosts-${artistName}-${selectedTags.join(",")}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) return JSON.parse(cached);
+    const cacheKey = `${artistName}-${selectedTags.join(",")}`;
+    if (topTagsCache.has(cacheKey)) return topTagsCache.get(cacheKey);
     let allPosts = [];
-    const MAX_PAGES = 5; // Limit to 5 pages (500 posts)
-    const LIMIT = 100; // 100 posts per page
+    const MAX_PAGES = 20; // Limit to 5 pages (500 posts)
+    const LIMIT = 200;
     for (let page = 1; page <= MAX_PAGES; page++) {
       const pagePosts = await fetchArtistImages(artistName, selectedTags, {
         page,
@@ -232,7 +234,12 @@ async function openArtistZoom(artist) {
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
     }
-    sessionStorage.setItem(cacheKey, JSON.stringify(allPosts));
+    // Limit cache size
+    if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
+      const firstKey = topTagsCache.keys().next().value;
+      topTagsCache.delete(firstKey);
+    }
+    topTagsCache.set(cacheKey, allPosts);
     return allPosts;
   }
 

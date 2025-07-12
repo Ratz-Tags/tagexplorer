@@ -222,6 +222,26 @@ async function filterTags() {
   renderList();
 }
 
+// Lazy fetch for tag counts (only for visible tags)
+async function fetchTagCounts(visibleTags = null) {
+  // visibleTags: array of tags to count, or null for all
+  const artists = allArtists || [];
+  const active = getActiveTags ? getActiveTags() : new Set();
+  const nameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+  const counts = {};
+  artists.forEach((a) => {
+    const tags = a.kinkTags || [];
+    if (![...active].every((t) => tags.includes(t))) return;
+    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return;
+    tags.forEach((t) => {
+      if (!visibleTags || visibleTags.includes(t)) {
+        counts[t] = (counts[t] || 0) + 1;
+      }
+    });
+  });
+  return counts;
+}
+
 // Add ARIA attributes and keyboard shortcuts for tag controls
 function enhanceTagControls(tagControls) {
   tagControls.setAttribute("role", "toolbar");
