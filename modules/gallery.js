@@ -741,6 +741,21 @@ function addTagCombinationModeUI() {
 }
 
 /**
+ * Forces sorting of filtered artists and re-renders the gallery
+ */
+function forceSortAndRender() {
+  // Example: sort filtered artists by current sortMode, then re-render
+  if (!filtered || !Array.isArray(filtered)) return;
+  if (sortMode === "name") {
+    filtered.sort((a, b) => a.artistName.localeCompare(b.artistName));
+  } else if (sortMode === "count") {
+    filtered.sort((a, b) => (b.postCount || 0) - (a.postCount || 0));
+  }
+  currentArtistPage = 0;
+  renderArtistsPage();
+}
+
+/**
  * Public API
  */
 export {
@@ -753,4 +768,5 @@ export {
   clearArtistCache,
   setTagCombinationMode,
   getTagCombinationMode,
+  forceSortAndRender,
 };
