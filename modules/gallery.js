@@ -770,4 +770,5 @@ export {
   setTagCombinationMode,
   getTagCombinationMode,
   forceSortAndRender,
+  getPaginationInfo,
 };
