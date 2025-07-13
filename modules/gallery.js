@@ -246,6 +246,7 @@ async function openArtistZoom(artist) {
       const retryBtn = document.createElement("button");
       retryBtn.className = "retry-btn";
       retryBtn.textContent = "Retry";
+      retryBtn.style.zIndex = "100000";
       retryBtn.setAttribute("aria-label", "Retry loading tags");
       retryBtn.onclick = () => {
         // Clear sessionStorage for this artist's tags
