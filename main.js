@@ -20,7 +20,7 @@ import {
   renderTagButtons,
 } from "./modules/tags.js";
 import {
-  initGallery,
+  initGalleryModule,
   filterArtists,
   setRandomBackground,
   setAllArtists as setGalleryArtists,
@@ -58,7 +58,7 @@ async function initApp() {
     initSidebar();
     initAudio();
     initTags();
-    initGallery();
+    initGalleryModule();
 
     // Set up data sharing between modules
     setSidebarArtists(artists);
