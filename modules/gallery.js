@@ -366,7 +366,7 @@ async function openArtistZoom(artist) {
           .slice(0, 20)
           .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
 
-        // Combine selected tags first, then top tags
+        // Only show tag counts, not total post count
         const tagString = [
           ...(selectedCounts.length ? selectedCounts : []),
           ...(top.length ? top : []),
@@ -446,9 +446,7 @@ function renderArtistsPage() {
     // Improved count display logic
     artist._updateCountDisplay = function () {
       const total =
-        typeof this._totalImageCount === "number"
-          ? this._totalImageCount
-          : undefined;
+        typeof this.postCount === "number" ? this.postCount : undefined;
       if (typeof total === "number") {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
@@ -458,17 +456,7 @@ function renderArtistsPage() {
 
     artist._updateCountDisplay();
 
-    // Always fetch latest count from Danbooru
-    (async () => {
-      try {
-        const { getArtistImageCount } = await import("./api.js");
-        const count = await getArtistImageCount(artist.artistName);
-        artist._totalImageCount = count;
-        artist._updateCountDisplay();
-      } catch (e) {
-        name.textContent = `${artist.artistName.replace(/_/g, " ")} [Error]`;
-      }
-    })();
+    // Remove live Danbooru count fetch for gallery display
 
     // Remove any fallback to artist.postCount for display
 
