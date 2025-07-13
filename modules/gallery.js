@@ -3,12 +3,7 @@
  */
 
 import { createFullscreenViewer, createSpinner } from "./ui.js";
-import {
-  fetchArtistImages,
-  clearArtistCache as apiClearArtistCache,
-  buildImageUrl,
-} from "./api.js";
-
+import { fetchArtistImages, clearArtistCache, buildImageUrl } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
@@ -27,14 +22,6 @@ let backgroundBlur = null;
 let allArtists = [];
 let getActiveTags = null;
 let getArtistNameFilter = null;
-
-// Favorites/bookmarks state
-let favoriteArtists = new Set(
-  JSON.parse(localStorage.getItem("favoriteArtists") || "[]")
-);
-
-// Tag combination mode state
-let tagCombinationMode = localStorage.getItem("tagCombinationMode") || "AND";
 
 /**
  * Sets the background image with a random image
@@ -438,8 +425,14 @@ function renderArtistsPage() {
   if (currentArtistPage === 0) {
     artistGallery.innerHTML = "";
   }
+
   // Remove spinner if present
-  removeGallerySpinner();
+  const spinner = artistGallery.querySelector(".gallery-spinner");
+  if (spinner) spinner.remove();
+
+  // DO NOT clear artistGallery here!
+  // artistGallery.innerHTML = ""; // <-- REMOVE THIS LINE
+
   if (filtered.length === 0) {
     const msg = document.createElement("div");
     msg.className = "no-artists-msg";
@@ -447,9 +440,11 @@ function renderArtistsPage() {
     artistGallery.appendChild(msg);
     return;
   }
+
   const start = currentArtistPage * artistsPerPage;
   const end = start + artistsPerPage;
   const artistsToShow = filtered.slice(start, end);
+
   artistsToShow.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card";
@@ -539,142 +534,209 @@ function renderArtistsPage() {
       }, 100);
     });
 
-    // Add favorite/star button
-    const favBtn = document.createElement("button");
-    favBtn.className = "favorite-btn";
-    favBtn.setAttribute(
-      "aria-label",
-      isArtistFavorited(artist.artistName)
-        ? "Unfavorite artist"
-        : "Favorite artist"
-    );
-    favBtn.innerHTML = isArtistFavorited(artist.artistName) ? "★" : "☆";
-    favBtn.onclick = (e) => {
-      e.stopPropagation();
-      toggleFavoriteArtist(artist.artistName);
-    };
-
     // Show tags if available
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       const taglist = document.createElement("div");
       taglist.className = "artist-tags";
       taglist.textContent = artist.kinkTags.join(", ");
-      card.append(img, name, taglist, copyBtn, reloadBtn, favBtn);
+      card.append(img, name, taglist, copyBtn, reloadBtn);
     } else {
-      card.append(img, name, copyBtn, reloadBtn, favBtn);
+      card.append(img, name, copyBtn, reloadBtn);
     }
 
     artistGallery.appendChild(card);
   });
   currentArtistPage++;
-  // Setup infinite scroll after initial render
-  if (currentArtistPage === 1) setupInfiniteScrollGallery();
 }
 
-// Tag Cloud Visualization
-function computeTagFrequencies(artists) {
-  const tagCounts = {};
-  artists.forEach((artist) => {
-    (artist.kinkTags || []).forEach((tag) => {
-      tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-    });
-  });
-  return tagCounts;
-}
-
-function renderTagCloud() {
-  let cloudContainer = document.getElementById("tag-cloud");
-  if (!cloudContainer) {
-    cloudContainer = document.createElement("div");
-    cloudContainer.id = "tag-cloud";
-    cloudContainer.className = "tag-cloud-container";
-    artistGallery.parentNode.insertBefore(cloudContainer, artistGallery);
+/**
+ * Filters and displays artists based on current criteria
+ */
+async function filterArtists(reset = true, force = false) {
+  if (!artistGallery) return;
+  const generation = ++filterGeneration;
+  if (isFetching) {
+    const existing = artistGallery.querySelector(".gallery-spinner");
+    if (!existing) {
+      artistGallery.appendChild(createSpinner());
+    }
   }
-  cloudContainer.innerHTML = "";
-  const tagCounts = computeTagFrequencies(allArtists);
-  const tags = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 40); // Top 40 tags
-  const maxCount = tags.length ? tags[0][1] : 1;
-  tags.forEach(([tag, count]) => {
-    const span = document.createElement("span");
-    span.className = "tag-cloud-tag";
-    span.textContent = tag.replace(/_/g, " ");
-    // Font size and color scale
-    const size = 0.9 + 1.2 * (count / maxCount);
-    span.style.fontSize = `${size}em`;
-    span.style.color = `hsl(${320 - 60 * (count / maxCount)}, 80%, 55%)`;
-    span.title = `${tag.replace(/_/g, " ")} (${count})`;
-    span.onclick = () => {
-      if (typeof window.toggleTag === "function") {
-        window.toggleTag(tag);
+
+  let spinner;
+  try {
+    if (reset) {
+      currentArtistPage = 0;
+      artistGallery.innerHTML = "";
+    }
+
+    spinner = artistGallery.querySelector(".gallery-spinner");
+    if (!spinner) {
+      spinner = createSpinner();
+      artistGallery.appendChild(spinner);
+    } else if (!spinner.updateProgress) {
+      spinner.remove();
+      spinner = createSpinner();
+      artistGallery.appendChild(spinner);
+    }
+
+    isFetching = true;
+
+    // Get active tags and filters
+    const activeTags = getActiveTags ? getActiveTags() : new Set();
+    const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+
+    // Filter artists
+    filtered = allArtists.filter((artist) => {
+      const tags = artist.kinkTags || [];
+      return (
+        Array.from(activeTags).every((tag) => tags.includes(tag)) &&
+        (artist.artistName.toLowerCase().includes(artistNameFilter) ||
+          artistNameFilter === "")
+      );
+    });
+
+    if (spinner.setTotal) spinner.setTotal(filtered.length);
+    if (spinner.updateProgress) spinner.updateProgress(0);
+
+    // Always fetch counts for the current filtered artists
+    async function fetchInBatches(
+      artists,
+      batchSize = 5,
+      delayMs = 1000,
+      gen,
+      spin
+    ) {
+      let done = 0;
+      for (let i = 0; i < artists.length; i += batchSize) {
+        if (gen !== filterGeneration) return;
+        const batch = artists.slice(i, i + batchSize);
+        await Promise.all(
+          batch.map(async (artist) => {
+            const totalCount = artist.postCount || 0;
+            artist._totalImageCount = totalCount;
+            artist._imageCount = totalCount;
+            if (gen !== filterGeneration) {
+              return;
+            }
+          })
+        );
+
+        done += batch.length;
+        if (spin && spin.updateProgress) spin.updateProgress(done);
+
+        if (i + batchSize < artists.length) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+        }
       }
-    };
-    cloudContainer.appendChild(span);
-  });
+
+      if (gen !== filterGeneration) return;
+
+      setSortMode(sortMode);
+      renderArtistsPage();
+    }
+
+    renderArtistsPage(); // Render immediately
+
+    if (reset) {
+      await fetchInBatches(filtered, 5, 1000, generation, spinner).catch(
+        (e) => {
+          console.error("Batch fetch failed:", e);
+        }
+      );
+      if (generation !== filterGeneration) return;
+      setSortMode(sortMode);
+      renderArtistsPage();
+    } else if (force) {
+      fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
+        if (generation !== filterGeneration) return;
+        setSortMode(sortMode);
+        renderArtistsPage();
+      });
+    }
+  } catch (error) {
+    console.warn("filterArtists failed", error);
+  } finally {
+    if (generation === filterGeneration) {
+      const remaining = artistGallery.querySelector(".gallery-spinner");
+      if (remaining) remaining.remove();
+      isFetching = false;
+    }
+  }
 }
 
-// Ensure filterArtists is defined before use
-function filterArtists(reset = true, force = false) {
-  // Example implementation: filter artists by active tags and name filter
-  if (!allArtists || !Array.isArray(allArtists)) return;
-  const activeTags = getActiveTags ? Array.from(getActiveTags()) : [];
-  const nameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
-  filtered = allArtists.filter((artist) => {
-    // Filter by tags (AND logic)
-    const hasTags =
-      activeTags.length === 0 ||
-      (artist.kinkTags &&
-        activeTags.every((tag) => artist.kinkTags.includes(tag)));
-    // Filter by name
-    const matchesName =
-      !nameFilter ||
-      artist.artistName.toLowerCase().includes(nameFilter.toLowerCase());
-    return hasTags && matchesName;
-  });
-  currentArtistPage = 0;
-  renderArtistsPage();
+function initGallery() {
+  artistGallery = document.getElementById("artist-gallery");
+  backgroundBlur = document.getElementById("background-blur");
+}
+function getPaginationInfo() {
+  const total = filtered.length;
+  const shown = currentArtistPage * artistsPerPage;
+  return {
+    total,
+    shown,
+    hasMore: shown < total,
+    currentPage: currentArtistPage,
+    artistsPerPage,
+  };
 }
 
-// Call renderTagCloud on gallery init and after filtering
-function initGalleryModule(
-  galleryElement,
-  blurElement,
-  artistData,
-  tagsGetter,
-  nameFilterGetter
-) {
-  artistGallery = galleryElement;
-  backgroundBlur = blurElement;
-  allArtists = artistData;
-  getActiveTags = tagsGetter;
-  getArtistNameFilter = nameFilterGetter;
-  addTagCombinationModeUI();
-  renderTagCloud();
-}
-
-/**
- * Sets the reference to all artists data
- */
 function setAllArtists(artists) {
-  allArtists = Array.isArray(artists) ? artists : [];
-  filterArtists(true, true); // Re-filter and re-render on update
+  allArtists = artists;
+}
+
+function setGetActiveTagsCallback(callback) {
+  getActiveTags = callback;
 }
 
 /**
- * Public API
+ * Sets the callback to get artist name filter
  */
+function setGetArtistNameFilterCallback(callback) {
+  getArtistNameFilter = callback;
+}
+
+function setSortMode(mode) {
+  sortMode = mode === "count" ? "count" : "name";
+  if (filtered.length > 0) {
+    if (sortMode === "count") {
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
+      );
+    }
+    currentArtistPage = 0;
+    renderArtistsPage();
+  }
+}
+function setSortPreference(preference) {
+  sortMode = preference === "count" ? "count" : "name";
+}
+
+function forceSortAndRender() {
+  setSortMode(sortMode);
+}
+
+function getFilteredArtists() {
+  return [...filtered];
+}
+
 export {
-  initGalleryModule,
-  setRandomBackground,
+  initGallery,
   filterArtists,
-  toggleFavoriteArtist,
-  isArtistFavorited,
+  renderArtistsPage,
   openArtistZoom,
-  clearArtistCache,
-  setTagCombinationMode,
-  getTagCombinationMode,
+  setSortPreference,
   forceSortAndRender,
-  getPaginationInfo,
+  setRandomBackground,
   setAllArtists,
+  setGetActiveTagsCallback,
+  setGetArtistNameFilterCallback,
+  setSortMode,
+  getFilteredArtists,
+  getPaginationInfo,
 };
