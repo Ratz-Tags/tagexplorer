@@ -445,23 +445,11 @@ function renderArtistsPage() {
 
     // Improved count display logic
     artist._updateCountDisplay = function () {
-      const hasTagFilter = getActiveTags && getActiveTags().size > 0;
       const total =
         typeof this._totalImageCount === "number"
           ? this._totalImageCount
-          : typeof this.postCount === "number"
-          ? this.postCount
           : undefined;
-
-      if (
-        hasTagFilter &&
-        typeof this._imageCount === "number" &&
-        typeof total === "number"
-      ) {
-        name.textContent = `${this.artistName.replace(/_/g, " ")} [${
-          this._imageCount
-        }/${total}]`;
-      } else if (typeof total === "number") {
+      if (typeof total === "number") {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
@@ -469,6 +457,20 @@ function renderArtistsPage() {
     };
 
     artist._updateCountDisplay();
+
+    // Always fetch latest count from Danbooru
+    (async () => {
+      try {
+        const { getArtistImageCount } = await import("./api.js");
+        const count = await getArtistImageCount(artist.artistName);
+        artist._totalImageCount = count;
+        artist._updateCountDisplay();
+      } catch (e) {
+        name.textContent = `${artist.artistName.replace(/_/g, " ")} [Error]`;
+      }
+    })();
+
+    // Remove any fallback to artist.postCount for display
 
     // When counts are set later, call this function
     Object.defineProperty(artist, "_imageCount", {
