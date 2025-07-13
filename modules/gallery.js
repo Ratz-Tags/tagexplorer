@@ -336,29 +336,27 @@ async function openArtistZoom(artist) {
     try {
       // Count all tags
       const allPosts = await fetchAllArtistImages(artist.artistName);
-if (!Array.isArray(allPosts) || allPosts.length === 0) {
-  if (topTags) topTags.textContent = "No tags found.";
-} else {
-  // Deduplicate posts by ID
-  const uniquePosts = [];
-  const seenIds = new Set();
-  allPosts.forEach(p => {
-    if (p.id && !seenIds.has(p.id)) {
-      seenIds.add(p.id);
-      uniquePosts.push(p);
-    }
-  });
+      if (!Array.isArray(allPosts) || allPosts.length === 0) {
+        if (topTags) topTags.textContent = "No tags found.";
+      } else {
+        // Deduplicate posts by ID
+        const uniquePosts = [];
+        const seenIds = new Set();
+        allPosts.forEach((p) => {
+          if (p.id && !seenIds.has(p.id)) {
+            seenIds.add(p.id);
+            uniquePosts.push(p);
+          }
+        });
 
-  // Now count tags from uniquePosts instead of allPosts!
-  const counts = {};
-  uniquePosts.forEach((p) => {
-    (p.tag_string || "").split(" ").forEach((t) => {
-      counts[t] = (counts[t] || 0) + 1;
-    });
-  });
+        // Now count tags from uniquePosts instead of allPosts!
+        const counts = {};
+        uniquePosts.forEach((p) => {
+          (p.tag_string || "").split(" ").forEach((t) => {
+            counts[t] = (counts[t] || 0) + 1;
+          });
+        });
 
-  // ... rest of your tag count logic using counts ...
-}
         // Get selected tags from filter (if any)
         const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
         const selectedCounts = selectedTags
