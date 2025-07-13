@@ -757,6 +757,18 @@ function forceSortAndRender() {
 }
 
 /**
+ * Returns pagination info for the artist gallery
+ */
+function getPaginationInfo() {
+  return {
+    currentPage: currentArtistPage,
+    artistsPerPage,
+    totalArtists: filtered.length,
+    totalPages: Math.ceil(filtered.length / artistsPerPage),
+  };
+}
+
+/**
  * Public API
  */
 export {
