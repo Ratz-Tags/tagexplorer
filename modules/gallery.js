@@ -3,7 +3,11 @@
  */
 
 import { createFullscreenViewer, createSpinner } from "./ui.js";
-import { fetchArtistImages, clearArtistCache, buildImageUrl } from "./api.js";
+import {
+  fetchArtistImages,
+  clearArtistCache as apiClearArtistCache,
+  buildImageUrl,
+} from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
@@ -609,6 +613,28 @@ function renderTagCloud() {
   });
 }
 
+// Add missing filterArtists function definition
+function filterArtists(reset = true, force = false) {
+  // Example implementation: filter artists by active tags and name filter
+  if (!allArtists || !Array.isArray(allArtists)) return;
+  const activeTags = getActiveTags ? Array.from(getActiveTags()) : [];
+  const nameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+  filtered = allArtists.filter((artist) => {
+    // Filter by tags (AND logic)
+    const hasTags =
+      activeTags.length === 0 ||
+      (artist.kinkTags &&
+        activeTags.every((tag) => artist.kinkTags.includes(tag)));
+    // Filter by name
+    const matchesName =
+      !nameFilter ||
+      artist.artistName.toLowerCase().includes(nameFilter.toLowerCase());
+    return hasTags && matchesName;
+  });
+  currentArtistPage = 0;
+  renderArtistsPage();
+}
+
 // Call renderTagCloud on gallery init and after filtering
 function initGalleryModule(
   galleryElement,
@@ -624,6 +650,94 @@ function initGalleryModule(
   getArtistNameFilter = nameFilterGetter;
   addTagCombinationModeUI();
   renderTagCloud();
+}
+
+// Add missing toggleFavoriteArtist function
+function toggleFavoriteArtist(artistName) {
+  if (favoriteArtists.has(artistName)) {
+    favoriteArtists.delete(artistName);
+  } else {
+    favoriteArtists.add(artistName);
+  }
+  localStorage.setItem(
+    "favoriteArtists",
+    JSON.stringify(Array.from(favoriteArtists))
+  );
+  // Optionally update UI (e.g., re-render favorites sidebar)
+}
+
+// Add missing isArtistFavorited function
+function isArtistFavorited(artistName) {
+  return favoriteArtists.has(artistName);
+}
+
+// Add missing clearArtistCache function
+function clearArtistCache(artistName) {
+  // Remove localStorage cache
+  localStorage.removeItem(`danbooru-image-${artistName}`);
+  // Remove all sessionStorage keys for this artist
+  const prefix = `danbooru-api-${artistName}-`;
+  const keysToRemove = [];
+  for (let i = 0; i < sessionStorage.length; i++) {
+    const key = sessionStorage.key(i);
+    if (key && key.startsWith(prefix)) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => sessionStorage.removeItem(key));
+}
+
+// Add missing setTagCombinationMode function
+function setTagCombinationMode(mode) {
+  if (mode === "AND" || mode === "OR") {
+    tagCombinationMode = mode;
+    localStorage.setItem("tagCombinationMode", mode);
+    // Optionally trigger re-filtering or UI update
+    if (typeof filterArtists === "function") {
+      filterArtists(true, true);
+    }
+  }
+}
+
+// Add missing getTagCombinationMode function
+function getTagCombinationMode() {
+  return tagCombinationMode;
+}
+
+// Add missing addTagCombinationModeUI function
+function addTagCombinationModeUI() {
+  // Find or create the tag combination mode UI container
+  let modeContainer = document.getElementById("tag-combination-mode");
+  if (!modeContainer) {
+    modeContainer = document.createElement("div");
+    modeContainer.id = "tag-combination-mode";
+    modeContainer.className = "tag-combination-mode";
+    // Insert into filter bar or above tag buttons
+    const filterBar = document.querySelector(".filter-bar");
+    if (filterBar) {
+      filterBar.insertBefore(modeContainer, filterBar.firstChild);
+    } else {
+      document.body.insertBefore(modeContainer, document.body.firstChild);
+    }
+  }
+  modeContainer.innerHTML = "";
+  // Create AND/OR toggle buttons
+  ["AND", "OR"].forEach((mode) => {
+    const btn = document.createElement("button");
+    btn.className =
+      "tag-combo-btn" + (tagCombinationMode === mode ? " active" : "");
+    btn.textContent = mode;
+    btn.setAttribute("aria-label", `Tag search mode: ${mode}`);
+    btn.onclick = () => {
+      setTagCombinationMode(mode);
+      // Update button states
+      Array.from(modeContainer.children).forEach((b) =>
+        b.classList.remove("active")
+      );
+      btn.classList.add("active");
+    };
+    modeContainer.appendChild(btn);
+  });
 }
 
 /**
