@@ -8,6 +8,7 @@ import {
   clearArtistCache as apiClearArtistCache,
   buildImageUrl,
 } from "./api.js";
+
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
@@ -613,7 +614,7 @@ function renderTagCloud() {
   });
 }
 
-// Add missing filterArtists function definition
+// Ensure filterArtists is defined before use
 function filterArtists(reset = true, force = false) {
   // Example implementation: filter artists by active tags and name filter
   if (!allArtists || !Array.isArray(allArtists)) return;

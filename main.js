@@ -35,6 +35,9 @@ import {
   setupInfiniteScroll,
   setupBackgroundRotation,
 } from "./modules/ui.js";
+
+// Ensure setupInfiniteScroll is exported from ./modules/ui.js and its usage matches the expected signature.
+// If you encounter an error like "setupInfiniteScroll is not a function", check ./modules/ui.js for the correct export.
 import {
   openTagExplorer,
   setAllArtists as setExplorerArtists,
