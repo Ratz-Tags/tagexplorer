@@ -256,6 +256,7 @@ async function openArtistZoom(artist) {
         sessionStorage.removeItem(cacheKey);
         noEntriesMsg.textContent = "Retrying...";
         // Re-run the zoom modal logic
+        // Limit cache size
         openArtistZoom(artist);
       };
       noEntriesMsg.appendChild(retryBtn);
@@ -371,6 +372,7 @@ async function openArtistZoom(artist) {
         const top = Object.entries(counts)
           .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
           .sort((a, b) => b[1] - a[1])
+          .slice(0, 20)
           .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
 
         // Only show tag counts, not total post count
