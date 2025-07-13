@@ -359,9 +359,10 @@ async function openArtistZoom(artist) {
           })
           .filter((str) => !str.startsWith(" (0)")); // Hide tags with 0 count
 
-        // Top 20 overall tags (excluding selected tags)
+        // Top 20 overall tags (excluding selected tags and artist name)
+        const artistTag = artist.artistName;
         const top = Object.entries(counts)
-          .filter(([t]) => !selectedTags.includes(t))
+          .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 20)
           .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
