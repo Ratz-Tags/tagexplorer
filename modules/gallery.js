@@ -234,12 +234,6 @@ async function openArtistZoom(artist) {
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
     }
-    // Limit cache size
-    if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
-      const firstKey = topTagsCache.keys().next().value;
-      topTagsCache.delete(firstKey);
-    }
-    topTagsCache.set(cacheKey, allPosts);
     return allPosts;
   }
 
@@ -252,6 +246,7 @@ async function openArtistZoom(artist) {
       const retryBtn = document.createElement("button");
       retryBtn.className = "retry-btn";
       retryBtn.textContent = "Retry";
+      retryBtn.z-index = 100000;
       retryBtn.setAttribute("aria-label", "Retry loading tags");
       retryBtn.onclick = () => {
         // Clear sessionStorage for this artist's tags
