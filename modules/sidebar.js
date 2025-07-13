@@ -32,15 +32,15 @@ function showToast(message) {
  */
 function handleArtistCopy(artist, imgSrc) {
   const artistTag = artist.artistName.replace(/_/g, " ");
-  const copyText = `artist:${artistTag}`;
-  if (copiedArtistsCache && copiedArtistsCache.has(copyText)) return;
+  // Store only the artist name in copiedArtists
+  if (copiedArtistsCache && copiedArtistsCache.has(artistTag)) return;
   navigator.clipboard
-    .writeText(copyText)
+    .writeText(`artist:${artistTag}`)
     .then(() => {
-      copiedArtists.add(copyText);
+      copiedArtists.add(artistTag);
       copiedArtistsCache = new Set(copiedArtists);
       updateCopiedSidebar();
-      showToast(`Copied: ${copyText}`);
+      showToast(`Copied: artist:${artistTag}`);
     })
     .catch(() => {
       showToast("Failed to copy artist name");
@@ -63,7 +63,9 @@ function updateCopiedSidebar() {
   copiedSidebar.appendChild(closeBtn);
 
   copiedArtists.forEach((name) => {
-    const artist = allArtists.find((a) => a.artistName === name);
+    const artist = allArtists.find(
+      (a) => a.artistName.replace(/_/g, " ") === name
+    );
     const div = document.createElement("div");
     div.className = "copied-artist";
     div.style.display = "flex";
@@ -90,7 +92,7 @@ function updateCopiedSidebar() {
     }
 
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = name.replace(/_/g, " ");
+    nameSpan.textContent = name;
     nameSpan.title = tooltip;
     nameSpan.style.flex = "1";
     nameSpan.style.fontWeight = "bold";
