@@ -224,7 +224,7 @@ async function openArtistZoom(artist) {
     const cacheKey = `${artistName}-${selectedTags.join(",")}`;
     if (topTagsCache.has(cacheKey)) return topTagsCache.get(cacheKey);
     let allPosts = [];
-    const MAX_PAGES = 20; // Limit to 5 pages (500 posts)
+    const MAX_PAGES = 40; // Limit to 20 pages (4000 posts if limit=200)
     const LIMIT = 200;
     for (let page = 1; page <= MAX_PAGES; page++) {
       const pagePosts = await fetchArtistImages(artistName, selectedTags, {
@@ -233,7 +233,15 @@ async function openArtistZoom(artist) {
       });
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
+      // If less than LIMIT, still continue to next page (Danbooru may have more)
+      // Only break if pagePosts.length === 0
     }
+    // Limit cache size
+    if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
+      const firstKey = topTagsCache.keys().next().value;
+      topTagsCache.delete(firstKey);
+    }
+    topTagsCache.set(cacheKey, allPosts);
     return allPosts;
   }
 
