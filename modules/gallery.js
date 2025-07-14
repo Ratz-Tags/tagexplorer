@@ -848,10 +848,22 @@ async function showTopArtistsByTagCount() {
         img.style.display = "block";
       }
       card.appendChild(img);
-      // Render artist name and kinkTags with [TagCount]
+      // Render artist name with [TotalCount]
       const nameDiv = document.createElement("div");
       nameDiv.className = "artist-name";
-      nameDiv.textContent = artist.artistName.replace(/_/g, " ");
+      let total =
+        typeof artist.postCount === "number" ? artist.postCount : undefined;
+      if (typeof total === "number") {
+        nameDiv.textContent = `${artist.artistName.replace(
+          /_/g,
+          " "
+        )} [${total}]`;
+      } else {
+        nameDiv.textContent = `${artist.artistName.replace(
+          /_/g,
+          " "
+        )} [Loading…]`;
+      }
       card.appendChild(nameDiv);
       const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
       let taglistText = "";
