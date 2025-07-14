@@ -682,17 +682,40 @@ async function showTopArtistsByTagCount() {
   const selectedTags = Array.from(getActiveTags());
   if (selectedTags.length === 0) return;
 
+  // Filter artists to only those that have all selected tags in their kinkTags
+  const filteredArtists = allArtists.filter((artist) => {
+    const tags = artist.kinkTags || [];
+    return selectedTags.every((tag) => tags.includes(tag));
+  });
+
   // Show spinner and loading bar while loading
   if (artistGallery) {
     artistGallery.innerHTML = "";
     const spinner = document.createElement("div");
     spinner.className = "gallery-spinner";
-    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" /> Calculating...`;
-    // Add loading bar
+    spinner.style.position = "fixed";
+    spinner.style.top = "50%";
+    spinner.style.left = "50%";
+    spinner.style.transform = "translate(-50%, -50%)";
+    spinner.style.zIndex = "10000";
+    spinner.style.background = "rgba(255,255,255,0.95)";
+    spinner.style.borderRadius = "2em";
+    spinner.style.padding = "2em 2em 2.5em 2em";
+    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" /> Calculating...`;
+    // Add loading bar, styled center and large
     const loadingBar = document.createElement("progress");
     loadingBar.className = "loading-bar";
     loadingBar.value = 0;
-    loadingBar.max = allArtists.length;
+    loadingBar.max = filteredArtists.length;
+    loadingBar.style.display = "block";
+    loadingBar.style.width = "80vw";
+    loadingBar.style.maxWidth = "400px";
+    loadingBar.style.height = "2.5em";
+    loadingBar.style.margin = "2em auto 0 auto";
+    loadingBar.style.position = "absolute";
+    loadingBar.style.left = "50%";
+    loadingBar.style.top = "calc(50% + 60px)";
+    loadingBar.style.transform = "translate(-50%, 0)";
     spinner.appendChild(loadingBar);
     artistGallery.appendChild(spinner);
   }
@@ -706,7 +729,7 @@ async function showTopArtistsByTagCount() {
   const loadingBarElem = spinnerElem
     ? spinnerElem.querySelector(".loading-bar")
     : null;
-  for (const artist of allArtists) {
+  for (const artist of filteredArtists) {
     let posts = [];
     try {
       posts = await fetchAllArtistImages(artist.artistName, [], {
@@ -724,9 +747,8 @@ async function showTopArtistsByTagCount() {
     artistTagCounts.push({ artist, count: matchCount });
     done++;
     if (spinnerElem) {
-      spinnerElem.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" /> Calculating... (${done}/${allArtists.length})`;
+      spinnerElem.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" /> Calculating... (${done}/${filteredArtists.length})`;
       if (loadingBarElem) loadingBarElem.value = done;
-      // Re-append loading bar after innerHTML update
       if (loadingBarElem && !spinnerElem.contains(loadingBarElem)) {
         spinnerElem.appendChild(loadingBarElem);
       }
