@@ -447,6 +447,20 @@ function renderArtistsPage() {
     name.className = "artist-name";
     name.textContent = artist.artistName.replace(/_/g, " ");
 
+    // Show selected tag counts on card
+    const tagCountDiv = document.createElement("div");
+    tagCountDiv.className = "artist-tag-count";
+    const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+    let tagCountText = "";
+    if (selectedTags.length > 0 && artist._tagMatchCount !== undefined) {
+      tagCountText = `${artist._tagMatchCount} image${
+        artist._tagMatchCount !== 1 ? "s" : ""
+      } with selected tag${
+        selectedTags.length > 1 ? "s" : ""
+      }`;
+    }
+    tagCountDiv.textContent = tagCountText;
+
     artist._updateCountDisplay = function () {
       const total =
         typeof this.postCount === "number" ? this.postCount : undefined;
@@ -454,6 +468,16 @@ function renderArtistsPage() {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
+      }
+      // Update tag count display if available
+      if (selectedTags.length > 0 && this._tagMatchCount !== undefined) {
+        tagCountDiv.textContent = `${this._tagMatchCount} image${
+          this._tagMatchCount !== 1 ? "s" : ""
+        } with selected tag${
+          selectedTags.length > 1 ? "s" : ""
+        }`;
+      } else {
+        tagCountDiv.textContent = "";
       }
     };
     artist._updateCountDisplay();
@@ -480,6 +504,17 @@ function renderArtistsPage() {
       },
       configurable: true,
     });
+    Object.defineProperty(artist, "_tagMatchCount", {
+      set(val) {
+        this.__tagMatchCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__tagMatchCount;
+      },
+      configurable: true,
+    });
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "copy-button";
@@ -493,14 +528,12 @@ function renderArtistsPage() {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (typeof clearArtistCache === "function")
-        clearArtistCache(artist.artistName);
-      const cacheKey = `allPosts-${artist.artistName}-${
-        getActiveTags ? Array.from(getActiveTags()).join(",") : ""
-      }`;
+      if (typeof clearArtistCache === "function") clearArtistCache(artist.artistName);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
       sessionStorage.removeItem(cacheKey);
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
+      artist._tagMatchCount = undefined;
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
       setTimeout(() => {
         if (typeof filterArtists === "function") {
@@ -513,9 +546,9 @@ function renderArtistsPage() {
       const taglist = document.createElement("div");
       taglist.className = "artist-tags";
       taglist.textContent = artist.kinkTags.join(", ");
-      card.append(img, name, taglist, copyBtn, reloadBtn);
+      card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
     } else {
-      card.append(img, name, copyBtn, reloadBtn);
+      card.append(img, name, tagCountDiv, copyBtn, reloadBtn);
     }
 
     artistGallery.appendChild(card);
