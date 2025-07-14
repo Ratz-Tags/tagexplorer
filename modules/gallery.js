@@ -573,8 +573,8 @@ async function filterArtists(reset = true, force = false) {
     // Always fetch counts for the current filtered artists
     async function fetchInBatches(
       artists,
-      batchSize = 5,
-      delayMs = 1000,
+      batchSize = 10,
+      delayMs = 500,
       gen,
       spin
     ) {
