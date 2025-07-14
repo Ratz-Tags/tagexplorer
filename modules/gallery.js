@@ -866,7 +866,9 @@ async function showTopArtistsByTagCount() {
   });
 
   // Debug: Show artistTag for each filtered artist
-  let debugTags = filteredArtists.map(a => a.artistTag || a.artistName).join(", ");
+  let debugTags = filteredArtists
+    .map((a) => a.artistTag || a.artistName)
+    .join(", ");
   alert("Filtered artist tags: " + debugTags);
 
   // Show spinner and loading bar while loading
