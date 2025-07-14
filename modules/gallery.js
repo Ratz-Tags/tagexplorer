@@ -7,8 +7,6 @@ import { fetchArtistImages, clearArtistCache, buildImageUrl } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
-let currentArtistPage = 0;
-const artistsPerPage = 24;
 let filtered = [];
 let isFetching = false;
 let sortMode = "name";
@@ -224,7 +222,7 @@ async function openArtistZoom(artist) {
     const cacheKey = `${artistName}-${selectedTags.join(",")}`;
     if (topTagsCache.has(cacheKey)) return topTagsCache.get(cacheKey);
     let allPosts = [];
-    const MAX_PAGES = 40; // Limit to 20 pages (4000 posts if limit=200)
+    const MAX_PAGES = 40; // Limit to 40 pages (8000 posts if limit=200)
     const LIMIT = 200;
     for (let page = 1; page <= MAX_PAGES; page++) {
       const pagePosts = await fetchArtistImages(artistName, selectedTags, {
@@ -233,8 +231,7 @@ async function openArtistZoom(artist) {
       });
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
-      // If less than LIMIT, still continue to next page (Danbooru may have more)
-      // Only break if pagePosts.length === 0
+      // Do NOT break if pagePosts.length < LIMIT; keep fetching until empty page
     }
     // Limit cache size
     if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
@@ -421,17 +418,11 @@ async function openArtistZoom(artist) {
 function renderArtistsPage() {
   if (!artistGallery) return;
 
-  // Only clear on first page
-  if (currentArtistPage === 0) {
-    artistGallery.innerHTML = "";
-  }
+  artistGallery.innerHTML = "";
 
   // Remove spinner if present
   const spinner = artistGallery.querySelector(".gallery-spinner");
   if (spinner) spinner.remove();
-
-  // DO NOT clear artistGallery here!
-  // artistGallery.innerHTML = ""; // <-- REMOVE THIS LINE
 
   if (filtered.length === 0) {
     const msg = document.createElement("div");
@@ -441,11 +432,7 @@ function renderArtistsPage() {
     return;
   }
 
-  const start = currentArtistPage * artistsPerPage;
-  const end = start + artistsPerPage;
-  const artistsToShow = filtered.slice(start, end);
-
-  artistsToShow.forEach((artist) => {
+  filtered.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card";
 
@@ -460,7 +447,6 @@ function renderArtistsPage() {
     name.className = "artist-name";
     name.textContent = artist.artistName.replace(/_/g, " ");
 
-    // Improved count display logic
     artist._updateCountDisplay = function () {
       const total =
         typeof this.postCount === "number" ? this.postCount : undefined;
@@ -470,14 +456,8 @@ function renderArtistsPage() {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
       }
     };
-
     artist._updateCountDisplay();
 
-    // Remove live Danbooru count fetch for gallery display
-
-    // Remove any fallback to artist.postCount for display
-
-    // When counts are set later, call this function
     Object.defineProperty(artist, "_imageCount", {
       set(val) {
         this.__imageCount = val;
@@ -513,28 +493,22 @@ function renderArtistsPage() {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      // Clear cache for this artist
       if (typeof clearArtistCache === "function")
         clearArtistCache(artist.artistName);
-      // Also clear sessionStorage for top tags
       const cacheKey = `allPosts-${artist.artistName}-${
         getActiveTags ? Array.from(getActiveTags()).join(",") : ""
       }`;
       sessionStorage.removeItem(cacheKey);
-      // Reset counts
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
-      // Optionally show loading state
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
-      // Force re-fetch and re-render
       setTimeout(() => {
         if (typeof filterArtists === "function") {
-          filterArtists(true, true); // force reload and re-render
+          filterArtists(true, true);
         }
       }, 100);
     });
 
-    // Show tags if available
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       const taglist = document.createElement("div");
       taglist.className = "artist-tags";
@@ -546,7 +520,6 @@ function renderArtistsPage() {
 
     artistGallery.appendChild(card);
   });
-  currentArtistPage++;
 }
 
 /**
@@ -565,7 +538,6 @@ async function filterArtists(reset = true, force = false) {
   let spinner;
   try {
     if (reset) {
-      currentArtistPage = 0;
       artistGallery.innerHTML = "";
     }
 
@@ -669,14 +641,12 @@ function initGallery() {
   backgroundBlur = document.getElementById("background-blur");
 }
 function getPaginationInfo() {
-  const total = filtered.length;
-  const shown = currentArtistPage * artistsPerPage;
   return {
-    total,
-    shown,
-    hasMore: shown < total,
-    currentPage: currentArtistPage,
-    artistsPerPage,
+    total: filtered.length,
+    shown: filtered.length,
+    hasMore: false,
+    currentPage: 1,
+    artistsPerPage: filtered.length,
   };
 }
 
@@ -709,7 +679,6 @@ function setSortMode(mode) {
         })
       );
     }
-    currentArtistPage = 0;
     renderArtistsPage();
   }
 }
