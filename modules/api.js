@@ -119,7 +119,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   const apiCacheKey = `danbooru-api-${artistName}-${selectedTags.join(",")}`;
   const posts = await fetchPosts(artistName, {
     cacheKey: apiCacheKey,
-    limit: options.limit || 1000,
+    limit: options.limit || 200,
     page: options.page || 1,
   });
   return filterValidImagePosts(posts, selectedTags);
@@ -223,7 +223,11 @@ async function loadAppData() {
  * Fetches all images for an artist, handling Danbooru API pagination
  * Returns an array of all valid image posts for the artist
  */
-async function fetchAllArtistImages(artistName, selectedTags = [], options = {}) {
+async function fetchAllArtistImages(
+  artistName,
+  selectedTags = [],
+  options = {}
+) {
   const MAX_PAGES = options.maxPages || 40; // 40 pages x 200 = 8000 max
   const LIMIT = 200;
   let allPosts = [];
