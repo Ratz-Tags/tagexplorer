@@ -946,6 +946,11 @@ async function showTopArtistsByTagCount() {
         formatArtistTag(artist.artistTag || artist.artistName),
         ...selectedTags.map(formatTag),
       ];
+      // Debug: log the API URL being called
+      const apiUrl = `https://danbooru.donmai.us/counts/posts?tags=${apiTags.join(
+        "+"
+      )}`;
+      console.log("Danbooru count API:", apiUrl);
       matchCount = await fetchPostCountForTags(apiTags);
     } catch (e) {
       matchCount = 0;
