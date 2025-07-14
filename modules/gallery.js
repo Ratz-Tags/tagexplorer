@@ -443,7 +443,15 @@ function renderArtistsPage() {
 
     const img = document.createElement("img");
     img.className = "artist-image";
-    lazyLoadBestImage(artist, img);
+    // Use cached image if available
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const cachedUrl = localStorage.getItem(cacheKey);
+    if (cachedUrl) {
+      img.src = cachedUrl;
+      img.style.display = "block";
+    } else {
+      lazyLoadBestImage(artist, img);
+    }
 
     // Fullscreen zoom on image click
     img.addEventListener("click", () => openArtistZoom(artist));
@@ -455,18 +463,37 @@ function renderArtistsPage() {
     // Show selected tag counts on card
     const tagCountDiv = document.createElement("div");
     tagCountDiv.className = "artist-tag-count";
+    // No longer show summary text, handled in tag list below
+
+    // Render kinkTags with [TagCount] for selected tags
     const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-    let tagCountText = "";
-    if (selectedTags.length > 0 && artist._tagMatchCount !== undefined) {
-      tagCountText = `${artist._tagMatchCount} image${
-        artist._tagMatchCount !== 1 ? "s" : ""
-      } with selected tag${selectedTags.length > 1 ? "s" : ""}`;
+    let taglistText = "";
+    if (artist.kinkTags && artist.kinkTags.length > 0) {
+      taglistText = artist.kinkTags
+        .map((tag) => {
+          if (selectedTags.includes(tag)) {
+            // Show [TagCount] if available
+            const count = artist._tagMatchCount !== undefined ? artist._tagMatchCount : "?";
+            return `${tag.replace(/_/g, " ")} [${count}]`;
+          }
+          return tag.replace(/_/g, " ");
+        })
+        .join(", ");
     }
-    tagCountDiv.textContent = tagCountText;
+
+    const taglist = document.createElement("div");
+    taglist.className = "artist-tags";
+    taglist.textContent = taglistText;
+
+    // Only show tagCountDiv if selected tags
+    if (selectedTags.length > 0 && artist._tagMatchCount !== undefined) {
+      tagCountDiv.textContent = `${artist._tagMatchCount} image${artist._tagMatchCount !== 1 ? "s" : ""} with selected tag${selectedTags.length > 1 ? "s" : ""}`;
+    } else {
+      tagCountDiv.textContent = "";
+    }
 
     artist._updateCountDisplay = function () {
-      const total =
-        typeof this.postCount === "number" ? this.postCount : undefined;
+      const total = typeof this.postCount === "number" ? this.postCount : undefined;
       if (typeof total === "number") {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
@@ -474,11 +501,21 @@ function renderArtistsPage() {
       }
       // Update tag count display if available
       if (selectedTags.length > 0 && this._tagMatchCount !== undefined) {
-        tagCountDiv.textContent = `${this._tagMatchCount} image${
-          this._tagMatchCount !== 1 ? "s" : ""
-        } with selected tag${selectedTags.length > 1 ? "s" : ""}`;
+        tagCountDiv.textContent = `${this._tagMatchCount} image${this._tagMatchCount !== 1 ? "s" : ""} with selected tag${selectedTags.length > 1 ? "s" : ""}`;
       } else {
         tagCountDiv.textContent = "";
+      }
+      // Update taglist with [TagCount] for selected tags
+      if (this.kinkTags && this.kinkTags.length > 0) {
+        taglist.textContent = this.kinkTags
+          .map((tag) => {
+            if (selectedTags.includes(tag)) {
+              const count = this._tagMatchCount !== undefined ? this._tagMatchCount : "?";
+              return `${tag.replace(/_/g, " ")} [${count}]`;
+            }
+            return tag.replace(/_/g, " ");
+          })
+          .join(", ");
       }
     };
     artist._updateCountDisplay();
@@ -486,8 +523,7 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_imageCount", {
       set(val) {
         this.__imageCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
       },
       get() {
         return this.__imageCount;
@@ -497,8 +533,7 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_totalImageCount", {
       set(val) {
         this.__totalImageCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
       },
       get() {
         return this.__totalImageCount;
@@ -508,8 +543,7 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_tagMatchCount", {
       set(val) {
         this.__tagMatchCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
       },
       get() {
         return this.__tagMatchCount;
@@ -529,12 +563,10 @@ function renderArtistsPage() {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (typeof clearArtistCache === "function")
-        clearArtistCache(artist.artistName);
-      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(
-        ","
-      )}`;
+      if (typeof clearArtistCache === "function") clearArtistCache(artist.artistName);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
       sessionStorage.removeItem(cacheKey);
+      localStorage.removeItem(`danbooru-image-${artist.artistName}`);
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
       artist._tagMatchCount = undefined;
@@ -546,15 +578,7 @@ function renderArtistsPage() {
       }, 100);
     });
 
-    if (artist.kinkTags && artist.kinkTags.length > 0) {
-      const taglist = document.createElement("div");
-      taglist.className = "artist-tags";
-      taglist.textContent = artist.kinkTags.join(", ");
-      card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
-    } else {
-      card.append(img, name, tagCountDiv, copyBtn, reloadBtn);
-    }
-
+    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
     artistGallery.appendChild(card);
   });
 }
@@ -701,7 +725,7 @@ async function showTopArtistsByTagCount() {
     spinner.style.background = "rgba(255,255,255,0.95)";
     spinner.style.borderRadius = "2em";
     spinner.style.padding = "2em 2em 2.5em 2em";
-    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" /> Calculating...`;
+    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" />`;
     // Add loading bar, styled center and large
     const loadingBar = document.createElement("progress");
     loadingBar.className = "loading-bar";
@@ -717,6 +741,17 @@ async function showTopArtistsByTagCount() {
     loadingBar.style.top = "calc(50% + 60px)";
     loadingBar.style.transform = "translate(-50%, 0)";
     spinner.appendChild(loadingBar);
+    // Add status text
+    const statusText = document.createElement("div");
+    statusText.className = "loading-status";
+    statusText.style.textAlign = "center";
+    statusText.style.fontSize = "1.2em";
+    statusText.style.marginTop = "1em";
+    statusText.style.position = "absolute";
+    statusText.style.left = "50%";
+    statusText.style.top = "calc(50% + 120px)";
+    statusText.style.transform = "translate(-50%, 0)";
+    spinner.appendChild(statusText);
     artistGallery.appendChild(spinner);
   }
 
@@ -729,6 +764,9 @@ async function showTopArtistsByTagCount() {
   const loadingBarElem = spinnerElem
     ? spinnerElem.querySelector(".loading-bar")
     : null;
+  const statusTextElem = spinnerElem
+    ? spinnerElem.querySelector(".loading-status")
+    : null;
   for (const artist of filteredArtists) {
     let posts = [];
     try {
@@ -737,6 +775,18 @@ async function showTopArtistsByTagCount() {
       });
     } catch (e) {
       posts = [];
+    }
+    // Cache best image URL if available
+    const validPosts = posts.filter((post) => {
+      const url = post?.large_file_url || post?.file_url;
+      const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+      return isImage && !post.is_banned;
+    });
+    if (validPosts.length > 0) {
+      const bestUrl = buildImageUrl(validPosts[0].large_file_url || validPosts[0].file_url);
+      if (bestUrl) {
+        localStorage.setItem(`danbooru-image-${artist.artistName}`, bestUrl);
+      }
     }
     // Count images that have all selected tags
     const matchCount = posts.filter((post) => {
@@ -747,10 +797,12 @@ async function showTopArtistsByTagCount() {
     artistTagCounts.push({ artist, count: matchCount });
     done++;
     if (spinnerElem) {
-      spinnerElem.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" /> Calculating... (${done}/${filteredArtists.length})`;
       if (loadingBarElem) loadingBarElem.value = done;
       if (loadingBarElem && !spinnerElem.contains(loadingBarElem)) {
         spinnerElem.appendChild(loadingBarElem);
+      }
+      if (statusTextElem) {
+        statusTextElem.textContent = `Fetching: ${artist.artistName.replace(/_/g, " ")} (${done}/${filteredArtists.length})`;
       }
     }
   }
