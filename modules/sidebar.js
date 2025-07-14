@@ -32,7 +32,8 @@ function showToast(message) {
  */
 function handleArtistCopy(artist, imgSrc) {
   const artistTag = artist.artistName.replace(/_/g, " ");
-  const copyText = `artist:${artistTag}`;
+  // Use just the artistTag for sidebar and clipboard
+  const copyText = artistTag;
   if (copiedArtistsCache && copiedArtistsCache.has(copyText)) return;
   navigator.clipboard
     .writeText(copyText)
@@ -62,47 +63,48 @@ function updateCopiedSidebar() {
   closeBtn.onclick = () => copiedSidebar.classList.remove("visible");
   copiedSidebar.appendChild(closeBtn);
 
-  copiedArtists.forEach((name) => {
-    const artist = allArtists.find((a) => a.artistName === name);
+  copiedArtists.forEach((artistTag) => {
+    // Find the artist object by normalized name
+    const artist = allArtists.find(
+      (a) => a.artistName.replace(/_/g, " ") === artistTag
+    );
     const div = document.createElement("div");
     div.className = "copied-artist";
     div.style.display = "flex";
     div.style.alignItems = "center";
     div.style.cursor = "pointer";
-    div.style.padding = "1em 0.5em"; // More tap area
-    div.style.gap = "12px"; // More space between image and text
-    div.style.fontSize = "1.15em"; // Larger text
+    div.style.padding = "1em 0.5em";
+    div.style.gap = "12px";
+    div.style.fontSize = "1.15em";
 
-    let tooltip =
-      artist && artist.tooltip
-        ? artist.tooltip
-        : artist?.artistName.replace(/_/g, " ");
+    let tooltip = artist && artist.tooltip ? artist.tooltip : artistTag;
 
+    // Show thumbnail if available
     if (artist && artist.thumbnailUrl) {
       const img = document.createElement("img");
       img.src = artist.thumbnailUrl;
       img.style.width = "44px";
       img.style.height = "44px";
       img.style.borderRadius = "12px";
-      img.style.marginRight = "10px";
-      img.title = tooltip;
       div.appendChild(img);
     }
 
     const nameSpan = document.createElement("span");
-    nameSpan.textContent = name.replace(/_/g, " ");
+    nameSpan.textContent = artistTag;
     nameSpan.title = tooltip;
     nameSpan.style.flex = "1";
     nameSpan.style.fontWeight = "bold";
     div.appendChild(nameSpan);
 
-    // Make the whole row tappable
+    // Make the whole row tappable: open zoom modal for this artist
     div.onclick = () => {
-      import("./gallery.js")
-        .then((gallery) => {
-          gallery.openArtistZoom(artist);
-        })
-        .catch(console.warn);
+      if (artist) {
+        import("./gallery.js").then((gallery) => {
+          if (typeof gallery.openArtistZoom === "function") {
+            gallery.openArtistZoom(artist);
+          }
+        });
+      }
     };
 
     copiedSidebar.appendChild(div);

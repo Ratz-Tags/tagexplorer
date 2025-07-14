@@ -592,6 +592,162 @@ function renderArtistsPage() {
   });
 }
 
+// Helper to render a list of artists using the normal card structure
+function renderArtistCards(artists) {
+  if (!artistGallery) return;
+  artistGallery.innerHTML = "";
+  artists.forEach((artist) => {
+    const card = document.createElement("div");
+    card.className = "artist-card";
+
+    const img = document.createElement("img");
+    img.className = "artist-image";
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    const cachedUrl = localStorage.getItem(cacheKey);
+    if (cachedUrl) {
+      img.src = cachedUrl;
+      img.style.display = "block";
+      img.onerror = () => {
+        img.src = "fallback.jpg";
+        img.style.display = "block";
+      };
+    } else {
+      lazyLoadBestImage(artist, img);
+      img.style.display = "block";
+    }
+    img.addEventListener("click", () => openArtistZoom(artist));
+
+    const name = document.createElement("div");
+    name.className = "artist-name";
+    const total =
+      typeof artist.postCount === "number" ? artist.postCount : undefined;
+    if (typeof total === "number") {
+      name.textContent = `${artist.artistName.replace(/_/g, " ")} [${total}]`;
+    } else {
+      name.textContent = `${artist.artistName.replace(/_/g, " ")} [Loading…]`;
+    }
+
+    const tagCountDiv = document.createElement("div");
+    tagCountDiv.className = "artist-tag-count";
+    tagCountDiv.textContent = "";
+
+    const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+    let taglistText = "";
+    if (artist.kinkTags && artist.kinkTags.length > 0) {
+      taglistText = artist.kinkTags
+        .map((tag) => {
+          if (selectedTags.includes(tag)) {
+            const count =
+              artist._tagMatchCount !== undefined ? artist._tagMatchCount : "?";
+            return `${tag.replace(/_/g, " ")} [${count}]`;
+          }
+          return tag.replace(/_/g, " ");
+        })
+        .join(", ");
+    }
+    const taglist = document.createElement("div");
+    taglist.className = "artist-tags";
+    taglist.textContent = taglistText;
+
+    artist._updateCountDisplay = function () {
+      const total =
+        typeof this.postCount === "number" ? this.postCount : undefined;
+      if (typeof total === "number") {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
+      } else {
+        name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
+      }
+      tagCountDiv.textContent = "";
+      if (this.kinkTags && this.kinkTags.length > 0) {
+        taglist.textContent = this.kinkTags
+          .map((tag) => {
+            if (selectedTags.includes(tag)) {
+              const count =
+                this._tagMatchCount !== undefined ? this._tagMatchCount : "?";
+              return `${tag.replace(/_/g, " ")} [${count}]`;
+            }
+            return tag.replace(/_/g, " ");
+          })
+          .join(", ");
+      }
+      if (localStorage.getItem(`danbooru-image-${this.artistName}`)) {
+        img.src = localStorage.getItem(`danbooru-image-${this.artistName}`);
+        img.style.display = "block";
+      } else {
+        img.style.display = "block";
+      }
+    };
+    artist._updateCountDisplay();
+
+    Object.defineProperty(artist, "_imageCount", {
+      set(val) {
+        this.__imageCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__imageCount;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(artist, "_totalImageCount", {
+      set(val) {
+        this.__totalImageCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__totalImageCount;
+      },
+      configurable: true,
+    });
+    Object.defineProperty(artist, "_tagMatchCount", {
+      set(val) {
+        this.__tagMatchCount = val;
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
+      },
+      get() {
+        return this.__tagMatchCount;
+      },
+      configurable: true,
+    });
+
+    const copyBtn = document.createElement("button");
+    copyBtn.className = "copy-button";
+    copyBtn.textContent = "📋";
+    copyBtn.title = "Copy name";
+    copyBtn.onclick = () => handleArtistCopy(artist, img.src);
+
+    const reloadBtn = document.createElement("button");
+    reloadBtn.className = "reload-button";
+    reloadBtn.textContent = "⟳";
+    reloadBtn.title = "Reload artist images/count";
+    reloadBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (typeof clearArtistCache === "function")
+        clearArtistCache(artist.artistName);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(
+        ","
+      )}`;
+      sessionStorage.removeItem(cacheKey);
+      localStorage.removeItem(`danbooru-image-${artist.artistName}`);
+      artist._imageCount = undefined;
+      artist._totalImageCount = undefined;
+      artist._tagMatchCount = undefined;
+      name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
+      setTimeout(() => {
+        if (typeof filterArtists === "function") {
+          filterArtists(true, true);
+        }
+      }, 100);
+    });
+
+    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
+    artistGallery.appendChild(card);
+  });
+}
+
 /**
  * Filters and displays artists based on current criteria
  */
@@ -824,74 +980,15 @@ async function showTopArtistsByTagCount() {
   // Sort artists by count descending
   artistTagCounts.sort((a, b) => b.count - a.count);
 
-  // Render results
-  if (artistGallery) {
-    artistGallery.innerHTML = "";
-    artistTagCounts.forEach(({ artist, count }) => {
-      if (count === 0) return; // Only show artists with matches
-      const card = document.createElement("div");
-      card.className = "artist-card top-tag-count";
-      // Always show cached image if available
-      const img = document.createElement("img");
-      img.className = "artist-image";
-      const cacheKey = `danbooru-image-${artist.artistName}`;
-      const cachedUrl = localStorage.getItem(cacheKey);
-      if (cachedUrl) {
-        img.src = cachedUrl;
-        img.style.display = "block";
-        img.onerror = () => {
-          img.src = "fallback.jpg";
-          img.style.display = "block";
-        };
-      } else {
-        img.src = "fallback.jpg";
-        img.style.display = "block";
-      }
-      card.appendChild(img);
-      // Render artist name with [TotalCount]
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "artist-name";
-      let total =
-        typeof artist.postCount === "number" ? artist.postCount : undefined;
-      if (typeof total === "number") {
-        nameDiv.textContent = `${artist.artistName.replace(
-          /_/g,
-          " "
-        )} [${total}]`;
-      } else {
-        nameDiv.textContent = `${artist.artistName.replace(
-          /_/g,
-          " "
-        )} [Loading…]`;
-      }
-      card.appendChild(nameDiv);
-      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-      let taglistText = "";
-      if (artist.kinkTags && artist.kinkTags.length > 0) {
-        taglistText = artist.kinkTags
-          .map((tag) => {
-            if (selectedTags.includes(tag)) {
-              const count =
-                artist._tagMatchCount !== undefined
-                  ? artist._tagMatchCount
-                  : "?";
-              return `${tag.replace(/_/g, " ")} [${count}]`;
-            }
-            return tag.replace(/_/g, " ");
-          })
-          .join(", ");
-      }
-      const taglistDiv = document.createElement("div");
-      taglistDiv.className = "artist-tags";
-      taglistDiv.textContent = taglistText;
-      card.appendChild(taglistDiv);
-      card.onclick = () => openArtistZoom(artist);
-      artistGallery.appendChild(card);
-    });
-    if (!artistGallery.hasChildNodes()) {
-      artistGallery.innerHTML =
-        '<div class="no-entries-msg">No artists found with all selected tags.</div>';
-    }
+  // Only show artists with matches
+  const topArtists = artistTagCounts
+    .filter(({ count }) => count > 0)
+    .map(({ artist }) => artist);
+  if (topArtists.length > 0) {
+    renderArtistCards(topArtists);
+  } else {
+    artistGallery.innerHTML =
+      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
   }
 }
 
