@@ -636,9 +636,93 @@ async function filterArtists(reset = true, force = false) {
   }
 }
 
+/**
+ * Calculates and displays artists with the most images matching all selected tags
+ */
+async function showTopArtistsByTagCount() {
+  if (!allArtists || allArtists.length === 0) return;
+  if (!getActiveTags) return;
+  const selectedTags = Array.from(getActiveTags());
+  if (selectedTags.length === 0) return;
+
+  // Show spinner while loading
+  if (artistGallery) {
+    artistGallery.innerHTML = "";
+    const spinner = document.createElement("div");
+    spinner.className = "gallery-spinner";
+    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" /> Calculating...`;
+    artistGallery.appendChild(spinner);
+  }
+
+  // For each artist, fetch their images and count matches
+  const artistTagCounts = [];
+  for (const artist of allArtists) {
+    // Fetch all images for the artist (single tag or just artist)
+    let posts = [];
+    try {
+      posts = await fetchArtistImages(artist.artistName, [], { limit: 1000 });
+    } catch (e) {
+      posts = [];
+    }
+    // Count images that have all selected tags
+    const matchCount = posts.filter((post) => {
+      const tagArr = (post.tag_string || "").split(" ");
+      return selectedTags.every((tag) => tagArr.includes(tag));
+    }).length;
+    artistTagCounts.push({ artist, count: matchCount });
+  }
+
+  // Sort artists by count descending
+  artistTagCounts.sort((a, b) => b.count - a.count);
+
+  // Render results
+  if (artistGallery) {
+    artistGallery.innerHTML = "";
+    artistTagCounts.forEach(({ artist, count }) => {
+      if (count === 0) return; // Only show artists with matches
+      const card = document.createElement("div");
+      card.className = "artist-card top-tag-count";
+      card.innerHTML = `
+        <div class=\"artist-name\">${artist.artistName.replace(/_/g, " ")}</div>
+        <div class=\"artist-tag-count\">${count} image${
+        count !== 1 ? "s" : ""
+      } with selected tags</div>
+      `;
+      card.onclick = () => openArtistZoom(artist);
+      artistGallery.appendChild(card);
+    });
+    if (!artistGallery.hasChildNodes()) {
+      artistGallery.innerHTML =
+        '<div class="no-entries-msg">No artists found with all selected tags.</div>';
+    }
+  }
+}
+
+// Optionally, expose this function for UI integration
+export { showTopArtistsByTagCount };
+
+function addTopTagCountButton() {
+  const sortControls = document.querySelector(".sort-controls");
+  if (!sortControls || document.getElementById("top-tag-count-btn")) return;
+  const btn = document.createElement("button");
+  btn.id = "top-tag-count-btn";
+  btn.className = "browse-btn";
+  btn.textContent = "Show Top Artists by Tag Count";
+  btn.title =
+    "See which artists have the most images matching all selected tags";
+  btn.onclick = () => {
+    if (typeof showTopArtistsByTagCount === "function") {
+      showTopArtistsByTagCount();
+    }
+  };
+  sortControls.appendChild(btn);
+}
+
+// Call this on gallery init
 function initGallery() {
   artistGallery = document.getElementById("artist-gallery");
   backgroundBlur = document.getElementById("background-blur");
+  addTopTagCountButton();
 }
 function getPaginationInfo() {
   return {
