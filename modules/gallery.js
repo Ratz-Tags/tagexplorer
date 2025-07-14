@@ -236,9 +236,7 @@ async function openArtistZoom(artist) {
       });
       if (!pagePosts || pagePosts.length === 0) break;
       allPosts = allPosts.concat(pagePosts);
-      // Do NOT break if pagePosts.length < LIMIT; keep fetching until empty page
     }
-    // Limit cache size
     if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
       const firstKey = topTagsCache.keys().next().value;
       topTagsCache.delete(firstKey);
@@ -247,11 +245,10 @@ async function openArtistZoom(artist) {
     return allPosts;
   }
 
-  function showNoEntries() {
+  function showNoEntries(message = "No tags found.") {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
-    noEntriesMsg.textContent = "No tags found.";
-    // Add Retry button if not present
+    noEntriesMsg.textContent = message;
     if (!noEntriesMsg.querySelector(".retry-btn")) {
       const retryBtn = document.createElement("button");
       retryBtn.className = "retry-btn";
@@ -259,14 +256,11 @@ async function openArtistZoom(artist) {
       retryBtn.style.zIndex = "100000";
       retryBtn.setAttribute("aria-label", "Retry loading tags");
       retryBtn.onclick = () => {
-        // Clear sessionStorage for this artist's tags
         const cacheKey = `allPosts-${artist.artistName}-${
           getActiveTags ? Array.from(getActiveTags()).join(",") : ""
         }`;
         sessionStorage.removeItem(cacheKey);
         noEntriesMsg.textContent = "Retrying...";
-        // Re-run the zoom modal logic
-        // Limit cache size
         openArtistZoom(artist);
       };
       noEntriesMsg.appendChild(retryBtn);
@@ -274,8 +268,12 @@ async function openArtistZoom(artist) {
   }
 
   function tryShow(index, attempts = 0) {
-    if (!posts.length || attempts >= posts.length) {
-      showNoEntries();
+    if (!posts || posts.length === 0) {
+      showNoEntries("No images found for this artist and filter.");
+      return;
+    }
+    if (attempts >= posts.length) {
+      showNoEntries("No valid images found for this artist.");
       return;
     }
     const raw = posts[index];
@@ -311,11 +309,13 @@ async function openArtistZoom(artist) {
   }
 
   prevBtn.onclick = () => {
+    if (!posts || posts.length === 0) return;
     currentIndex = (currentIndex - 1 + posts.length) % posts.length;
     debouncedShowPost(currentIndex);
   };
 
   nextBtn.onclick = () => {
+    if (!posts || posts.length === 0) return;
     currentIndex = (currentIndex + 1) % posts.length;
     debouncedShowPost(currentIndex);
   };
@@ -325,32 +325,32 @@ async function openArtistZoom(artist) {
 
   // Fetch and show artist images
   try {
-    const data = await fetchArtistImages(artist.artistName);
-    if (!Array.isArray(data)) {
+    const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+    const data = await fetchArtistImages(artist.artistName, selectedTags);
+    if (!Array.isArray(data) || data.length === 0) {
       posts = [];
-      showNoEntries();
+      showNoEntries("No images found for this artist and filter.");
       return;
     }
-
     const validPosts = data.filter((post) => {
       const url = post?.large_file_url || post?.file_url;
       const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
       return isImage && !post.is_banned;
     });
-
     posts = validPosts;
     if (posts.length === 0) {
-      showNoEntries();
+      showNoEntries("No valid images found for this artist.");
       return;
     }
     // compute artist top tags
     try {
-      // Count all tags
-      const allPosts = await fetchAllArtistImages(artist.artistName);
+      const allPosts = await fetchAllArtistImages(
+        artist.artistName,
+        selectedTags
+      );
       if (!Array.isArray(allPosts) || allPosts.length === 0) {
         if (topTags) topTags.textContent = "No tags found.";
       } else {
-        // Deduplicate posts by ID
         const uniquePosts = [];
         const seenIds = new Set();
         allPosts.forEach((p) => {
@@ -359,56 +359,43 @@ async function openArtistZoom(artist) {
             uniquePosts.push(p);
           }
         });
-
-        // Now count tags from uniquePosts instead of allPosts!
         const counts = {};
         uniquePosts.forEach((p) => {
           (p.tag_string || "").split(" ").forEach((t) => {
             counts[t] = (counts[t] || 0) + 1;
           });
         });
-
-        // Get selected tags from filter (if any)
-        const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
         const selectedCounts = selectedTags
           .map((tag) => {
             const count = counts[tag] || 0;
             return `${tag.replace(/_/g, " ")} (${count})`;
           })
-          .filter((str) => !str.startsWith(" (0)")); // Hide tags with 0 count
-
-        // Top 20 overall tags (excluding selected tags and artist name)
+          .filter((str) => !str.startsWith(" (0)"));
         const artistTag = artist.artistName;
         const top = Object.entries(counts)
           .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
           .sort((a, b) => b[1] - a[1])
           .slice(0, 20)
           .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
-
-        // Only show tag counts, not total post count
         const tagString = [
           ...(selectedCounts.length ? selectedCounts : []),
           ...(top.length ? top : []),
         ].join(", ");
-
         if (topTags) topTags.textContent = tagString || "No tags found.";
       }
     } catch (err) {
       if (topTags) topTags.textContent = "Error loading tags.";
       console.warn("Failed to compute top tags:", err);
     }
-
     const startId = artist._thumbnailPostId;
     const idx = startId ? posts.findIndex((p) => p.id === startId) : -1;
     currentIndex = idx >= 0 ? idx : 0;
     tryShow(currentIndex);
   } catch (error) {
     console.warn("Failed to fetch artist images:", error);
-    showNoEntries();
+    showNoEntries("Error loading images for this artist.");
     if (topTags) topTags.textContent = "Error loading tags.";
   }
-
-  // After you set tagList.textContent and topTags.textContent:
   tagList.style.display = "block";
   topTags.style.display = "block";
   tagList.setAttribute("aria-live", "polite");
