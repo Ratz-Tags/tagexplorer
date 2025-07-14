@@ -922,7 +922,7 @@ async function showTopArtistsByTagCount() {
   }
 
   // Use Danbooru /counts/posts API for each artist+tags
-  const { fetchPostCountForTags } = await import("./api.js");
+  const { fetchPostCountForTags, fetchArtistImages } = await import("./api.js");
   const artistTagCounts = [];
   let done = 0;
   const spinnerElem = artistGallery
@@ -935,18 +935,30 @@ async function showTopArtistsByTagCount() {
     ? spinnerElem.querySelector(".loading-status")
     : null;
 
+  // Helper to format artist name for Danbooru tag
+  function formatArtistTag(name) {
+    return name.replace(/\s+/g, "_").toLowerCase();
+  }
+  // Helper to format selected tags for Danbooru
+  function formatTag(tag) {
+    return tag.replace(/\s+/g, "_").toLowerCase();
+  }
+
+  let allZero = true;
   for (const artist of filteredArtists) {
     let matchCount = 0;
     try {
-      // Use /counts/posts for fast count
-      matchCount = await fetchPostCountForTags([
-        `artist:${artist.artistName}`,
-        ...selectedTags,
-      ]);
+      // Format tags for API
+      const apiTags = [
+        formatArtistTag(artist.artistName),
+        ...selectedTags.map(formatTag),
+      ];
+      matchCount = await fetchPostCountForTags(apiTags);
     } catch (e) {
       matchCount = 0;
     }
     artist._tagMatchCount = matchCount;
+    if (matchCount > 0) allZero = false;
     artistTagCounts.push({ artist, count: matchCount });
     done++;
     if (spinnerElem) {
@@ -958,8 +970,22 @@ async function showTopArtistsByTagCount() {
         statusTextElem.textContent = `Fetching: ${artist.artistName.replace(
           /_/g,
           " "
-        )} (${done}/${filteredArtists.length})`;
+        )} (${done}/${filteredArtists.length}) [${matchCount}]`;
       }
+    }
+    // Ensure image is cached for card display
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    if (!localStorage.getItem(cacheKey)) {
+      try {
+        const posts = await fetchArtistImages(artist.artistName, [], {
+          limit: 1,
+        });
+        if (Array.isArray(posts) && posts.length > 0) {
+          const post = posts[0];
+          const url = post.large_file_url || post.file_url;
+          if (url) localStorage.setItem(cacheKey, url);
+        }
+      } catch {}
     }
   }
 
@@ -973,8 +999,14 @@ async function showTopArtistsByTagCount() {
   if (topArtists.length > 0) {
     renderArtistCards(topArtists);
   } else {
-    artistGallery.innerHTML =
-      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
+    // Debug output if all zero
+    if (allZero) {
+      artistGallery.innerHTML =
+        '<div class="no-entries-msg">No artists found with all selected tags.<br><span style="color:red">[Debug] All counts were zero. Check tag formatting and Danbooru API.</span></div>';
+    } else {
+      artistGallery.innerHTML =
+        '<div class="no-entries-msg">No artists found with all selected tags.</div>';
+    }
   }
 }
 
