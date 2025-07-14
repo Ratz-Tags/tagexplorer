@@ -3,7 +3,12 @@
  */
 
 import { createFullscreenViewer, createSpinner } from "./ui.js";
-import { fetchArtistImages, clearArtistCache, buildImageUrl } from "./api.js";
+import {
+  fetchArtistImages,
+  clearArtistCache,
+  buildImageUrl,
+  fetchAllArtistImages,
+} from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
 // Gallery state
@@ -455,9 +460,7 @@ function renderArtistsPage() {
     if (selectedTags.length > 0 && artist._tagMatchCount !== undefined) {
       tagCountText = `${artist._tagMatchCount} image${
         artist._tagMatchCount !== 1 ? "s" : ""
-      } with selected tag${
-        selectedTags.length > 1 ? "s" : ""
-      }`;
+      } with selected tag${selectedTags.length > 1 ? "s" : ""}`;
     }
     tagCountDiv.textContent = tagCountText;
 
@@ -473,9 +476,7 @@ function renderArtistsPage() {
       if (selectedTags.length > 0 && this._tagMatchCount !== undefined) {
         tagCountDiv.textContent = `${this._tagMatchCount} image${
           this._tagMatchCount !== 1 ? "s" : ""
-        } with selected tag${
-          selectedTags.length > 1 ? "s" : ""
-        }`;
+        } with selected tag${selectedTags.length > 1 ? "s" : ""}`;
       } else {
         tagCountDiv.textContent = "";
       }
@@ -528,8 +529,11 @@ function renderArtistsPage() {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (typeof clearArtistCache === "function") clearArtistCache(artist.artistName);
-      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+      if (typeof clearArtistCache === "function")
+        clearArtistCache(artist.artistName);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(
+        ","
+      )}`;
       sessionStorage.removeItem(cacheKey);
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
@@ -678,22 +682,36 @@ async function showTopArtistsByTagCount() {
   const selectedTags = Array.from(getActiveTags());
   if (selectedTags.length === 0) return;
 
-  // Show spinner while loading
+  // Show spinner and loading bar while loading
   if (artistGallery) {
     artistGallery.innerHTML = "";
     const spinner = document.createElement("div");
     spinner.className = "gallery-spinner";
     spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" /> Calculating...`;
+    // Add loading bar
+    const loadingBar = document.createElement("progress");
+    loadingBar.className = "loading-bar";
+    loadingBar.value = 0;
+    loadingBar.max = allArtists.length;
+    spinner.appendChild(loadingBar);
     artistGallery.appendChild(spinner);
   }
 
-  // For each artist, fetch their images and count matches
+  // For each artist, fetch all images and count matches
   const artistTagCounts = [];
+  let done = 0;
+  const spinnerElem = artistGallery
+    ? artistGallery.querySelector(".gallery-spinner")
+    : null;
+  const loadingBarElem = spinnerElem
+    ? spinnerElem.querySelector(".loading-bar")
+    : null;
   for (const artist of allArtists) {
-    // Fetch all images for the artist (single tag or just artist)
     let posts = [];
     try {
-      posts = await fetchArtistImages(artist.artistName, [], { limit: 1000 });
+      posts = await fetchAllArtistImages(artist.artistName, [], {
+        maxPages: 40,
+      });
     } catch (e) {
       posts = [];
     }
@@ -702,7 +720,17 @@ async function showTopArtistsByTagCount() {
       const tagArr = (post.tag_string || "").split(" ");
       return selectedTags.every((tag) => tagArr.includes(tag));
     }).length;
+    artist._tagMatchCount = matchCount;
     artistTagCounts.push({ artist, count: matchCount });
+    done++;
+    if (spinnerElem) {
+      spinnerElem.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" /> Calculating... (${done}/${allArtists.length})`;
+      if (loadingBarElem) loadingBarElem.value = done;
+      // Re-append loading bar after innerHTML update
+      if (loadingBarElem && !spinnerElem.contains(loadingBarElem)) {
+        spinnerElem.appendChild(loadingBarElem);
+      }
+    }
   }
 
   // Sort artists by count descending
@@ -719,7 +747,7 @@ async function showTopArtistsByTagCount() {
         <div class=\"artist-name\">${artist.artistName.replace(/_/g, " ")}</div>
         <div class=\"artist-tag-count\">${count} image${
         count !== 1 ? "s" : ""
-      } with selected tags</div>
+      } with selected tag${selectedTags.length > 1 ? "s" : ""}</div>
       `;
       card.onclick = () => openArtistZoom(artist);
       artistGallery.appendChild(card);

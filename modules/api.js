@@ -222,6 +222,7 @@ async function loadAppData() {
 /**
  * Fetches all images for an artist, handling Danbooru API pagination
  * Returns an array of all valid image posts for the artist
+ * Now supports parallel fetches for faster loading
  */
 async function fetchAllArtistImages(
   artistName,
@@ -230,17 +231,37 @@ async function fetchAllArtistImages(
 ) {
   const MAX_PAGES = options.maxPages || 40; // 40 pages x 200 = 8000 max
   const LIMIT = 200;
-  let allPosts = [];
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    const posts = await fetchArtistImages(artistName, selectedTags, {
-      limit: LIMIT,
-      page,
-    });
-    if (!posts || posts.length === 0) break;
-    allPosts = allPosts.concat(posts);
-    // If less than LIMIT returned, last page reached
-    if (posts.length < LIMIT) break;
+  // First, fetch the first page to get total count
+  const firstPage = await fetchArtistImages(artistName, selectedTags, {
+    limit: LIMIT,
+    page: 1,
+  });
+  if (!firstPage || firstPage.length === 0) return [];
+  // Estimate total pages
+  let totalPages = MAX_PAGES;
+  if (firstPage.length === LIMIT) {
+    // Try to get total count from API
+    try {
+      const count = await getArtistImageCount(artistName);
+      totalPages = Math.min(MAX_PAGES, Math.ceil(count / LIMIT));
+    } catch {}
+  } else {
+    totalPages = 1;
   }
+  // Fetch all pages in parallel
+  const pagePromises = [];
+  for (let page = 2; page <= totalPages; page++) {
+    pagePromises.push(
+      fetchArtistImages(artistName, selectedTags, { limit: LIMIT, page })
+    );
+  }
+  const restPages = await Promise.all(pagePromises);
+  let allPosts = firstPage;
+  restPages.forEach((posts) => {
+    if (Array.isArray(posts) && posts.length > 0) {
+      allPosts = allPosts.concat(posts);
+    }
+  });
   return allPosts;
 }
 
