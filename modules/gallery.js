@@ -928,9 +928,9 @@ async function showTopArtistsByTagCount() {
     ? spinnerElem.querySelector(".loading-status")
     : null;
 
-  // Helper to format artist name for Danbooru tag
-  function formatArtistTag(name) {
-    return name.replace(/\s+/g, "_").toLowerCase();
+  // Helper to format artist tag for Danbooru
+  function formatArtistTag(tag) {
+    return tag.replace(/\s+/g, "_").toLowerCase();
   }
   // Helper to format selected tags for Danbooru
   function formatTag(tag) {
@@ -941,9 +941,9 @@ async function showTopArtistsByTagCount() {
   for (const artist of filteredArtists) {
     let matchCount = 0;
     try {
-      // Format tags for API
+      // Use artistTag for API calls
       const apiTags = [
-        formatArtistTag(artist.artistName),
+        formatArtistTag(artist.artistTag || artist.artistName),
         ...selectedTags.map(formatTag),
       ];
       matchCount = await fetchPostCountForTags(apiTags);
@@ -960,10 +960,9 @@ async function showTopArtistsByTagCount() {
         spinnerElem.appendChild(loadingBarElem);
       }
       if (statusTextElem) {
-        statusTextElem.textContent = `Fetching: ${artist.artistName.replace(
-          /_/g,
-          " "
-        )} (${done}/${filteredArtists.length}) [${matchCount}]`;
+        statusTextElem.textContent = `Fetching: ${
+          artist.artistTag || artist.artistName
+        } (${done}/${filteredArtists.length}) [${matchCount}]`;
       }
     }
     // Ensure image is cached for card display
