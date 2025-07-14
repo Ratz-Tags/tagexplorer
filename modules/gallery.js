@@ -864,6 +864,7 @@ async function filterArtists(reset = true, force = false) {
 
 /**
  * Calculates and displays artists with the most images matching all selected tags
+ * Optimized: Uses Danbooru /counts/posts API for fast post counts
  */
 async function showTopArtistsByTagCount() {
   if (!allArtists || allArtists.length === 0) return;
@@ -920,7 +921,8 @@ async function showTopArtistsByTagCount() {
     artistGallery.appendChild(spinner);
   }
 
-  // For each artist, fetch all images and count matches
+  // Use Danbooru /counts/posts API for each artist+tags
+  const { fetchPostCountForTags } = await import("./api.js");
   const artistTagCounts = [];
   let done = 0;
   const spinnerElem = artistGallery
@@ -932,34 +934,18 @@ async function showTopArtistsByTagCount() {
   const statusTextElem = spinnerElem
     ? spinnerElem.querySelector(".loading-status")
     : null;
+
   for (const artist of filteredArtists) {
-    let posts = [];
+    let matchCount = 0;
     try {
-      posts = await fetchAllArtistImages(artist.artistName, [], {
-        maxPages: 40,
-      });
+      // Use /counts/posts for fast count
+      matchCount = await fetchPostCountForTags([
+        `artist:${artist.artistName}`,
+        ...selectedTags,
+      ]);
     } catch (e) {
-      posts = [];
+      matchCount = 0;
     }
-    // Cache best image URL if available
-    const validPosts = posts.filter((post) => {
-      const url = post?.large_file_url || post?.file_url;
-      const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-      return isImage && !post.is_banned;
-    });
-    if (validPosts.length > 0) {
-      const bestUrl = buildImageUrl(
-        validPosts[0].large_file_url || validPosts[0].file_url
-      );
-      if (bestUrl) {
-        localStorage.setItem(`danbooru-image-${artist.artistName}`, bestUrl);
-      }
-    }
-    // Count images that have all selected tags
-    const matchCount = posts.filter((post) => {
-      const tagArr = (post.tag_string || "").split(" ");
-      return selectedTags.every((tag) => tagArr.includes(tag));
-    }).length;
     artist._tagMatchCount = matchCount;
     artistTagCounts.push({ artist, count: matchCount });
     done++;
