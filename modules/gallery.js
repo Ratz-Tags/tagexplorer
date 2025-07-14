@@ -865,12 +865,6 @@ async function showTopArtistsByTagCount() {
     return selectedTags.every((tag) => tags.includes(tag));
   });
 
-  // Debug: Show artistTag for each filtered artist
-  let debugTags = filteredArtists
-    .map((a) => a.artistTag || a.artistName)
-    .join(", ");
-  alert("Filtered artist tags: " + debugTags);
-
   // Show spinner and loading bar while loading
   if (artistGallery) {
     artistGallery.innerHTML = "";
@@ -946,11 +940,6 @@ async function showTopArtistsByTagCount() {
         formatArtistTag(artist.artistTag || artist.artistName),
         ...selectedTags.map(formatTag),
       ];
-      // Debug: log the API URL being called
-      const apiUrl = `https://danbooru.donmai.us/counts/posts?tags=${apiTags.join(
-        "+"
-      )}`;
-      console.log("Danbooru count API:", apiUrl);
       matchCount = await fetchPostCountForTags(apiTags);
     } catch (e) {
       matchCount = 0;
@@ -967,7 +956,7 @@ async function showTopArtistsByTagCount() {
       if (statusTextElem) {
         statusTextElem.textContent = `Fetching: ${
           artist.artistTag || artist.artistName
-        } (${done}/${filteredArtists.length}) [${matchCount}]`;
+        } (${done}/${filteredArtists.length})`;
       }
     }
     // Ensure image is cached for card display
@@ -996,14 +985,8 @@ async function showTopArtistsByTagCount() {
   if (topArtists.length > 0) {
     renderArtistCards(topArtists);
   } else {
-    // Debug output if all zero
-    if (allZero) {
-      artistGallery.innerHTML =
-        '<div class="no-entries-msg">No artists found with all selected tags.<br><span style="color:red">[Debug] All counts were zero. Check tag formatting and Danbooru API.</span></div>';
-    } else {
-      artistGallery.innerHTML =
-        '<div class="no-entries-msg">No artists found with all selected tags.</div>';
-    }
+    artistGallery.innerHTML =
+      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
   }
 }
 
