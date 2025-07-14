@@ -28,7 +28,7 @@ function buildImageUrl(url) {
  */
 async function fetchPosts(tags, options = {}) {
   const {
-    limit = 1000,
+    limit = 200,
     page = 1,
     order = "score",
     useCache = true,
@@ -219,6 +219,27 @@ async function loadAppData() {
   }
 }
 
+/**
+ * Fetches all images for an artist, handling Danbooru API pagination
+ * Returns an array of all valid image posts for the artist
+ */
+async function fetchAllArtistImages(artistName, selectedTags = [], options = {}) {
+  const MAX_PAGES = options.maxPages || 40; // 40 pages x 200 = 8000 max
+  const LIMIT = 200;
+  let allPosts = [];
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const posts = await fetchArtistImages(artistName, selectedTags, {
+      limit: LIMIT,
+      page,
+    });
+    if (!posts || posts.length === 0) break;
+    allPosts = allPosts.concat(posts);
+    // If less than LIMIT returned, last page reached
+    if (posts.length < LIMIT) break;
+  }
+  return allPosts;
+}
+
 // Export functions for ES modules
 export {
   postHasAllTags,
@@ -227,6 +248,7 @@ export {
   filterValidImagePosts,
   getRandomBackgroundImage,
   fetchArtistImages,
+  fetchAllArtistImages,
   clearArtistCache,
   loadAppData,
 };
