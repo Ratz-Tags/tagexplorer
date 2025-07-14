@@ -265,6 +265,22 @@ async function fetchAllArtistImages(
   return allPosts;
 }
 
+/**
+ * Fetches post count for a set of tags using Danbooru's /counts/posts endpoint (HTML response)
+ */
+export async function fetchPostCountForTags(tags) {
+  const url = `https://danbooru.donmai.us/counts/posts?tags=${tags.join("+")}`;
+  const response = await fetch(url);
+  if (!response.ok) return 0;
+  const html = await response.text();
+  // Extract the post count from the HTML using a regex
+  const match = html.match(/Post count for.*?:\s*(\d+)/);
+  if (match && match[1]) {
+    return parseInt(match[1], 10);
+  }
+  return 0;
+}
+
 // Export functions for ES modules
 export {
   postHasAllTags,
