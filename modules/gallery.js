@@ -449,8 +449,13 @@ function renderArtistsPage() {
     if (cachedUrl) {
       img.src = cachedUrl;
       img.style.display = "block";
+      img.onerror = () => {
+        img.src = "fallback.jpg";
+        img.style.display = "block";
+      };
     } else {
       lazyLoadBestImage(artist, img);
+      img.style.display = "block";
     }
 
     // Fullscreen zoom on image click
@@ -460,10 +465,10 @@ function renderArtistsPage() {
     name.className = "artist-name";
     name.textContent = artist.artistName.replace(/_/g, " ");
 
-    // Show selected tag counts on card
+    // Remove tagCountDiv summary text
     const tagCountDiv = document.createElement("div");
     tagCountDiv.className = "artist-tag-count";
-    // No longer show summary text, handled in tag list below
+    tagCountDiv.textContent = "";
 
     // Render kinkTags with [TagCount] for selected tags
     const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
@@ -472,8 +477,8 @@ function renderArtistsPage() {
       taglistText = artist.kinkTags
         .map((tag) => {
           if (selectedTags.includes(tag)) {
-            // Show [TagCount] if available
-            const count = artist._tagMatchCount !== undefined ? artist._tagMatchCount : "?";
+            const count =
+              artist._tagMatchCount !== undefined ? artist._tagMatchCount : "?";
             return `${tag.replace(/_/g, " ")} [${count}]`;
           }
           return tag.replace(/_/g, " ");
@@ -485,37 +490,35 @@ function renderArtistsPage() {
     taglist.className = "artist-tags";
     taglist.textContent = taglistText;
 
-    // Only show tagCountDiv if selected tags
-    if (selectedTags.length > 0 && artist._tagMatchCount !== undefined) {
-      tagCountDiv.textContent = `${artist._tagMatchCount} image${artist._tagMatchCount !== 1 ? "s" : ""} with selected tag${selectedTags.length > 1 ? "s" : ""}`;
-    } else {
-      tagCountDiv.textContent = "";
-    }
-
     artist._updateCountDisplay = function () {
-      const total = typeof this.postCount === "number" ? this.postCount : undefined;
+      const total =
+        typeof this.postCount === "number" ? this.postCount : undefined;
       if (typeof total === "number") {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
       } else {
         name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
       }
-      // Update tag count display if available
-      if (selectedTags.length > 0 && this._tagMatchCount !== undefined) {
-        tagCountDiv.textContent = `${this._tagMatchCount} image${this._tagMatchCount !== 1 ? "s" : ""} with selected tag${selectedTags.length > 1 ? "s" : ""}`;
-      } else {
-        tagCountDiv.textContent = "";
-      }
+      // Remove tagCountDiv summary text
+      tagCountDiv.textContent = "";
       // Update taglist with [TagCount] for selected tags
       if (this.kinkTags && this.kinkTags.length > 0) {
         taglist.textContent = this.kinkTags
           .map((tag) => {
             if (selectedTags.includes(tag)) {
-              const count = this._tagMatchCount !== undefined ? this._tagMatchCount : "?";
+              const count =
+                this._tagMatchCount !== undefined ? this._tagMatchCount : "?";
               return `${tag.replace(/_/g, " ")} [${count}]`;
             }
             return tag.replace(/_/g, " ");
           })
           .join(", ");
+      }
+      // Always show image if cached or fallback
+      if (localStorage.getItem(`danbooru-image-${this.artistName}`)) {
+        img.src = localStorage.getItem(`danbooru-image-${this.artistName}`);
+        img.style.display = "block";
+      } else {
+        img.style.display = "block";
       }
     };
     artist._updateCountDisplay();
@@ -523,7 +526,8 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_imageCount", {
       set(val) {
         this.__imageCount = val;
-        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
       },
       get() {
         return this.__imageCount;
@@ -533,7 +537,8 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_totalImageCount", {
       set(val) {
         this.__totalImageCount = val;
-        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
       },
       get() {
         return this.__totalImageCount;
@@ -543,7 +548,8 @@ function renderArtistsPage() {
     Object.defineProperty(artist, "_tagMatchCount", {
       set(val) {
         this.__tagMatchCount = val;
-        if (typeof this._updateCountDisplay === "function") this._updateCountDisplay();
+        if (typeof this._updateCountDisplay === "function")
+          this._updateCountDisplay();
       },
       get() {
         return this.__tagMatchCount;
@@ -563,8 +569,11 @@ function renderArtistsPage() {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (typeof clearArtistCache === "function") clearArtistCache(artist.artistName);
-      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+      if (typeof clearArtistCache === "function")
+        clearArtistCache(artist.artistName);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(
+        ","
+      )}`;
       sessionStorage.removeItem(cacheKey);
       localStorage.removeItem(`danbooru-image-${artist.artistName}`);
       artist._imageCount = undefined;
@@ -783,7 +792,9 @@ async function showTopArtistsByTagCount() {
       return isImage && !post.is_banned;
     });
     if (validPosts.length > 0) {
-      const bestUrl = buildImageUrl(validPosts[0].large_file_url || validPosts[0].file_url);
+      const bestUrl = buildImageUrl(
+        validPosts[0].large_file_url || validPosts[0].file_url
+      );
       if (bestUrl) {
         localStorage.setItem(`danbooru-image-${artist.artistName}`, bestUrl);
       }
@@ -802,7 +813,10 @@ async function showTopArtistsByTagCount() {
         spinnerElem.appendChild(loadingBarElem);
       }
       if (statusTextElem) {
-        statusTextElem.textContent = `Fetching: ${artist.artistName.replace(/_/g, " ")} (${done}/${filteredArtists.length})`;
+        statusTextElem.textContent = `Fetching: ${artist.artistName.replace(
+          /_/g,
+          " "
+        )} (${done}/${filteredArtists.length})`;
       }
     }
   }
@@ -817,12 +831,48 @@ async function showTopArtistsByTagCount() {
       if (count === 0) return; // Only show artists with matches
       const card = document.createElement("div");
       card.className = "artist-card top-tag-count";
-      card.innerHTML = `
-        <div class=\"artist-name\">${artist.artistName.replace(/_/g, " ")}</div>
-        <div class=\"artist-tag-count\">${count} image${
-        count !== 1 ? "s" : ""
-      } with selected tag${selectedTags.length > 1 ? "s" : ""}</div>
-      `;
+      // Always show cached image if available
+      const img = document.createElement("img");
+      img.className = "artist-image";
+      const cacheKey = `danbooru-image-${artist.artistName}`;
+      const cachedUrl = localStorage.getItem(cacheKey);
+      if (cachedUrl) {
+        img.src = cachedUrl;
+        img.style.display = "block";
+        img.onerror = () => {
+          img.src = "fallback.jpg";
+          img.style.display = "block";
+        };
+      } else {
+        img.src = "fallback.jpg";
+        img.style.display = "block";
+      }
+      card.appendChild(img);
+      // Render artist name and kinkTags with [TagCount]
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "artist-name";
+      nameDiv.textContent = artist.artistName.replace(/_/g, " ");
+      card.appendChild(nameDiv);
+      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+      let taglistText = "";
+      if (artist.kinkTags && artist.kinkTags.length > 0) {
+        taglistText = artist.kinkTags
+          .map((tag) => {
+            if (selectedTags.includes(tag)) {
+              const count =
+                artist._tagMatchCount !== undefined
+                  ? artist._tagMatchCount
+                  : "?";
+              return `${tag.replace(/_/g, " ")} [${count}]`;
+            }
+            return tag.replace(/_/g, " ");
+          })
+          .join(", ");
+      }
+      const taglistDiv = document.createElement("div");
+      taglistDiv.className = "artist-tags";
+      taglistDiv.textContent = taglistText;
+      card.appendChild(taglistDiv);
       card.onclick = () => openArtistZoom(artist);
       artistGallery.appendChild(card);
     });
