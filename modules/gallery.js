@@ -245,10 +245,38 @@ async function openArtistZoom(artist) {
     return allPosts;
   }
 
-  function showNoEntries(message = "No tags found.") {
+  function showNoEntries(
+    message = "No images found for this artist and filter."
+  ) {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
     noEntriesMsg.textContent = message;
+    // Add fallback button if filtered fetch failed
+    if (!noEntriesMsg.querySelector(".show-all-btn")) {
+      const showAllBtn = document.createElement("button");
+      showAllBtn.className = "show-all-btn";
+      showAllBtn.textContent = "Show all images for this artist";
+      showAllBtn.style.marginTop = "1em";
+      showAllBtn.onclick = async () => {
+        noEntriesMsg.textContent = "Loading all images...";
+        showAllBtn.disabled = true;
+        try {
+          const allData = await fetchArtistImages(artist.artistName, []);
+          if (Array.isArray(allData) && allData.length > 0) {
+            processApiData(allData, true);
+            zoomed.style.display = "block";
+            noEntriesMsg.style.display = "none";
+          } else {
+            noEntriesMsg.textContent = "No images found for this artist.";
+          }
+        } catch {
+          noEntriesMsg.textContent = "Error loading images.";
+        }
+        showAllBtn.disabled = false;
+      };
+      noEntriesMsg.appendChild(showAllBtn);
+    }
+    // Add retry button if not present
     if (!noEntriesMsg.querySelector(".retry-btn")) {
       const retryBtn = document.createElement("button");
       retryBtn.className = "retry-btn";
@@ -265,6 +293,62 @@ async function openArtistZoom(artist) {
       };
       noEntriesMsg.appendChild(retryBtn);
     }
+  }
+
+  function processApiData(data, isFallback = false) {
+    const validPosts = Array.isArray(data)
+      ? data.filter((post) => {
+          const url = post?.large_file_url || post?.file_url;
+          const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
+          return isImage && !post.is_banned;
+        })
+      : [];
+
+    if (validPosts.length === 0) {
+      if (
+        !isFallback &&
+        getActiveTags &&
+        Array.from(getActiveTags()).length > 0
+      ) {
+        showNoEntries("No images found for this artist and selected tags.");
+      } else {
+        showNoEntries("No images found for this artist.");
+      }
+      return;
+    }
+
+    function tryLoadUrls(urls, index = 0) {
+      if (index >= urls.length) {
+        showNoEntries();
+        return;
+      }
+      const url = urls[index];
+      zoomed.onerror = () => tryLoadUrls(urls, index + 1);
+      zoomed.onload = () => {
+        zoomed.onerror = null;
+        zoomed.onload = null;
+        if (index === 0) {
+          localStorage.setItem(`danbooru-image-${artist.artistName}`, url);
+        }
+        artist._thumbnailPostId = validPosts[index]?.id;
+      };
+      zoomed.src = url;
+    }
+
+    const imageUrls = validPosts
+      .slice(0, 5)
+      .map((post) => {
+        const url = post.large_file_url || post.file_url;
+        return buildImageUrl(url);
+      })
+      .filter(Boolean);
+
+    if (imageUrls.length > 0) {
+      tryLoadUrls(imageUrls);
+    } else {
+      showNoEntries();
+    }
+    posts = validPosts;
   }
 
   function tryShow(index, attempts = 0) {
@@ -327,19 +411,10 @@ async function openArtistZoom(artist) {
   try {
     const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
     const data = await fetchArtistImages(artist.artistName, selectedTags);
+    processApiData(data);
     if (!Array.isArray(data) || data.length === 0) {
       posts = [];
-      showNoEntries("No images found for this artist and filter.");
-      return;
-    }
-    const validPosts = data.filter((post) => {
-      const url = post?.large_file_url || post?.file_url;
-      const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-      return isImage && !post.is_banned;
-    });
-    posts = validPosts;
-    if (posts.length === 0) {
-      showNoEntries("No valid images found for this artist.");
+      showNoEntries("No images found for this artist and selected tags.");
       return;
     }
     // compute artist top tags
