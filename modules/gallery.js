@@ -223,28 +223,6 @@ async function openArtistZoom(artist) {
   const topTagsCache = new Map();
   const TOP_TAGS_CACHE_LIMIT = 20;
 
-  async function fetchAllArtistImages(artistName, selectedTags = []) {
-    const cacheKey = `${artistName}-${selectedTags.join(",")}`;
-    if (topTagsCache.has(cacheKey)) return topTagsCache.get(cacheKey);
-    let allPosts = [];
-    const MAX_PAGES = 40; // Limit to 40 pages (8000 posts if limit=200)
-    const LIMIT = 200;
-    for (let page = 1; page <= MAX_PAGES; page++) {
-      const pagePosts = await fetchArtistImages(artistName, selectedTags, {
-        page,
-        limit: LIMIT,
-      });
-      if (!pagePosts || pagePosts.length === 0) break;
-      allPosts = allPosts.concat(pagePosts);
-    }
-    if (topTagsCache.size >= TOP_TAGS_CACHE_LIMIT) {
-      const firstKey = topTagsCache.keys().next().value;
-      topTagsCache.delete(firstKey);
-    }
-    topTagsCache.set(cacheKey, allPosts);
-    return allPosts;
-  }
-
   function showNoEntries(
     message = "No images found for this artist and filter."
   ) {
@@ -261,9 +239,10 @@ async function openArtistZoom(artist) {
         noEntriesMsg.textContent = "Loading all images...";
         showAllBtn.disabled = true;
         try {
-          const allData = await fetchArtistImages(artist.artistName, []);
+          const allData = await fetchAllArtistImages(artist.artistName, []);
           if (Array.isArray(allData) && allData.length > 0) {
-            processApiData(allData, true);
+            posts = allData;
+            processApiData(posts, true);
             zoomed.style.display = "block";
             noEntriesMsg.style.display = "none";
           } else {
@@ -304,6 +283,8 @@ async function openArtistZoom(artist) {
         })
       : [];
 
+    posts = validPosts;
+
     if (validPosts.length === 0) {
       if (
         !isFallback &&
@@ -317,38 +298,8 @@ async function openArtistZoom(artist) {
       return;
     }
 
-    function tryLoadUrls(urls, index = 0) {
-      if (index >= urls.length) {
-        showNoEntries();
-        return;
-      }
-      const url = urls[index];
-      zoomed.onerror = () => tryLoadUrls(urls, index + 1);
-      zoomed.onload = () => {
-        zoomed.onerror = null;
-        zoomed.onload = null;
-        if (index === 0) {
-          localStorage.setItem(`danbooru-image-${artist.artistName}`, url);
-        }
-        artist._thumbnailPostId = validPosts[index]?.id;
-      };
-      zoomed.src = url;
-    }
-
-    const imageUrls = validPosts
-      .slice(0, 5)
-      .map((post) => {
-        const url = post.large_file_url || post.file_url;
-        return buildImageUrl(url);
-      })
-      .filter(Boolean);
-
-    if (imageUrls.length > 0) {
-      tryLoadUrls(imageUrls);
-    } else {
-      showNoEntries();
-    }
-    posts = validPosts;
+    // Show the first image, navigation will use posts[]
+    tryShow(currentIndex);
   }
 
   function tryShow(index, attempts = 0) {
@@ -409,61 +360,55 @@ async function openArtistZoom(artist) {
 
   // Fetch and show artist images
   try {
-    const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-    const data = await fetchArtistImages(artist.artistName, selectedTags);
-    processApiData(data);
-    if (!Array.isArray(data) || data.length === 0) {
+    // Always fetch ALL images for the artist only (no kink-tags)
+    const artistTag = artist.artistTag || artist.artistName;
+    const allData = await fetchAllArtistImages(artistTag, []);
+    processApiData(allData);
+    if (!Array.isArray(allData) || allData.length === 0) {
       posts = [];
-      showNoEntries("No images found for this artist and selected tags.");
+      showNoEntries("No images found for this artist.");
       return;
     }
     // compute artist top tags
     try {
-      const allPosts = await fetchAllArtistImages(
-        artist.artistName,
-        selectedTags
-      );
-      if (!Array.isArray(allPosts) || allPosts.length === 0) {
-        if (topTags) topTags.textContent = "No tags found.";
-      } else {
-        const uniquePosts = [];
-        const seenIds = new Set();
-        allPosts.forEach((p) => {
-          if (p.id && !seenIds.has(p.id)) {
-            seenIds.add(p.id);
-            uniquePosts.push(p);
-          }
+      const uniquePosts = [];
+      const seenIds = new Set();
+      allData.forEach((p) => {
+        if (p.id && !seenIds.has(p.id)) {
+          seenIds.add(p.id);
+          uniquePosts.push(p);
+        }
+      });
+      const counts = {};
+      uniquePosts.forEach((p) => {
+        (p.tag_string || "").split(" ").forEach((t) => {
+          counts[t] = (counts[t] || 0) + 1;
         });
-        const counts = {};
-        uniquePosts.forEach((p) => {
-          (p.tag_string || "").split(" ").forEach((t) => {
-            counts[t] = (counts[t] || 0) + 1;
-          });
-        });
-        const selectedCounts = selectedTags
-          .map((tag) => {
-            const count = counts[tag] || 0;
-            return `${tag.replace(/_/g, " ")} (${count})`;
-          })
-          .filter((str) => !str.startsWith(" (0)"));
-        const artistTag = artist.artistName;
-        const top = Object.entries(counts)
-          .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 20)
-          .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
-        const tagString = [
-          ...(selectedCounts.length ? selectedCounts : []),
-          ...(top.length ? top : []),
-        ].join(", ");
-        if (topTags) topTags.textContent = tagString || "No tags found.";
-      }
+      });
+      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+      const selectedCounts = selectedTags
+        .map((tag) => {
+          const count = counts[tag] || 0;
+          return `${tag.replace(/_/g, " ")} (${count})`;
+        })
+        .filter((str) => !str.startsWith(" (0)"));
+      const top = Object.entries(counts)
+        .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
+      const tagString = [
+        ...(selectedCounts.length ? selectedCounts : []),
+        ...(top.length ? top : []),
+      ].join(", ");
+      if (topTags) topTags.textContent = tagString || "No tags found.";
     } catch (err) {
       if (topTags) topTags.textContent = "Error loading tags.";
       console.warn("Failed to compute top tags:", err);
     }
     const startId = artist._thumbnailPostId;
-    const idx = startId ? posts.findIndex((p) => p.id === startId) : -1;
+    const idx = startId ? allData.findIndex((p) => p.id === startId) : -1;
+    posts = allData;
     currentIndex = idx >= 0 ? idx : 0;
     tryShow(currentIndex);
   } catch (error) {
