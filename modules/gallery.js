@@ -422,6 +422,135 @@ async function openArtistZoom(artist) {
   topTags.setAttribute("aria-live", "polite");
   zoomed.setAttribute("tabindex", "0");
   zoomed.setAttribute("aria-label", "Artist image, click to toggle tags");
+
+  // --- AESTHETIC TWEAKS & HUMILIATION ---
+  // Add sparkle/heart overlay to modal
+  if (wrapper && !wrapper.querySelector(".sparkle-overlay")) {
+    const sparkle = document.createElement("div");
+    sparkle.className = "sparkle-overlay";
+    sparkle.style.position = "absolute";
+    sparkle.style.top = "0";
+    sparkle.style.left = "0";
+    sparkle.style.width = "100%";
+    sparkle.style.height = "100%";
+    sparkle.style.pointerEvents = "none";
+    sparkle.style.backgroundImage =
+      "url('icons/sparkle.png'), url('icons/bow.png')";
+    sparkle.style.backgroundRepeat = "repeat";
+    sparkle.style.opacity = "0.18";
+    wrapper.appendChild(sparkle);
+  }
+  // Add humiliating taunt to modal header
+  if (wrapper && !wrapper.querySelector(".taunt-header")) {
+    const taunt = document.createElement("div");
+    taunt.className = "taunt-header";
+    taunt.style.fontFamily = "'Hi Melody', sans-serif";
+    taunt.style.fontSize = "1.5em";
+    taunt.style.color = "#fd7bc5";
+    taunt.style.textAlign = "center";
+    taunt.style.margin = "1em 0 0.5em 0";
+    taunt.innerHTML =
+      'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.2em;">Pathetic.</span> 💖✨';
+    wrapper.insertBefore(taunt, wrapper.firstChild);
+  }
+  // Style reload/copy buttons with playful tooltips
+  document.querySelectorAll(".reload-button").forEach((btn) => {
+    btn.style.background = "linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%)";
+    btn.style.borderRadius = "2em";
+    btn.style.color = "#fff";
+    btn.style.fontFamily = "'Hi Melody', sans-serif";
+    btn.style.fontSize = "1.1em";
+    btn.style.boxShadow = "0 2px 8px #fd7bc540";
+    btn.title = "Desperate for more?";
+  });
+  document.querySelectorAll(".copy-button").forEach((btn) => {
+    btn.style.background = "linear-gradient(90deg, #fff0fa 0%, #fd7bc5 100%)";
+    btn.style.borderRadius = "2em";
+    btn.style.color = "#a0005a";
+    btn.style.fontFamily = "'Hi Melody', sans-serif";
+    btn.style.fontSize = "1.1em";
+    btn.style.boxShadow = "0 2px 8px #fd7bc540";
+    btn.title = "Copying again? How needy.";
+  });
+  // Add shame badge to artists with few images
+  document.querySelectorAll(".artist-card").forEach((card) => {
+    const nameDiv = card.querySelector(".artist-name");
+    const imgCount = card.artist && card.artist._totalImageCount;
+    if (
+      imgCount !== undefined &&
+      imgCount < 5 &&
+      !card.querySelector(".shame-badge")
+    ) {
+      const badge = document.createElement("span");
+      badge.className = "shame-badge";
+      badge.textContent = "Shame: Only " + imgCount + " pics";
+      badge.style.background = "#fd7bc5";
+      badge.style.color = "#fff";
+      badge.style.fontFamily = "'Hi Melody', sans-serif";
+      badge.style.fontSize = "0.9em";
+      badge.style.borderRadius = "1em";
+      badge.style.padding = "0.2em 0.8em";
+      badge.style.marginLeft = "1em";
+      nameDiv.appendChild(badge);
+    }
+  });
+  // Add lipstick kiss watermark to modal background
+  if (wrapper && !wrapper.querySelector(".lipstick-kiss")) {
+    const kiss = document.createElement("div");
+    kiss.className = "lipstick-kiss";
+    kiss.style.position = "absolute";
+    kiss.style.bottom = "24px";
+    kiss.style.right = "32px";
+    kiss.style.width = "64px";
+    kiss.style.height = "64px";
+    kiss.style.backgroundImage = "url('icons/bow.png')";
+    kiss.style.backgroundSize = "contain";
+    kiss.style.backgroundRepeat = "no-repeat";
+    kiss.style.opacity = "0.35";
+    wrapper.appendChild(kiss);
+  }
+  // Add random taunt to empty states and tooltips
+  if (noEntriesMsg) {
+    const taunts = [
+      "No images? Maybe you should try harder. 💔",
+      "Not even Danbooru can help you. Tragic.",
+      "Did you really expect more? How embarrassing.",
+      "Keep searching, maybe you'll get lucky. Doubt it.",
+      "Shame! Not a single pic for you.",
+    ];
+    const randomTaunt = taunts[Math.floor(Math.random() * taunts.length)];
+    noEntriesMsg.innerHTML += `<br><span style='font-size:1.1em;color:#fd7bc5;'>${randomTaunt}</span>`;
+  }
+  // Add playful tooltips to sort/filter controls
+  document
+    .querySelectorAll(
+      ".browse-btn, .sort-controls select, .sort-controls button"
+    )
+    .forEach((el) => {
+      el.title = "Sorting again? You must be desperate.";
+      el.style.fontFamily = "'Hi Melody', sans-serif";
+      el.style.borderRadius = "2em";
+      el.style.background = "linear-gradient(90deg, #fff0fa 0%, #fd7bc5 100%)";
+      el.style.color = "#a0005a";
+    });
+  // Add playful tooltips to tag buttons
+  document.querySelectorAll(".tag-btn, .tag-button").forEach((el) => {
+    el.title = "Tagging up? You really want it all, don't you?";
+    el.style.fontFamily = "'Hi Melody', sans-serif";
+    el.style.borderRadius = "2em";
+    el.style.background = "linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%)";
+    el.style.color = "#fff";
+  });
+  // Animate shame badge for extra humiliation
+  document.querySelectorAll(".shame-badge").forEach((badge) => {
+    badge.style.animation = "shamePulse 1.2s infinite";
+    badge.title = "So few images? Shameful.";
+  });
+  // Animate sparkles overlay
+  if (wrapper && wrapper.querySelector(".sparkle-overlay")) {
+    wrapper.querySelector(".sparkle-overlay").style.animation =
+      "sparkleMove 8s linear infinite";
+  }
 }
 
 /**
