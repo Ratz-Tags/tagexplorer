@@ -360,61 +360,32 @@ async function openArtistZoom(artist) {
 
   // Fetch and show artist images
   try {
-    // Always fetch ALL images for the artist only (no kink-tags)
-    const artistTag = artist.artistTag || artist.artistName;
-    const allData = await fetchAllArtistImages(artistTag, []);
-    processApiData(allData);
-    if (!Array.isArray(allData) || allData.length === 0) {
-      posts = [];
-      showNoEntries("No images found for this artist.");
+    // Fetch all images for the artist only (not filtered by tags)
+    posts = await import("./api.js").then((api) =>
+      api.fetchAllArtistImages(artist.artistName, [], { limit: 200 })
+    );
+    // If artist has a thumbnailUrl, prepend it as the first image if not already present
+    if (artist.thumbnailUrl) {
+      const thumbUrl = artist.thumbnailUrl;
+      const alreadyIncluded = posts.some(
+        (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
+      );
+      if (!alreadyIncluded) {
+        posts.unshift({
+          large_file_url: thumbUrl,
+          tag_string: "thumbnail",
+          file_url: thumbUrl,
+        });
+      }
+    }
+    if (!posts || posts.length === 0) {
+      showNoEntries();
       return;
     }
-    // compute artist top tags
-    try {
-      const uniquePosts = [];
-      const seenIds = new Set();
-      allData.forEach((p) => {
-        if (p.id && !seenIds.has(p.id)) {
-          seenIds.add(p.id);
-          uniquePosts.push(p);
-        }
-      });
-      const counts = {};
-      uniquePosts.forEach((p) => {
-        (p.tag_string || "").split(" ").forEach((t) => {
-          counts[t] = (counts[t] || 0) + 1;
-        });
-      });
-      const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-      const selectedCounts = selectedTags
-        .map((tag) => {
-          const count = counts[tag] || 0;
-          return `${tag.replace(/_/g, " ")} (${count})`;
-        })
-        .filter((str) => !str.startsWith(" (0)"));
-      const top = Object.entries(counts)
-        .filter(([t]) => !selectedTags.includes(t) && t !== artistTag)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([t, c]) => `${t.replace(/_/g, " ")} (${c})`);
-      const tagString = [
-        ...(selectedCounts.length ? selectedCounts : []),
-        ...(top.length ? top : []),
-      ].join(", ");
-      if (topTags) topTags.textContent = tagString || "No tags found.";
-    } catch (err) {
-      if (topTags) topTags.textContent = "Error loading tags.";
-      console.warn("Failed to compute top tags:", err);
-    }
-    const startId = artist._thumbnailPostId;
-    const idx = startId ? allData.findIndex((p) => p.id === startId) : -1;
-    posts = allData;
-    currentIndex = idx >= 0 ? idx : 0;
-    tryShow(currentIndex);
+    // Show the first image (thumbnail or first post)
+    tryShow(0);
   } catch (error) {
-    console.warn("Failed to fetch artist images:", error);
     showNoEntries("Error loading images for this artist.");
-    if (topTags) topTags.textContent = "Error loading tags.";
   }
   tagList.style.display = "block";
   topTags.style.display = "block";
