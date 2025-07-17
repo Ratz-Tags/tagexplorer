@@ -226,7 +226,7 @@ main {
 
 .artist-card {
   position: relative;
-  background: var(--bow) no-repeat top right/80px, var(--background-alt);
+  background: var(--background-alt);
   border: 2px solid var(--border);
   border-radius: var(--radius);
   box-shadow: 0 2px 12px #fd7bc540;
@@ -255,7 +255,7 @@ main {
 .reload-button {
   position: absolute;
   top: 0.7em;
-  right: 0.7em;
+  left: 0.7em;
   z-index: 2;
   background: var(--accent2);
   color: #fff;
