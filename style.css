@@ -266,7 +266,7 @@ main {
 .reload-button {
   position: absolute;
   top: 0.7em;
-  right: 0.7em;
+  left: 0.7em;
   z-index: 2;
   background: var(--accent2);
   color: #fff;
