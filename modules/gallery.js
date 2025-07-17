@@ -405,6 +405,7 @@ async function openArtistZoom(artist) {
     sparkle.style.width = "100%";
     sparkle.style.height = "100%";
     sparkle.style.pointerEvents = "none";
+    sparkle.stule.zIndex = "1";
     sparkle.style.backgroundImage =
       "url('icons/sparkle.png'), url('icons/bow.png')";
     sparkle.style.backgroundRepeat = "repeat";
