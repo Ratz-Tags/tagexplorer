@@ -85,6 +85,8 @@ const tagIcons = {
   pregnant: "icons/pregnant.png",
 };
 
+let tagSearchMode = "contains"; // "contains", "starts", "ends"
+
 /**
  * Spawns a taunt bubble for a selected tag
  */
@@ -164,11 +166,27 @@ function renderTagButtons() {
 
   // Filter and sort tags
   let tagsToShow = kinkTags
-    .filter(
-      (tag) =>
-        tag.toLowerCase().includes(searchFilter.trim().toLowerCase()) &&
-        (possibleTags.has(tag) || activeTags.has(tag)) // always show selected tags
-    )
+    .filter((tag) => {
+      const filter = searchFilter.trim().toLowerCase();
+      if (!filter) return possibleTags.has(tag) || activeTags.has(tag);
+      if (tagSearchMode === "starts") {
+        return (
+          tag.toLowerCase().startsWith(filter) &&
+          (possibleTags.has(tag) || activeTags.has(tag))
+        );
+      }
+      if (tagSearchMode === "ends") {
+        return (
+          tag.toLowerCase().endsWith(filter) &&
+          (possibleTags.has(tag) || activeTags.has(tag))
+        );
+      }
+      // default: contains
+      return (
+        tag.toLowerCase().includes(filter) &&
+        (possibleTags.has(tag) || activeTags.has(tag))
+      );
+    })
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
   if (tagsToShow.length === 0) {
@@ -243,12 +261,20 @@ function toggleTag(tag) {
 }
 
 /**
- * Handles tag search input with debouncing
+ * Handles tag search input with debouncing and search mode
  */
 function handleTagSearch(value) {
   searchFilter = value;
   renderTagButtons();
   if (renderArtists) renderArtists(true);
+}
+
+/**
+ * Sets the tag search mode ("contains", "starts", "ends")
+ */
+function setTagSearchMode(mode) {
+  tagSearchMode = mode;
+  renderTagButtons();
 }
 
 /**
@@ -384,6 +410,7 @@ export {
   getKinkTags,
   toggleTag,
   spawnBubble,
+  setTagSearchMode,
 };
 
 // All functions in this file are defined and used as follows:

@@ -339,6 +339,71 @@ function showAudioToast(message, type = "info") {
   }, 3000);
 }
 
+/**
+ * Updates the humiliation meter display and taunt message
+ */
+function updateAudioHumiliationMeter() {
+  let meter = document.getElementById("audio-humiliation-meter");
+  if (!meter) {
+    meter = document.createElement("div");
+    meter.id = "audio-humiliation-meter";
+    meter.style.position = "fixed";
+    meter.style.left = "50%";
+    meter.style.bottom = "4.5em";
+    meter.style.transform = "translateX(-50%)";
+    meter.style.background = "#fff0fa";
+    meter.style.border = "2px solid #fd7bc5";
+    meter.style.borderRadius = "2em";
+    meter.style.boxShadow = "0 2px 12px #fd7bc555";
+    meter.style.zIndex = "1000";
+    meter.style.padding = "0.3em 1em 0.5em 1em";
+    meter.style.display = "flex";
+    meter.style.flexDirection = "column";
+    meter.style.alignItems = "center";
+    meter.style.fontFamily = "'Hi Melody', cursive, sans-serif";
+    meter.innerHTML = `<div class="audio-humiliation-bar" style="width:0%;height:1.1em;background:#f9badd;border-radius:1em;margin-bottom:0.3em;transition:width 0.5s,background 0.5s;"></div>
+      <span class="audio-humiliation-taunt"></span>`;
+    document.body.appendChild(meter);
+  }
+  const count =
+    (window._customAudioUrls && Object.keys(window._customAudioUrls).length) ||
+    0;
+  const bar = meter.querySelector(".audio-humiliation-bar");
+  const taunt = meter.querySelector(".audio-humiliation-taunt");
+  const percent = Math.min(100, count * 10);
+  bar.style.width = percent + "%";
+  bar.style.background =
+    percent > 80 ? "#fd7bc5" : percent > 50 ? "#ff63a5" : "#f9badd";
+  let msg = "";
+  if (count === 0) msg = "Audio dignity: Intact (for now)";
+  else if (count < 3) msg = "Mildly desperate for new tracks";
+  else if (count < 6) msg = "Getting needy for variety...";
+  else if (count < 10) msg = "Desperation rising! So many tracks!";
+  else msg = "Utterly shameless audio addict!";
+  taunt.textContent = msg;
+}
+
+// Patch into addTrackByUrl and initAudioUI
+const origAddTrackByUrl = addTrackByUrl;
+addTrackByUrl = function (url, name) {
+  origAddTrackByUrl.apply(this, arguments);
+  updateAudioHumiliationMeter();
+  // Playful taunt
+  const taunts = [
+    "Another one? You really can't help yourself.",
+    "So desperate for new sounds?",
+    "Adding more? Your playlist is as needy as you.",
+    "You must love humiliating yourself with these tracks.",
+    "Keep going, maybe you'll finally be satisfied. (You won't.)",
+  ];
+  showAudioToast(taunts[Math.floor(Math.random() * taunts.length)]);
+};
+const origInitAudioUI = initAudioUI;
+initAudioUI = function () {
+  origInitAudioUI.apply(this, arguments);
+  updateAudioHumiliationMeter();
+};
+
 // All functions in this file are defined and used as follows:
 
 // getAudioSrc: used by loadTrack

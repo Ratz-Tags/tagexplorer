@@ -18,6 +18,7 @@ import {
   getActiveTags,
   getArtistNameFilter,
   renderTagButtons,
+  setTagSearchMode,
 } from "./modules/tags.js";
 import {
   initGallery,
@@ -214,3 +215,38 @@ if (sortButtonElem) {
     forceSortAndRender();
   });
 }
+
+// Add tag search mode selector
+const tagSearchModeSelect = document.createElement("select");
+tagSearchModeSelect.id = "tag-search-mode";
+tagSearchModeSelect.innerHTML = `
+  <option value="contains">Contains</option>
+  <option value="starts">Starts with</option>
+  <option value="ends">Ends with</option>
+`;
+tagSearchModeSelect.style.marginLeft = "0.5em";
+const tagSearchInput = document.getElementById("tag-search");
+if (tagSearchInput && tagSearchInput.parentNode) {
+  tagSearchInput.parentNode.insertBefore(
+    tagSearchModeSelect,
+    tagSearchInput.nextSibling
+  );
+  tagSearchModeSelect.addEventListener("change", (e) => {
+    setTagSearchMode(e.target.value);
+  });
+}
+
+// Add JOI mode toggle button
+const joiBtn = document.createElement("button");
+joiBtn.textContent = "JOI Mode";
+joiBtn.className = "browse-btn humiliation-glow";
+joiBtn.style.marginLeft = "1em";
+joiBtn.onclick = () => {
+  if (window.startJOIMode) {
+    window.startJOIMode();
+    joiBtn.disabled = true;
+    joiBtn.textContent = "JOI Mode (Active)";
+  }
+};
+const controlsBar = document.querySelector(".sort-controls");
+if (controlsBar) controlsBar.appendChild(joiBtn);

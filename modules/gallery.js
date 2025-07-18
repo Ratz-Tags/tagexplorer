@@ -797,6 +797,30 @@ function renderArtistCards(artists) {
       }, 100);
     });
 
+    // Add humiliation overlay on hover
+    card.addEventListener("mouseenter", () => {
+      let overlay = card.querySelector(".gallery-humiliation-overlay");
+      if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.className = "gallery-humiliation-overlay";
+        overlay.style.position = "absolute";
+        overlay.style.top = "0";
+        overlay.style.left = "0";
+        overlay.style.width = "100%";
+        overlay.style.height = "100%";
+        overlay.style.pointerEvents = "none";
+        overlay.style.zIndex = "10";
+        overlay.style.opacity = "0.18";
+        overlay.style.backgroundImage =
+          Math.random() > 0.5
+            ? "url('icons/heart.png')"
+            : "url('icons/lipstick.png')";
+        overlay.style.backgroundRepeat = "repeat";
+        card.appendChild(overlay);
+        setTimeout(() => overlay.remove(), 1200);
+      }
+    });
+
     card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
     frag.appendChild(card);
   });
@@ -1155,6 +1179,58 @@ function setGetArtistNameFilterCallback(callback) {
 
 function setSortPreference(preference) {
   sortMode = preference === "count" ? "count" : "name";
+}
+
+// --- JOI MODE ---
+let joiModeActive = false;
+let joiInterval = null;
+const joiCommands = [
+  "Edge for 30 seconds. No touching until the timer ends.",
+  "Say out loud: 'I'm a desperate little sissy.'",
+  "Kneel and thank your favorite artist.",
+  "Write your favorite tag on a piece of paper and keep it visible.",
+  "Clap your hands and say 'Thank you, Mistress!'",
+  "Send a compliment to another user (or imagine doing so).",
+  "Repeat: 'I am so needy' five times.",
+  "Take a deep breath and hold it for 10 seconds.",
+  "Blow a kiss to the screen.",
+  "Promise you won't touch yourself until you finish browsing.",
+  "Pathetic! Now, do 10 jumping jacks.",
+  "Type 'I'm so embarrassed' in the search bar (then clear it).",
+];
+
+function startJOIMode(intervalMs = 60000) {
+  if (joiModeActive) return;
+  joiModeActive = true;
+  function showJOICommand() {
+    const command = joiCommands[Math.floor(Math.random() * joiCommands.length)];
+    const modal = document.createElement("div");
+    modal.className = "modal humiliation-glow";
+    modal.style.zIndex = "9999";
+    modal.style.textAlign = "center";
+    modal.innerHTML = `<h3 style="color:#fd7bc5;">JOI Command</h3>
+      <div style="font-size:1.3em;margin:1em 0;">${command}</div>
+      <button class="browse-btn" style="margin-top:1em;">Done</button>`;
+    modal.querySelector("button").onclick = () => modal.remove();
+    document.body.appendChild(modal);
+    // Increase meter for every command shown
+    if (typeof window.incrementDesperationMeter === "function") {
+      window.incrementDesperationMeter(3);
+    }
+  }
+  joiInterval = setInterval(showJOICommand, intervalMs);
+  showJOICommand();
+}
+
+function stopJOIMode() {
+  joiModeActive = false;
+  if (joiInterval) clearInterval(joiInterval);
+}
+
+// Expose JOI mode globally
+if (typeof window !== "undefined") {
+  window.startJOIMode = startJOIMode;
+  window.stopJOIMode = stopJOIMode;
 }
 
 export {

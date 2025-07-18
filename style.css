@@ -533,6 +533,35 @@ main {
   margin: 0.5em 0.2em;
 }
 
+.audio-humiliation-bar {
+  width: 0%;
+  height: 1.1em;
+  background: #f9badd;
+  border-radius: 1em;
+  margin-bottom: 0.3em;
+  transition: width 0.5s, background 0.5s;
+}
+.audio-humiliation-taunt {
+  font-size: 1em;
+  color: #fd7bc5;
+  margin-top: 0.1em;
+  text-align: center;
+  font-weight: bold;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.gallery-humiliation-overlay {
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.18;
+  background-repeat: repeat;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  animation: sparkleMove 8s linear infinite;
+}
+
 /* ...existing code... */
 
 #back-to-top {
@@ -1218,4 +1247,33 @@ option {
 
 .modal.humiliation-glow button.browse-btn {
   margin: 0.5em 0.2em;
+}
+
+.audio-humiliation-bar {
+  width: 0%;
+  height: 1.1em;
+  background: #f9badd;
+  border-radius: 1em;
+  margin-bottom: 0.3em;
+  transition: width 0.5s, background 0.5s;
+}
+.audio-humiliation-taunt {
+  font-size: 1em;
+  color: #fd7bc5;
+  margin-top: 0.1em;
+  text-align: center;
+  font-weight: bold;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.gallery-humiliation-overlay {
+  pointer-events: none;
+  z-index: 10;
+  opacity: 0.18;
+  background-repeat: repeat;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0; left: 0;
+  animation: sparkleMove 8s linear infinite;
 }
