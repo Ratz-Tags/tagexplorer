@@ -1152,16 +1152,6 @@ async function showTopArtistsByTagCount() {
   }
 }
 
-function getPaginationInfo() {
-  return {
-    total: filtered.length,
-    shown: filtered.length,
-    hasMore: false,
-    currentPage: 1,
-    artistsPerPage: filtered.length,
-  };
-}
-
 function setAllArtists(artists) {
   allArtists = artists;
 }

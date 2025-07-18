@@ -164,7 +164,8 @@ function renderTagButtons() {
     (artist.kinkTags || []).forEach((tag) => possibleTags.add(tag));
   });
 
-  // Filter and sort tags
+  // --- Allow user to add a custom/typed tag if not present ---
+  const filter = searchFilter.trim().toLowerCase();
   let tagsToShow = kinkTags
     .filter((tag) => {
       const filter = searchFilter.trim().toLowerCase();
@@ -189,15 +190,26 @@ function renderTagButtons() {
     })
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
 
-  if (tagsToShow.length === 0) {
-    const emptyMsg = document.createElement("span");
-    emptyMsg.style.fontStyle = "italic";
-    emptyMsg.style.opacity = "0.7";
-    emptyMsg.textContent = "No tags found.";
-    tagButtonsContainer.appendChild(emptyMsg);
-    if (clearTagsBtn)
-      clearTagsBtn.style.display = activeTags.size ? "" : "none";
-    return;
+  // If user typed a tag that is not in kinkTags, offer to add/search for it
+  if (
+    filter &&
+    !kinkTags.some((tag) => tag.toLowerCase() === filter) &&
+    !tagsToShow.some((tag) => tag.toLowerCase() === filter)
+  ) {
+    const customBtn = document.createElement("button");
+    customBtn.className = "tag-button";
+    customBtn.type = "button";
+    customBtn.textContent = `Search for "${filter}"`;
+    customBtn.style.background = "#ffd6f6";
+    customBtn.style.color = "#a0005a";
+    customBtn.onclick = () => {
+      activeTags.add(filter);
+      renderTagButtons();
+      if (renderArtists) renderArtists(true);
+      if (setRandomBackground) setRandomBackground();
+      if (navigator.vibrate) navigator.vibrate(50);
+    };
+    tagButtonsContainer.appendChild(customBtn);
   }
 
   tagsToShow.forEach((tag) => {
