@@ -380,6 +380,7 @@ function setupAudioPanelToggle() {
 }
 
 // --- HUMILIATION BAR LESS OBSTRUCTIVE ---
+let humiliationMeterTimeout = null;
 function updateAudioHumiliationMeter() {
   let meter = document.getElementById("audio-humiliation-meter");
   if (!meter) {
@@ -403,9 +404,24 @@ function updateAudioHumiliationMeter() {
     meter.style.fontFamily = "'Hi Melody', cursive, sans-serif";
     meter.style.fontSize = "0.9em";
     meter.style.opacity = "0.85";
-    meter.innerHTML = `<div class="audio-humiliation-bar" style="width:0%;height:0.8em;background:#f9badd;border-radius:1em;margin-bottom:0.2em;transition:width 0.5s,background 0.5s;"></div>
-      <span class="audio-humiliation-taunt"></span>`;
+    meter.style.transition = "opacity 0.5s";
+    meter.style.pointerEvents = "none";
+    meter.innerHTML = `<div class="audio-humiliation-bar" style="width:0%;height:0.8em;background:#f9badd;border-radius:1em;margin-bottom:0.2em;transition:width 0.5s,background 0.5s;"></div>\n      <span class="audio-humiliation-taunt"></span>`;
     document.body.appendChild(meter);
+  }
+  // Responsive placement
+  if (window.innerWidth <= 600) {
+    meter.style.right = "0.5em";
+    meter.style.left = "0.5em";
+    meter.style.bottom = "4.5em";
+    meter.style.width = "auto";
+    meter.style.maxWidth = "90vw";
+  } else {
+    meter.style.right = "1.5em";
+    meter.style.left = "auto";
+    meter.style.bottom = "1.5em";
+    meter.style.width = "auto";
+    meter.style.maxWidth = "320px";
   }
   const count =
     (window._customAudioUrls && Object.keys(window._customAudioUrls).length) ||
@@ -423,6 +439,21 @@ function updateAudioHumiliationMeter() {
   else if (count < 10) msg = "Desperation rising! So many tracks!";
   else msg = "Utterly shameless audio addict!";
   taunt.textContent = msg;
+  // --- Show/hide logic ---
+  meter.style.opacity = "0.95";
+  meter.style.visibility = "visible";
+  meter.style.pointerEvents = "none";
+  if (humiliationMeterTimeout) clearTimeout(humiliationMeterTimeout);
+  // If high tier, keep visible
+  if (count >= 10) {
+    meter.style.opacity = "0.98";
+    meter.style.visibility = "visible";
+  } else {
+    humiliationMeterTimeout = setTimeout(() => {
+      meter.style.opacity = "0";
+      meter.style.visibility = "hidden";
+    }, 3500);
+  }
 }
 
 // --- ENSURE AUDIO INITIALIZATION ---

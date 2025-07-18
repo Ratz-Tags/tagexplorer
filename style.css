@@ -562,8 +562,6 @@ main {
   animation: sparkleMove 8s linear infinite;
 }
 
-/* ...existing code... */
-
 #back-to-top {
   display: none;
 }
@@ -1276,4 +1274,22 @@ option {
   position: absolute;
   top: 0; left: 0;
   animation: sparkleMove 8s linear infinite;
+}
+
+#audio-humiliation-meter {
+  transition: opacity 0.5s, visibility 0.5s;
+  opacity: 0.95;
+  visibility: visible;
+  pointer-events: none;
+  max-width: 320px;
+  width: auto;
+  box-sizing: border-box;
+}
+@media (max-width: 600px) {
+  #audio-humiliation-meter {
+    right: 0.5em !important;
+    left: 0.5em !important;
+    bottom: 4.5em !important;
+    max-width: 90vw !important;
+  }
 }
