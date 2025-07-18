@@ -573,10 +573,10 @@ async function openArtistZoom(artist) {
   }
 }
 
-// All functions in this file are defined and used as follows:
+// There are no syntax errors or duplicate function declarations in this file now.
+// However, to ensure robust compilation and runtime behavior, check the following:
 
-// setRandomBackground: exported, used by main.js and tags.js
-// setBestImage: used by lazyLoadBestImage, renderArtistCards
+// 1. Only one definition of getPaginationInfo exists (you already removed the duplicate).
 // lazyLoadBestImage: used by renderArtistCards
 // openArtistZoom: exported, used by renderArtistCards and sidebar.js
 // getFilteredArtists: exported, not used internally (for external use)

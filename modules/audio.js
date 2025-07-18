@@ -423,3 +423,9 @@ initAudioUI = function () {
 // showAudioToast: used by initAudioUI
 // getCurrentTrack: exported, not used internally (for external use)
 // getAudioFiles: exported, not used internally
+
+export {
+  initAudio,
+  initAudioUI,
+  // Optionally export other functions if needed elsewhere
+};
