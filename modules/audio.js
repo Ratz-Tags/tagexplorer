@@ -339,6 +339,25 @@ function showAudioToast(message, type = "info") {
   }, 3000);
 }
 
+/**
+ * Loads the last played track index from localStorage
+ */
+function loadLastTrack() {
+  const saved = localStorage.getItem("lastAudioTrack");
+  if (saved !== null && !isNaN(Number(saved))) {
+    currentTrack = Number(saved);
+  } else {
+    currentTrack = 0;
+  }
+}
+
+/**
+ * Saves the current track index to localStorage
+ */
+function saveLastTrack() {
+  localStorage.setItem("lastAudioTrack", String(currentTrack));
+}
+
 // --- AUDIO PANEL TOGGLE FIX ---
 // Ensure the audio bar (panel) can be toggled by clicking the bar itself or a dedicated button
 function setupAudioPanelToggle() {
@@ -406,20 +425,15 @@ function updateAudioHumiliationMeter() {
   taunt.textContent = msg;
 }
 
-// --- ENSURE AUDIO AND JOI MODE INITIALIZATION ---
-// Patch initAudio and initAudioUI to call setupAudioPanelToggle
+// --- ENSURE AUDIO INITIALIZATION ---
 const origInitAudio = initAudio;
 initAudio = function () {
   origInitAudio.apply(this, arguments);
   setupAudioPanelToggle();
-};
-const origInitAudioUI2 = initAudioUI;
-initAudioUI = function () {
-  origInitAudioUI2.apply(this, arguments);
   updateAudioHumiliationMeter();
 };
 
-// Expose startJOIMode globally if not already
+// --- JOI MODE GLOBAL EXPOSURE (calls gallery.js implementation) ---
 if (
   typeof window !== "undefined" &&
   typeof window.startJOIMode !== "function"
