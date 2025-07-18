@@ -404,6 +404,25 @@ initAudioUI = function () {
   updateAudioHumiliationMeter();
 };
 
+/**
+ * Loads the last played track index from localStorage
+ */
+function loadLastTrack() {
+  const saved = localStorage.getItem("lastAudioTrack");
+  if (saved !== null && !isNaN(Number(saved))) {
+    currentTrack = Number(saved);
+  } else {
+    currentTrack = 0;
+  }
+}
+
+/**
+ * Saves the current track index to localStorage
+ */
+function saveLastTrack() {
+  localStorage.setItem("lastAudioTrack", String(currentTrack));
+}
+
 // All functions in this file are defined and used as follows:
 
 // getAudioSrc: used by loadTrack
