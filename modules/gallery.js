@@ -16,6 +16,8 @@ let filtered = [];
 let isFetching = false;
 let sortMode = "name";
 let filterGeneration = 0;
+let artistsPerPage = 100;
+let currentPage = 1;
 
 // DOM references
 let artistGallery = null;
@@ -572,16 +574,58 @@ async function openArtistZoom(artist) {
 }
 
 /**
- * Renders the current page of artists
+ * Returns a copy of the currently filtered artists.
+ */
+function getFilteredArtists() {
+  return filtered.slice();
+}
+
+/**
+ * Sets the number of artists to show per page.
+ */
+function setArtistsPerPage(count) {
+  artistsPerPage = Math.max(10, count);
+  currentPage = 1;
+  renderArtistsPage();
+}
+
+/**
+ * Renders the current page of artists, with pagination.
  */
 function renderArtistsPage() {
-  renderArtistCards(filtered);
+  const start = (currentPage - 1) * artistsPerPage;
+  const end = start + artistsPerPage;
+  const artistsToShow = filtered.slice(0, end);
+  renderArtistCards(artistsToShow);
+
+  // Pagination: Show "Show More" button if there are more artists
+  if (filtered.length > end) {
+    let showMoreBtn = document.getElementById("show-more-artists-btn");
+    if (!showMoreBtn) {
+      showMoreBtn = document.createElement("button");
+      showMoreBtn.id = "show-more-artists-btn";
+      showMoreBtn.className = "browse-btn";
+      showMoreBtn.textContent = "Show More Artists";
+      showMoreBtn.style.display = "block";
+      showMoreBtn.style.margin = "2em auto";
+      showMoreBtn.onclick = () => {
+        currentPage++;
+        renderArtistsPage();
+      };
+      artistGallery.appendChild(showMoreBtn);
+    }
+  } else {
+    const btn = document.getElementById("show-more-artists-btn");
+    if (btn) btn.remove();
+  }
 }
 
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists) {
   if (!artistGallery) return;
   artistGallery.innerHTML = "";
+  // Use DocumentFragment for performance
+  const frag = document.createDocumentFragment();
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card";
@@ -730,8 +774,21 @@ function renderArtistCards(artists) {
     });
 
     card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
-    artistGallery.appendChild(card);
+    frag.appendChild(card);
   });
+  artistGallery.appendChild(frag);
+}
+
+function getPaginationInfo() {
+  const total = filtered.length;
+  const shown = Math.min(currentPage * artistsPerPage, total);
+  return {
+    total,
+    shown,
+    hasMore: shown < total,
+    currentPage,
+    artistsPerPage,
+  };
 }
 
 /**
@@ -1089,4 +1146,6 @@ export {
   setGetArtistNameFilterCallback,
   setSortMode,
   getPaginationInfo,
+  getFilteredArtists,
+  setArtistsPerPage,
 };

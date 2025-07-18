@@ -248,6 +248,32 @@ function getAudioFiles() {
   return [...audioFiles];
 }
 
+/**
+ * Shuffles the audio playlist.
+ */
+function shuffleTracks() {
+  for (let i = audioFiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [audioFiles[i], audioFiles[j]] = [audioFiles[j], audioFiles[i]];
+  }
+  currentTrack = 0;
+  loadTrack(currentTrack);
+}
+
+/**
+ * Sets the volume for the main audio (0.0 - 1.0)
+ */
+function setVolume(vol) {
+  if (hypnoAudio) hypnoAudio.volume = Math.max(0, Math.min(1, vol));
+}
+
+/**
+ * Gets the current track name (without extension)
+ */
+function getCurrentTrackName() {
+  return audioFiles[currentTrack]?.replace(/\.mp3$/, "") || "";
+}
+
 // Export functions for ES modules
 export {
   initAudio,
@@ -260,4 +286,7 @@ export {
   togglePanel,
   getCurrentTrack,
   getAudioFiles,
+  shuffleTracks,
+  setVolume,
+  getCurrentTrackName,
 };

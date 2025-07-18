@@ -295,6 +295,53 @@ function initUI() {
   addLipstickKiss();
 }
 
+/**
+ * Shows a toast notification (global, re-usable)
+ */
+function showToast(message, duration = 3000) {
+  const toast = document.createElement("div");
+  toast.className = "toast-popup";
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+}
+
+/**
+ * Scrolls smoothly to the top of the page.
+ */
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/**
+ * Creates a confirmation modal with OK/Cancel.
+ * Returns a Promise that resolves to true/false.
+ */
+function createConfirmationModal(message) {
+  return new Promise((resolve) => {
+    const modal = createModal("", "confirmation-modal");
+    const content = modal.querySelector(".confirmation-modal-content");
+    content.innerHTML = `<div style="margin-bottom:1em;">${message}</div>`;
+    const okBtn = document.createElement("button");
+    okBtn.textContent = "OK";
+    okBtn.className = "browse-btn";
+    okBtn.onclick = () => {
+      modal.remove();
+      resolve(true);
+    };
+    const cancelBtn = document.createElement("button");
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.className = "browse-btn";
+    cancelBtn.onclick = () => {
+      modal.remove();
+      resolve(false);
+    };
+    content.append(okBtn, cancelBtn);
+    document.body.appendChild(modal);
+    okBtn.focus();
+  });
+}
+
 // Export functions for ES modules
 export {
   showNoEntriesMsg,
@@ -309,4 +356,7 @@ export {
   createFullscreenViewer,
   setupKeyboardShortcuts,
   initUI,
+  showToast,
+  scrollToTop,
+  createConfirmationModal,
 };

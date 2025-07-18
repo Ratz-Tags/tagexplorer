@@ -170,7 +170,7 @@ async function filterTags() {
       list.textContent = "No tags";
       return;
     }
-    tags.forEach((tag) => {
+    tags.forEach((tag, idx) => {
       const btn = document.createElement("button");
       btn.className = "tag-button";
       btn.textContent = `${tag.replace(/_/g, " ")} (${counts[tag] || 0})`;
@@ -179,20 +179,28 @@ async function filterTags() {
         toggleTag(tag);
         renderList();
       };
+      btn.tabIndex = 0;
+      btn.dataset.idx = idx;
       list.appendChild(btn);
     });
   }
 
-  // Add keyboard handling (Escape key)
-  wrapper.tabIndex = 0;
+  // Keyboard navigation for tag explorer
+  let selectedIdx = 0;
   wrapper.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      closeBtn.click();
+    const tagBtns = list.querySelectorAll(".tag-button");
+    if (e.key === "ArrowDown") {
+      selectedIdx = Math.min(selectedIdx + 1, tagBtns.length - 1);
+      tagBtns[selectedIdx]?.focus();
       e.preventDefault();
     }
-    // Feature: quick search focus with "/"
-    if (e.key === "/") {
-      searchInput.focus();
+    if (e.key === "ArrowUp") {
+      selectedIdx = Math.max(selectedIdx - 1, 0);
+      tagBtns[selectedIdx]?.focus();
+      e.preventDefault();
+    }
+    if (e.key === "Enter") {
+      tagBtns[selectedIdx]?.click();
       e.preventDefault();
     }
     // Feature: clear tags with Ctrl+Backspace
