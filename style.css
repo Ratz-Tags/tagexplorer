@@ -334,13 +334,25 @@ main {
 
 .copied-sidebar-close {
   position: absolute;
-  top: var(--padding);
-  right: var(--padding);
-  background: transparent;
+  top: 0.7em;
+  right: 1.2em;
+  background: #fd7bc5;
+  color: #fff;
   border: none;
-  color: var(--text);
-  font-size: 1.25rem;
+  border-radius: 50%;
+  width: 2em;
+  height: 2em;
+  font-size: 1.3em;
+  font-family: inherit;
   cursor: pointer;
+  box-shadow: 0 2px 8px #fd7bc522;
+  z-index: 2;
+  transition: background 0.2s;
+}
+
+.copied-sidebar-close:hover {
+  background: #ffb3e6;
+  color: #fd7bc5;
 }
 
 .copied-artist {
@@ -349,13 +361,15 @@ main {
   padding: 0.5rem;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border);
+  background: #fff6fa;
+  border-radius: 1.2em;
+  margin-bottom: 0.5em;
+  transition: background 0.2s;
+  box-shadow: 0 2px 8px #fd7bc522;
 }
 
-.copied-artist img {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius);
-  object-fit: cover;
+.copied-artist:hover {
+  background: #ffe0f5;
 }
 
 #jrpg-bubbles {
@@ -847,4 +861,52 @@ option {
     padding: 0.15em 0.6em;
     margin-left: 0.5em;
   }
+}
+
+/* Sidebar humiliation/taunt styles */
+.sidebar-taunt-banner {
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1.25em;
+  color: #fd7bc5;
+  background: linear-gradient(90deg, #fff0fa 60%, #ffd6f6 100%);
+  border-radius: 1.5em 1.5em 0 0;
+  padding: 0.7em 1em 0.5em 1em;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.2em;
+  box-shadow: 0 2px 8px #fd7bc522;
+}
+
+.shame-badge {
+  display: inline-block;
+  background: #fd7bc5;
+  color: #fff;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1.1em;
+  border-radius: 2em;
+  padding: 0.4em 1.2em 0.4em 1.2em;
+  margin: 0.5em auto 0.7em auto;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 12px #fd7bc555;
+  animation: shame-pulse 1.2s infinite;
+}
+.shame-badge span {
+  font-size: 1.3em;
+  margin-left: 0.3em;
+}
+@keyframes shame-pulse {
+  0% { box-shadow: 0 0 12px #fd7bc555; }
+  50% { box-shadow: 0 0 32px #fd7bc5cc; }
+  100% { box-shadow: 0 0 12px #fd7bc555; }
+}
+
+.lipstick-kiss {
+  font-size: 1.5em;
+  margin-right: 0.3em;
+  filter: drop-shadow(0 0 2px #fd7bc5cc);
+  user-select: none;
+  pointer-events: none;
 }

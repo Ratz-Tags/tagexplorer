@@ -57,6 +57,41 @@ function updateCopiedSidebar() {
   if (!copiedSidebar) return;
   copiedSidebar.innerHTML = "";
 
+  // --- HUMILIATION: Dynamic taunt banner ---
+  const copiedCount = copiedArtists.size;
+  let tauntMsg = "";
+  if (copiedCount === 0) {
+    tauntMsg = "No artists copied yet. Too shy?";
+  } else if (copiedCount === 1) {
+    tauntMsg = "Just one? Surely you can do better.";
+  } else if (copiedCount < 4) {
+    tauntMsg = `Already copied ${copiedCount}? Getting needy!`;
+  } else if (copiedCount < 8) {
+    tauntMsg = `Wow, ${copiedCount} artists? Greedy little thing!`;
+  } else if (copiedCount < 15) {
+    tauntMsg = `Obsessed much? ${copiedCount} artists and counting...`;
+  } else {
+    tauntMsg = `Shameless! ${copiedCount} artists? You're insatiable!`;
+  }
+  const tauntBanner = document.createElement("div");
+  tauntBanner.className = "sidebar-taunt-banner";
+  tauntBanner.textContent = tauntMsg;
+  copiedSidebar.appendChild(tauntBanner);
+
+  // --- HUMILIATION: Shame badge if copied more than 3 artists ---
+  if (copiedCount > 3) {
+    const shameBadge = document.createElement("div");
+    shameBadge.className = "shame-badge pulse";
+    shameBadge.innerHTML = `SHAME <span>💋</span>`;
+    shameBadge.title =
+      copiedCount < 8
+        ? "So many artists, so little dignity."
+        : copiedCount < 15
+        ? "You're really going for a high score, huh?"
+        : "Utterly shameless!";
+    copiedSidebar.appendChild(shameBadge);
+  }
+
   // Add close button at the top
   const closeBtn = document.createElement("button");
   closeBtn.className = "copied-sidebar-close";
@@ -91,6 +126,13 @@ function updateCopiedSidebar() {
       div.appendChild(img);
     }
 
+    // --- HUMILIATION: Add lipstick kiss or sparkle icon ---
+    const icon = document.createElement("span");
+    icon.className = "lipstick-kiss";
+    icon.title = "Kissed with shame!";
+    icon.innerHTML = Math.random() > 0.5 ? "💋" : "✨";
+    div.appendChild(icon);
+
     const nameSpan = document.createElement("span");
     nameSpan.textContent = artistTag;
     nameSpan.title = tooltip;
@@ -111,6 +153,13 @@ function updateCopiedSidebar() {
 
     copiedSidebar.appendChild(div);
   });
+
+  // --- HUMILIATION: Sidebar style tweaks ---
+  copiedSidebar.style.border = "3px solid #fd7bc5";
+  copiedSidebar.style.borderRadius = "2em";
+  copiedSidebar.style.fontFamily = "'Hi Melody', cursive, sans-serif";
+  copiedSidebar.style.background =
+    "linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%)";
 }
 
 /**
