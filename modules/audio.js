@@ -339,19 +339,40 @@ function showAudioToast(message, type = "info") {
   }, 3000);
 }
 
-/**
- * Updates the humiliation meter display and taunt message
- */
+// --- AUDIO PANEL TOGGLE FIX ---
+// Ensure the audio bar (panel) can be toggled by clicking the bar itself or a dedicated button
+function setupAudioPanelToggle() {
+  // Try to get both the panel and a toggle button
+  const panel = document.getElementById("audio-panel");
+  const bar = document.getElementById("audio-bar") || panel; // fallback to panel if no bar
+  const toggleBtn = document.getElementById("audio-panel-toggle");
+  function toggle() {
+    if (panel) panel.classList.toggle("hidden");
+  }
+  if (bar) {
+    bar.style.cursor = "pointer";
+    bar.addEventListener("click", toggle);
+    bar.addEventListener("touchend", toggle);
+  }
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", toggle);
+    toggleBtn.addEventListener("touchend", toggle);
+  }
+}
+
+// --- HUMILIATION BAR LESS OBSTRUCTIVE ---
 function updateAudioHumiliationMeter() {
   let meter = document.getElementById("audio-humiliation-meter");
   if (!meter) {
     meter = document.createElement("div");
     meter.id = "audio-humiliation-meter";
+    // Move to bottom right, smaller, more transparent
     meter.style.position = "fixed";
-    meter.style.left = "50%";
-    meter.style.bottom = "4.5em";
-    meter.style.transform = "translateX(-50%)";
-    meter.style.background = "#fff0fa";
+    meter.style.right = "1.5em";
+    meter.style.bottom = "1.5em";
+    meter.style.left = "auto";
+    meter.style.transform = "none";
+    meter.style.background = "#fff0faCC";
     meter.style.border = "2px solid #fd7bc5";
     meter.style.borderRadius = "2em";
     meter.style.boxShadow = "0 2px 12px #fd7bc555";
@@ -361,7 +382,9 @@ function updateAudioHumiliationMeter() {
     meter.style.flexDirection = "column";
     meter.style.alignItems = "center";
     meter.style.fontFamily = "'Hi Melody', cursive, sans-serif";
-    meter.innerHTML = `<div class="audio-humiliation-bar" style="width:0%;height:1.1em;background:#f9badd;border-radius:1em;margin-bottom:0.3em;transition:width 0.5s,background 0.5s;"></div>
+    meter.style.fontSize = "0.9em";
+    meter.style.opacity = "0.85";
+    meter.innerHTML = `<div class="audio-humiliation-bar" style="width:0%;height:0.8em;background:#f9badd;border-radius:1em;margin-bottom:0.2em;transition:width 0.5s,background 0.5s;"></div>
       <span class="audio-humiliation-taunt"></span>`;
     document.body.appendChild(meter);
   }
@@ -383,44 +406,36 @@ function updateAudioHumiliationMeter() {
   taunt.textContent = msg;
 }
 
-// Patch into addTrackByUrl and initAudioUI
-const origAddTrackByUrl = addTrackByUrl;
-addTrackByUrl = function (url, name) {
-  origAddTrackByUrl.apply(this, arguments);
-  updateAudioHumiliationMeter();
-  // Playful taunt
-  const taunts = [
-    "Another one? You really can't help yourself.",
-    "So desperate for new sounds?",
-    "Adding more? Your playlist is as needy as you.",
-    "You must love humiliating yourself with these tracks.",
-    "Keep going, maybe you'll finally be satisfied. (You won't.)",
-  ];
-  showAudioToast(taunts[Math.floor(Math.random() * taunts.length)]);
+// --- ENSURE AUDIO AND JOI MODE INITIALIZATION ---
+// Patch initAudio and initAudioUI to call setupAudioPanelToggle
+const origInitAudio = initAudio;
+initAudio = function () {
+  origInitAudio.apply(this, arguments);
+  setupAudioPanelToggle();
 };
-const origInitAudioUI = initAudioUI;
+const origInitAudioUI2 = initAudioUI;
 initAudioUI = function () {
-  origInitAudioUI.apply(this, arguments);
+  origInitAudioUI2.apply(this, arguments);
   updateAudioHumiliationMeter();
 };
 
-/**
- * Loads the last played track index from localStorage
- */
-function loadLastTrack() {
-  const saved = localStorage.getItem("lastAudioTrack");
-  if (saved !== null && !isNaN(Number(saved))) {
-    currentTrack = Number(saved);
-  } else {
-    currentTrack = 0;
-  }
-}
-
-/**
- * Saves the current track index to localStorage
- */
-function saveLastTrack() {
-  localStorage.setItem("lastAudioTrack", String(currentTrack));
+// Expose startJOIMode globally if not already
+if (
+  typeof window !== "undefined" &&
+  typeof window.startJOIMode !== "function"
+) {
+  window.startJOIMode = function () {
+    if (
+      typeof window.kexplorer === "object" &&
+      typeof window.kexplorer.startJOIMode === "function"
+    ) {
+      window.kexplorer.startJOIMode();
+    } else if (typeof startJOIMode === "function") {
+      startJOIMode();
+    } else {
+      alert("JOI mode is not available.");
+    }
+  };
 }
 
 // All functions in this file are defined and used as follows:
