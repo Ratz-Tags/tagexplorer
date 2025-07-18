@@ -424,35 +424,116 @@ main {
   position: fixed;
   bottom: 1rem;
   left: 1rem;
-  width: 300px;
-  background: var(--background-alt);
-  border: 1px solid var(--border);
+  width: 320px;
+  min-height: 340px;
+  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
+  border: 2px solid #fd7bc5;
   border-radius: var(--radius);
   padding: var(--padding);
   display: flex;
   flex-direction: column;
   gap: var(--padding);
   z-index: 150;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 32px #ff63a540;
+  overflow: visible;
+  position: relative;
 }
 
 #audio-panel.hidden {
   display: none;
 }
 
-.audio-controls {
-  display: flex;
-  gap: 0.5rem;
+#audio-panel input[type="url"] {
+  border: 2px solid #fd7bc5;
+  border-radius: 2em;
+  padding: 0.5em 1em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1em;
+  background: #fff0fa;
+  color: #a0005a;
+  margin-bottom: 0.5em;
 }
 
-.audio-controls button {
-  flex: 1;
-  background: var(--accent);
+#audio-panel .browse-btn {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   color: #fff;
+  border-radius: 2em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1.1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  margin: 0.2em 0.5em 0.2em 0;
   border: none;
-  border-radius: var(--radius);
-  padding: 0.5rem;
-  cursor: pointer;
+  padding: 0.5em 1.2em;
+  transition: background 0.2s, box-shadow 0.2s;
 }
+
+#audio-panel .browse-btn:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  box-shadow: 0 4px 16px #fd7bc540;
+}
+
+.audio-humiliation-overlay {
+  pointer-events: none;
+  z-index: 2;
+  background-image: url('icons/heart.png'), url('icons/sparkle.png'), url('icons/bow.png');
+  background-repeat: repeat;
+  background-size: 80px, 120px, 90px;
+  opacity: 0.10;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  animation: sparkleMove 12s linear infinite;
+}
+
+#audio-panel .lipstick-kiss {
+  position: absolute;
+  bottom: 12px;
+  right: 18px;
+  width: 48px;
+  height: 48px;
+  background-image: url('icons/bow.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.35;
+  z-index: 3;
+  pointer-events: none;
+  animation: kissWiggle 2.5s infinite;
+}
+
+#audio-panel .browse-btn.humiliation-glow {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #a0005a;
+  border: 2px solid #fd7bc5;
+  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
+  animation: humiliationGlow 1.2s infinite alternate, toastfade 0.3s forwards;
+}
+
+#audio-panel .browse-btn.humiliation-glow:hover {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%);
+  color: #fff;
+}
+
+.modal.humiliation-glow {
+  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
+  border: 2px solid #fd7bc5;
+  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
+  animation: humiliationGlow 1.2s infinite alternate, taunt-pop 0.7s;
+  color: #a0005a;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.modal.humiliation-glow h3 {
+  color: #fd7bc5;
+  font-size: 1.3em;
+  margin-bottom: 1em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.modal.humiliation-glow button.browse-btn {
+  margin: 0.5em 0.2em;
+}
+
+/* ...existing code... */
 
 #back-to-top {
   display: none;
@@ -1004,4 +1085,137 @@ option {
   margin-top: 0.1em;
   text-align: center;
   font-weight: bold;
+}
+
+/* Feminine playful utility classes */
+.fem-shadow {
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 32px #ff63a540;
+}
+.fem-border {
+  border: 2px solid #fd7bc5 !important;
+  border-radius: 2em !important;
+}
+.humiliation-glow {
+  animation: humiliationGlow 1.2s infinite alternate;
+  box-shadow: 0 0 24px #fd7bc5cc, 0 0 48px #ff63a5cc;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  color: #a0005a !important;
+}
+@keyframes humiliationGlow {
+  0% { box-shadow: 0 0 12px #fd7bc5cc; }
+  100% { box-shadow: 0 0 48px #ff63a5cc; }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  width: 320px;
+  min-height: 340px;
+  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
+  border: 2px solid #fd7bc5;
+  border-radius: var(--radius);
+  padding: var(--padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--padding);
+  z-index: 150;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 32px #ff63a540;
+  overflow: visible;
+  position: relative;
+}
+
+#audio-panel.hidden {
+  display: none;
+}
+
+#audio-panel input[type="url"] {
+  border: 2px solid #fd7bc5;
+  border-radius: 2em;
+  padding: 0.5em 1em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1em;
+  background: #fff0fa;
+  color: #a0005a;
+  margin-bottom: 0.5em;
+}
+
+#audio-panel .browse-btn {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  color: #fff;
+  border-radius: 2em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1.1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  margin: 0.2em 0.5em 0.2em 0;
+  border: none;
+  padding: 0.5em 1.2em;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+#audio-panel .browse-btn:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  box-shadow: 0 4px 16px #fd7bc540;
+}
+
+.audio-humiliation-overlay {
+  pointer-events: none;
+  z-index: 2;
+  background-image: url('icons/heart.png'), url('icons/sparkle.png'), url('icons/bow.png');
+  background-repeat: repeat;
+  background-size: 80px, 120px, 90px;
+  opacity: 0.10;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  animation: sparkleMove 12s linear infinite;
+}
+
+#audio-panel .lipstick-kiss {
+  position: absolute;
+  bottom: 12px;
+  right: 18px;
+  width: 48px;
+  height: 48px;
+  background-image: url('icons/bow.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0.35;
+  z-index: 3;
+  pointer-events: none;
+  animation: kissWiggle 2.5s infinite;
+}
+
+#audio-panel .browse-btn.humiliation-glow {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #a0005a;
+  border: 2px solid #fd7bc5;
+  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
+  animation: humiliationGlow 1.2s infinite alternate, toastfade 0.3s forwards;
+}
+
+#audio-panel .browse-btn.humiliation-glow:hover {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%);
+  color: #fff;
+}
+
+.modal.humiliation-glow {
+  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
+  border: 2px solid #fd7bc5;
+  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
+  animation: humiliationGlow 1.2s infinite alternate, taunt-pop 0.7s;
+  color: #a0005a;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.modal.humiliation-glow h3 {
+  color: #fd7bc5;
+  font-size: 1.3em;
+  margin-bottom: 1em;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+
+.modal.humiliation-glow button.browse-btn {
+  margin: 0.5em 0.2em;
 }

@@ -30,10 +30,14 @@ let hypnoAudio = null;
 let moanAudio = null;
 
 /**
- * Gets the audio source path for a given track index
+ * Gets the audio source path for a given track index (supports custom URLs).
  */
 function getAudioSrc(index) {
-  return `audio/${audioFiles[index]}`;
+  const name = audioFiles[index];
+  if (window._customAudioUrls && window._customAudioUrls[name]) {
+    return window._customAudioUrls[name];
+  }
+  return `audio/${name}`;
 }
 
 /**
@@ -41,7 +45,8 @@ function getAudioSrc(index) {
  */
 function loadTrack(index) {
   if (!hypnoAudio || !trackName) return;
-
+  currentTrack = index;
+  saveLastTrack();
   hypnoAudio.src = getAudioSrc(index);
   trackName.textContent = audioFiles[index].replace(/\.mp3$/, "");
   hypnoAudio.play().catch(console.warn);
@@ -67,6 +72,7 @@ function togglePlayback() {
  */
 function nextTrack() {
   currentTrack = (currentTrack + 1) % audioFiles.length;
+  saveLastTrack();
   loadTrack(currentTrack);
 }
 
@@ -75,6 +81,7 @@ function nextTrack() {
  */
 function previousTrack() {
   currentTrack = (currentTrack - 1 + audioFiles.length) % audioFiles.length;
+  saveLastTrack();
   loadTrack(currentTrack);
 }
 
@@ -184,6 +191,8 @@ function initAudio() {
     hypnoAudio.addEventListener("ended", onTrackEnded);
   }
 
+  // Load last played track from localStorage
+  loadLastTrack();
   // Load initial track
   loadTrack(currentTrack);
 
@@ -194,99 +203,51 @@ function initAudio() {
   if (moanBtn) {
     moanBtn.textContent = "🔇 Moan";
   }
+
+  // Keyboard shortcuts: Space (play/pause), N (next), P (prev), S (shuffle)
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.code === "Space") {
+      togglePlayback();
+      e.preventDefault();
+    }
+    if (e.key.toLowerCase() === "n") {
+      nextTrack();
+      e.preventDefault();
+    }
+    if (e.key.toLowerCase() === "p") {
+      previousTrack();
+      e.preventDefault();
+    }
+    if (e.key.toLowerCase() === "s") {
+      shuffleTracks();
+      e.preventDefault();
+    }
+  });
 }
 
 /**
- * Shows an error message for audio loading issues
+ * Initializes UI controls for adding tracks by direct MP3 URL only.
+ * Call this after DOM is ready.
  */
-function showAudioError(container, errorMsg = "Error loading audio.") {
-  container.textContent = errorMsg;
-  container.style.display = "block";
-  container.setAttribute("aria-live", "assertive");
-  // Add Retry button if not present
-  if (!container.querySelector(".retry-btn")) {
-    const retryBtn = document.createElement("button");
-    retryBtn.className = "retry-btn";
-    retryBtn.textContent = "Retry";
-    retryBtn.setAttribute("aria-label", "Retry loading audio");
-    retryBtn.onclick = () => {
-      container.textContent = "Retrying...";
-      // Invalidate cache and re-fetch audio
-      if (typeof invalidateAudioCache === "function") invalidateAudioCache();
-      if (typeof fetchAudio === "function") fetchAudio();
-    };
-    container.appendChild(retryBtn);
-  }
-}
+function initAudioUI() {
+  // Remove any search/yt/soundcloud buttons if present
+  const oldSearchBtn = document.getElementById("search-hypno-btn");
+  if (oldSearchBtn) oldSearchBtn.remove();
 
-/**
- * Loads audio and handles errors
- */
-async function loadAudio() {
-  try {
-    // Fetch audio, handle errors
-    const audioSrc = await fetchAudioSrc();
-    if (!audioSrc) throw new Error("No audio source");
-    // ...existing code...
-  } catch (err) {
-    showAudioError("Error loading audio.");
-    console.warn("Failed to load audio:", err);
-  }
-}
-
-/**
- * Returns the current track index
- */
-function getCurrentTrack() {
-  return currentTrack;
-}
-
-/**
- * Returns a copy of the audio files array
- */
-function getAudioFiles() {
-  return [...audioFiles];
-}
-
-/**
- * Shuffles the audio playlist.
- */
-function shuffleTracks() {
-  for (let i = audioFiles.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [audioFiles[i], audioFiles[j]] = [audioFiles[j], audioFiles[i]];
-  }
-  currentTrack = 0;
-  loadTrack(currentTrack);
-}
-
-/**
- * Sets the volume for the main audio (0.0 - 1.0)
- */
-function setVolume(vol) {
-  if (hypnoAudio) hypnoAudio.volume = Math.max(0, Math.min(1, vol));
-}
-
-/**
- * Gets the current track name (without extension)
- */
-function getCurrentTrackName() {
-  return audioFiles[currentTrack]?.replace(/\.mp3$/, "") || "";
-}
-
-// Export functions for ES modules
-export {
-  initAudio,
-  loadTrack,
-  togglePlayback,
-  nextTrack,
-  previousTrack,
-  toggleMoan,
-  toggleMoanPlayback,
-  togglePanel,
-  getCurrentTrack,
-  getAudioFiles,
-  shuffleTracks,
-  setVolume,
-  getCurrentTrackName,
-};
+  // Add input for adding track by URL
+  let urlInput = document.getElementById("add-track-url");
+  let urlBtn = document.getElementById("add-track-url-btn");
+  if (!urlInput) {
+    urlInput = document.createElement("input");
+    urlInput.id = "add-track-url";
+    urlInput.type = "url";
+    urlInput.placeholder = "Paste direct MP3 URL";
+    urlInput.style.margin = "0.5em 0.2em";
+    urlInput.style.borderRadius = "2em";
+    urlInput.style.padding = "0.5em 1em";
+    urlInput.style.border = "2px solid #fd7bc5";
+    urlInput.style.fontFamily = "'Hi Melody',cursive";
+    urlInput.style.width = "60%";
+    const panel = document.getElementById("audio-panel");
+    if

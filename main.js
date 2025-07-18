@@ -6,7 +6,7 @@ import {
   initSidebar,
   setAllArtists as setSidebarArtists,
 } from "./modules/sidebar.js";
-import { initAudio } from "./modules/audio.js";
+import { initAudio, initAudioUI } from "./modules/audio.js";
 import {
   initTags,
   setAllArtists as setTagsArtists,
@@ -54,6 +54,7 @@ async function initApp() {
     initUI();
     initSidebar();
     initAudio();
+    initAudioUI();
     initTags();
     initGallery();
 
