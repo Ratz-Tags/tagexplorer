@@ -887,9 +887,27 @@ function initGallery() {
 function setSortMode(mode) {
   sortMode = mode;
   lastSortMode = mode;
+  if (filtered.length > 0) {
+    if (sortMode === "count") {
+      filtered.sort(
+        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+      );
+    } else {
+      filtered.sort((a, b) =>
+        a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        })
+      );
+    }
+    renderArtistsPage();
+  }
 }
 
-// Patch: after showTopArtistsByTagCount, keep sort mode as 'top' until user changes it
+function forceSortAndRender() {
+  if (lastSortMode) sortMode = lastSortMode;
+  renderArtistsPage();
+}
+
 async function showTopArtistsByTagCount() {
   if (!allArtists || allArtists.length === 0) return;
   sortMode = "top";
@@ -1078,17 +1096,9 @@ function setSortMode(mode) {
     renderArtistsPage();
   }
 }
+
 function setSortPreference(preference) {
   sortMode = preference === "count" ? "count" : "name";
-}
-
-function forceSortAndRender() {
-  if (lastSortMode) sortMode = lastSortMode;
-  renderArtistsPage();
-}
-
-function getFilteredArtists() {
-  return [...filtered];
 }
 
 export {
