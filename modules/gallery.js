@@ -1113,6 +1113,5 @@ export {
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
   setSortMode,
-  getFilteredArtists,
   getPaginationInfo,
 };
