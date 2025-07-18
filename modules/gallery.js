@@ -358,6 +358,50 @@ async function openArtistZoom(artist) {
   document.body.appendChild(wrapper);
   wrapper.focus();
 
+  // --- HUMILIATION: Add taunt header to zoom modal ---
+  if (wrapper && !wrapper.querySelector(".taunt-header")) {
+    let taunt = "";
+    // Try to get a tag-specific taunt if possible
+    if (
+      artist.kinkTags &&
+      Array.isArray(artist.kinkTags) &&
+      artist.kinkTags.length > 0
+    ) {
+      // Import tag taunts if available
+      try {
+        const tagsMod = await import("./tags.js");
+        const tagTaunts = tagsMod && tagsMod.tagTaunts ? tagsMod.tagTaunts : {};
+        const tag =
+          artist.kinkTags[Math.floor(Math.random() * artist.kinkTags.length)];
+        if (tagTaunts && tagTaunts[tag] && tagTaunts[tag].length > 0) {
+          taunt =
+            tagTaunts[tag][Math.floor(Math.random() * tagTaunts[tag].length)];
+        }
+      } catch {}
+    }
+    // Fallback to a general taunt if no tag-specific taunt
+    if (!taunt) {
+      try {
+        const humiliation = await import("./humiliation.js");
+        if (
+          humiliation &&
+          humiliation.startTauntTicker &&
+          window._generalTaunts
+        ) {
+          taunt =
+            window._generalTaunts[
+              Math.floor(Math.random() * window._generalTaunts.length)
+            ];
+        }
+      } catch {}
+    }
+    if (!taunt) taunt = "You really can't get enough, can you?";
+    const tauntHeader = document.createElement("div");
+    tauntHeader.className = "taunt-header";
+    tauntHeader.textContent = taunt;
+    wrapper.querySelector(".zoom-content").prepend(tauntHeader);
+  }
+
   // Fetch and show artist images
   try {
     // Fetch all images for the artist only (not filtered by tags)
