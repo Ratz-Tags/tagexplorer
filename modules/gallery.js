@@ -1047,12 +1047,6 @@ async function showTopArtistsByTagCount() {
   }
 }
 
-// When any button is clicked, don't reset sortMode unless user changes dropdown
-function forceSortAndRender() {
-  if (lastSortMode) sortMode = lastSortMode;
-  renderArtistsPage();
-}
-
 function getPaginationInfo() {
   return {
     total: filtered.length,
