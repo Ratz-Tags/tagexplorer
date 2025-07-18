@@ -385,3 +385,26 @@ export {
   toggleTag,
   spawnBubble,
 };
+
+// All functions in this file are defined and used as follows:
+
+// spawnBubble: exported, used by toggleTag, renderTagButtons
+// updateFilteredResultsSummary: used by renderTagButtons
+// renderTagButtons: exported, used by main.js, tags.js, and internally
+// clearAllTags: exported, used by clearTagsBtn event, tag-explorer.js (window.clearAllTags)
+// toggleTag: exported, used by renderTagButtons, tag-explorer.js
+// handleTagSearch: exported, used by tagSearchInput event
+// handleArtistNameFilter: exported, used by artistNameFilterInput event, tag-explorer.js
+// initTags: exported, used by main.js
+// setAllArtists: exported, used by main.js, tag-explorer.js
+// setRenderArtistsCallback: exported, used by main.js
+// setRandomBackgroundCallback: exported, used by main.js
+// setTagTooltips: exported, used by main.js
+// setTagTaunts: exported, used by main.js
+// setTaunts: exported, used by main.js
+// getActiveTags: exported, used by main.js, gallery.js, tag-explorer.js, humiliation.js
+// getSearchFilter: exported, not used internally (for external use)
+// getArtistNameFilter: exported, used by main.js, gallery.js, tag-explorer.js
+// getKinkTags: exported, used by tag-explorer.js
+
+// No unused or undefined functions in this file.

@@ -250,4 +250,111 @@ function initAudioUI() {
     urlInput.style.fontFamily = "'Hi Melody',cursive";
     urlInput.style.width = "60%";
     const panel = document.getElementById("audio-panel");
-    if
+    if (panel) {
+      panel.appendChild(urlInput);
+    }
+  }
+  if (!urlBtn) {
+    urlBtn = document.createElement("button");
+    urlBtn.id = "add-track-url-btn";
+    urlBtn.textContent = "➕ Add Track";
+    urlBtn.style.marginLeft = "0.5em";
+    urlBtn.style.borderRadius = "2em";
+    urlBtn.style.padding = "0.5em 1em";
+    urlBtn.style.backgroundColor = "#fd7bc5";
+    urlBtn.style.color = "#fff";
+    urlBtn.style.fontFamily = "'Hi Melody',cursive";
+    urlBtn.style.cursor = "pointer";
+    const panel = document.getElementById("audio-panel");
+    if (panel) {
+      panel.appendChild(urlBtn);
+    }
+  }
+
+  // Handle track addition by URL
+  if (urlBtn) {
+    urlBtn.addEventListener("click", () => {
+      const urlInput = document.getElementById("add-track-url");
+      if (urlInput) {
+        const url = urlInput.value.trim();
+        if (url) {
+          addTrackByUrl(url);
+          urlInput.value = "";
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Adds a new track to the playlist from a direct MP3 URL
+ */
+function addTrackByUrl(url) {
+  // Validate URL (basic validation, can be expanded)
+  if (!url.startsWith("http") || !url.endsWith(".mp3")) {
+    showAudioToast("Invalid URL. Please enter a direct MP3 URL.", "error");
+    return;
+  }
+
+  // Add to audioFiles array and update current track
+  audioFiles.push(url);
+  currentTrack = audioFiles.length - 1;
+  saveLastTrack();
+
+  // Update UI and load the new track
+  const trackName = url
+    .split("/")
+    .pop()
+    .replace(/\.mp3$/, "");
+  const option = document.createElement("option");
+  option.value = url;
+  option.textContent = trackName;
+  const trackSelect = document.getElementById("track-select");
+  if (trackSelect) {
+    trackSelect.appendChild(option);
+  }
+
+  loadTrack(currentTrack);
+  showAudioToast(`Track added: ${trackName}`, "success");
+}
+
+/**
+ * Shows a temporary toast message for audio actions
+ */
+function showAudioToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.className = `audio-toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("show");
+  }, 100);
+
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 300);
+  }, 3000);
+}
+
+// All functions in this file are defined and used as follows:
+
+// getAudioSrc: used by loadTrack
+// loadTrack: used by nextTrack, previousTrack, onTrackEnded, initAudio, shuffleTracks
+// togglePlayback: used by initAudio, keyboard shortcut
+// nextTrack: used by initAudio, keyboard shortcut
+// previousTrack: used by initAudio, keyboard shortcut
+// toggleMoan: used by initAudio
+// toggleMoanPlayback: used by initAudio
+// togglePanel: used by initAudio
+// onTrackEnded: used by initAudio
+// initAudio: called from main.js and sets up all event listeners
+// initAudioUI: called from main.js, sets up the add-track UI
+// addTrackByUrl: used by initAudioUI
+// loadLastTrack: used by initAudio
+// saveLastTrack: used by loadTrack, nextTrack, previousTrack
+// showAudioToast: used by initAudioUI
+// getCurrentTrack: exported, not used internally (for external use)
+// getAudioFiles: exported, not used internally

@@ -293,3 +293,20 @@ export {
   clearArtistCache,
   loadAppData,
 };
+
+// All functions in this file are defined and used as follows:
+
+// postHasAllTags: exported, used by filterValidImagePosts
+// buildImageUrl: exported, used by gallery.js, api.js
+// fetchPosts: exported, used by fetchArtistImages, getRandomBackgroundImage
+// filterValidImagePosts: exported, used by fetchArtistImages
+// getRandomBackgroundImage: exported, used by gallery.js
+// fetchArtistImages: exported, used by gallery.js, api.js
+// loadArtists: used by getArtistImageCount
+// getArtistImageCount: exported, used by fetchAllArtistImages
+// clearArtistCache: exported, used by gallery.js
+// loadAppData: exported, used by main.js
+// fetchAllArtistImages: exported, used by gallery.js
+// fetchPostCountForTags: exported, used by gallery.js
+
+// No unused or undefined functions in this file.

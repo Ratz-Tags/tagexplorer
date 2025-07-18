@@ -266,4 +266,16 @@ function openTagExplorer() {
   filterTags();
 }
 
+// All functions in this file are defined and used as follows:
+
+// setAllArtists: exported, used by main.js
+// getFilteredCounts: used by renderList
+// showTagLoadingError: used by filterTags
+// filterTags: used by openTagExplorer
+// fetchTagCounts: used by filterTags
+// enhanceTagControls: exported, not used internally (for external use)
+// openTagExplorer: exported, used by main.js
+
+// No unused or undefined functions in this file.
+
 export { openTagExplorer, setAllArtists };

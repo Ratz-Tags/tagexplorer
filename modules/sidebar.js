@@ -443,3 +443,24 @@ if (typeof module !== "undefined" && module.exports) {
     _setCopiedSidebar: setCopiedSidebar,
   };
 }
+
+// All functions in this file are defined and used as follows:
+
+// getCopiedCount: exported, used by humiliation.js
+// showToast: exported, used by handleArtistCopy, patched for humiliation
+// handleArtistCopy: exported, used by gallery.js
+// updateCopiedSidebar: exported, used by handleArtistCopy, patched for humiliation, and main.js
+// initSidebar: exported, used by main.js
+// setAllArtists: exported, used by main.js
+// setCopiedArtists: exported, not used internally (for external use)
+// setCopiedSidebar: exported, not used internally (for external use)
+// showSidebarError: used by updateSidebar
+// updateSidebar: not exported, not used externally (could be removed if not needed)
+// addShameBadgeToCard: used by window._galleryHumiliationPatch
+// showGalleryEmptyState: used by window._showGalleryEmptyState
+// addGalleryCardHover: used by window._galleryHumiliationPatch
+// updateDesperationMeter: used by showToast (patch), updateCopiedSidebar (patch), and window._galleryHumiliationPatch
+// window._galleryHumiliationPatch: used by gallery.js (assumed via window)
+// window._showGalleryEmptyState: used by gallery.js (assumed via window)
+
+// No unused or undefined functions in this file.

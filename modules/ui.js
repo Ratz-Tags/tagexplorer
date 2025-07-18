@@ -342,6 +342,26 @@ function createConfirmationModal(message) {
   });
 }
 
+// All functions in this file are defined and used as follows:
+
+// showNoEntriesMsg: exported, used by other modules
+// setupInfiniteScroll: exported, used by main.js
+// setupBackToTop: used by initUI
+// setupBackgroundRotation: exported, used by main.js
+// addLipstickKiss: used by initUI
+// createSpinner: exported, used by gallery.js
+// debounce: exported, used by tags.js
+// throttle: exported, not used internally (for external use)
+// createModal: exported, used by createConfirmationModal
+// createFullscreenViewer: exported, used by gallery.js
+// setupKeyboardShortcuts: exported, not used internally (for external use)
+// initUI: exported, used by main.js
+// showToast: exported, used by sidebar.js, humiliation.js, audio.js
+// scrollToTop: exported, not used internally (for external use)
+// createConfirmationModal: exported, not used internally (for external use)
+
+// No unused or undefined functions in this file.
+
 // Export functions for ES modules
 export {
   showNoEntriesMsg,

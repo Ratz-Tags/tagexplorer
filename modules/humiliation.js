@@ -26,4 +26,10 @@ function startTauntTicker(taunts = [], intervalMs = 30000) {
   }, intervalMs);
 }
 
+// All functions in this file are defined and used as follows:
+
+// startTauntTicker: exported, used by main.js
+
+// No unused or undefined functions in this file.
+
 export { startTauntTicker };

@@ -573,6 +573,30 @@ async function openArtistZoom(artist) {
   }
 }
 
+// All functions in this file are defined and used as follows:
+
+// setRandomBackground: exported, used by main.js and tags.js
+// setBestImage: used by lazyLoadBestImage, renderArtistCards
+// lazyLoadBestImage: used by renderArtistCards
+// openArtistZoom: exported, used by renderArtistCards and sidebar.js
+// getFilteredArtists: exported, not used internally (for external use)
+// setArtistsPerPage: exported, not used internally (for external use)
+// renderArtistsPage: exported, used by setSortMode, forceSortAndRender, setArtistsPerPage, filterArtists, and internally
+// renderArtistCards: used by renderArtistsPage, showTopArtistsByTagCount
+// getPaginationInfo: exported, used by main.js (infinite scroll), showTopArtistsByTagCount
+// filterArtists: exported, used by main.js, tags.js, and internally
+// showTopArtistsByTagCount: exported, used by addTopTagCountButton
+// addTopTagCountButton: used by initGallery
+// initGallery: exported, used by main.js
+// setSortMode: exported, used by main.js, filterArtists, showTopArtistsByTagCount
+// forceSortAndRender: exported, used by main.js
+// setAllArtists: exported, used by main.js
+// setGetActiveTagsCallback: exported, used by main.js
+// setGetArtistNameFilterCallback: exported, used by main.js
+// setSortPreference: exported, used by main.js
+
+// No unused or undefined functions in this file.
+
 /**
  * Returns a copy of the currently filtered artists.
  */
