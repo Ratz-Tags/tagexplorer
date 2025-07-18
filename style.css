@@ -749,6 +749,31 @@ main {
   max-width: 90vw;
 }
 
+/* Consistent select/dropdown styling */
+select, .sort-controls select, .tag-explorer-header select {
+  background: var(--background);
+  border: 2px solid var(--accent2);
+  color: var(--text);
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  border-radius: 1.2em;
+  padding: 0.5em 1.2em;
+  margin: 0.2em 0.5em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  appearance: none;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+select:focus, .sort-controls select:focus, .tag-explorer-header select:focus {
+  border-color: var(--accent3);
+  box-shadow: 0 0 0 2px #fd7bc540;
+}
+option {
+  background: #fff0fa;
+  color: #a0005a;
+  font-family: var(--heading-font);
+}
+
 /* Playful tooltips for gallery cards, sort/filter controls, and tag buttons */
 .tag-btn[title], .tag-button[title], .reload-button[title], .copy-button[title], .browse-btn[title], .sort-controls select[title], .sort-controls button[title] {
   position: relative;

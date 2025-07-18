@@ -32,16 +32,18 @@ function showToast(message) {
  */
 function handleArtistCopy(artist, imgSrc) {
   const artistTag = artist.artistName.replace(/_/g, " ");
-  // Use just the artistTag for sidebar and clipboard
-  const copyText = artistTag;
-  if (copiedArtistsCache && copiedArtistsCache.has(copyText)) return;
+  // Always copy to clipboard, even if already in sidebar
   navigator.clipboard
-    .writeText(copyText)
+    .writeText(artistTag)
     .then(() => {
-      copiedArtists.add(copyText);
-      copiedArtistsCache = new Set(copiedArtists);
-      updateCopiedSidebar();
-      showToast(`Copied: ${copyText}`);
+      let added = false;
+      if (!copiedArtists.has(artistTag)) {
+        copiedArtists.add(artistTag);
+        copiedArtistsCache = new Set(copiedArtists);
+        updateCopiedSidebar();
+        added = true;
+      }
+      showToast(added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`);
     })
     .catch(() => {
       showToast("Failed to copy artist name");

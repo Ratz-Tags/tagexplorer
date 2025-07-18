@@ -976,6 +976,8 @@ async function filterArtists(reset = true, force = false) {
  */
 async function showTopArtistsByTagCount() {
   if (!allArtists || allArtists.length === 0) return;
+  sortMode = "top";
+  lastSortMode = "top";
   if (!getActiveTags) return;
   const selectedTags = Array.from(getActiveTags());
   if (selectedTags.length === 0) return;
@@ -1114,6 +1116,8 @@ async function showTopArtistsByTagCount() {
 // Optionally, expose this function for UI integration
 export { showTopArtistsByTagCount };
 
+let lastSortMode = null;
+
 function addTopTagCountButton() {
   const sortControls = document.querySelector(".sort-controls");
   if (!sortControls || document.getElementById("top-tag-count-btn")) return;
@@ -1136,7 +1140,166 @@ function initGallery() {
   artistGallery = document.getElementById("artist-gallery");
   backgroundBlur = document.getElementById("background-blur");
   addTopTagCountButton();
+  // Patch: remember last sort mode
+  const sortSelect = document.querySelector(".sort-controls select, #sort-by");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      lastSortMode = e.target.value;
+    });
+  }
 }
+
+function setSortMode(mode) {
+  sortMode = mode;
+  lastSortMode = mode;
+}
+
+// Patch: after showTopArtistsByTagCount, keep sort mode as 'top' until user changes it
+async function showTopArtistsByTagCount() {
+  if (!allArtists || allArtists.length === 0) return;
+  sortMode = "top";
+  lastSortMode = "top";
+  if (!getActiveTags) return;
+  const selectedTags = Array.from(getActiveTags());
+  if (selectedTags.length === 0) return;
+
+  // Filter artists to only those that have all selected tags in their kinkTags
+  const filteredArtists = allArtists.filter((artist) => {
+    const tags = artist.kinkTags || [];
+    return selectedTags.every((tag) => tags.includes(tag));
+  });
+
+  // Show spinner and loading bar while loading
+  if (artistGallery) {
+    artistGallery.innerHTML = "";
+    const spinner = document.createElement("div");
+    spinner.className = "gallery-spinner";
+    spinner.style.position = "fixed";
+    spinner.style.top = "50%";
+    spinner.style.left = "50%";
+    spinner.style.transform = "translate(-50%, -50%)";
+    spinner.style.zIndex = "10000";
+    spinner.style.background = "rgba(255,255,255,0.95)";
+    spinner.style.borderRadius = "2em";
+    spinner.style.padding = "2em 2em 2.5em 2em";
+    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" />`;
+    // Add loading bar, styled center and large
+    const loadingBar = document.createElement("progress");
+    loadingBar.className = "loading-bar";
+    loadingBar.value = 0;
+    loadingBar.max = filteredArtists.length;
+    loadingBar.style.display = "block";
+    loadingBar.style.width = "80vw";
+    loadingBar.style.maxWidth = "400px";
+    loadingBar.style.height = "2.5em";
+    loadingBar.style.margin = "2em auto 0 auto";
+    loadingBar.style.position = "absolute";
+    loadingBar.style.left = "50%";
+    loadingBar.style.top = "calc(50% + 60px)";
+    loadingBar.style.transform = "translate(-50%, 0)";
+    spinner.appendChild(loadingBar);
+    // Add status text
+    const statusText = document.createElement("div");
+    statusText.className = "loading-status";
+    statusText.style.textAlign = "center";
+    statusText.style.fontSize = "1.2em";
+    statusText.style.marginTop = "1em";
+    statusText.style.position = "absolute";
+    statusText.style.left = "50%";
+    statusText.style.top = "calc(50% + 120px)";
+    statusText.style.transform = "translate(-50%, 0)";
+    spinner.appendChild(statusText);
+    artistGallery.appendChild(spinner);
+  }
+
+  // Use Danbooru /counts/posts API for each artist+tags
+  const { fetchPostCountForTags, fetchArtistImages } = await import("./api.js");
+  const artistTagCounts = [];
+  let done = 0;
+  const spinnerElem = artistGallery
+    ? artistGallery.querySelector(".gallery-spinner")
+    : null;
+  const loadingBarElem = spinnerElem
+    ? spinnerElem.querySelector(".loading-bar")
+    : null;
+  const statusTextElem = spinnerElem
+    ? spinnerElem.querySelector(".loading-status")
+    : null;
+
+  // Helper to format artist tag for Danbooru
+  function formatArtistTag(tag) {
+    return tag.replace(/\s+/g, "_").toLowerCase();
+  }
+  // Helper to format selected tags for Danbooru
+  function formatTag(tag) {
+    return tag.replace(/\s+/g, "_").toLowerCase();
+  }
+
+  let allZero = true;
+  for (const artist of filteredArtists) {
+    let matchCount = 0;
+    try {
+      // Use artistTag for API calls
+      const apiTags = [
+        formatArtistTag(artist.artistTag || artist.artistName),
+        ...selectedTags.map(formatTag),
+      ];
+      matchCount = await fetchPostCountForTags(apiTags);
+    } catch (e) {
+      matchCount = 0;
+    }
+    artist._tagMatchCount = matchCount;
+    if (matchCount > 0) allZero = false;
+    artistTagCounts.push({ artist, count: matchCount });
+    done++;
+    if (spinnerElem) {
+      if (loadingBarElem) loadingBarElem.value = done;
+      if (loadingBarElem && !spinnerElem.contains(loadingBarElem)) {
+        spinnerElem.appendChild(loadingBarElem);
+      }
+      if (statusTextElem) {
+        statusTextElem.textContent = `Fetching: ${
+          artist.artistTag || artist.artistName
+        } (${done}/${filteredArtists.length})`;
+      }
+    }
+    // Ensure image is cached for card display
+    const cacheKey = `danbooru-image-${artist.artistName}`;
+    if (!localStorage.getItem(cacheKey)) {
+      try {
+        const posts = await fetchArtistImages(artist.artistName, [], {
+          limit: 1,
+        });
+        if (Array.isArray(posts) && posts.length > 0) {
+          const post = posts[0];
+          const url = post.large_file_url || post.file_url;
+          if (url) localStorage.setItem(cacheKey, url);
+        }
+      } catch {}
+    }
+  }
+
+  // Sort artists by count descending
+  artistTagCounts.sort((a, b) => b.count - a.count);
+
+  // Only show artists with matches
+  const topArtists = artistTagCounts
+    .filter(({ count }) => count > 0)
+    .map(({ artist }) => artist);
+  if (topArtists.length > 0) {
+    renderArtistCards(topArtists);
+  } else {
+    artistGallery.innerHTML =
+      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
+  }
+}
+
+// When any button is clicked, don't reset sortMode unless user changes dropdown
+function forceSortAndRender() {
+  if (lastSortMode) sortMode = lastSortMode;
+  renderArtistsPage();
+}
+
 function getPaginationInfo() {
   return {
     total: filtered.length,
@@ -1163,7 +1326,8 @@ function setGetArtistNameFilterCallback(callback) {
 }
 
 function setSortMode(mode) {
-  sortMode = mode === "count" ? "count" : "name";
+  sortMode = mode;
+  lastSortMode = mode;
   if (filtered.length > 0) {
     if (sortMode === "count") {
       filtered.sort(
@@ -1184,7 +1348,8 @@ function setSortPreference(preference) {
 }
 
 function forceSortAndRender() {
-  setSortMode(sortMode);
+  if (lastSortMode) sortMode = lastSortMode;
+  renderArtistsPage();
 }
 
 function getFilteredArtists() {
