@@ -1047,12 +1047,6 @@ async function showTopArtistsByTagCount() {
   }
 }
 
-// When any button is clicked, don't reset sortMode unless user changes dropdown
-function forceSortAndRender() {
-  if (lastSortMode) sortMode = lastSortMode;
-  renderArtistsPage();
-}
-
 function getPaginationInfo() {
   return {
     total: filtered.length,
@@ -1076,25 +1070,6 @@ function setGetActiveTagsCallback(callback) {
  */
 function setGetArtistNameFilterCallback(callback) {
   getArtistNameFilter = callback;
-}
-
-function setSortMode(mode) {
-  sortMode = mode;
-  lastSortMode = mode;
-  if (filtered.length > 0) {
-    if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
-    } else {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
-    }
-    renderArtistsPage();
-  }
 }
 
 function setSortPreference(preference) {
