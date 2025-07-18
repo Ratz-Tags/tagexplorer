@@ -364,12 +364,13 @@ main {
   background: #fff6fa;
   border-radius: 1.2em;
   margin-bottom: 0.5em;
-  transition: background 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 8px #fd7bc522;
 }
 
 .copied-artist:hover {
   background: #ffe0f5;
+  box-shadow: 0 4px 16px #ff63a555;
 }
 
 #jrpg-bubbles {
@@ -700,6 +701,18 @@ main {
   }
 }
 
+@keyframes taunt-pop {
+  0% { transform: scale(0.7); opacity: 0.2; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes sparklePop {
+  0% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 8px #ff63a5); transform: scale(1.15); }
+  100% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
+}
+
 .lipstick-kiss {
   position: absolute;
   z-index: 10;
@@ -716,9 +729,9 @@ main {
   animation: kissWiggle 2.5s infinite;
 }
 @keyframes kissWiggle {
-  0% { transform: rotate(-5deg) scale(1); }
-  50% { transform: rotate(8deg) scale(1.08); }
-  100% { transform: rotate(-5deg) scale(1); }
+  0% { transform: rotate(-8deg) scale(1); }
+  50% { transform: rotate(8deg) scale(1.15); }
+  100% { transform: rotate(-8deg) scale(1); }
 }
 .sparkle-overlay {
   position: absolute;
@@ -876,6 +889,7 @@ option {
   letter-spacing: 0.03em;
   margin-bottom: 0.2em;
   box-shadow: 0 2px 8px #fd7bc522;
+  animation: taunt-pop 0.7s;
 }
 
 .shame-badge {
@@ -901,12 +915,4 @@ option {
   0% { box-shadow: 0 0 12px #fd7bc555; }
   50% { box-shadow: 0 0 32px #fd7bc5cc; }
   100% { box-shadow: 0 0 12px #fd7bc555; }
-}
-
-.lipstick-kiss {
-  font-size: 1.5em;
-  margin-right: 0.3em;
-  filter: drop-shadow(0 0 2px #fd7bc5cc);
-  user-select: none;
-  pointer-events: none;
 }

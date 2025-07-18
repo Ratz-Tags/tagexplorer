@@ -61,21 +61,30 @@ function updateCopiedSidebar() {
   const copiedCount = copiedArtists.size;
   let tauntMsg = "";
   if (copiedCount === 0) {
-    tauntMsg = "No artists copied yet. Too shy?";
+    tauntMsg = "No artists copied yet. Too shy to commit? Pathetic.";
   } else if (copiedCount === 1) {
-    tauntMsg = "Just one? Surely you can do better.";
-  } else if (copiedCount < 4) {
-    tauntMsg = `Already copied ${copiedCount}? Getting needy!`;
-  } else if (copiedCount < 8) {
-    tauntMsg = `Wow, ${copiedCount} artists? Greedy little thing!`;
+    tauntMsg = "Just one? That's barely even embarrassing.";
+  } else if (copiedCount === 2) {
+    tauntMsg = "Two artists? Double the shame, double the fun!";
+  } else if (copiedCount === 3) {
+    tauntMsg = "Three? You're starting to get greedy, aren't you?";
+  } else if (copiedCount < 6) {
+    tauntMsg = `Already copied ${copiedCount}? You really can't help yourself.`;
+  } else if (copiedCount < 10) {
+    tauntMsg = `Wow, ${copiedCount} artists? Greedy little thing! Everyone can see your desperation.`;
   } else if (copiedCount < 15) {
-    tauntMsg = `Obsessed much? ${copiedCount} artists and counting...`;
+    tauntMsg = `Obsessed much? ${copiedCount} artists and counting... Is there any shame left?`;
+  } else if (copiedCount < 25) {
+    tauntMsg = `Shameless! ${copiedCount} artists? You're insatiable! This is getting embarrassing.`;
+  } else if (copiedCount < 40) {
+    tauntMsg = `Utterly depraved. ${copiedCount} artists? Are you even keeping track anymore?`;
   } else {
-    tauntMsg = `Shameless! ${copiedCount} artists? You're insatiable!`;
+    tauntMsg = `Hopeless case! ${copiedCount} artists? You need help (and maybe a cold shower).`;
   }
   const tauntBanner = document.createElement("div");
   tauntBanner.className = "sidebar-taunt-banner";
   tauntBanner.textContent = tauntMsg;
+  tauntBanner.style.animation = "taunt-pop 0.7s";
   copiedSidebar.appendChild(tauntBanner);
 
   // --- HUMILIATION: Shame badge if copied more than 3 artists ---
@@ -84,11 +93,19 @@ function updateCopiedSidebar() {
     shameBadge.className = "shame-badge pulse";
     shameBadge.innerHTML = `SHAME <span>💋</span>`;
     shameBadge.title =
-      copiedCount < 8
+      copiedCount < 10
         ? "So many artists, so little dignity."
-        : copiedCount < 15
+        : copiedCount < 20
         ? "You're really going for a high score, huh?"
-        : "Utterly shameless!";
+        : copiedCount < 40
+        ? "Utterly shameless!"
+        : "You are the definition of humiliation.";
+    shameBadge.style.background =
+      copiedCount > 20
+        ? "linear-gradient(90deg, #fd7bc5 60%, #ff63a5 100%)"
+        : "#fd7bc5";
+    shameBadge.style.boxShadow =
+      copiedCount > 20 ? "0 0 32px #ff63a5cc" : "0 0 12px #fd7bc555";
     copiedSidebar.appendChild(shameBadge);
   }
 
@@ -100,7 +117,7 @@ function updateCopiedSidebar() {
   closeBtn.onclick = () => copiedSidebar.classList.remove("visible");
   copiedSidebar.appendChild(closeBtn);
 
-  copiedArtists.forEach((artistTag) => {
+  copiedArtists.forEach((artistTag, idx) => {
     // Find the artist object by normalized name
     const artist = allArtists.find(
       (a) => a.artistName.replace(/_/g, " ") === artistTag
@@ -113,6 +130,11 @@ function updateCopiedSidebar() {
     div.style.padding = "1em 0.5em";
     div.style.gap = "12px";
     div.style.fontSize = "1.15em";
+    div.style.position = "relative";
+    div.style.transition = "background 0.2s, box-shadow 0.2s";
+    div.style.background = idx % 2 === 0 ? "#fff6fa" : "#ffe0f5";
+    div.style.boxShadow =
+      idx % 2 === 0 ? "0 2px 8px #fd7bc522" : "0 2px 12px #ff63a522";
 
     let tooltip = artist && artist.tooltip ? artist.tooltip : artistTag;
 
@@ -123,6 +145,7 @@ function updateCopiedSidebar() {
       img.style.width = "44px";
       img.style.height = "44px";
       img.style.borderRadius = "12px";
+      img.style.boxShadow = "0 0 8px #fd7bc555";
       div.appendChild(img);
     }
 
@@ -131,6 +154,10 @@ function updateCopiedSidebar() {
     icon.className = "lipstick-kiss";
     icon.title = "Kissed with shame!";
     icon.innerHTML = Math.random() > 0.5 ? "💋" : "✨";
+    icon.style.animation =
+      Math.random() > 0.5
+        ? "kissWiggle 1.2s infinite"
+        : "sparklePop 1.2s infinite alternate";
     div.appendChild(icon);
 
     const nameSpan = document.createElement("span");
@@ -138,7 +165,19 @@ function updateCopiedSidebar() {
     nameSpan.title = tooltip;
     nameSpan.style.flex = "1";
     nameSpan.style.fontWeight = "bold";
+    nameSpan.style.letterSpacing = "0.04em";
+    nameSpan.style.fontFamily = "'Hi Melody', cursive, sans-serif";
     div.appendChild(nameSpan);
+
+    // Add a little heart if this is the most recent copy
+    if (idx === copiedArtists.size - 1 && copiedCount > 1) {
+      const heart = document.createElement("span");
+      heart.textContent = "💖";
+      heart.style.marginLeft = "0.5em";
+      heart.style.fontSize = "1.2em";
+      heart.title = "Your latest obsession";
+      div.appendChild(heart);
+    }
 
     // Make the whole row tappable: open zoom modal for this artist
     div.onclick = () => {
@@ -160,6 +199,7 @@ function updateCopiedSidebar() {
   copiedSidebar.style.fontFamily = "'Hi Melody', cursive, sans-serif";
   copiedSidebar.style.background =
     "linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%)";
+  copiedSidebar.style.boxShadow = "0 0 32px #fd7bc555";
 }
 
 /**
