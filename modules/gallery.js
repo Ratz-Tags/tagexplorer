@@ -1072,25 +1072,6 @@ function setGetArtistNameFilterCallback(callback) {
   getArtistNameFilter = callback;
 }
 
-function setSortMode(mode) {
-  sortMode = mode;
-  lastSortMode = mode;
-  if (filtered.length > 0) {
-    if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
-    } else {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
-    }
-    renderArtistsPage();
-  }
-}
-
 function setSortPreference(preference) {
   sortMode = preference === "count" ? "count" : "name";
 }
