@@ -300,7 +300,6 @@ async function updateSidebar() {
 
 // --- GALLERY HUMILIATION FEATURES ---
 
-// 1. Gallery Card Taunts & Tooltips
 const galleryTaunts = [
   "Caught you peeking!",
   "You wish you were this talented.",
@@ -315,7 +314,15 @@ const galleryTaunts = [
   "You’re hopeless!",
 ];
 
-// 2. Animated Shame Badge on Cards (for artists with few images)
+const copyTaunts = [
+  "You really want to remember this one? Pathetic.",
+  "Copied again? You must be obsessed.",
+  "Desperate to keep this? How sad.",
+  "Adding to your shame list?",
+  "You’re not even subtle about it!",
+  "Another one? Greedy!",
+];
+
 function addShameBadgeToCard(card, artist) {
   if (artist && artist.postCount !== undefined && artist.postCount < 5) {
     let badge = card.querySelector(".gallery-shame-badge");
@@ -329,17 +336,6 @@ function addShameBadgeToCard(card, artist) {
   }
 }
 
-// 3. Copy Button Humiliation Toasts
-const copyTaunts = [
-  "You really want to remember this one? Pathetic.",
-  "Copied again? You must be obsessed.",
-  "Desperate to keep this? How sad.",
-  "Adding to your shame list?",
-  "You’re not even subtle about it!",
-  "Another one? Greedy!",
-];
-
-// 4. Gallery Empty State Humiliation
 function showGalleryEmptyState() {
   const gallery = document.getElementById("artist-gallery");
   if (gallery) {
@@ -350,7 +346,6 @@ function showGalleryEmptyState() {
   }
 }
 
-// 5. Gallery Card Hover Animation
 function addGalleryCardHover(card) {
   card.addEventListener("mouseenter", () => {
     let overlay = card.querySelector(".gallery-hover-overlay");
@@ -364,7 +359,6 @@ function addGalleryCardHover(card) {
   });
 }
 
-// 6. Desperation Meter
 function updateDesperationMeter() {
   let meter = document.getElementById("desperation-meter");
   if (!meter) {
@@ -406,10 +400,6 @@ if (typeof window !== "undefined") {
       addGalleryCardHover(card);
     });
   };
-}
-
-// Patch into gallery empty state
-if (typeof window !== "undefined") {
   window._showGalleryEmptyState = showGalleryEmptyState;
 }
 
