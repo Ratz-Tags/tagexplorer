@@ -298,6 +298,140 @@ async function updateSidebar() {
   }
 }
 
+// --- GALLERY HUMILIATION FEATURES ---
+
+// 1. Gallery Card Taunts & Tooltips
+const galleryTaunts = [
+  "Caught you peeking!",
+  "You wish you were this talented.",
+  "Desperate for more, aren’t you?",
+  "You can't resist, can you?",
+  "Another one for your collection?",
+  "Shameless little fan!",
+  "You really like this one, huh?",
+  "Dreaming of being this cute?",
+  "You’re not fooling anyone!",
+  "Still not satisfied?",
+  "You’re hopeless!",
+];
+
+// 2. Animated Shame Badge on Cards (for artists with few images)
+function addShameBadgeToCard(card, artist) {
+  if (artist && artist.postCount !== undefined && artist.postCount < 5) {
+    let badge = card.querySelector(".gallery-shame-badge");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.className = "gallery-shame-badge pulse";
+      badge.innerHTML = "SHAME <span>💔</span>";
+      badge.title = "So few images... embarrassing!";
+      card.appendChild(badge);
+    }
+  }
+}
+
+// 3. Copy Button Humiliation Toasts
+const copyTaunts = [
+  "You really want to remember this one? Pathetic.",
+  "Copied again? You must be obsessed.",
+  "Desperate to keep this? How sad.",
+  "Adding to your shame list?",
+  "You’re not even subtle about it!",
+  "Another one? Greedy!",
+];
+
+// 4. Gallery Empty State Humiliation
+function showGalleryEmptyState() {
+  const gallery = document.getElementById("artist-gallery");
+  if (gallery) {
+    gallery.innerHTML = `<div class="gallery-empty-humiliation">
+      <span class="gallery-empty-emoji">😭</span>
+      <div class="gallery-empty-msg">Nobody wants to play with you.<br>Try less picky tags!</div>
+    </div>`;
+  }
+}
+
+// 5. Gallery Card Hover Animation
+function addGalleryCardHover(card) {
+  card.addEventListener("mouseenter", () => {
+    let overlay = card.querySelector(".gallery-hover-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.className = "gallery-hover-overlay";
+      overlay.innerHTML = Math.random() > 0.5 ? "💋" : "✨";
+      card.appendChild(overlay);
+      setTimeout(() => overlay.remove(), 1200);
+    }
+  });
+}
+
+// 6. Desperation Meter
+function updateDesperationMeter() {
+  let meter = document.getElementById("desperation-meter");
+  if (!meter) {
+    meter = document.createElement("div");
+    meter.id = "desperation-meter";
+    meter.innerHTML = `<div class="desperation-bar"></div><span class="desperation-taunt"></span>`;
+    document.body.appendChild(meter);
+  }
+  const count = copiedArtists.size;
+  const bar = meter.querySelector(".desperation-bar");
+  const taunt = meter.querySelector(".desperation-taunt");
+  const percent = Math.min(100, count * 5);
+  bar.style.width = percent + "%";
+  bar.style.background =
+    percent > 80 ? "#fd7bc5" : percent > 50 ? "#ff63a5" : "#f9badd";
+  let msg = "";
+  if (count === 0) msg = "Dignity: Intact (for now)";
+  else if (count < 5) msg = "Mildly desperate";
+  else if (count < 10) msg = "Getting needy...";
+  else if (count < 20) msg = "Desperation rising!";
+  else if (count < 30) msg = "Utterly shameless!";
+  else msg = "No hope left!";
+  taunt.textContent = msg;
+}
+
+// Patch into gallery rendering (assumes renderArtistCards or similar is called)
+if (typeof window !== "undefined") {
+  window._galleryHumiliationPatch = function patchGalleryHumiliation() {
+    const cards = document.querySelectorAll(".artist-card");
+    cards.forEach((card) => {
+      // Add random taunt as tooltip
+      card.title =
+        galleryTaunts[Math.floor(Math.random() * galleryTaunts.length)];
+      // Add shame badge if needed
+      const artistName = card.getAttribute("data-artist");
+      const artist = allArtists.find((a) => a.artistName === artistName);
+      addShameBadgeToCard(card, artist);
+      // Add hover animation
+      addGalleryCardHover(card);
+    });
+  };
+}
+
+// Patch into gallery empty state
+if (typeof window !== "undefined") {
+  window._showGalleryEmptyState = showGalleryEmptyState;
+}
+
+// Patch into copy logic for humiliation toast
+const origShowToast = showToast;
+showToast = function (message) {
+  if (message && message.startsWith("Copied")) {
+    const taunt = copyTaunts[Math.floor(Math.random() * copyTaunts.length)];
+    origShowToast(`${message}  ${taunt}`);
+    updateDesperationMeter();
+  } else {
+    origShowToast(message);
+  }
+};
+
+// Patch desperation meter update into sidebar update
+const origUpdateCopiedSidebar = updateCopiedSidebar;
+updateCopiedSidebar = function () {
+  origUpdateCopiedSidebar.apply(this, arguments);
+  updateDesperationMeter();
+};
+
 // Export functions for ES modules
 export {
   handleArtistCopy,

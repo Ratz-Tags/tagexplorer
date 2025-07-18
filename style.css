@@ -916,3 +916,92 @@ option {
   50% { box-shadow: 0 0 32px #fd7bc5cc; }
   100% { box-shadow: 0 0 12px #fd7bc555; }
 }
+
+/* Gallery humiliation/taunt styles */
+.gallery-shame-badge {
+  display: inline-block;
+  background: #fd7bc5;
+  color: #fff;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  font-size: 1em;
+  border-radius: 2em;
+  padding: 0.2em 1em;
+  margin: 0.5em auto 0.7em auto;
+  text-align: center;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  box-shadow: 0 0 12px #fd7bc555;
+  animation: shame-pulse 1.2s infinite;
+  position: absolute;
+  top: 0.7em;
+  right: 0.7em;
+  z-index: 2;
+}
+.gallery-shame-badge span {
+  font-size: 1.2em;
+  margin-left: 0.2em;
+}
+
+.gallery-hover-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  font-size: 2.2em;
+  pointer-events: none;
+  animation: taunt-pop 0.7s, sparklePop 1.2s infinite alternate;
+  z-index: 3;
+  color: #fd7bc5;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.gallery-empty-humiliation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  font-family: 'Hi Melody', cursive, sans-serif;
+  color: #fd7bc5;
+  font-size: 1.5em;
+  text-align: center;
+  animation: taunt-pop 0.7s;
+}
+.gallery-empty-emoji {
+  font-size: 3em;
+  margin-bottom: 0.3em;
+  animation: shame-pulse 1.2s infinite;
+}
+
+#desperation-meter {
+  position: fixed;
+  left: 50%;
+  bottom: 0.7em;
+  transform: translateX(-50%);
+  width: 320px;
+  background: #fff0fa;
+  border: 2px solid #fd7bc5;
+  border-radius: 2em;
+  box-shadow: 0 2px 12px #fd7bc555;
+  z-index: 1000;
+  padding: 0.3em 1em 0.5em 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Hi Melody', cursive, sans-serif;
+}
+.desperation-bar {
+  width: 0%;
+  height: 1.1em;
+  background: #f9badd;
+  border-radius: 1em;
+  margin-bottom: 0.3em;
+  transition: width 0.5s, background 0.5s;
+}
+.desperation-taunt {
+  font-size: 1em;
+  color: #fd7bc5;
+  margin-top: 0.1em;
+  text-align: center;
+  font-weight: bold;
+}
