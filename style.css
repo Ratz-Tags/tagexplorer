@@ -34,12 +34,15 @@ body.incognito-theme {
 
 body {
   font-family: 'Inter', sans-serif;
-  background: var(--background);
-  color: var(--text);
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
   margin: 0;
   line-height: 1.5;
   min-height: 100vh;
   letter-spacing: 0.03em;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  padding: var(--padding);
 }
 
 .container {
@@ -185,15 +188,25 @@ header {
 
 .tag-btn,
 .tag-button {
-  background: #fff0fa;
-  border: 2px solid #fd7bc5;
-  color: #a0005a;
-  border-radius: 2em;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+
+.tag-btn::after,
+.tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
   font-family: var(--heading-font);
-  font-size: 1em;
-  padding: 0.5em 1.2em;
-  margin: 0.2em;
-  transition: background 0.2s, color 0.2s;
+  opacity: 0.7;
+  margin-left: 0.2em;
 }
 
 .tag-btn:hover,
@@ -232,10 +245,10 @@ main {
 
 .artist-card {
   position: relative;
-  background: var(--background-alt);
-  border: 2px solid var(--border);
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  border: 4px double #fd7bc5 !important;
   border-radius: var(--radius);
-  box-shadow: 0 2px 12px #fd7bc540;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
   padding: 1.2em 1em 1em 1em;
   margin: 1em;
   display: flex;
@@ -244,7 +257,33 @@ main {
   min-width: 220px;
   min-height: 320px;
   transition: box-shadow 0.2s, transform 0.2s;
-  overflow: hidden;
+  overflow: visible;
+}
+
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
 .artist-image {
@@ -433,9 +472,10 @@ main {
   z-index: 1002;
   min-width: 260px;
   max-width: 90vw;
-  background: rgba(30, 30, 40, 0.98);
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
   border-radius: 1.2em 1.2em 1.2em 1.2em;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.25);
   padding: 1em 1.2em 1em 1.2em;
   display: flex;
   flex-direction: column;
@@ -451,6 +491,143 @@ main {
   transform: translateY(120%);
 }
 
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
 @media (max-width: 600px) {
   #audio-panel {
     left: 0.5em;
@@ -463,329 +640,146 @@ main {
   }
 }
 
-.audio-humiliation-overlay {
-  pointer-events: none;
-  z-index: 2;
-  background-image: url('icons/heart.png'), url('icons/sparkle.png'), url('icons/bow.png');
-  background-repeat: repeat;
-  background-size: 80px, 120px, 90px;
-  opacity: 0.10;
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  animation: sparkleMove 12s linear infinite;
-}
-
-#audio-panel .lipstick-kiss {
-  position: absolute;
-  bottom: 12px;
-  right: 18px;
-  width: 48px;
-  height: 48px;
-  background-image: url('icons/bow.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0.35;
-  z-index: 3;
-  pointer-events: none;
-  animation: kissWiggle 2.5s infinite;
-}
-
-#audio-panel .browse-btn.humiliation-glow {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-  color: #a0005a;
-  border: 2px solid #fd7bc5;
-  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
-  animation: humiliationGlow 1.2s infinite alternate, toastfade 0.3s forwards;
-}
-
-#audio-panel .browse-btn.humiliation-glow:hover {
-  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%);
-  color: #fff;
-}
-
-.modal.humiliation-glow {
-  background: linear-gradient(135deg, #fff0fa 0%, #ffd6f6 100%);
-  border: 2px solid #fd7bc5;
-  box-shadow: 0 2px 32px #fd7bc540, 0 0 48px #ff63a5cc;
-  animation: humiliationGlow 1.2s infinite alternate, taunt-pop 0.7s;
-  color: #a0005a;
-  font-family: 'Hi Melody', cursive, sans-serif;
-}
-
-.modal.humiliation-glow h3 {
-  color: #fd7bc5;
-  font-size: 1.3em;
-  margin-bottom: 1em;
-  font-family: 'Hi Melody', cursive, sans-serif;
-}
-
-.modal.humiliation-glow button.browse-btn {
-  margin: 0.5em 0.2em;
-}
-
-.audio-humiliation-bar {
-  width: 0%;
-  height: 1.1em;
-  background: #f9badd;
-  border-radius: 1em;
-  margin-bottom: 0.3em;
-  transition: width 0.5s, background 0.5s;
-}
-.audio-humiliation-taunt {
-  font-size: 1em;
-  color: #fd7bc5;
-  margin-top: 0.1em;
-  text-align: center;
-  font-weight: bold;
-  font-family: 'Hi Melody', cursive, sans-serif;
-}
-
-.gallery-humiliation-overlay {
-  pointer-events: none;
-  z-index: 10;
-  opacity: 0.18;
-  background-repeat: repeat;
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 0; left: 0;
-  animation: sparkleMove 8s linear infinite;
-}
-
-#back-to-top {
-  display: none;
-}
-
-@media (min-width: 768px) {
-  .floating-controls {
-    flex-direction: row;
-  }
-}
-
-.fullscreen-wrapper {
+/* Audio panel enhancements */
+#audio-panel {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-}
-
-.zoom-content {
-  display: flex;
-  width: 90vw;
-  height: 90vh;
-  background: transparent;
-  border-radius: 1em;
-  overflow: hidden;
-  box-shadow: 0 4px 32px #000a;
-}
-
-.zoom-left, .zoom-right {
-  height: 100%;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-}
-
-.zoom-left {
-  width: 50%;
-  align-items: center;
-  background: transparent;
-  justify-content: center;
-  display: flex;
-}
-
-.zoom-right {
-  width: 50%;
-  background: rgba(40,0,40,0.85);
-  color: #fff;
-  padding: 2rem 1.5rem;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   align-items: flex-start;
-  gap: 2rem;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
 }
 
-.fullscreen-img {
-  max-width: 100%;
-  max-height: 90vh;
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
   border-radius: 1em;
-  box-shadow: 0 2px 16px #00000040;
-  border: 4px solid #fd7bc5;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
 }
 
-/* Mobile: stack vertically */
-@media (max-width: 900px) {
-  .zoom-content {
-    flex-direction: column;
-    width: 98vw;
-    height: 98vh;
-    min-height: 0;
-  }
-  .zoom-left, .zoom-right {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-  }
-  .zoom-left {
-    justify-content: flex-start;
-    align-items: center;
-    padding-top: 2vh;
-  }
-  .fullscreen-img {
-    max-width: 100vw;
-    max-height: 50vh;
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-    border-radius: 2em;
-  }
-  .zoom-right {
-    padding: 1rem;
-    gap: 1rem;
-    align-items: center;
-  }
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
 }
 
-.fullscreen-wrapper button.zoom-prev,
-.fullscreen-wrapper button.zoom-next,
-.fullscreen-wrapper button.zoom-close {
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
   position: absolute;
-  background: rgba(0, 0, 0, 0.6);
-  border: none;
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
-
-.zoom-close {
-  top: 1rem;
-  right: 1rem;
-}
-
-.zoom-prev {
-  top: 50%;
-  left: 1rem;
-  transform: translateY(-50%);
-}
-
-.zoom-next {
-  top: 50%;
-  right: 1rem;
-  transform: translateY(-50%);
-}
-
-/* Add this to style.css */
-.fullscreen-wrapper.tag-explorer-wrapper .zoom-close {
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
   position: absolute;
-  top: 1.5rem;
-  right: 2rem;
-  z-index: 220;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
-  box-shadow: 0 2px 8px #fd7bc540;
-  cursor: pointer;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
-.tag-explorer {
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-
-/* Tag Explorer Modal Styles */
-.fullscreen-wrapper.tag-explorer-wrapper {
-  z-index: 210; /* Higher than other overlays */
-}
-
-.tag-explorer {
-  background: var(--background-alt);
-  border-radius: var(--radius);
-  padding: 1.5rem;
-  max-width: 90vw;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.tag-explorer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 1rem;
-}
-
-.tag-explorer-header h3 {
-  margin: 0;
-  color: var(--text);
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
   font-family: var(--heading-font);
-}
-
-.tag-explorer-header select {
-  background: var(--background);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.5rem;
-  border-radius: var(--radius);
-}
-
-.tag-explorer-header input {
-  background: var(--background);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.5rem;
-  border-radius: var(--radius);
-  margin-right: 0.5rem;
-}
-
-.tag-explorer-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  max-height: 60vh;
-  overflow-y: auto;
+  opacity: 0.7;
+  margin-left: 0.2em;
 }
 
 .toast-popup {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-  color: #a0005a;
-  padding: 1em 2em 1em 3.5em;
-  border-radius: 2em;
-  z-index: 250;
-  font-family: var(--heading-font);
-  font-size: 1.2em;
-  box-shadow: 0 2px 16px #fd7bc540;
-  opacity: 0;
-  animation: toastfade 0.3s forwards;
-  display: flex;
-  align-items: center;
-  gap: 1em;
-  border: 2px solid #fd7bc5;
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
 .toast-popup::before {
-  content: "";
-  display: inline-block;
-  width: 2.5em;
-  height: 2.5em;
-  background: url('icons/chibi.png') center/cover no-repeat;
-  border-radius: 50%;
-  margin-right: 1em;
-  box-shadow: 0 2px 8px #fd7bc540;
-  border: 2px solid #fd7bc5;
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
 }
 .toast-popup::after {
   content: "💋";
@@ -794,26 +788,1618 @@ main {
   margin-left: 0.5em;
   vertical-align: middle;
 }
-@keyframes toastfade {
-  to {
-    opacity: 1;
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
   }
 }
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+@media (max-width: 600px) {
+  #audio-panel {
+    left: 0.5em;
+    right: 0.5em;
+    min-width: unset;
+    width: calc(100vw - 1em);
+    max-width: unset;
+    border-radius: 1em 1em 1em 1em;
+    padding: 0.7em 0.7em 0.7em 0.7em;
+  }
+}
+
+/* Audio panel enhancements */
+#audio-panel {
+  position: fixed;
+  left: 1.5em;
+  bottom: 1.5em;
+  z-index: 1002;
+  min-width: 260px;
+  max-width: 90vw;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  border: 4px double #fd7bc5 !important;
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border-radius: 1.2em 1.2em 1.2em 1.2em;
+  padding: 1em 1.2em 1em 1.2em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#audio-panel.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(120%);
+}
+
+#audio-panel .audio-header {
+  font-family: var(--heading-font);
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-weight: bold;
+  letter-spacing: 0.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-family: var(--heading-font);
+  font-size: 1.1em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin: 0.2em 0.4em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+
+#audio-panel .audio-controls button:hover {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+}
+
+/* Feminize scrollbar even more */
+::-webkit-scrollbar {
+  width: 16px;
+  background: #ffd6f6;
+  border-radius: 1em;
+}
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  border-radius: 1em;
+  border: 3px solid #fff0fa;
+}
+
+/* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */
+
+body {
+  background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  color: #a0005a;
+  font-size: 1.12em;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540, 0 0 2px #ff63a5cc;
+  letter-spacing: 0.07em;
+}
+
+.artist-card {
+  border: 4px double #fd7bc5 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  position: relative;
+  overflow: visible;
+}
+.artist-card::before {
+  content: "✧ Sissy ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  top: -1.2em;
+  left: 1em;
+  opacity: 0.85;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+.artist-card::after {
+  content: "Obey and drool 💋";
+  color: #fd7bc5;
+  font-size: 1em;
+  font-family: var(--heading-font);
+  position: absolute;
+  bottom: -1.2em;
+  right: 1em;
+  opacity: 0.7;
+  pointer-events: none;
+  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
+}
+
+.tag-btn, .tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 2.5em !important;
+  font-weight: bold;
+  text-transform: lowercase;
+  letter-spacing: 0.12em;
+  box-shadow: 0 2px 24px #fd7bc540 !important;
+  position: relative;
+}
+.tag-btn::after, .tag-button::after {
+  content: " ✧";
+  color: #ff63a5;
+  font-size: 1.1em;
+  font-family: var(--heading-font);
+  opacity: 0.7;
+  margin-left: 0.2em;
+}
+
+.toast-popup {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.25em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.toast-popup::before {
+  content: "Sissy! ";
+  color: #ff63a5;
+  font-size: 1.2em;
+  font-family: var(--heading-font);
+  margin-right: 0.5em;
+}
+.toast-popup::after {
+  content: "💋";
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+  vertical-align: middle;
+}
+
+.shame-badge, .gallery-shame-badge {
+  border: 3px dashed #fd7bc5 !important;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #a0005a !important;
+  font-size: 1.15em !important;
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+}
+.shame-badge span, .gallery-shame-badge span {
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
+}
+
+/* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
 
 @keyframes taunt-pop {
   0% { transform: scale(0.7); opacity: 0.2; }
   60% { transform: scale(1.15); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
-
 @keyframes sparklePop {
   0% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
   50% { filter: drop-shadow(0 0 8px #ff63a5); transform: scale(1.15); }
   100% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
 }
-
 .lipstick-kiss {
-  position: absolute;
+  position: absolute; position: fixed;
   z-index: 10;
   pointer-events: none;
   opacity: 0.35;
@@ -822,8 +2408,6 @@ main {
   background-repeat: no-repeat;
   width: 64px;
   height: 64px;
-  bottom: 24px;
-  right: 32px;
   filter: drop-shadow(0 2px 8px #fd7bc540);
   animation: kissWiggle 2.5s infinite;
 }
@@ -844,18 +2428,18 @@ main {
   animation: sparkleMove 8s linear infinite;
 }
 .taunt-header {
-  font-family: var(--heading-font);
+  font-family: var(--heading-font); text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
   font-size: 1.5em;
   color: var(--accent);
   text-align: center;
   margin: 1em 0 0.5em 0;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  padding: 0.5em 1em;
   border-radius: 1em;
   box-shadow: 0 2px 8px #fd7bc540;
-  padding: 0.5em 1em;
-  position: relative;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
 }
 .taunt-header::after {
+  margin: 0.2em 0.4em;
   content: "💖✨";
   font-size: 1.2em;
   margin-left: 0.5em;
@@ -866,126 +2450,38 @@ main {
   font-family: var(--heading-font);
   font-size: 1.1em;
   color: var(--accent2);
-  background: #fff0fa;
-  border-radius: 1em;
-  padding: 0.7em 1.2em;
-  margin: 1em auto;
   text-align: center;
-  box-shadow: 0 2px 8px #fd7bc540;
-  max-width: 90vw;
-}
-
-/* Consistent select/dropdown styling */
-select, .sort-controls select, .tag-explorer-header select {
-  background: var(--fem-gradient) !important;
-  color: #a0005a !important;
-  border: 2px solid #fd7bc5 !important;
-  font-family: var(--heading-font) !important;
-  font-size: 1.1em !important;
-  border-radius: 1.2em !important;
-  box-shadow: 0 2px 8px #fd7bc540 !important;
-}
-select:focus, .sort-controls select:focus, .tag-explorer-header select:focus {
-  border-color: var(--accent3);
-  box-shadow: 0 0 0 2px #fd7bc540;
-}
-option {
-  background: #fff0fa;
-  color: #a0005a;
-  font-family: var(--heading-font);
-}
-
-/* Playful tooltips for gallery cards, sort/filter controls, and tag buttons */
-.tag-btn[title], .tag-button[title], .reload-button[title], .copy-button[title], .browse-btn[title], .sort-controls select[title], .sort-controls button[title] {
-  position: relative;
-}
-.tag-btn[title]:hover::after, .tag-button[title]:hover::after, .reload-button[title]:hover::after, .copy-button[title]:hover::after, .browse-btn[title]:hover::after, .sort-controls select[title]:hover::after, .sort-controls button[title]:hover::after {
-  content: attr(title);
-  position: absolute;
-  left: 50%;
-  top: 110%;
-  transform: translateX(-50%);
-  background: #ffd6f6;
-  color: #a0005a;
-  font-family: var(--heading-font);
-  font-size: 1em;
-  padding: 0.4em 1em;
+  margin: 1em 0 0.5em 0;
+  padding: 0.5em 1em;
   border-radius: 1em;
   box-shadow: 0 2px 8px #fd7bc540;
-  white-space: pre;
-  z-index: 1000;
-  pointer-events: none;
-}
-
-/* Mobile UI fixes for gallery cards and modal layouts */
-@media (max-width: 600px) {
-  .artist-card {
-    padding: 0.5em 0.2em;
-    font-size: 1em;
-    min-width: 0;
-    flex-direction: column;
-    align-items: flex-start;
-    border-radius: 1em;
-    margin: 0.5em 0.2em;
-  }
-  .artist-image {
-    width: 100%;
-    max-width: 100%;
-    height: auto;
-    border-radius: 1em;
-  }
-  .artist-name {
-    font-size: 1em;
-    margin-top: 0.2em;
-    padding: 0.5em 0.7em;
-  }
-  .artist-tags {
-    font-size: 0.95em;
-    margin-top: 0.1em;
-    padding: 0.4em 0.7em;
-  }
-  .reload-button, .copy-button {
-    font-size: 1.1em;
-    padding: 0.3em 0.7em;
-    margin: 0.1em 0.2em;
-    top: 0.5em;
-    right: 0.5em;
-    left: auto;
-  }
-  .no-entries-msg {
-    font-size: 1em;
-    padding: 0.5em 1em;
-    border-radius: 1em;
-    max-width: 90vw;
-  }
-  .taunt-header {
-    font-size: 1.1em;
-    padding: 0.3em 0.7em;
-    margin: 0.5em 0;
-  }
-  .shame-badge {
-    font-size: 0.85em;
-    padding: 0.15em 0.6em;
-    margin-left: 0.5em;
-  }
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  max-width: 90vw;
 }
 
 /* Sidebar humiliation/taunt styles */
 .sidebar-taunt-banner {
   font-family: 'Hi Melody', cursive, sans-serif;
-  font-size: 1.25em;
+  font-size: 1.3em;
   color: #fd7bc5;
-  background: linear-gradient(90deg, #fff0fa 60%, #ffd6f6 100%);
+  background: linear-gradient(90deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  padding: 0.7em 1em;
   border-radius: 1.5em 1.5em 0 0;
-  padding: 0.7em 1em 0.5em 1em;
   text-align: center;
-  font-weight: bold;
-  letter-spacing: 0.03em;
-  margin-bottom: 0.2em;
-  box-shadow: 0 2px 8px #fd7bc522;
+  margin-bottom: 1em;
+  position: relative;
+  z-index: 10;
+}
+.sidebar-taunt-banner::after {
+  content: "💖✨";
+  font-size: 1.5em;
+  position: absolute;
+  top: 0.5em;
+  right: 1em;
   animation: taunt-pop 0.7s;
 }
 
+/* FEMININE & HUMILIATION CUES --- */
 .shame-badge {
   display: inline-block;
   background: #fd7bc5;
@@ -1002,6 +2498,7 @@ option {
   animation: shame-pulse 1.2s infinite;
 }
 .shame-badge span {
+  position: fixed;
   font-size: 1.3em;
   margin-left: 0.3em;
 }
@@ -1032,23 +2529,23 @@ option {
   z-index: 2;
 }
 .gallery-shame-badge span {
-  font-size: 1.2em;
-  margin-left: 0.2em;
+  color: #ff63a5;
+  font-size: 1.3em;
+  margin-left: 0.5em;
 }
 
 .gallery-hover-overlay {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%) scale(1);
-  font-size: 2.2em;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
   pointer-events: none;
   animation: taunt-pop 0.7s, sparklePop 1.2s infinite alternate;
-  z-index: 3;
-  color: #fd7bc5;
-  text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
-
 .gallery-empty-humiliation {
   display: flex;
   flex-direction: column;
@@ -1059,6 +2556,10 @@ option {
   color: #fd7bc5;
   font-size: 1.5em;
   text-align: center;
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-radius: 1em;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   animation: taunt-pop 0.7s;
 }
 .gallery-empty-emoji {
@@ -1067,17 +2568,17 @@ option {
   animation: shame-pulse 1.2s infinite;
 }
 
+/* Desperation meter styles */
 #desperation-meter {
   position: fixed;
   left: 50%;
   bottom: 0.7em;
+  z-index: 1000;
   transform: translateX(-50%);
   width: 320px;
   background: #fff0fa;
   border: 2px solid #fd7bc5;
   border-radius: 2em;
-  box-shadow: 0 2px 12px #fd7bc555;
-  z-index: 1000;
   padding: 0.3em 1em 0.5em 1em;
   display: flex;
   flex-direction: column;
@@ -1094,8 +2595,8 @@ option {
 }
 .desperation-taunt {
   font-size: 1em;
-  color: #fd7bc5;
-  margin-top: 0.1em;
+  color: #a0005a;
+  font-family: var(--heading-font);
   text-align: center;
   font-weight: bold;
 }
@@ -1109,50 +2610,6 @@ option {
   border-radius: 2em !important;
 }
 .humiliation-glow {
-  animation: humiliationGlow 1.2s infinite alternate;
-  box-shadow: 0 0 24px #fd7bc5cc, 0 0 48px #ff63a5cc;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   color: #a0005a !important;
-}
-@keyframes humiliationGlow {
-  0% { box-shadow: 0 0 12px #fd7bc5cc; }
-  100% { box-shadow: 0 0 48px #ff63a5cc; }
-}
-
-/* Audio panel enhancements */
-#audio-panel {
-  position: fixed;
-  left: 1.5em;
-  bottom: 1.5em;
-  z-index: 1002;
-  min-width: 260px;
-  max-width: 90vw;
-  background: rgba(30, 30, 40, 0.98);
-  border-radius: 1.2em 1.2em 1.2em 1.2em;
-  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.25);
-  padding: 1em 1.2em 1em 1.2em;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-#audio-panel.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(120%);
-}
-
-@media (max-width: 600px) {
-  #audio-panel {
-    left: 0.5em;
-    right: 0.5em;
-    min-width: unset;
-    width: calc(100vw - 1em);
-    max-width: unset;
-    border-radius: 1em 1em 1em 1em;
-    padding: 0.7em 0.7em 0.7em 0.7em;
-  }
+  animation: humiliationGlow 1.2s infinite alternate;
 }
