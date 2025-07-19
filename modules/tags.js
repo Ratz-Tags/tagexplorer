@@ -1,3 +1,5 @@
+import { vibrate } from "./ui.js";
+
 /**
  * Tags module - Handles tag filtering, buttons, and related functionality
  */
@@ -322,7 +324,10 @@ function initTags() {
 
   // Set up clear all button
   if (clearTagsBtn) {
-    clearTagsBtn.addEventListener("click", clearAllTags);
+    clearTagsBtn.addEventListener("click", (e) => {
+      vibrate();
+      clearAllTags(e);
+    });
   }
 
   // Set up artist name filter

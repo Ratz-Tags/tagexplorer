@@ -2,6 +2,8 @@
  * Sidebar module - Handles the copied artists sidebar functionality
  */
 
+import { vibrate } from "./ui.js";
+
 let copiedArtists = new Set();
 let copiedSidebar = null;
 let allArtists = [];
@@ -215,7 +217,8 @@ function initSidebar() {
   const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
   if (sidebarToggles && copiedSidebar) {
     sidebarToggles.forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", (e) => {
+        vibrate();
         copiedSidebar.classList.toggle("visible");
         // Toggle body class when sidebar is opened or closed
         if (copiedSidebar.classList.contains("visible")) {

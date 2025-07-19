@@ -342,6 +342,15 @@ function createConfirmationModal(message) {
   });
 }
 
+/**
+ * Triggers a short vibration for haptic feedback (if supported)
+ */
+function vibrate(ms = 30) {
+  if (window.navigator && typeof window.navigator.vibrate === "function") {
+    window.navigator.vibrate(ms);
+  }
+}
+
 // All functions in this file are defined and used as follows:
 
 // showNoEntriesMsg: exported, used by other modules
@@ -359,6 +368,7 @@ function createConfirmationModal(message) {
 // showToast: exported, used by sidebar.js, humiliation.js, audio.js
 // scrollToTop: exported, not used internally (for external use)
 // createConfirmationModal: exported, not used internally (for external use)
+// vibrate: exported, not used internally (for external use)
 
 // No unused or undefined functions in this file.
 
@@ -379,4 +389,5 @@ export {
   showToast,
   scrollToTop,
   createConfirmationModal,
+  vibrate,
 };

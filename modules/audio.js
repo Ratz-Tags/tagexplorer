@@ -2,6 +2,8 @@
  * Audio module - Handles audio controls and playback functionality
  */
 
+import { vibrate } from "./ui.js";
+
 let currentTrack = 0;
 let moansMuted = false;
 let moanPlaying = false;
@@ -164,27 +166,45 @@ function initAudio() {
 
   // Set up event listeners
   if (toggleBtn) {
-    toggleBtn.addEventListener("click", togglePlayback);
+    toggleBtn.addEventListener("click", (e) => {
+      vibrate();
+      togglePlayback(e);
+    });
   }
 
   if (nextBtn) {
-    nextBtn.addEventListener("click", nextTrack);
+    nextBtn.addEventListener("click", (e) => {
+      vibrate();
+      nextTrack(e);
+    });
   }
 
   if (prevBtn) {
-    prevBtn.addEventListener("click", previousTrack);
+    prevBtn.addEventListener("click", (e) => {
+      vibrate();
+      previousTrack(e);
+    });
   }
 
   if (moanBtn) {
-    moanBtn.addEventListener("click", toggleMoan);
+    moanBtn.addEventListener("click", (e) => {
+      vibrate();
+      toggleMoan(e);
+    });
   }
 
   if (moanToggle && moanAudio) {
-    moanToggle.addEventListener("click", toggleMoanPlayback);
+    moanToggle.addEventListener("click", (e) => {
+      vibrate();
+      toggleMoanPlayback(e);
+    });
   }
 
   if (panelToggle) {
-    panelToggle.addEventListener("click", togglePanel);
+    panelToggle.addEventListener("click", (e) => {
+      vibrate();
+      togglePanel(e);
+    });
   }
 
   if (hypnoAudio) {
