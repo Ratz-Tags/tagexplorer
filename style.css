@@ -11,9 +11,14 @@
   --accent3: #f9badd;
   --radius: 2em;
   --padding: 1rem;
-  --heading-font: 'Hi Melody', sans-serif;
+  --heading-font: 'Hi Melody', 'Inter', cursive, sans-serif;
   --sparkle: url('icons/sparkle.png');
   --bow: url('icons/bow.png');
+  --fem-shadow: 0 2px 32px #fd7bc5cc, 0 0 48px #ff63a5cc;
+  --fem-glow: 0 0 32px #ff63a5cc, 0 0 64px #fd7bc5cc;
+  --fem-gradient: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  --fem-gradient-2: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
+  --fem-gradient-3: linear-gradient(135deg, #ffd6f6 0%, #fd7bc5 100%);
 }
 
 body.incognito-theme {
@@ -199,9 +204,10 @@ header {
 
 .tag-btn.active,
 .tag-button.active {
-  background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
-  color: #fff;
-  border-color: #ff63a5;
+  background: var(--fem-gradient-2) !important;
+  color: #fff !important;
+  border-color: #ff63a5 !important;
+  box-shadow: 0 0 32px #ff63a5cc !important;
 }
 
 #clear-tags {
@@ -783,6 +789,7 @@ main {
 }
 .toast-popup::after {
   content: "💋";
+  color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
   vertical-align: middle;
@@ -870,18 +877,13 @@ main {
 
 /* Consistent select/dropdown styling */
 select, .sort-controls select, .tag-explorer-header select {
-  background: var(--background);
-  border: 2px solid var(--accent2);
-  color: var(--text);
-  font-family: var(--heading-font);
-  font-size: 1.1em;
-  border-radius: 1.2em;
-  padding: 0.5em 1.2em;
-  margin: 0.2em 0.5em;
-  box-shadow: 0 2px 8px #fd7bc540;
-  appearance: none;
-  outline: none;
-  transition: border 0.2s, box-shadow 0.2s;
+  background: var(--fem-gradient) !important;
+  color: #a0005a !important;
+  border: 2px solid #fd7bc5 !important;
+  font-family: var(--heading-font) !important;
+  font-size: 1.1em !important;
+  border-radius: 1.2em !important;
+  box-shadow: 0 2px 8px #fd7bc540 !important;
 }
 select:focus, .sort-controls select:focus, .tag-explorer-header select:focus {
   border-color: var(--accent3);
