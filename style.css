@@ -517,17 +517,113 @@ main {
   color: #fff !important;
 }
 
-/* Feminize scrollbar even more */
+/* --- BUTTON INTERACTIVITY --- */
+.btn-animate, .tag-btn, .tag-button, .browse-btn, .copy-button, .reload-button, .floating-controls button, .audio-controls button {
+  transition: transform 0.12s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, filter 0.18s;
+  will-change: transform, box-shadow, filter;
+}
+.btn-animate:active, .tag-btn:active, .tag-button:active, .browse-btn:active, .copy-button:active, .reload-button:active, .floating-controls button:active, .audio-controls button:active {
+  transform: scale(0.93) rotate(-2deg);
+  box-shadow: 0 0 32px #fd7bc5cc, 0 0 64px #ff63a5cc;
+  filter: brightness(1.1) saturate(1.2);
+}
+.btn-animate:hover, .tag-btn:hover, .tag-button:hover, .browse-btn:hover, .copy-button:hover, .reload-button:hover, .floating-controls button:hover, .audio-controls button:hover {
+  box-shadow: 0 0 32px #ff63a5cc, 0 0 64px #fd7bc5cc;
+  filter: brightness(1.08) saturate(1.1);
+}
+.btn-animate:focus-visible, .tag-btn:focus-visible, .tag-button:focus-visible, .browse-btn:focus-visible, .copy-button:focus-visible, .reload-button:focus-visible, .floating-controls button:focus-visible, .audio-controls button:focus-visible {
+  outline: 3px solid #a0005a;
+  outline-offset: 2px;
+}
+
+/* --- BADGE & TOAST ANIMATIONS --- */
+@keyframes bounceIn {
+  0% { transform: scale(0.7); opacity: 0.2; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.toast-popup, .shame-badge, .gallery-shame-badge {
+  animation: bounceIn 0.7s cubic-bezier(.4,2,.6,1);
+}
+.toast-popup.fade-out {
+  animation: fadeOut 0.7s forwards;
+}
+
+/* --- TEXT ANIMATIONS --- */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #fff0fa 25%, #ffd6f6 50%, #fff0fa 75%);
+  background-size: 200% 100%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmer 2.2s linear infinite;
+}
+@keyframes bounceText {
+  0%,100% { transform: translateY(0); }
+  30% { transform: translateY(-8px); }
+  60% { transform: translateY(4px); }
+}
+.bounce-text {
+  display: inline-block;
+  animation: bounceText 1.2s infinite;
+}
+@keyframes colorCycle {
+  0% { color: #fd7bc5; }
+  33% { color: #ff63a5; }
+  66% { color: #a0005a; }
+  100% { color: #fd7bc5; }
+}
+.color-cycle {
+  animation: colorCycle 2.5s linear infinite;
+}
+
+/* --- SCREEN PULSE EFFECT --- */
+@keyframes screenPulse {
+  0% { box-shadow: 0 0 0 0 #fd7bc555; }
+  50% { box-shadow: 0 0 0 32px #fd7bc522; }
+  100% { box-shadow: 0 0 0 0 #fd7bc555; }
+}
+.screen-pulse {
+  animation: screenPulse 0.5s cubic-bezier(.4,2,.6,1);
+}
+
+/* --- THEMED SCROLLBARS --- */
 ::-webkit-scrollbar {
   width: 16px;
   background: #ffd6f6;
   border-radius: 1em;
 }
-
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
   border: 3px solid #fff0fa;
+}
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #fd7bc5 #ffd6f6;
+}
+
+/* --- MOBILE & ACCESSIBILITY --- */
+@media (max-width: 600px) {
+  html { font-size: 1.08em; }
+  .artist-card, .tag-btn, .tag-button, .browse-btn, .copy-button, .reload-button, .floating-controls button, .audio-controls button {
+    font-size: 1.08em;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+:focus-visible {
+  outline: 3px solid #a0005a;
+  outline-offset: 2px;
 }
 
 /* --- EXTRA HYPERFEMININE & HUMILIATION CUES --- */

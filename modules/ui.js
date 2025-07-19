@@ -351,6 +351,19 @@ function vibrate(ms = 30) {
   }
 }
 
+/**
+ * Triggers a screen pulse effect (CSS + accessibility)
+ */
+function pulseScreen() {
+  if (
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  )
+    return;
+  document.body.classList.add("screen-pulse");
+  setTimeout(() => document.body.classList.remove("screen-pulse"), 500);
+}
+
 // All functions in this file are defined and used as follows:
 
 // showNoEntriesMsg: exported, used by other modules
@@ -369,6 +382,7 @@ function vibrate(ms = 30) {
 // scrollToTop: exported, not used internally (for external use)
 // createConfirmationModal: exported, not used internally (for external use)
 // vibrate: exported, not used internally (for external use)
+// pulseScreen: exported, not used internally (for external use)
 
 // No unused or undefined functions in this file.
 
@@ -390,4 +404,5 @@ export {
   scrollToTop,
   createConfirmationModal,
   vibrate,
+  pulseScreen,
 };
