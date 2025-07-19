@@ -523,6 +523,7 @@ main {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -546,6 +547,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -558,6 +560,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -571,7 +574,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -582,7 +586,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -598,6 +604,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -605,6 +612,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -613,14 +621,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -699,6 +710,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -722,6 +734,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -734,6 +747,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -747,7 +761,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -758,7 +773,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -774,6 +791,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -781,6 +799,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -789,14 +808,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -875,6 +897,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -898,6 +921,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -910,6 +934,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -923,7 +948,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -934,7 +960,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -950,6 +978,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -957,6 +986,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -965,14 +995,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1051,6 +1084,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1074,6 +1108,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1086,6 +1121,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1099,7 +1135,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1110,7 +1147,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -1126,6 +1165,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -1133,6 +1173,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -1141,14 +1182,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1227,6 +1271,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1250,6 +1295,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1262,6 +1308,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1275,7 +1322,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1286,7 +1334,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -1302,6 +1352,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -1309,6 +1360,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -1317,14 +1369,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1403,6 +1458,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1426,6 +1482,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1438,6 +1495,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1451,7 +1509,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1462,7 +1521,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -1478,6 +1539,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -1485,6 +1547,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -1493,14 +1556,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1579,6 +1645,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1602,6 +1669,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1614,6 +1682,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1627,7 +1696,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1638,7 +1708,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -1654,6 +1726,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -1661,6 +1734,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -1669,14 +1743,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1755,6 +1832,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1778,6 +1856,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1790,6 +1869,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1803,7 +1883,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1814,7 +1895,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -1830,6 +1913,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -1837,6 +1921,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -1845,14 +1930,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -1931,6 +2019,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -1954,6 +2043,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -1966,6 +2056,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -1979,7 +2070,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -1990,7 +2082,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -2006,6 +2100,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -2013,6 +2108,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -2021,14 +2117,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -2107,6 +2206,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -2130,6 +2230,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -2142,6 +2243,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -2155,7 +2257,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -2166,7 +2269,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -2182,6 +2287,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -2189,6 +2295,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -2197,14 +2304,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -2283,6 +2393,7 @@ body {
   background: #ffd6f6;
   border-radius: 1em;
 }
+
 ::-webkit-scrollbar-thumb {
   background: linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%);
   border-radius: 1em;
@@ -2306,6 +2417,7 @@ body {
   position: relative;
   overflow: visible;
 }
+
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -2318,6 +2430,7 @@ body {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
+
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -2331,7 +2444,8 @@ body {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.tag-btn, .tag-button {
+.tag-btn,
+.tag-button {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   color: #a0005a !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -2342,7 +2456,9 @@ body {
   box-shadow: 0 2px 24px #fd7bc540 !important;
   position: relative;
 }
-.tag-btn::after, .tag-button::after {
+
+.tag-btn::after,
+.tag-button::after {
   content: " ✧";
   color: #ff63a5;
   font-size: 1.1em;
@@ -2358,6 +2474,7 @@ body {
   font-size: 1.25em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
+
 .toast-popup::before {
   content: "Sissy! ";
   color: #ff63a5;
@@ -2365,6 +2482,7 @@ body {
   font-family: var(--heading-font);
   margin-right: 0.5em;
 }
+
 .toast-popup::after {
   content: "💋";
   color: #ff63a5;
@@ -2373,14 +2491,17 @@ body {
   vertical-align: middle;
 }
 
-.shame-badge, .gallery-shame-badge {
+.shame-badge,
+.gallery-shame-badge {
   border: 3px dashed #fd7bc5 !important;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   color: #a0005a !important;
   font-size: 1.15em !important;
   text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
 }
-.shame-badge span, .gallery-shame-badge span {
+
+.shame-badge span,
+.gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
   margin-left: 0.5em;
@@ -2389,17 +2510,42 @@ body {
 /* --- END EXTRA HYPERFEMININE & HUMILIATION CUES --- */
 
 @keyframes taunt-pop {
-  0% { transform: scale(0.7); opacity: 0.2; }
-  60% { transform: scale(1.15); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0.7);
+    opacity: 0.2;
+  }
+
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
+
 @keyframes sparklePop {
-  0% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
-  50% { filter: drop-shadow(0 0 8px #ff63a5); transform: scale(1.15); }
-  100% { filter: drop-shadow(0 0 0 #ff63a5); transform: scale(1); }
+  0% {
+    filter: drop-shadow(0 0 0 #ff63a5);
+    transform: scale(1);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 8px #ff63a5);
+    transform: scale(1.15);
+  }
+
+  100% {
+    filter: drop-shadow(0 0 0 #ff63a5);
+    transform: scale(1);
+  }
 }
+
 .lipstick-kiss {
-  position: absolute; position: fixed;
+  position: absolute;
+  position: fixed;
   z-index: 10;
   pointer-events: none;
   opacity: 0.35;
@@ -2411,11 +2557,21 @@ body {
   filter: drop-shadow(0 2px 8px #fd7bc540);
   animation: kissWiggle 2.5s infinite;
 }
+
 @keyframes kissWiggle {
-  0% { transform: rotate(-8deg) scale(1); }
-  50% { transform: rotate(8deg) scale(1.15); }
-  100% { transform: rotate(-8deg) scale(1); }
+  0% {
+    transform: rotate(-8deg) scale(1);
+  }
+
+  50% {
+    transform: rotate(8deg) scale(1.15);
+  }
+
+  100% {
+    transform: rotate(-8deg) scale(1);
+  }
 }
+
 .sparkle-overlay {
   position: absolute;
   z-index: 5;
@@ -2427,8 +2583,10 @@ body {
   height: 100%;
   animation: sparkleMove 8s linear infinite;
 }
+
 .taunt-header {
-  font-family: var(--heading-font); text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
+  font-family: var(--heading-font);
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
   font-size: 1.5em;
   color: var(--accent);
   text-align: center;
@@ -2438,6 +2596,7 @@ body {
   box-shadow: 0 2px 8px #fd7bc540;
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
 }
+
 .taunt-header::after {
   margin: 0.2em 0.4em;
   content: "💖✨";
@@ -2472,6 +2631,7 @@ body {
   position: relative;
   z-index: 10;
 }
+
 .sidebar-taunt-banner::after {
   content: "💖✨";
   font-size: 1.5em;
@@ -2497,15 +2657,25 @@ body {
   box-shadow: 0 0 12px #fd7bc555;
   animation: shame-pulse 1.2s infinite;
 }
+
 .shame-badge span {
   position: fixed;
   font-size: 1.3em;
   margin-left: 0.3em;
 }
+
 @keyframes shame-pulse {
-  0% { box-shadow: 0 0 12px #fd7bc555; }
-  50% { box-shadow: 0 0 32px #fd7bc5cc; }
-  100% { box-shadow: 0 0 12px #fd7bc555; }
+  0% {
+    box-shadow: 0 0 12px #fd7bc555;
+  }
+
+  50% {
+    box-shadow: 0 0 32px #fd7bc5cc;
+  }
+
+  100% {
+    box-shadow: 0 0 12px #fd7bc555;
+  }
 }
 
 /* Gallery humiliation/taunt styles */
@@ -2528,6 +2698,7 @@ body {
   right: 0.7em;
   z-index: 2;
 }
+
 .gallery-shame-badge span {
   color: #ff63a5;
   font-size: 1.3em;
@@ -2546,6 +2717,7 @@ body {
   pointer-events: none;
   animation: taunt-pop 0.7s, sparklePop 1.2s infinite alternate;
 }
+
 .gallery-empty-humiliation {
   display: flex;
   flex-direction: column;
@@ -2562,6 +2734,7 @@ body {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   animation: taunt-pop 0.7s;
 }
+
 .gallery-empty-emoji {
   font-size: 3em;
   margin-bottom: 0.3em;
@@ -2585,6 +2758,7 @@ body {
   align-items: center;
   font-family: 'Hi Melody', cursive, sans-serif;
 }
+
 .desperation-bar {
   width: 0%;
   height: 1.1em;
@@ -2593,6 +2767,7 @@ body {
   margin-bottom: 0.3em;
   transition: width 0.5s, background 0.5s;
 }
+
 .desperation-taunt {
   font-size: 1em;
   color: #a0005a;
@@ -2605,10 +2780,12 @@ body {
 .fem-shadow {
   box-shadow: 0 2px 16px #fd7bc540, 0 0 32px #ff63a540;
 }
+
 .fem-border {
   border: 2px solid #fd7bc5 !important;
   border-radius: 2em !important;
 }
+
 .humiliation-glow {
   color: #a0005a !important;
   animation: humiliationGlow 1.2s infinite alternate;
