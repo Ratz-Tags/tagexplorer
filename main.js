@@ -169,8 +169,24 @@ if (sidebarCloseBtn && copiedSidebar) {
 const sortSelect = document.getElementById("sort-by");
 if (sortSelect) {
   sortSelect.addEventListener("change", (e) => {
-    setSortMode(e.target.value);
-    filterArtists(true);
+    // No immediate sort, just set mode for button
+    // Optionally, update UI to reflect selection
+  });
+}
+
+const sortButtonElem = document.getElementById("sort-button");
+if (sortButtonElem && sortSelect) {
+  sortButtonElem.addEventListener("click", () => {
+    if (
+      sortSelect.value === "top" &&
+      typeof window.kexplorer !== "undefined" &&
+      typeof window.kexplorer.showTopArtistsByTagCount === "function"
+    ) {
+      window.kexplorer.showTopArtistsByTagCount();
+    } else {
+      setSortMode(sortSelect.value);
+      forceSortAndRender();
+    }
   });
 }
 
@@ -209,13 +225,6 @@ if (sortPreferenceElem) {
   });
 }
 
-const sortButtonElem = document.getElementById("sort-button");
-if (sortButtonElem) {
-  sortButtonElem.addEventListener("click", () => {
-    forceSortAndRender();
-  });
-}
-
 // Add tag search mode selector
 const tagSearchModeSelect = document.createElement("select");
 tagSearchModeSelect.id = "tag-search-mode";
@@ -241,11 +250,18 @@ const joiBtn = document.createElement("button");
 joiBtn.textContent = "JOI Mode";
 joiBtn.className = "browse-btn humiliation-glow";
 joiBtn.style.marginLeft = "1em";
+let joiActive = false;
 joiBtn.onclick = () => {
-  if (window.startJOIMode) {
+  if (!joiActive && window.startJOIMode) {
     window.startJOIMode();
-    joiBtn.disabled = true;
-    joiBtn.textContent = "JOI Mode (Active)";
+    joiActive = true;
+    joiBtn.textContent = "Stop JOI Mode";
+    joiBtn.classList.add("active");
+  } else if (joiActive && window.stopJOIMode) {
+    window.stopJOIMode();
+    joiActive = false;
+    joiBtn.textContent = "JOI Mode";
+    joiBtn.classList.remove("active");
   }
 };
 const controlsBar = document.querySelector(".sort-controls");

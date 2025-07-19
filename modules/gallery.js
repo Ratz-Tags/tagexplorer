@@ -956,6 +956,10 @@ async function filterArtists(reset = true, force = false) {
 // Optionally, expose this function for UI integration
 export { showTopArtistsByTagCount };
 
+if (typeof window !== "undefined" && typeof window.kexplorer === "object") {
+  window.kexplorer.showTopArtistsByTagCount = showTopArtistsByTagCount;
+}
+
 let lastSortMode = null;
 
 function addTopTagCountButton() {
@@ -1175,18 +1179,26 @@ function setSortPreference(preference) {
 let joiModeActive = false;
 let joiInterval = null;
 const joiCommands = [
-  "Edge for 30 seconds. No touching until the timer ends.",
-  "Say out loud: 'I'm a desperate little sissy.'",
-  "Kneel and thank your favorite artist.",
-  "Write your favorite tag on a piece of paper and keep it visible.",
-  "Clap your hands and say 'Thank you, Mistress!'",
-  "Send a compliment to another user (or imagine doing so).",
-  "Repeat: 'I am so needy' five times.",
-  "Take a deep breath and hold it for 10 seconds.",
-  "Blow a kiss to the screen.",
-  "Promise you won't touch yourself until you finish browsing.",
-  "Pathetic! Now, do 10 jumping jacks.",
-  "Type 'I'm so embarrassed' in the search bar (then clear it).",
+  "Edge for 60 seconds. If you fail, start over and call yourself a loser.",
+  "Say out loud: 'I'm a pathetic, needy little toy.'",
+  "Kneel on the floor and beg for permission to continue. Out loud.",
+  "Slap yourself lightly and say, 'That's for being so weak.'",
+  "Look in the mirror and say, 'I'm nothing but a desperate sissy.'",
+  "Send a humiliating compliment to a friend (or imagine doing so).",
+  "Repeat: 'I exist to be used and teased' ten times, slowly.",
+  "Hold your breath and whimper quietly for 15 seconds. No touching.",
+  "Blow a kiss to the screen and thank your superior for the privilege.",
+  "Promise out loud: 'I won't cum until I'm told.'",
+  "Pathetic! Now, do 20 jumping jacks and say 'I'm so desperate!' after each one.",
+  "Type 'I'm a hopeless case' in the search bar, then delete it in shame.",
+  "Lick your lips and say, 'I'm so needy, please humiliate me more.'",
+  "Sit on your hands for 2 minutes. If you move, start over and apologize out loud.",
+  "Send a voice note to yourself saying, 'I'm a worthless little plaything.' (or imagine it).",
+  "Write 'USE ME' on your hand and keep it visible for the rest of your session.",
+  "Stare at the most humiliating image you can find for 1 minute without looking away.",
+  "Say, 'Thank you for reminding me how low I've sunk.' three times, slowly.",
+  "Promise: 'I will obey every command, no matter how embarrassing.' Out loud.",
+  "If you feel embarrassed, say, 'That's exactly what I deserve.' and smile.",
 ];
 
 function startJOIMode(intervalMs = 60000) {

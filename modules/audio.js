@@ -363,10 +363,17 @@ function saveLastTrack() {
 function setupAudioPanelToggle() {
   // Try to get both the panel and a toggle button
   const panel = document.getElementById("audio-panel");
-  const bar = document.getElementById("audio-bar") || panel; // fallback to panel if no bar
+  const bar = document.getElementById("audio-bar");
   const toggleBtn = document.getElementById("audio-panel-toggle");
   function toggle() {
-    if (panel) panel.classList.toggle("hidden");
+    if (panel) {
+      panel.classList.toggle("hidden");
+      // Debug: log panel state
+      console.log(
+        "Audio panel toggled. Now hidden:",
+        panel.classList.contains("hidden")
+      );
+    }
   }
   if (bar) {
     bar.style.cursor = "pointer";
