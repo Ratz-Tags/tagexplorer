@@ -72,6 +72,11 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  overflow-x: auto;
+  max-width: 100vw;
+  box-sizing: border-box;
 }
 
 .sort-controls {
@@ -437,7 +442,8 @@ main {
   position: fixed;
   bottom: 1rem;
   left: 1rem;
-  z-index: 200;
+  z-index: 900 !important; /* Lower than modals/fullscreen */
+  pointer-events: none;
 }
 
 .jrpg-bubble {
@@ -716,12 +722,16 @@ main {
     box-sizing: border-box;
     padding-left: 0;
     padding-right: 0;
+    overflow-x: auto !important;
   }
   .top-bar {
     gap: 0.5em !important;
     padding: 0.5em 0.2em !important;
+    overflow-x: auto !important;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
-  .brand, .tagline {
+  .brand, .tagline, .brand-sissy {
     font-size: 1.3em !important;
     padding: 0.2em 0.4em !important;
     max-width: 98vw;
