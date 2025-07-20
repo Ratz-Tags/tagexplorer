@@ -43,6 +43,8 @@ import {
 import { loadAppData } from "./modules/api.js";
 import { startTauntTicker } from "./modules/humiliation.js";
 
+import { renderPromptCacheUI } from "./modules/prompt-cache.js";
+
 /**
  * Initialize the application
  */
@@ -266,3 +268,13 @@ joiBtn.onclick = () => {
 };
 const controlsBar = document.querySelector(".sort-controls");
 if (controlsBar) controlsBar.appendChild(joiBtn);
+
+// Add Prompt Cache button
+const promptBtn = document.createElement("button");
+promptBtn.textContent = "Prompts";
+promptBtn.className = "browse-btn";
+promptBtn.style.marginLeft = "1em";
+promptBtn.onclick = () => {
+  renderPromptCacheUI();
+};
+if (controlsBar) controlsBar.appendChild(promptBtn);
