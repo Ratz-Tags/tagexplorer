@@ -224,6 +224,7 @@ async function openArtistZoom(artist) {
   // In-memory cache for top tags (limit to 20 artists per session)
   const topTagsCache = new Map();
   const TOP_TAGS_CACHE_LIMIT = 20;
+  let artistTopTags = [];
 
   function showNoEntries(
     message = "No images found for this artist and filter."
@@ -286,6 +287,56 @@ async function openArtistZoom(artist) {
       : [];
 
     posts = validPosts;
+
+    // --- Calculate top 20 tags for this artist (excluding artist tag) ---
+    if (posts.length > 0) {
+      // Count tag frequencies
+      const tagCounts = {};
+      posts.forEach((post) => {
+        if (post.tag_string) {
+          post.tag_string.split(" ").forEach((tag) => {
+            // Exclude artist tag (danbooru: artist:xxx)
+            if (!tag.startsWith("artist:")) {
+              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            }
+          });
+        }
+      });
+      // Remove the artist's own tag if present (e.g. artistName)
+      const artistTag = (
+        artist.artistTag ||
+        artist.artistName ||
+        ""
+      ).toLowerCase();
+      delete tagCounts[artistTag];
+      // Sort tags by frequency
+      artistTopTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([tag, count]) => ({ tag, count }));
+      // Render top tags in the modal
+      if (topTags) {
+        if (artistTopTags.length > 0) {
+          topTags.innerHTML =
+            "<b>Top 20 Tags:</b> " +
+            artistTopTags
+              .map(
+                (t) =>
+                  `<span class="zoom-top-tag">${t.tag.replace(
+                    /_/g,
+                    " "
+                  )} <span class="zoom-top-tag-count">[${
+                    t.count
+                  }]</span></span>`
+              )
+              .join(", ");
+          topTags.style.display = "block";
+        } else {
+          topTags.innerHTML = "";
+          topTags.style.display = "none";
+        }
+      }
+    }
 
     if (validPosts.length === 0) {
       if (
