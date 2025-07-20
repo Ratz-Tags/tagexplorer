@@ -90,6 +90,12 @@ header {
   border-radius: 1em;
   box-shadow: 0 2px 8px #fd7bc540;
   position: relative;
+  border: 2px solid #fd7bc5;
+  margin-bottom: 0.2em;
+  margin-top: 0.2em;
+  display: inline-block;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
 }
 
 .tagline::before {
@@ -106,6 +112,14 @@ header {
   position: relative;
   letter-spacing: 0.08em;
   text-shadow: 0 2px 8px #fd7bc540;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  padding: 0.2em 1.2em;
+  border-radius: 1.5em;
+  border: 3px solid #fd7bc5;
+  box-shadow: 0 2px 16px #fd7bc540;
+  display: inline-block;
+  margin-bottom: 0.2em;
+  margin-top: 0.2em;
 }
 
 .brand::after {
