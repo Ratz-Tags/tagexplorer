@@ -1,3 +1,48 @@
+/* Ensure sidebar is hidden by default on page load */
+#copied-sidebar {
+  display: none !important;
+}
+.sidebar-hidden {
+  display: none !important;
+}
+/* Zoom modal navigation and close buttons theme styles */
+.zoom-nav-btn, .zoom-close-btn {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #ff63a5 !important;
+  border: 2.5px solid #ff63a5 !important;
+  border-radius: 2em !important;
+  font-size: 2.2em !important;
+  font-family: var(--heading-font);
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  transition: background 0.2s, color 0.2s;
+  position: relative;
+  min-width: 56px;
+  min-height: 56px;
+  width: 64px;
+  height: 64px;
+  margin: 0.5em 0.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+.zoom-nav-btn:active, .zoom-nav-btn:focus-visible, .zoom-close-btn:active, .zoom-close-btn:focus-visible {
+  outline: 3px solid #ff63a5 !important;
+  background: #fd7bc5 !important;
+  color: #fff !important;
+}
+.zoom-nav-btn img, .zoom-nav-btn svg, .zoom-close-btn img, .zoom-close-btn svg {
+  width: 2em !important;
+  height: 2em !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  object-fit: contain;
+  vertical-align: middle;
+  pointer-events: none;
+}
 .sidebar-hidden {
   display: none !important;
 }
