@@ -60,18 +60,7 @@ body {
   z-index: -1;
 }
 
-header[role="banner"] {
-  background: transparent !important;
-  border: none !important;
-  position: absolute !important;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 0;
-  z-index: 1 !important;
-  pointer-events: none;
-  opacity: 0;
-}
+
 
 .top-bar {
   display: flex;
