@@ -44,7 +44,7 @@
 .tag-explorer-wrapper,
 .joi-modal,
 .taunt-modal {
-  display: none !important;
+  display: flex !important;
   position: fixed !important;
   top: 0 !important;
   left: 0 !important;
@@ -55,12 +55,22 @@
   justify-content: center !important;
   pointer-events: auto !important;
 }
-.modal.active,
-.fullscreen-wrapper.active,
-.tag-explorer-wrapper.active,
-.joi-modal.active,
-.taunt-modal.active {
-  display: flex !important;
+
+/* Sidebar and audio panel toggling */
+#copied-sidebar {
+  display: none;
+  /* ...existing sidebar styles... */
+}
+#copied-sidebar.visible {
+  display: block;
+}
+
+#audio-panel {
+  display: block;
+  /* ...existing audio panel styles... */
+}
+#audio-panel.hidden {
+  display: none;
 }
 /* Feminine default theme */
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap');
