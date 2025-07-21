@@ -60,12 +60,17 @@ body {
   z-index: -1;
 }
 
-header {
-  background: var(--background-alt);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
+header[role="banner"] {
+  background: transparent !important;
+  border: none !important;
+  position: absolute !important;
   top: 0;
-  z-index: 100;
+  left: 0;
+  width: 100vw;
+  height: 0;
+  z-index: -2 !important;
+  pointer-events: none;
+  opacity: 0;
 }
 
 .top-bar {
@@ -170,7 +175,7 @@ header {
   margin: 0;
   font-weight: 600;
   color: var(--accent2);
-  font-family: var(--heading-font);
+  font-family: 'Hi Melody', 'Dancing Script', 'Pacifico', 'Inter', cursive, sans-serif !important;
   position: relative;
   letter-spacing: 0.08em;
   text-shadow: 0 2px 8px #fd7bc540;
@@ -182,6 +187,17 @@ header {
   display: inline-block;
   margin-bottom: 0.2em;
   margin-top: 0.2em;
+}
+
+/* Add or override .brand-sissy for curly, girly font */
+.brand-sissy {
+  font-family: 'Hi Melody', 'Dancing Script', 'Pacifico', 'Inter', cursive, sans-serif !important;
+  color: #ff63a5;
+  font-size: 1.2em;
+  margin: 0.2em 0 0.2em 0;
+  text-align: center;
+  letter-spacing: 0.09em;
+  font-weight: 600;
 }
 
 .brand::after {
@@ -309,36 +325,21 @@ header {
   border-radius: var(--radius);
 }
 
-main {
-  padding: var(--padding);
-}
-
-#artist-gallery {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: var(--padding);
-}
-
-/* --- ARTIST CARDS: CONSOLIDATED, CLEAN, MODERN --- */
-.artist-card {
+.tagline {
+  font-family: 'Hi Melody', 'Dancing Script', 'Pacifico', 'Inter', cursive, sans-serif !important;
+  font-size: 1.35rem !important;
+  color: var(--accent2);
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  padding: 0.3em 1em;
+  border-radius: 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
   position: relative;
-  z-index: 5;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 340px;
-  min-width: 220px;
-  min-height: 320px;
-  margin: 1em auto;
-  padding: 1.2em 1em 1em 1em;
-  border-radius: var(--radius);
-  border: 2.5px solid #ffd6f6 !important;
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
-  box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc, 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
-  transition: box-shadow 0.2s, transform 0.2s, filter 0.18s, border 0.18s;
-  will-change: transform, box-shadow, filter;
-  overflow: visible;
+  border: 2px solid #fd7bc5;
+  margin-bottom: 0.2em;
+  margin-top: 0.2em;
+  display: inline-block;
+  letter-spacing: 0.13em;
+  font-weight: 600;
 }
 .artist-card:hover, .artist-card:focus-within {
   transform: scale(1.035) translateY(-2px) rotate(-1deg);
@@ -1081,29 +1082,12 @@ body, html {
   font-size: 1.3em;
   color: #fd7bc5;
   background: linear-gradient(90deg, #fff0fa 60%, #ffd6f6 100%) !important;
-  padding: 0.7em 1.2em;
+  padding: 0.7em 1em;
   border-radius: 1.5em 1.5em 0 0;
   text-align: center;
   margin-bottom: 1em;
   position: relative;
   z-index: 10;
-  max-width: 98vw;
-  width: fit-content;
-  min-width: 0;
-  margin-left: auto;
-  margin-right: auto;
-  word-break: break-word;
-  box-sizing: border-box;
-  overflow-wrap: anywhere;
-}
-@media (max-width: 600px) {
-  .sidebar-taunt-banner {
-    font-size: 1.05em;
-    padding: 0.5em 0.5em;
-    max-width: 96vw;
-    width: 100%;
-    border-radius: 1.2em 1.2em 0 0;
-  }
 }
 
 .sidebar-taunt-banner::after {
