@@ -120,7 +120,7 @@ function updateCopiedSidebar() {
   closeBtn.className = "copied-sidebar-close";
   closeBtn.innerHTML = "&times;";
   closeBtn.title = "Close";
-  closeBtn.onclick = () => copiedSidebar.classList.remove("visible");
+  closeBtn.onclick = () => copiedSidebar.classList.add("sidebar-hidden");
   copiedSidebar.appendChild(closeBtn);
 
   copiedArtists.forEach((artistTag, idx) => {
@@ -219,9 +219,9 @@ function initSidebar() {
     sidebarToggles.forEach((btn) => {
       btn.addEventListener("click", (e) => {
         vibrate();
-        copiedSidebar.classList.toggle("visible");
+        copiedSidebar.classList.toggle("sidebar-hidden");
         // Toggle body class when sidebar is opened or closed
-        if (copiedSidebar.classList.contains("visible")) {
+        if (!copiedSidebar.classList.contains("sidebar-hidden")) {
           document.body.classList.add("sidebar-open");
         } else {
           document.body.classList.remove("sidebar-open");
