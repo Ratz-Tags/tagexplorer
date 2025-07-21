@@ -1,3 +1,87 @@
+/* --- TAG EXPLORER USABILITY & COMPACTNESS OVERRIDES --- */
+.tag-explorer {
+  max-height: 92vh !important;
+  height: 92vh !important;
+  min-height: 420px;
+  width: 98vw !important;
+  max-width: 900px !important;
+  margin: 0 auto;
+  overflow-y: auto !important;
+  padding: 1.2em 1.2em 2.5em 1.2em !important;
+  outline: none;
+  z-index: 12010 !important;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  box-sizing: border-box;
+}
+#tag-list {
+  max-height: 60vh;
+  min-height: 180px;
+  overflow-y: auto;
+  padding-right: 0.5em;
+  margin-bottom: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.tag-btn,
+.tag-button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2px solid #fd7bc5 !important;
+  border-radius: 2em !important;
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.09em;
+  box-shadow: 0 1.5px 8px #fd7bc540 !important;
+  position: relative;
+  font-size: 0.98em !important;
+  padding: 0.32em 0.95em !important;
+  min-width: 0;
+  min-height: 0;
+  max-width: 180px;
+  white-space: nowrap;
+  margin: 0.13em 0.13em;
+}
+@media (max-width: 900px) {
+  .tag-explorer {
+    max-width: 99vw !important;
+    width: 99vw !important;
+    min-width: 0;
+    padding: 0.7em 0.2em 2.5em 0.2em !important;
+  }
+  #tag-list {
+    max-height: 48vh;
+    gap: 0.18em;
+  }
+  .tag-btn, .tag-button {
+    font-size: 0.93em !important;
+    padding: 0.22em 0.7em !important;
+    max-width: 120px;
+  }
+}
+@media (max-width: 600px) {
+  .tag-explorer {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    min-width: 0;
+    height: 98vh !important;
+    padding: 0.3em 0.1em 2.2em 0.1em !important;
+  }
+  #tag-list {
+    max-height: 36vh;
+    gap: 0.11em;
+  }
+  .tag-btn, .tag-button {
+    font-size: 0.89em !important;
+    padding: 0.13em 0.5em !important;
+    max-width: 90px;
+  }
+}
 /* --- FORCE ALL OVERLAYS TO FLOAT ABOVE CONTENT --- */
 #copied-sidebar,
 #audio-panel,
