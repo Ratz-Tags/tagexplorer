@@ -1,8 +1,8 @@
 /* Removed duplicate/faulty #copied-sidebar rules above. See overlay section for correct floating sidebar. */
 /* --- TAG EXPLORER USABILITY & COMPACTNESS OVERRIDES --- */
 .tag-explorer {
-  max-height: 92vh !important;
-  height: 92vh !important;
+  max-height: 98vh !important;
+  height: 90vh !important;
   min-height: 420px;
   width: 98vw !important;
   max-width: 900px !important;
@@ -19,8 +19,8 @@
 }
 
 #tag-list {
-  max-height: 60vh;
-  min-height: 180px;
+  max-height: 95vh;
+  min-height: 380px;
   overflow-y: auto;
   padding-right: 0.5em;
   margin-bottom: 1em;
@@ -42,7 +42,7 @@
   letter-spacing: 0.09em;
   box-shadow: 0 1.5px 8px #fd7bc540 !important;
   position: relative;
-  font-size: 0.98em !important;
+  font-size: 0.94em !important;
   padding: 0.32em 0.95em !important;
   min-width: 0;
   min-height: 0;
