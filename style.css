@@ -1,7 +1,5 @@
 /* Ensure sidebar is hidden by default on page load */
-#copied-sidebar {
-  display: none !important;
-}
+/* Sidebar hidden state */
 .sidebar-hidden {
   display: none !important;
 }
@@ -60,12 +58,9 @@
   box-shadow: -8px 0 32px #fd7bc5cc, 0 0 64px #ff63a5cc;
   border-radius: 1.5em 0 0 1.5em;
   overflow-y: auto;
-  display: none !important;
+  display: flex !important;
   flex-direction: column;
   transition: right 0.2s, box-shadow 0.2s;
-}
-#copied-sidebar:not(.sidebar-hidden) {
-  display: flex !important;
 }
 @media (max-width: 900px) {
   #copied-sidebar {
