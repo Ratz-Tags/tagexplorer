@@ -1,3 +1,105 @@
+/* --- BUTTON & ICON SIZING FIXES FOR TAG-EXPLORER AND ZOOM MODAL --- */
+.tag-btn, .tag-button {
+  padding: 0.42em 1.2em 0.42em 1.2em !important;
+  min-width: 48px !important;
+  min-height: 36px !important;
+  max-width: 180px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+.tag-btn img, .tag-button img {
+  width: 1.3em !important;
+  height: 1.3em !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+  object-fit: contain;
+  vertical-align: middle;
+  margin: 0 0.1em 0 0;
+}
+.zoom-nav-btn {
+  min-width: 64px !important;
+  min-height: 64px !important;
+  width: 72px !important;
+  height: 72px !important;
+  margin: 0.7em 0.3em !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+}
+.zoom-nav-btn img, .zoom-nav-btn svg {
+  width: 2em !important;
+  height: 2em !important;
+  max-width: 40px !important;
+  max-height: 40px !important;
+  object-fit: contain;
+  vertical-align: middle;
+  pointer-events: none;
+}
+@media (max-width: 900px) {
+  .tag-btn, .tag-button {
+    font-size: 0.93em !important;
+    padding: 0.32em 0.9em 0.32em 0.9em !important;
+    min-width: 36px !important;
+    min-height: 28px !important;
+    max-width: 120px;
+  }
+  .tag-btn img, .tag-button img {
+    width: 1.1em !important;
+    height: 1.1em !important;
+    max-width: 18px !important;
+    max-height: 18px !important;
+  }
+  .zoom-nav-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: 52px !important;
+    height: 52px !important;
+    font-size: 1.3em !important;
+  }
+  .zoom-nav-btn img, .zoom-nav-btn svg {
+    width: 1.3em !important;
+    height: 1.3em !important;
+    max-width: 24px !important;
+    max-height: 24px !important;
+  }
+}
+@media (max-width: 600px) {
+  .tag-btn, .tag-button {
+    font-size: 0.89em !important;
+    padding: 0.22em 0.6em 0.22em 0.6em !important;
+    min-width: 28px !important;
+    min-height: 22px !important;
+    max-width: 90px;
+  }
+  .tag-btn img, .tag-button img {
+    width: 0.9em !important;
+    height: 0.9em !important;
+    max-width: 14px !important;
+    max-height: 14px !important;
+  }
+  .zoom-nav-btn {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1em !important;
+  }
+  .zoom-nav-btn img, .zoom-nav-btn svg {
+    width: 1em !important;
+    height: 1em !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+  }
+}
 /* Removed duplicate/faulty #copied-sidebar rules above. See overlay section for correct floating sidebar. */
 /* --- TAG EXPLORER USABILITY & COMPACTNESS OVERRIDES --- */
 .tag-explorer {
