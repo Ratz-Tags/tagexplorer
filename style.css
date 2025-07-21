@@ -1,3 +1,20 @@
+/* --- UNIVERSAL MODAL POSITIONING FIX --- */
+.modal,
+.fullscreen-wrapper,
+.tag-explorer-wrapper,
+.joi-modal,
+.taunt-modal {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 12000 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  pointer-events: auto !important;
+}
 /* Feminine default theme */
 @import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap');
 
