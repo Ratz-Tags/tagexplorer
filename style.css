@@ -1,3 +1,89 @@
+/* --- FORCE ALL OVERLAYS TO FLOAT ABOVE CONTENT --- */
+#copied-sidebar,
+#audio-panel,
+#prompt-cache-container {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  max-width: 100vw;
+  z-index: 12500 !important;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+#audio-panel {
+  bottom: 0;
+  top: auto;
+  width: 100vw;
+  max-width: 100vw;
+  left: 0;
+  right: 0;
+  border-radius: 1.5em 1.5em 0 0;
+  box-shadow: 0 -2px 32px #fd7bc540, 0 1.5px 8px #ff63a533;
+}
+#copied-sidebar {
+  right: 0;
+  width: 420px;
+  max-width: 98vw;
+  height: 100vh;
+  top: 0;
+  left: auto;
+  border-radius: 2em 0 0 2em;
+  box-shadow: -2px 0 32px #fd7bc540, 0 1.5px 8px #ff63a533;
+  overflow-y: auto;
+}
+#prompt-cache-container {
+  left: 50%;
+  bottom: 2em;
+  top: auto;
+  transform: translateX(-50%);
+  width: 340px;
+  max-width: 95vw;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px #fd7bc540;
+}
+@media (max-width: 900px) {
+  #copied-sidebar {
+    width: 98vw;
+    border-radius: 0;
+    left: 0;
+    right: 0;
+  }
+  #audio-panel {
+    border-radius: 1em 1em 0 0;
+  }
+  #prompt-cache-container {
+    width: 98vw;
+    left: 1vw;
+    transform: none;
+  }
+}
+@media (max-width: 600px) {
+  #copied-sidebar {
+    width: 100vw;
+    left: 0;
+    right: 0;
+    border-radius: 0;
+    max-width: 100vw;
+    height: 100vh;
+    top: 0;
+    box-shadow: none;
+  }
+  #audio-panel {
+    width: 100vw;
+    left: 0;
+    right: 0;
+    border-radius: 1em 1em 0 0;
+    box-shadow: 0 -2px 16px #fd7bc540;
+  }
+  #prompt-cache-container {
+    width: 99vw;
+    left: 0.5vw;
+    right: 0.5vw;
+    transform: none;
+    border-radius: 1em;
+  }
+}
 /* --- FLOATING CONTROLS FIX --- */
 .floating-controls {
   position: fixed !important;
