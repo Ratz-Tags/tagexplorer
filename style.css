@@ -1259,13 +1259,13 @@ body, html {
   left: 0;
   width: 100vw;
   height: 100vh;
-  z-index: 9999 !important;
+  z-index: 12000 !important;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 240, 250, 0.92);
-  backdrop-filter: blur(2px) saturate(1.1);
-  overflow: auto;
+  background: rgba(255, 240, 250, 0.97);
+  backdrop-filter: blur(2.5px) saturate(1.1);
+  overflow: hidden;
   padding: 0;
 }
 
@@ -1333,17 +1333,22 @@ body, html {
 
 /* Tag Explorer Specific */
 .tag-explorer {
-  max-height: 70vh !important;
+  max-height: 80vh !important;
   overflow-y: auto !important;
-  padding-bottom: 1.5em !important;
+  padding-bottom: 2.5em !important;
   outline: none;
+  z-index: 12010 !important;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 .tag-explorer:focus-within {
   box-shadow: 0 0 0 3px #fd7bc580, 0 8px 32px 0 #fd7bc540;
   border-color: #ff63a5 !important;
 }
 #tag-list {
-  max-height: 48vh;
+  max-height: 38vh;
   overflow-y: auto;
   padding-right: 0.5em;
   margin-bottom: 1em;
@@ -1351,6 +1356,32 @@ body, html {
   flex-wrap: wrap;
   gap: 0.5em;
   align-items: flex-start;
+}
+/* Prevent background scroll when tag-explorer/modal is open */
+.modal-open, .tag-explorer-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  position: relative !important;
+}
+
+body.tag-explorer-open, html.tag-explorer-open {
+  overflow: hidden !important;
+  height: 100vh !important;
+  position: relative !important;
+}
+/* Tag Explorer button area always visible at bottom */
+.tag-explorer .tag-explorer-buttons {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(0deg, #fff0fa 90%, #ffd6f600 100%);
+  padding: 1em 0 0.5em 0;
+  display: flex;
+  gap: 0.7em;
+  justify-content: center;
+  z-index: 12020;
+  box-shadow: 0 -2px 16px #fd7bc540;
 }
 .tag-explorer input:focus, .tag-explorer select:focus {
   outline: 2.5px solid #ff63a5;
