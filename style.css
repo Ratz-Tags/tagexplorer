@@ -1518,91 +1518,98 @@ body, html {
 
 /* Tag Explorer Specific */
 .tag-explorer {
-  width: 480px;
-  max-width: 96vw;
-  min-height: 320px;
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  border-radius: 2em;
-  box-shadow: 0 0 64px #fd7bc5cc;
-  padding: 2em 1.5em 1.5em 1.5em;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+  padding-bottom: 1.5em !important;
+  outline: none;
+}
+.tag-explorer:focus-within {
+  box-shadow: 0 0 0 3px #fd7bc580, 0 8px 32px 0 #fd7bc540;
+  border-color: #ff63a5 !important;
+}
+#tag-list {
+  max-height: 48vh;
+  overflow-y: auto;
+  padding-right: 0.5em;
+  margin-bottom: 1em;
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: flex-start;
+}
+.tag-explorer input:focus, .tag-explorer select:focus {
+  outline: 2.5px solid #ff63a5;
+  box-shadow: 0 0 0 2px #ffd6f6;
+}
+
+/* --- TAGLINE: ANIMATED GRADIENT, FEMININE FONT --- */
+.tagline {
+  font-family: 'Hi Melody', 'Inter', cursive, sans-serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 700;
+  background: linear-gradient(90deg, #fd7bc5, #ffd6f6, #ff63a5, #fff0fa, #fd7bc5);
+  background-size: 300% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+  animation: gradientMove 6s ease-in-out infinite alternate;
+  border: 2.5px solid #fd7bc5;
+  border-radius: 1.5em;
+  padding: 0.3em 1.2em;
+  margin: 0.2em auto 0.2em auto;
+  text-align: center;
+  letter-spacing: 0.13em;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 8px #fff8;
   position: relative;
 }
-.tag-explorer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.7em;
-  margin-bottom: 1.2em;
-  background: none !important;
-  border: none !important;
-  box-shadow: none !important;
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
 }
 
-.tag-explorer input, .tag-explorer select {
-  background: #fff0fa !important;
-  border-radius: 1.2em !important;
-  border: 1.5px solid #fd7bc5 !important;
-  font-family: var(--heading-font);
-  font-size: 1.08em;
-  padding: 0.4em 1em;
-  margin: 0.1em 0.2em;
-  box-shadow: 0 1px 8px #fd7bc520;
+/* --- ARTIST CARDS: MOTION & HOVER EFFECTS --- */
+.artist-card {
+  transition: transform 0.18s cubic-bezier(.4,2,.6,1), box-shadow 0.18s, filter 0.18s, border 0.18s;
+  will-change: transform, box-shadow, filter;
+  border: 2.5px solid #ffd6f6 !important;
+  box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc !important;
+  background: rgba(255, 240, 250, 0.92) !important;
+  position: relative;
 }
-
-.tag-explorer-clear {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
-  color: #fff !important;
-  border: 2px solid #fd7bc5 !important;
-  border-radius: 2em !important;
-  font-family: var(--heading-font);
-  font-size: 1.08em;
-  box-shadow: 0 2px 16px #fd7bc540 !important;
-  margin-left: 0.5em;
-  transition: background 0.2s, color 0.2s;
-}
-
-.tag-explorer-clear:hover {
-  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
-  color: #ff63a5 !important;
-}
-
-/* Ensure all bows/sparkles are always background */
-.top-bar::before, .top-bar::after, .brand-sissy::before, .brand-sissy::after, .sparkle-overlay, .lipstick-kiss {
-  z-index: 0 !important;
-  opacity: 0.13 !important;
-  pointer-events: none !important;
-}
-
-.fullscreen-wrapper, .modal, .tag-explorer-wrapper, .joi-modal, .taunt-modal {
-  z-index: 9999 !important;
-  background: rgba(255, 240, 250, 0.97) !important;
-  border-radius: 2.2em !important;
-  box-shadow: 0 12px 48px 0 #fd7bc580, 0 2px 16px #ff63a5cc !important;
+.artist-card:hover, .artist-card:focus-within {
+  transform: scale(1.035) translateY(-2px) rotate(-1deg);
+  box-shadow: 0 8px 32px #fd7bc580, 0 2px 16px #ff63a5cc !important;
   border: 2.5px solid #fd7bc5 !important;
-  backdrop-filter: blur(16px) saturate(1.2) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
+  filter: brightness(1.04) saturate(1.08) drop-shadow(0 0 12px #ff63a5cc);
+  z-index: 10;
+}
+.artist-card:focus-visible {
+  outline: 3px solid #ff63a5;
+  outline-offset: 2px;
 }
 
-/* Remove horizontal scroll from all main UI */
-html, body, .container, .filter-bar, .tag-explorer, .fullscreen-wrapper, .modal, .sidebar-wrapper {
-  overflow-x: hidden !important;
-  max-width: 100vw !important;
+/* --- GLASSMORPHISM: FAINT BORDER & PINK INNER-GLOW --- */
+.container, .filter-bar, .sidebar-wrapper, .fullscreen-wrapper, .modal, .tag-explorer-wrapper, .tag-explorer, .joi-modal, .taunt-modal, #copied-sidebar, #audio-panel, .prompt-cache-container {
+  border: 1.5px solid #ffd6f6 !important;
+  box-shadow: 0 8px 32px 0 #fd7bc540, 0 1.5px 8px #ff63a5cc, 0 0 0 0.5em #ffd6f633 inset !important;
+  background: rgba(255, 240, 250, 0.82) !important;
+  backdrop-filter: blur(12px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.2) !important;
+  transition: box-shadow 0.25s, background 0.25s, border 0.25s;
 }
 
-@media (max-width: 900px) {
-  .container, .tag-explorer {
-    padding: 0.7em 0.5em 0.7em 0.5em !important;
-    border-radius: 1.5em !important;
-    margin: 0.7em auto 0.7em auto !important;
-  }
+/* --- GENERAL: FOCUS & TRANSITIONS --- */
+*:focus-visible {
+  outline: 2.5px solid #ff63a5;
+  outline-offset: 2px;
+  z-index: 20;
 }
-@media (max-width: 600px) {
-  .container, .tag-explorer {
-    padding: 0.4em 0.1em 0.4em 0.1em !important;
-    border-radius: 1em !important;
-    margin: 0.3em auto 0.3em auto !important;
+
+/* --- SUGGESTION: SUBTLE CARD SHADOW ON TAP (MOBILE) --- */
+@media (hover: none) and (pointer: coarse) {
+  .artist-card:active {
+    transform: scale(0.98) rotate(-1deg);
+    box-shadow: 0 2px 16px #fd7bc540, 0 0 8px #ff63a5cc !important;
   }
 }
