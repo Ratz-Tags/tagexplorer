@@ -1,3 +1,33 @@
+#copied-sidebar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  height: 100vh !important;
+  width: 380px !important;
+  max-width: 98vw !important;
+  z-index: 9999 !important;
+  background: #fff0fa !important;
+  box-shadow: -8px 0 32px #fd7bc5cc, 0 0 64px #ff63a5cc;
+  border-radius: 1.5em 0 0 1.5em;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  transition: right 0.2s, box-shadow 0.2s;
+}
+@media (max-width: 900px) {
+  #copied-sidebar {
+    width: 98vw !important;
+    max-width: 100vw !important;
+    border-radius: 0;
+    top: auto !important;
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    height: 60vh !important;
+    min-height: 220px;
+    box-shadow: 0 -8px 32px #fd7bc5cc, 0 0 64px #ff63a5cc;
+  }
+}
 /* --- TAG EXPLORER USABILITY & COMPACTNESS OVERRIDES --- */
 .tag-explorer {
   max-height: 92vh !important;
