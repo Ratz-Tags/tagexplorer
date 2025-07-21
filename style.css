@@ -1362,8 +1362,9 @@ body, html {
     padding: 0 !important;
     box-sizing: border-box !important;
     overflow: auto !important;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
+    /* Center modals on all screens */
+    align-items: center !important;
+    justify-content: center !important;
   }
   .tag-explorer {
     max-height: 100vh !important;
