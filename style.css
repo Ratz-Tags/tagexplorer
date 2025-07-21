@@ -1081,12 +1081,29 @@ body, html {
   font-size: 1.3em;
   color: #fd7bc5;
   background: linear-gradient(90deg, #fff0fa 60%, #ffd6f6 100%) !important;
-  padding: 0.7em 1em;
+  padding: 0.7em 1.2em;
   border-radius: 1.5em 1.5em 0 0;
   text-align: center;
   margin-bottom: 1em;
   position: relative;
   z-index: 10;
+  max-width: 98vw;
+  width: fit-content;
+  min-width: 0;
+  margin-left: auto;
+  margin-right: auto;
+  word-break: break-word;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .sidebar-taunt-banner {
+    font-size: 1.05em;
+    padding: 0.5em 0.5em;
+    max-width: 96vw;
+    width: 100%;
+    border-radius: 1.2em 1.2em 0 0;
+  }
 }
 
 .sidebar-taunt-banner::after {
