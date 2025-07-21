@@ -326,10 +326,10 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 100%;
+  max-width: 340px;
   min-width: 220px;
   min-height: 320px;
-  width: 100%;
-  max-width: 98vw;
   margin: 1em auto;
   padding: 1.2em 1em 1em 1em;
   border-radius: var(--radius);
@@ -376,20 +376,37 @@ main {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
+.artist-image {
+  position: relative;
+  z-index: 1;
+  border-radius: 1.2em;
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px #fd7bc540;
+  margin-bottom: 0.7em;
+  max-width: 90%;
+  max-height: 220px;
+  min-width: 120px;
+  min-height: 120px;
+  display: block;
+}
+
 @media (max-width: 600px) {
   .artist-card {
-    min-width: unset;
-    width: 100%;
     max-width: 98vw;
+    width: 100%;
+    min-width: unset;
     margin: 0.5em auto;
     box-sizing: border-box;
   }
-}
-
-@media (hover: none) and (pointer: coarse) {
-  .artist-card:active {
-    transform: scale(0.98) rotate(-1deg);
-    box-shadow: 0 2px 16px #fd7bc540, 0 0 8px #ff63a5cc !important;
+  .artist-image {
+    width: 90vw;
+    max-width: 98vw;
+    min-width: 100px;
+    height: auto;
+    max-height: 220px;
+    min-height: 100px;
   }
 }
 
@@ -625,9 +642,9 @@ button[aria-label*="Previous"]::after, button[aria-label*="Next"]::after, button
     padding: 0 0.25em;
   }
   .artist-card {
-    min-width: unset;
-    width: 100%;
     max-width: 98vw;
+    width: 100%;
+    min-width: unset;
     margin: 0.5em auto;
     box-sizing: border-box;
   }
