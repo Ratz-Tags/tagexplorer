@@ -319,24 +319,38 @@ main {
   gap: var(--padding);
 }
 
+/* --- ARTIST CARDS: CONSOLIDATED, CLEAN, MODERN --- */
 .artist-card {
   position: relative;
-  z-index: 2;
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  border: 4px double #fd7bc5 !important;
-  border-radius: var(--radius);
-  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
-  padding: 1.2em 1em 1em 1em;
-  margin: 1em;
+  z-index: 5;
   display: flex;
   flex-direction: column;
   align-items: center;
   min-width: 220px;
   min-height: 320px;
-  transition: box-shadow 0.2s, transform 0.2s;
+  width: 100%;
+  max-width: 98vw;
+  margin: 1em auto;
+  padding: 1.2em 1em 1em 1em;
+  border-radius: var(--radius);
+  border: 2.5px solid #ffd6f6 !important;
+  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
+  box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc, 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  transition: box-shadow 0.2s, transform 0.2s, filter 0.18s, border 0.18s;
+  will-change: transform, box-shadow, filter;
   overflow: visible;
 }
-
+.artist-card:hover, .artist-card:focus-within {
+  transform: scale(1.035) translateY(-2px) rotate(-1deg);
+  box-shadow: 0 8px 32px #fd7bc580, 0 2px 16px #ff63a5cc, 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
+  border: 2.5px solid #fd7bc5 !important;
+  filter: brightness(1.04) saturate(1.08) drop-shadow(0 0 12px #ff63a5cc);
+  z-index: 10;
+}
+.artist-card:focus-visible {
+  outline: 3px solid #ff63a5;
+  outline-offset: 2px;
+}
 .artist-card::before {
   content: "✧ Sissy ✧";
   color: #ff63a5;
@@ -349,7 +363,6 @@ main {
   pointer-events: none;
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
-
 .artist-card::after {
   content: "Obey and drool 💋";
   color: #fd7bc5;
@@ -363,237 +376,22 @@ main {
   text-shadow: 0 0 8px #fff, 0 0 16px #fd7bc5;
 }
 
-.artist-image {
-  position: relative;
-  z-index: 1;
-  border-radius: 1.2em;
-  width: 180px;
-  height: 180px;
-  object-fit: cover;
-  box-shadow: 0 2px 8px #fd7bc540;
-  margin-bottom: 0.7em;
+@media (max-width: 600px) {
+  .artist-card {
+    min-width: unset;
+    width: 100%;
+    max-width: 98vw;
+    margin: 0.5em auto;
+    box-sizing: border-box;
+  }
 }
 
-.reload-button {
-  position: absolute;
-  top: 0.7em;
-  left: 0.7em;
-  z-index: 2;
-  background: var(--accent2);
-  color: #fff;
-  border: none;
-  border-radius: 1.2em;
-  padding: 0.3em 0.7em;
-  font-size: 1.1em;
-  cursor: pointer;
-  box-shadow: 0 2px 8px #fd7bc540;
-  transition: background 0.2s, box-shadow 0.2s;
+@media (hover: none) and (pointer: coarse) {
+  .artist-card:active {
+    transform: scale(0.98) rotate(-1deg);
+    box-shadow: 0 2px 16px #fd7bc540, 0 0 8px #ff63a5cc !important;
+  }
 }
-
-.reload-button:hover {
-  background: var(--accent);
-  box-shadow: 0 4px 16px #fd7bc540;
-}
-
-.artist-name {
-  font-family: var(--heading-font);
-  font-size: 1.2em;
-  color: var(--accent2);
-  padding: 1em;
-  background: #fff0fa;
-  border-radius: 1em;
-  margin: 0.5em;
-  text-align: center;
-}
-
-.artist-tags {
-  font-size: 1em;
-  color: var(--accent2);
-  background: #ffd6f6;
-  border-radius: 1em;
-  padding: 0.5em 1em;
-  margin: 0.5em;
-  text-align: center;
-}
-
-.copy-button {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  border: none;
-  background: var(--accent);
-  color: #fff;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-}
-
-.sidebar-wrapper {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: flex-end;
-  pointer-events: none;
-  z-index: 150;
-}
-
-#copied-sidebar {
-  background: var(--background-alt);
-  width: 320px;
-  max-width: 90vw;
-  height: 100%;
-  padding: var(--padding);
-  overflow-y: auto;
-  transform: translateX(100%);
-  transition: transform 0.3s;
-  pointer-events: auto;
-}
-
-#copied-sidebar.visible {
-  transform: translateX(0);
-}
-
-.copied-sidebar-close {
-  position: absolute;
-  top: 0.7em;
-  right: 1.2em;
-  background: #fd7bc5;
-  color: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 2em;
-  height: 2em;
-  font-size: 1.3em;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 2px 8px #fd7bc522;
-  z-index: 2;
-  transition: background 0.2s;
-}
-
-.copied-sidebar-close:hover {
-  background: #ffb3e6;
-  color: #fd7bc5;
-}
-
-.copied-artist {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  gap: 0.5rem;
-  border-bottom: 1px solid var(--border);
-  background: #fff6fa;
-  border-radius: 1.2em;
-  margin-bottom: 0.5em;
-  transition: background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 2px 8px #fd7bc522;
-}
-
-.copied-artist:hover {
-  background: #ffe0f5;
-  box-shadow: 0 4px 16px #ff63a555;
-}
-
-#jrpg-bubbles {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 900 !important; /* Lower than modals/fullscreen */
-  pointer-events: none;
-}
-
-.jrpg-bubble {
-  background: var(--background-alt);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 0.5rem 1rem;
-  border-radius: var(--radius);
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.jrpg-bubble .chibi {
-  height: 32px;
-}
-
-.floating-controls {
-  position: fixed;
-  bottom: 1rem;
-  right: 1rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  z-index: 150;
-}
-
-.floating-controls button {
-  background: var(--background-alt);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 0.5rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-
-.floating-controls button:hover {
-  background: var(--accent);
-  color: #fff;
-}
-
-#audio-panel {
-  position: fixed;
-  left: 1.5em;
-  bottom: 1.5em;
-  z-index: 1002;
-  min-width: 260px;
-  max-width: 90vw;
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%) !important;
-  border: 4px double #fd7bc5 !important;
-  box-shadow: 0 0 64px #ff63a5cc, 0 0 128px #fd7bc5cc !important;
-  border-radius: 1.2em 1.2em 1.2em 1.2em;
-  padding: 1em 1.2em 1em 1.2em;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  transition: opacity 0.3s, transform 0.3s, bottom 0.3s;
-  opacity: 1;
-  pointer-events: auto;
-}
-
-#audio-panel.hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(120%);
-}
-
-#audio-panel .audio-header {
-  font-family: var(--heading-font);
-  color: #ff63a5;
-  font-size: 1.2em;
-  font-weight: bold;
-  letter-spacing: 0.12em;
-  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
-}
-
-#audio-panel .audio-controls button {
-  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
-  color: #a0005a !important;
-  border: 2px solid #ff63a5 !important;
-  border-radius: 2em !important;
-  font-family: var(--heading-font);
-  font-size: 1.1em;
-  box-shadow: 0 2px 16px #fd7bc540 !important;
-  margin: 0.2em 0.4em;
-  text-shadow: 0 1px 0 #fff8, 0 2px 12px #fd7bc540;
-}
-
-/*audio-panel .audio-controls button:hover {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
-  color: #fff !important;
-}*/
 
 /* --- FEMININE BUTTONS, PILLS, ARROWS, ANIMATIONS, SCROLLBARS --- */
 
@@ -1575,7 +1373,6 @@ body, html {
   border: 2.5px solid #ffd6f6 !important;
   box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc !important;
   background: rgba(255, 240, 250, 0.92) !important;
-  position: relative;
 }
 .artist-card:hover, .artist-card:focus-within {
   transform: scale(1.035) translateY(-2px) rotate(-1deg);
@@ -1592,11 +1389,13 @@ body, html {
 /* --- GLASSMORPHISM: FAINT BORDER & PINK INNER-GLOW --- */
 .container, .filter-bar, .sidebar-wrapper, .fullscreen-wrapper, .modal, .tag-explorer-wrapper, .tag-explorer, .joi-modal, .taunt-modal, #copied-sidebar, #audio-panel, .prompt-cache-container {
   border: 1.5px solid #ffd6f6 !important;
-  box-shadow: 0 8px 32px 0 #fd7bc540, 0 1.5px 8px #ff63a5cc, 0 0 0 0.5em #ffd6f633 inset !important;
+  /* Improved glassmorphism shadow: softer, more natural, less harsh */
+  box-shadow: 0 4px 32px 0 #fd7bc540, 0 1.5px 8px #ff63a533, 0 0 0 0.5em #fd7bc533 inset !important;
   background: rgba(255, 240, 250, 0.82) !important;
   backdrop-filter: blur(12px) saturate(1.2) !important;
   -webkit-backdrop-filter: blur(12px) saturate(1.2) !important;
   transition: box-shadow 0.25s, background 0.25s, border 0.25s;
+  z-index: 1 !important;
 }
 
 /* --- GENERAL: FOCUS & TRANSITIONS --- */
