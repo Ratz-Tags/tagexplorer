@@ -60,8 +60,6 @@ body {
   z-index: -1;
 }
 
-
-
 .top-bar {
   display: flex;
   flex-direction: column;
@@ -613,6 +611,17 @@ button[aria-label*="Previous"]::after, button[aria-label*="Next"]::after, button
 }
 
 /* --- MOBILE & ACCESSIBILITY --- */
+/* --- ARTIST GALLERY GRID LAYOUT --- */
+#artist-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5em;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1em 0;
+  box-sizing: border-box;
+}
+
 @media (max-width: 600px) {
   html, body {
     font-size: 1em;
@@ -627,9 +636,9 @@ button[aria-label*="Previous"]::after, button[aria-label*="Next"]::after, button
     box-sizing: border-box;
   }
   #artist-gallery {
-    grid-template-columns: 1fr;
-    gap: 0.5em;
-    padding: 0 0.25em;
+    grid-template-columns: 1fr !important;
+    gap: 0.5em !important;
+    padding: 0 0.25em !important;
   }
   .artist-card {
     max-width: 98vw;
