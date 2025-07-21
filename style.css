@@ -70,13 +70,70 @@ header {
 
 .top-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 0.5em;
-  overflow-x: auto;
-  max-width: 100vw;
-  box-sizing: border-box;
+  width: 100%;
+  background: rgba(255, 240, 250, 0.82);
+  border-radius: 2.5em;
+  box-shadow: 0 8px 32px 0 #fd7bc540, 0 1.5px 8px #ff63a5cc;
+  border: 1.5px solid #ffd6f6;
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  margin: 1.2em auto 1.2em auto;
+  padding: 1.2em 2.2em 1.2em 2.2em;
+  position: relative;
+  transition: box-shadow 0.25s, background 0.25s, border 0.25s;
+  animation: topBarGradient 8s ease-in-out infinite alternate;
+  z-index: 120;
+}
+
+@keyframes topBarGradient {
+  0% {
+    background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  }
+  100% {
+    background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
+  }
+}
+
+.top-bar:hover, .top-bar:focus-within {
+  box-shadow: 0 12px 48px 0 #fd7bc580, 0 2px 16px #ff63a5cc;
+  border: 2.5px solid #fd7bc5;
+  background: rgba(255, 240, 250, 0.95);
+}
+
+.top-bar::before {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: 1.5em;
+  width: 2.5em;
+  height: 2.5em;
+  background: url('icons/sparkle.png') no-repeat center center/contain;
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 1;
+  animation: sparkleMove 12s linear infinite;
+}
+.top-bar::after {
+  content: "";
+  position: absolute;
+  bottom: 0.7em;
+  right: 1.5em;
+  width: 2.5em;
+  height: 2.5em;
+  background: url('icons/bow.png') no-repeat center center/contain;
+  opacity: 0.13;
+  pointer-events: none;
+  z-index: 1;
+  animation: sparkleMove 10s linear infinite reverse;
+}
+@keyframes sparkleMove {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  50% { transform: translateY(-8px) scale(1.08) rotate(8deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
 }
 
 .sort-controls {
@@ -1479,235 +1536,73 @@ body, html {
   justify-content: space-between;
   gap: 0.7em;
   margin-bottom: 1.2em;
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
-.tag-explorer-header h3 {
+
+.tag-explorer input, .tag-explorer select {
+  background: #fff0fa !important;
+  border-radius: 1.2em !important;
+  border: 1.5px solid #fd7bc5 !important;
   font-family: var(--heading-font);
-  color: #ff63a5;
-  font-size: 1.4em;
-  margin: 0;
-  flex: 1 1 auto;
+  font-size: 1.08em;
+  padding: 0.4em 1em;
+  margin: 0.1em 0.2em;
+  box-shadow: 0 1px 8px #fd7bc520;
 }
+
 .tag-explorer-clear {
-  background: #fd7bc5;
-  color: #fff;
-  border: none;
-  border-radius: 1.2em;
-  padding: 0.4em 1.2em;
-  font-size: 1em;
-  cursor: pointer;
-  margin-left: 0.5em;
-  transition: background 0.2s;
-}
-.tag-explorer-clear:hover {
-  background: #ff63a5;
-}
-#tag-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5em;
-  justify-content: flex-start;
-  margin-top: 1em;
-  min-height: 120px;
-}
-
-/* JOI & Taunt Modal Styles */
-.joi-modal-content, .taunt-modal-content {
-  min-width: 320px;
-  min-height: 180px;
-  max-width: 96vw;
-  max-height: 90vh;
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  border-radius: 2em;
-  box-shadow: 0 0 64px #fd7bc5cc;
-  padding: 2em 2.5em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  overflow-y: auto;
-}
-.joi-modal-content h2, .taunt-modal-content h2 {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+  border: 2px solid #fd7bc5 !important;
+  border-radius: 2em !important;
   font-family: var(--heading-font);
-  color: #ff63a5;
-  font-size: 1.5em;
-  margin-bottom: 1em;
+  font-size: 1.08em;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  margin-left: 0.5em;
+  transition: background 0.2s, color 0.2s;
 }
 
-@media (max-width: 700px) {
-  .zoom-content, .tag-explorer, .joi-modal-content, .taunt-modal-content {
-    padding: 1em 0.5em;
-    min-width: 0;
-    max-width: 99vw;
-    border-radius: 1.2em;
-  }
-  .fullscreen-img {
-    max-width: 90vw;
-    max-height: 60vh;
-  }
-}
-
-/* --- HYPER-FEMININE HEADER & MOBILE OPTIMIZATION FOR FOLDABLES --- */
-
-.brand, .brand-sissy, .tagline {
-  font-family: 'Hi Melody', 'Inter', cursive, sans-serif !important;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-shadow: 0 2px 12px #fd7bc540, 0 0 8px #fff8, 0 0 2px #ff63a5cc;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
-  border-radius: 2em;
-  padding: 0.2em 1.2em;
-  margin: 0.2em auto 0.2em auto;
-  display: block;
-  text-align: center;
-  border: 2.5px solid #fd7bc5;
-  box-shadow: 0 2px 16px #fd7bc540;
-  color: #ff63a5;
-  position: relative;
-}
-.brand {
-  font-size: 2.5rem !important;
+.tag-explorer-clear:hover {
+  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%) !important;
   color: #ff63a5 !important;
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-  border: 3px solid #ff63a5;
-  letter-spacing: 0.18em;
-  padding: 0.3em 1.5em;
-  margin-bottom: 0.1em;
 }
-.brand-sissy {
-  font-size: 1.3rem !important;
-  color: #fd7bc5 !important;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
-  border: 2px dashed #fd7bc5;
-  margin-bottom: 0.1em;
-  margin-top: 0.1em;
-  padding: 0.2em 1.2em 0.3em 1.2em;
-  position: relative;
+
+/* Ensure all bows/sparkles are always background */
+.top-bar::before, .top-bar::after, .brand-sissy::before, .brand-sissy::after, .sparkle-overlay, .lipstick-kiss {
+  z-index: 0 !important;
+  opacity: 0.13 !important;
+  pointer-events: none !important;
 }
-.brand-sissy::before {
-  content: url('icons/bow.png');
-  display: inline-block;
-  width: 1.5em;
-  height: 1.5em;
-  margin-right: 0.3em;
-  vertical-align: middle;
-  opacity: 0.8;
+
+.fullscreen-wrapper, .modal, .tag-explorer-wrapper, .joi-modal, .taunt-modal {
+  z-index: 9999 !important;
+  background: rgba(255, 240, 250, 0.97) !important;
+  border-radius: 2.2em !important;
+  box-shadow: 0 12px 48px 0 #fd7bc580, 0 2px 16px #ff63a5cc !important;
+  border: 2.5px solid #fd7bc5 !important;
+  backdrop-filter: blur(16px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.2) !important;
 }
-.brand-sissy::after {
-  content: url('icons/sparkle.png');
-  display: inline-block;
-  width: 1.5em;
-  height: 1.5em;
-  margin-left: 0.3em;
-  vertical-align: middle;
-  opacity: 0.8;
-}
-.tagline {
-  font-size: 1.1rem !important;
-  color: #a0005a !important;
-  background: linear-gradient(90deg, #ffd6f6 0%, #fff0fa 100%);
-  border: 2px solid #fd7bc5;
-  margin-bottom: 0.2em;
-  margin-top: 0.2em;
-  padding: 0.2em 1em;
-  letter-spacing: 0.14em;
-  position: relative;
-}
-.tagline::before {
-  content: "♡ ";
-  color: #fd7bc5;
-  font-size: 1.2em;
-  margin-right: 0.3em;
-  vertical-align: middle;
-}
-.tagline::after {
-  content: " ✧";
-  color: #ff63a5;
-  font-size: 1.1em;
-  margin-left: 0.3em;
-  vertical-align: middle;
+
+/* Remove horizontal scroll from all main UI */
+html, body, .container, .filter-bar, .tag-explorer, .fullscreen-wrapper, .modal, .sidebar-wrapper {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
 }
 
 @media (max-width: 900px) {
-  .container {
-    max-width: 98vw;
-    padding: 0 0.2em;
-  }
-  .top-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 0.3em !important;
-    padding: 0.5em 0.2em !important;
-    width: 100vw;
-    box-sizing: border-box;
-    overflow-x: auto !important;
-  }
-  .brand, .brand-sissy, .tagline {
-    font-size: 1.1em !important;
-    padding: 0.2em 0.5em !important;
-    max-width: 98vw;
-    word-break: break-word;
-    text-align: center;
-    margin-left: auto;
-    margin-right: auto;
-    display: block !important;
-  }
-  .sort-controls, .top-actions {
-    flex-direction: row !important;
-    align-items: center !important;
-    gap: 0.3em !important;
-    width: 100%;
-    margin: 0.1em 0 0.2em 0 !important;
-    justify-content: center;
-  }
-  .browse-btn, .tag-btn, .tag-button, .copy-button, .reload-button {
-    font-size: 0.98em !important;
-    min-width: 36px !important;
-    min-height: 36px !important;
-    padding: 0.4em 0.7em !important;
-    margin: 0.1em 0.1em !important;
-    border-radius: 2em !important;
-  }
-  .filter-inputs {
-    flex-direction: column;
-    gap: 0.3em;
-  }
-  .filter-inputs input,
-  .filter-inputs select {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 1em;
-    border-radius: 1.2em;
-    padding: 0.4em 0.7em;
+  .container, .tag-explorer {
+    padding: 0.7em 0.5em 0.7em 0.5em !important;
+    border-radius: 1.5em !important;
+    margin: 0.7em auto 0.7em auto !important;
   }
 }
-
 @media (max-width: 600px) {
-  .brand {
-    font-size: 1.5rem !important;
-    padding: 0.2em 0.7em !important;
-  }
-  .brand-sissy {
-    font-size: 1.05rem !important;
-    padding: 0.15em 0.5em 0.2em 0.5em !important;
-  }
-  .tagline {
-    font-size: 0.98rem !important;
-    padding: 0.15em 0.5em !important;
-  }
-  .browse-btn, .tag-btn, .tag-button, .copy-button, .reload-button {
-    font-size: 0.93em !important;
-    min-width: 32px !important;
-    min-height: 32px !important;
-    padding: 0.3em 0.5em !important;
-    margin: 0.08em 0.08em !important;
-    border-radius: 2em !important;
-  }
-  .top-bar {
-    gap: 0.2em !important;
-    padding: 0.3em 0.1em !important;
-  }
-  .container {
-    padding: 0 0.1em;
+  .container, .tag-explorer {
+    padding: 0.4em 0.1em 0.4em 0.1em !important;
+    border-radius: 1em !important;
+    margin: 0.3em auto 0.3em auto !important;
   }
 }
