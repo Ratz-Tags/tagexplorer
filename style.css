@@ -335,9 +335,10 @@ body {
 .zoom-tags,
 .zoom-top-tags {
   display: flex;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: 0.3em;
-  overflow-x: auto;
+  overflow: auto;
 }
 
 /* Sidebar & audio panel */

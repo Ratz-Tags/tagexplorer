@@ -417,6 +417,9 @@ async function openArtistZoom(artist) {
   document.body.appendChild(wrapper);
   wrapper.focus();
 
+  // Add overlay above zoom modal
+  showZoomTauntOverlay();
+
   // --- HUMILIATION: Add taunt header to zoom modal ---
   if (wrapper && !wrapper.querySelector(".taunt-header")) {
     let taunt = "";
@@ -1292,6 +1295,42 @@ if (typeof window !== "undefined") {
   window.stopJOIMode = stopJOIMode;
 }
 
+function showZoomTauntOverlay() {
+  let old = document.getElementById("taunt-overlay");
+  if (old) old.remove();
+  const overlay = document.createElement("div");
+  overlay.id = "taunt-overlay";
+  overlay.style.position = "fixed";
+  overlay.style.top = "0";
+  overlay.style.left = "0";
+  overlay.style.width = "100vw";
+  overlay.style.height = "100vh";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "flex-start";
+  overlay.style.justifyContent = "center";
+  overlay.style.pointerEvents = "none";
+  overlay.style.zIndex = "13000";
+  const taunt = document.createElement("div");
+  taunt.className = "taunt-header";
+  taunt.style.fontFamily = "'Hi Melody', sans-serif";
+  taunt.style.fontSize = "1.8em";
+  taunt.style.color = "#fd7bc5";
+  taunt.style.textAlign = "center";
+  taunt.style.margin = "2.5em 0 0 0";
+  taunt.style.background = "rgba(255,255,255,0.94)";
+  taunt.style.borderRadius = "2em";
+  taunt.style.boxShadow = "0 2px 24px rgba(253,123,197,0.15)";
+  taunt.style.padding = "0.6em 1.5em";
+  taunt.innerHTML =
+    'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.2em;">Pathetic.</span> 💖✨';
+  overlay.appendChild(taunt);
+  document.body.appendChild(overlay);
+}
+function hideZoomTauntOverlay() {
+  const old = document.getElementById("taunt-overlay");
+  if (old) old.remove();
+}
+
 export {
   initGallery,
   filterArtists,
@@ -1307,4 +1346,5 @@ export {
   getPaginationInfo,
   getFilteredArtists,
   setArtistsPerPage,
+  hideZoomTauntOverlay,
 };
