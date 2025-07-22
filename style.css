@@ -305,18 +305,74 @@ body {
   z-index: 12000;
 }
 
-.zoom-content,
-.tag-explorer-content,
-.joi-modal-content,
-.taunt-modal-content {
-  background: #fff0fa;
-  border-radius: var(--radius);
-  box-shadow: 0 0 64px rgba(253, 123, 197, 0.8);
-  padding: 1.2em;
-  max-width: 98vw;
-  max-height: 92vh;
-  overflow: hidden;
+.zoom-content {
+  position: relative;
   display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background: #222;
+  border-radius: 1em;
+  padding: 2em 2em 2em 2em;
+}
+
+.zoom-close {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  z-index: 2;
+  font-size: 2em;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zoom-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.zoom-prev {
+  position: absolute;
+  left: -2.5em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2em;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.zoom-right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.zoom-next {
+  position: absolute;
+  right: -2.5em;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 2em;
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.taunt-header {
+  width: 100%;
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  margin-bottom: 1em;
+  color: #ffb6c1;
 }
 
 .zoom-nav-btn,

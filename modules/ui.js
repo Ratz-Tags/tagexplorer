@@ -173,36 +173,17 @@ function createFullscreenViewer() {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
 
-  // Create zoom-content container
+  // Taunt header above zoom content
+  const tauntHeader = document.createElement("div");
+  tauntHeader.className = "taunt-header";
+  tauntHeader.textContent = ""; // Fill as needed
+  wrapper.appendChild(tauntHeader);
+
+  // Zoom content container
   const content = document.createElement("div");
   content.className = "zoom-content";
 
-  // Left side: image
-  const left = document.createElement("div");
-  left.className = "zoom-left";
-  const img = document.createElement("img");
-  img.className = "fullscreen-img";
-  left.appendChild(img);
-
-  // Add noEntriesMsg element (hidden by default)
-  const noEntriesMsg = document.createElement("div");
-  noEntriesMsg.className = "no-entries-msg";
-  noEntriesMsg.textContent = "No images found for this artist.";
-  noEntriesMsg.style.display = "none";
-  left.appendChild(noEntriesMsg);
-  const tagList = document.createElement("div");
-  tagList.className = "zoom-tags";
-  tagList.style.display = "none";
-  left.appendChild(tagList);
-  const topTags = document.createElement("div");
-  topTags.className = "artist-top-tags";
-  topTags.style.display = "none";
-  left.appendChild(topTags);
-
-  content.append(left);
-  wrapper.appendChild(content);
-
-  // Controls
+  // Close button (top right of zoom-content)
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
@@ -210,16 +191,50 @@ function createFullscreenViewer() {
     hideZoomTauntOverlay();
     wrapper.remove();
   };
+  content.appendChild(closeBtn);
+
+  // Left side: image and prev button
+  const left = document.createElement("div");
+  left.className = "zoom-left";
 
   const prevBtn = document.createElement("button");
   prevBtn.className = "zoom-prev";
   prevBtn.textContent = "←";
+  left.appendChild(prevBtn);
+
+  const img = document.createElement("img");
+  img.className = "fullscreen-img";
+  left.appendChild(img);
+
+  // Tag list and top tags
+  const tagList = document.createElement("div");
+  tagList.className = "zoom-tags";
+  tagList.style.display = "none";
+  left.appendChild(tagList);
+
+  const topTags = document.createElement("div");
+  topTags.className = "artist-top-tags";
+  topTags.style.display = "none";
+  left.appendChild(topTags);
+
+  // No entries message
+  const noEntriesMsg = document.createElement("div");
+  noEntriesMsg.className = "no-entries-msg";
+  noEntriesMsg.textContent = "No images found for this artist.";
+  noEntriesMsg.style.display = "none";
+  left.appendChild(noEntriesMsg);
+
+  // Right side: next button
+  const right = document.createElement("div");
+  right.className = "zoom-right";
 
   const nextBtn = document.createElement("button");
   nextBtn.className = "zoom-next";
   nextBtn.textContent = "→";
+  right.appendChild(nextBtn);
 
-  wrapper.append(closeBtn, prevBtn, nextBtn);
+  content.append(left, right);
+  wrapper.appendChild(content);
 
   // Tap/click image to show tags
   img.addEventListener("click", () => {
@@ -257,6 +272,7 @@ function createFullscreenViewer() {
     closeBtn,
     prevBtn,
     nextBtn,
+    tauntHeader,
   };
 }
 
