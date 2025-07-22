@@ -1058,6 +1058,7 @@ body {
 
 /* --- FEMININE BUTTONS, PILLS, ARROWS, ANIMATIONS, SCROLLBARS --- */
 
+.fem-btn,
 .browse-btn,
 .tag-btn,
 .tag-button,
@@ -2142,7 +2143,7 @@ html {
   background: #fff0fa !important;
   backdrop-filter: blur(2.5px) saturate(1.1);
   overflow: auto !important;
-  padding: 0;
+  padding:   0;
   box-sizing: border-box;
 }
 
