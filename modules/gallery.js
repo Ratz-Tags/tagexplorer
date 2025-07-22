@@ -507,7 +507,7 @@ async function openArtistZoom(artist) {
     sparkle.style.backgroundImage =
       "url('icons/sparkle.png'), url('icons/bow.png')";
     sparkle.style.backgroundRepeat = "repeat";
-    sparkle.style.opacity = "0.18";
+    sparkle.style.opacity = "0.025";
     wrapper.appendChild(sparkle);
   }
   // Add humiliating taunt to modal header
@@ -1301,15 +1301,16 @@ function showZoomTauntOverlay() {
   overlay.style.alignItems = "flex-start";
   overlay.style.justifyContent = "center";
   overlay.style.pointerEvents = "none";
+  overlay.style.margin = "-1em";
   overlay.style.zIndex = "13000";
   const taunt = document.createElement("div");
   taunt.className = "taunt-header";
   taunt.style.fontFamily = "'Hi Melody', sans-serif";
-  taunt.style.fontSize = "1.8em";
+  taunt.style.fontSize = "0.8em";
   taunt.style.color = "#fd7bc5";
   taunt.style.textAlign = "center";
   taunt.style.margin = "2.5em 0 0 0";
-  taunt.style.background = "rgba(255,255,255,0.94)";
+  taunt.style.background = "rgba(255,255,255,0.5)";
   taunt.style.borderRadius = "2em";
   taunt.style.boxShadow = "0 2px 24px rgba(253,123,197,0.15)";
   taunt.style.padding = "0.6em 1.5em";
