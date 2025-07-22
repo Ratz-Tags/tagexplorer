@@ -270,13 +270,11 @@ body {
 .tag-explorer {
   background: #fff0fa;
   padding: 2em 2em 1.5em 2em;
-  max-width: 540px;
+  max-width: 900px;
   border-radius: 1.2em;
   box-shadow: 0 2px 32px #fd7bc540;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
 }
 
 .tag-explorer-header {
