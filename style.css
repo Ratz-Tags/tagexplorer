@@ -131,7 +131,10 @@ body {
 .browse-btn:active,
 .copy-button:active,
 .reload-button:active {
-  background: linear-gradient(90deg, #fd7bc5 0%, #ffd6f6 100%);
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 0 0 4px #fd7bc580;
+  transform: scale(0.97);
 }
 
 .fem-btn:focus-visible,
