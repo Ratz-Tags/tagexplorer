@@ -1213,17 +1213,6 @@ body {
   position: relative;
 }
 
-.tag-btn::before,
-.tag-button::before {
-  content: url('icons/bow.png');
-  display: inline-block;
-  width: 1.2em;
-  height: 1.2em;
-  margin-right: 0.2em;
-  vertical-align: middle;
-  opacity: 0.7;
-}
-
 /* Arrows (pagination, controls) */
 button[aria-label*="Previous"],
 button[aria-label*="Next"],
