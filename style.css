@@ -1,3 +1,40 @@
+#prompt-cache-container {
+  position: fixed !important;
+  left: 50% !important;
+  bottom: 2em !important;
+  top: auto !important;
+  transform: translateX(-50%) !important;
+  width: 340px !important;
+  max-width: 95vw !important;
+  border-radius: 1.2em !important;
+  box-shadow: 0 2px 16px #fd7bc540 !important;
+  background: #fff0fa !important;
+  z-index: 13000 !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1em 1.2em !important;
+}
+@media (max-width: 900px) {
+  #prompt-cache-container {
+    width: 98vw !important;
+    left: 1vw !important;
+    transform: none !important;
+    border-radius: 1em !important;
+    padding: 0.7em 0.5em !important;
+  }
+}
+@media (max-width: 600px) {
+  #prompt-cache-container {
+    width: 99vw !important;
+    left: 0.5vw !important;
+    right: 0.5vw !important;
+    transform: none !important;
+    border-radius: 1em !important;
+    padding: 0.5em 0.2em !important;
+  }
+}
 .tag-btn img, .tag-button img, .tag-btn svg, .tag-button svg {
   width: 1.1em !important;
   height: 1.1em !important;
@@ -225,7 +262,7 @@
 }
 @media (max-width: 900px) {
   .tag-btn, .tag-button {
-    font-size: 0.70em !important;
+    font-size: 0.55em !important;
     padding: 0.32em 0.9em 0.32em 0.9em !important;
     min-width: 36px !important;
     min-height: 28px !important;
@@ -289,12 +326,11 @@
   max-width: 900px !important;
   margin: 0 auto;
   overflow-y: auto !important;
-  padding: 1.2em 1.2em 2.5em 1.2em !important;
+  padding: 1.2em 1.2em 1.2em 1.2em !important;
   outline: none;
   z-index: 12010 !important;
   position: relative;
   display: flex;
-  flex-direction: column;
   align-items: stretch;
   box-sizing: border-box;
 }
@@ -323,7 +359,7 @@
   letter-spacing: 0.09em;
   box-shadow: 0 1.5px 8px #fd7bc540 !important;
   position: relative;
-  font-size: 0.70em !important;
+  font-size: 0.55em !important;
   padding: 0.32em 0.95em !important;
   min-width: 0;
   min-height: 0;
@@ -337,7 +373,7 @@
     max-width: 99vw !important;
     width: 99vw !important;
     min-width: 0;
-    padding: 0.7em 0.2em 2.5em 0.2em !important;
+    padding: 0.7em 0.2em 0.7em 0.2em !important;
   }
 
   #tag-list {
@@ -347,7 +383,7 @@
 
   .tag-btn,
   .tag-button {
-    font-size: 0.70em !important;
+    font-size: 0.55em !important;
     padding: 0.22em 0.7em !important;
     max-width: 120px;
   }
@@ -359,17 +395,17 @@
     width: 100vw !important;
     min-width: 0;
     height: 98vh !important;
-    padding: 0.3em 0.1em 2.2em 0.1em !important;
+    padding: 0.3em 0.1em 0.3em 0.1em !important;
   }
 
   #tag-list {
-    max-height: 36vh;
+    max-height: 65vh;
     gap: 0.11em;
   }
 
   .tag-btn,
   .tag-button {
-    font-size: 0.70em !important;
+    font-size: 0.55em !important;
     padding: 0.13em 0.5em !important;
     max-width: 90px;
   }
@@ -608,7 +644,7 @@
     overflow-y: auto !important;
     border-radius: 0 !important;
     box-sizing: border-box !important;
-    padding: 0.7em 0.2em 2.5em 0.2em !important;
+    padding: 0.7em 0.2em 0.7em 0.2em !important;
   }
 }
 
@@ -945,7 +981,7 @@ body {
 .tag-button::after {
   content: " ✧";
   color: #ff63a5;
-  font-size: 0.70em;
+  font-size: 0.55em;
   font-family: var(--heading-font);
   opacity: 0.7;
   margin-left: 0.2em;
@@ -1084,7 +1120,7 @@ body {
   border-radius: 2.5em;
   cursor: pointer;
   font-family: var(--heading-font);
-  font-size: 0.70em;
+  font-size: 0.55em;
   box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc;
   transition: background 0.2s, box-shadow 0.2s, color 0.2s;
   position: relative;
@@ -1102,7 +1138,7 @@ body {
 .audio-controls button::after {
   content: " ✧";
   color: #ff63a5;
-  font-size: 0.70em;
+  font-size: 0.55em;
   font-family: var(--heading-font);
   opacity: 0.7;
   margin-left: 0.2em;
@@ -1129,7 +1165,7 @@ body {
   border-radius: 2.5em;
   cursor: pointer;
   font-family: var(--heading-font);
-  font-size: 0.70em;
+  font-size: 0.55em;
   box-shadow: 0 2px 24px #fd7bc540, 0 0 8px #ff63a5cc;
   transition: background 0.2s, box-shadow 0.2s, color 0.2s;
   position: relative;
@@ -1147,7 +1183,7 @@ body {
 .audio-controls button::after {
   content: " ✧";
   color: #ff63a5;
-  font-size: 0.70em;
+  font-size: 0.55em;
   font-family: var(--heading-font);
   opacity: 0.7;
   margin-left: 0.2em;
@@ -1491,7 +1527,7 @@ button[aria-label*="Back"]::after,
   .tag-button,
   .copy-button,
   .reload-button {
-    font-size: 0.70em;
+    font-size: 0.55em;
     min-width: 44px;
     min-height: 44px;
     width: 100%;
@@ -1724,7 +1760,7 @@ body {
 .tag-button::after {
   content: " ✧";
   color: #ff63a5;
-  font-size: 0.70em;
+  font-size: 0.55em;
   font-family: var(--heading-font);
   opacity: 0.7;
   margin-left: 0.2em;
@@ -2358,7 +2394,7 @@ html {
   max-height: 90vh !important;
   height: 100%;
   overflow-y: auto !important;
-  padding-bottom: 2.5em !important;
+  padding-bottom: 0.7em !important;
   outline: none;
   z-index: 12010 !important;
   position: relative;
@@ -2393,7 +2429,7 @@ html {
     min-width: 0 !important;
     width: 100vw !important;
     border-radius: 0 !important;
-    padding: 0.7em 0.2em 2.5em 0.2em !important;
+    padding: 0.7em 0.2em 0.7em 0.2em !important;
     box-sizing: border-box !important;
     overflow-y: auto !important;
   }
@@ -2607,7 +2643,7 @@ html.tag-explorer-open {
   .tag-button,
   .copy-button,
   .reload-button {
-    font-size: 0.70em !important;
+    font-size: 0.55em !important;
     min-width: 36px !important;
     min-height: 36px !important;
     padding: 0.4em 0.7em !important;
@@ -2651,7 +2687,7 @@ html.tag-explorer-open {
   .tag-button,
   .copy-button,
   .reload-button {
-    font-size: 0.70em !important;
+    font-size: 0.55em !important;
     min-width: 32px !important;
     min-height: 32px !important;
     padding: 0.3em 0.5em !important;
