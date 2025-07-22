@@ -3,6 +3,7 @@
  */
 
 import { vibrate } from "./ui.js";
+import { getThumbnailUrl } from "./gallery.js";
 
 let copiedArtists = new Set();
 let copiedSidebar = null;
@@ -120,7 +121,10 @@ function updateCopiedSidebar() {
   closeBtn.className = "copied-sidebar-close";
   closeBtn.innerHTML = "&times;";
   closeBtn.title = "Close";
-  closeBtn.onclick = () => copiedSidebar.classList.add("sidebar-hidden");
+  closeBtn.onclick = () => {
+    copiedSidebar.classList.add("sidebar-hidden");
+    document.body.classList.remove("sidebar-open");
+  };
   copiedSidebar.appendChild(closeBtn);
 
   copiedArtists.forEach((artistTag, idx) => {
@@ -144,15 +148,21 @@ function updateCopiedSidebar() {
 
     let tooltip = artist && artist.tooltip ? artist.tooltip : artistTag;
 
-    // Show thumbnail if available
-    if (artist && artist.thumbnailUrl) {
-      const img = document.createElement("img");
-      img.src = artist.thumbnailUrl;
-      img.style.width = "44px";
-      img.style.height = "44px";
-      img.style.borderRadius = "12px";
-      img.style.boxShadow = "0 0 8px #fd7bc555";
-      div.appendChild(img);
+    // Show thumbnail if available (use getThumbnailUrl from gallery.js)
+    if (artist) {
+      let thumbUrl = artist.thumbnailUrl;
+      if (!thumbUrl && typeof getThumbnailUrl === "function") {
+        thumbUrl = getThumbnailUrl(artist);
+      }
+      if (thumbUrl) {
+        const img = document.createElement("img");
+        img.src = thumbUrl;
+        img.style.width = "44px";
+        img.style.height = "44px";
+        img.style.borderRadius = "12px";
+        img.style.boxShadow = "0 0 8px #fd7bc555";
+        div.appendChild(img);
+      }
     }
 
     // --- HUMILIATION: Add lipstick kiss or sparkle icon ---
