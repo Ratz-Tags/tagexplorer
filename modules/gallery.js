@@ -1,4 +1,10 @@
 /**
+ * Returns the thumbnail URL for an artist (used by sidebar and cards)
+ */
+export function getThumbnailUrl(artist) {
+  return artist && artist.thumbnailUrl ? artist.thumbnailUrl : undefined;
+}
+/**
  * Gallery module - Handles artist gallery display and image management
  */
 
