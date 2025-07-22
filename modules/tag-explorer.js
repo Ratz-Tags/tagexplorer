@@ -99,12 +99,13 @@ async function filterTags() {
   title.textContent = "Browse Tags";
   header.appendChild(title);
 
-  // Add close button in header
+  // Add close button in header (move this inside header)
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
   closeBtn.onclick = () => wrapper.remove();
   closeBtn.title = "Close (Esc)";
+  header.appendChild(closeBtn); // <-- Move this line here
 
   // Feature: Add clear tags button for quick reset
   const clearTagsBtn = document.createElement("button");
@@ -215,7 +216,6 @@ async function filterTags() {
 
   // Assemble the modal
   wrapper.appendChild(container);
-  wrapper.appendChild(closeBtn);
 
   document.body.appendChild(wrapper);
   wrapper.focus();

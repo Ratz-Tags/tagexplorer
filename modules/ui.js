@@ -190,19 +190,16 @@ function createFullscreenViewer() {
   noEntriesMsg.textContent = "No images found for this artist.";
   noEntriesMsg.style.display = "none";
   left.appendChild(noEntriesMsg);
-
-  // Right side: tags
-  const right = document.createElement("div");
-  right.className = "zoom-right";
   const tagList = document.createElement("div");
   tagList.className = "zoom-tags";
   tagList.style.display = "none";
+  left.appendChild(tagList);
   const topTags = document.createElement("div");
   topTags.className = "artist-top-tags";
   topTags.style.display = "none";
-  right.append(tagList, topTags);
+  left.appendChild(topTags);
 
-  content.append(left, right);
+  content.append(left);
   wrapper.appendChild(content);
 
   // Controls

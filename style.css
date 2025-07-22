@@ -159,14 +159,16 @@ body {
 
 .top-bar {
   display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0.5em;
   width: 100%;
   background: rgba(255, 240, 250, 0.82);
   border-radius: 2.5em;
   box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
-  padding: 1.2em 2.2em;
+  padding: 0.2em 0.2em;
 }
 
 .sort-controls,
@@ -275,6 +277,14 @@ body {
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
+}
+
+.tag-explorer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: 1em;
 }
 
 .modal,
@@ -397,8 +407,9 @@ body {
 #tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7em;
-  overflow-y: auto;
+  gap: 0.4em;
+  justify-content: center;
+  overflow: auto;
   margin-top: 1em;
 }
 

@@ -321,26 +321,18 @@ async function openArtistZoom(artist) {
         .slice(0, 20)
         .map(([tag, count]) => ({ tag, count }));
       // Render top tags in the modal
-      if (topTags) {
-        if (artistTopTags.length > 0) {
-          topTags.innerHTML =
-            "<b>Top 20 Tags:</b> " +
-            artistTopTags
-              .map(
-                (t) =>
-                  `<span class="zoom-top-tag">${t.tag.replace(
-                    /_/g,
-                    " "
-                  )} <span class="zoom-top-tag-count">[${
-                    t.count
-                  }]</span></span>`
-              )
-              .join(", ");
-          topTags.style.display = "block";
-        } else {
-          topTags.innerHTML = "";
-          topTags.style.display = "none";
-        }
+      if (topTags && artistTopTags.length > 0) {
+        topTags.innerHTML = "<strong>Top Tags:</strong><br>";
+        artistTopTags.forEach(({ tag, count }) => {
+          const tagDiv = document.createElement("div");
+          tagDiv.className = "zoom-top-tag";
+          tagDiv.textContent = `${tag.replace(/_/g, " ")} (${count})`;
+          topTags.appendChild(tagDiv);
+        });
+        topTags.style.display = "block";
+      } else if (topTags) {
+        topTags.innerHTML = "";
+        topTags.style.display = "none";
       }
     }
 

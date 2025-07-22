@@ -29,6 +29,9 @@
           </select>
           <button id="sort-button">Sort</button>
           <button id="toggle-filters" type="button" class="filter-toggle" aria-expanded="false">Browse Tags</button>
+          <button id="joi-mode-toggle" class="fem-btn" aria-label="Toggle JOI Mode">JOI Mode</button>
+          <button id="prompt-cache-toggle" class="fem-btn" aria-label="Show Prompts">Prompts</button>
+          <button id="show-top-artists" class="fem-btn" aria-label="Show Top Artists by Tag Count">Top Artists</button>
         </div>
         <div class="top-actions">
         </div>
@@ -53,16 +56,6 @@
             placeholder="Filter by artist name..."
             aria-describedby="artist-filter-help"
           >
-
-          <label for="sort-by" class="visually-hidden">Sort artists</label>
-          <select id="sort-by" aria-label="Sort artists">
-            <option value="default">Sort: Default</option>
-            <option value="name">Sort: Name</option>
-            <option value="count">Sort: Total Images</option>
-            <option value="top">Top Artists (by tag count)</option>
-          </select>
-
-
         </div>
         
         <div id="tag-buttons" role="group" aria-label="Available tags"></div>
