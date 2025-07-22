@@ -264,7 +264,19 @@ body {
 }
 
 /* Tag explorer & modals */
-.tag-explorer,
+
+.tag-explorer {
+  background: #fff0fa;
+  padding: 2em 2em 1.5em 2em;
+  max-width: 540px;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 32px #fd7bc540;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
 .modal,
 .fullscreen-wrapper,
 .tag-explorer-wrapper,
@@ -385,8 +397,9 @@ body {
 #tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3em;
+  gap: 0.7em;
   overflow-y: auto;
+  margin-top: 1em;
 }
 
 .tag-explorer-buttons {
