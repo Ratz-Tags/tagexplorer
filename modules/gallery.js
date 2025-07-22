@@ -321,7 +321,7 @@ async function openArtistZoom(artist) {
         .slice(0, 20)
         .map(([tag, count]) => ({ tag, count }));
       // Render top tags in the modal
-      if (topTags && artistTopTags.length > 0) {
+      if (topTags && artistTopTags && artistTopTags.length > 0) {
         topTags.innerHTML = "<strong>Top Tags:</strong><br>";
         artistTopTags.forEach(({ tag, count }) => {
           const tagDiv = document.createElement("div");

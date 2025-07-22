@@ -206,17 +206,6 @@ function createFullscreenViewer() {
   img.className = "fullscreen-img";
   left.appendChild(img);
 
-  // Tag list and top tags
-  const tagList = document.createElement("div");
-  tagList.className = "zoom-tags";
-  tagList.style.display = "none";
-  left.appendChild(tagList);
-
-  const topTags = document.createElement("div");
-  topTags.className = "artist-top-tags";
-  topTags.style.display = "none";
-  left.appendChild(topTags);
-
   // No entries message
   const noEntriesMsg = document.createElement("div");
   noEntriesMsg.className = "no-entries-msg";
@@ -228,6 +217,15 @@ function createFullscreenViewer() {
   const right = document.createElement("div");
   right.className = "zoom-right";
 
+  const tagList = document.createElement("div");
+  tagList.className = "zoom-tags";
+  tagList.style.display = "none";
+  right.appendChild(tagList);
+
+  const topTags = document.createElement("div");
+  topTags.className = "artist-top-tags";
+  topTags.style.display = "none";
+  right.appendChild(topTags);
   const nextBtn = document.createElement("button");
   nextBtn.className = "zoom-next";
   nextBtn.textContent = "→";

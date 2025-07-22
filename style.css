@@ -297,9 +297,10 @@ body {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(255, 240, 250, 0.92);
+  background: rgba(255, 240, 250, 1);
   backdrop-filter: blur(2.5px) saturate(1.1);
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   z-index: 12000;
@@ -369,7 +370,6 @@ body {
 .taunt-header {
   width: 100%;
   text-align: center;
-  font-size: 1.2em;
   font-weight: bold;
   margin-bottom: 1em;
   color: #ffb6c1;
@@ -630,9 +630,9 @@ button[aria-label*="Back"]::after,
 
 .sparkle-overlay {
   position: absolute;
-  z-index: 1;
+  z-index: 5;
   pointer-events: none;
-  opacity: 0.18;
+  opacity: 0.05;
   background-image: url('icons/sparkle.png'), url('icons/bow.png');
   background-repeat: repeat;
   width: 100%;
