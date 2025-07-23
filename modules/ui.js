@@ -223,7 +223,7 @@ function createFullscreenViewer() {
   right.appendChild(tagList);
 
   const topTags = document.createElement("div");
-  topTags.className = "artist-top-tags";
+  topTags.className = "zoom-top-tags";
   topTags.style.display = "none";
   right.appendChild(topTags);
   const nextBtn = document.createElement("button");
