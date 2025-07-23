@@ -367,7 +367,7 @@ body {
   right: 0.5em;
   top: 55%;
   transform: translateY(-50%);
-  font-size: 2em;
+  font-size: 1em;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   border: 2.5px solid var(--accent2);
   border-radius: 2em;
