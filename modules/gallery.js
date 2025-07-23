@@ -218,24 +218,11 @@ async function openArtistZoom(artist) {
     wrapper,
     img: zoomed,
     tagList,
+    topTags,
     noEntriesMsg,
     prevBtn,
     nextBtn,
   } = viewer;
-
-  // Ensure .zoom-top-tags div exists and is placed below tagList
-  let topTags = wrapper.querySelector('.zoom-top-tags');
-  if (!topTags) {
-    topTags = document.createElement('div');
-    topTags.className = 'zoom-top-tags';
-    topTags.style.display = 'none';
-    // Insert after tagList
-    if (tagList && tagList.parentNode) {
-      tagList.parentNode.insertBefore(topTags, tagList.nextSibling);
-    } else {
-      wrapper.appendChild(topTags);
-    }
-  }
 
   let currentIndex = 0;
   let posts = [];
