@@ -340,18 +340,19 @@ body {
 .zoom-prev {
   position: absolute;
   left: 0.5em;
-  top: 50%;
+  top: 55%;
   transform: translateY(-50%);
-  font-size: 2.8em;
+  font-size: 2em;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   border: 2.5px solid var(--accent2);
   border-radius: 2em;
   color: var(--accent2);
   cursor: pointer;
   z-index: 10001;
-  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
-  padding: 0.3em 0.7em;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.18);
+  padding: 0.2em 0.5em;
   touch-action: manipulation;
+  opacity: 0.85;
 }
 
 .zoom-right {
@@ -364,18 +365,19 @@ body {
 .zoom-next {
   position: absolute;
   right: 0.5em;
-  top: 50%;
+  top: 55%;
   transform: translateY(-50%);
-  font-size: 2.8em;
+  font-size: 2em;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   border: 2.5px solid var(--accent2);
   border-radius: 2em;
   color: var(--accent2);
   cursor: pointer;
   z-index: 10001;
-  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
-  padding: 0.3em 0.7em;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.18);
+  padding: 0.2em 0.5em;
   touch-action: manipulation;
+  opacity: 0.85;
 }
 
 .taunt-header {
@@ -423,13 +425,31 @@ body {
   box-shadow: 0 2px 32px rgba(253, 123, 197, 0.8);
 }
 
-.zoom-tags,
-.zoom-top-tags {
+.zoom-tags {
   display: flex;
   flex-direction: column;
   flex-wrap: wrap;
   gap: 0.3em;
   overflow: auto;
+}
+
+.zoom-top-tags {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  justify-content: flex-start;
+  align-items: center;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  padding: 0.3em 0.7em;
+  min-height: 2.2em;
+  width: 100%;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  border-radius: 1em;
+  box-shadow: 0 2px 8px rgba(253, 123, 197, 0.08);
+  font-size: 1em;
+  z-index: 10002;
 }
 
 /* Sidebar & audio panel */
