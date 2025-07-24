@@ -151,11 +151,27 @@ window.kexplorer = {
   openTagExplorer,
 };
 
+// --- SIDEBAR TOGGLE BUTTON ---
+const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
+const copiedSidebarEl = document.getElementById("copied-sidebar");
+if (sidebarToggleBtn && copiedSidebarEl) {
+  sidebarToggleBtn.addEventListener("click", () => {
+    copiedSidebarEl.classList.toggle("visible");
+    document.body.classList.toggle("sidebar-open");
+  });
+}
+
 const audioToggleBtn = document.querySelector(".audio-toggle");
 const audioPanel = document.getElementById("audio-panel");
 if (audioToggleBtn && audioPanel) {
   audioToggleBtn.addEventListener("click", () => {
     audioPanel.classList.toggle("hidden");
+    if (!audioPanel.classList.contains("hidden")) {
+      audioPanel.setAttribute("aria-hidden", "false");
+      audioPanel.focus && audioPanel.focus();
+    } else {
+      audioPanel.setAttribute("aria-hidden", "true");
+    }
   });
 }
 
