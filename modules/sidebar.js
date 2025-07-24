@@ -21,6 +21,33 @@ function getCopiedCount() {
   return copiedArtists.size;
 }
 
+// Ensures the TTS toggle button is present in the audio-controls
+function ensureTTSToggleButton() {
+  const audioPanel = document.getElementById("audio-panel");
+  if (audioPanel) {
+    const controls = audioPanel.querySelector(".audio-controls");
+    if (controls) {
+      let ttsBtn = document.getElementById("tts-toggle-btn");
+      if (!ttsBtn) {
+        ttsBtn = document.createElement("button");
+        ttsBtn.id = "tts-toggle-btn";
+        ttsBtn.className = "browse-btn";
+        ttsBtn.style.marginLeft = "0.7em";
+        ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
+        ttsBtn.onclick = () => {
+          window._ttsEnabled = !window._ttsEnabled;
+          ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
+        };
+        controls.appendChild(ttsBtn);
+      }
+    }
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("DOMContentLoaded", ensureTTSToggleButton);
+}
+
 /**
  * Shows a toast notification message
  */
@@ -67,82 +94,7 @@ function showToast(message) {
     utter.volume = 1;
     window.speechSynthesis.speak(utter);
   }
-
-  // Ensures the TTS toggle button is present in the audio-controls
-  function ensureTTSToggleButton() {
-    const audioPanel = document.getElementById("audio-panel");
-    if (audioPanel) {
-      const controls = audioPanel.querySelector(".audio-controls");
-      if (controls) {
-        let ttsBtn = document.getElementById("tts-toggle-btn");
-        if (!ttsBtn) {
-          ttsBtn = document.createElement("button");
-          ttsBtn.id = "tts-toggle-btn";
-          ttsBtn.className = "browse-btn";
-          ttsBtn.style.marginLeft = "0.7em";
-          ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
-          ttsBtn.onclick = () => {
-            window._ttsEnabled = !window._ttsEnabled;
-            ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "� TTS Off";
-          };
-          controls.appendChild(ttsBtn);
-        }
-      }
-    }
-  }
-
-  // Call on DOMContentLoaded and whenever toast is shown
-  if (typeof window !== "undefined") {
-    window.addEventListener("DOMContentLoaded", ensureTTSToggleButton);
-  }
-
-  function showToast(message) {
-    const toast = document.createElement("div");
-    toast.className = "toast-popup";
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    // Text-to-speech: Feminine/dominant voice (if enabled)
-    if (window._ttsEnabled && "speechSynthesis" in window) {
-      const utter = new SpeechSynthesisUtterance(message);
-      let voices = window.speechSynthesis.getVoices();
-      // Filter out 'Brian' and other male voices
-      voices = voices.filter((v) => !/brian/i.test(v.name + v.voiceURI));
-      // Prefer voices with gender 'female' or name/voiceURI containing 'female', 'woman', 'girl', 'dominant'
-      let voice = voices.find(
-        (v) =>
-          (v.gender === "female" ||
-            /female|woman|girl|dominant/.test(
-              (v.name + v.voiceURI).toLowerCase()
-            )) &&
-          v.lang.startsWith("en")
-      );
-      if (!voice)
-        voice = voices.find(
-          (v) => v.gender === "female" && v.lang.startsWith("en")
-        );
-      if (!voice)
-        voice = voices.find(
-          (v) =>
-            /female|woman|girl|dominant/.test(
-              (v.name + v.voiceURI).toLowerCase()
-            ) && v.lang.startsWith("en")
-        );
-      if (!voice)
-        voice = voices.find(
-          (v) => v.lang.startsWith("en") && !/brian/i.test(v.name + v.voiceURI)
-        );
-      if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
-      if (voice) utter.voice = voice;
-      utter.rate = 1.05;
-      utter.pitch = 1.3;
-      utter.volume = 1;
-      window.speechSynthesis.speak(utter);
-    }
-    ensureTTSToggleButton();
-    setTimeout(() => toast.remove(), 3000);
-  }
-
+  ensureTTSToggleButton();
   setTimeout(() => toast.remove(), 3000);
 }
 
