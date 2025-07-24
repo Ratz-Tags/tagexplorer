@@ -6,9 +6,13 @@ import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
 
 let copiedArtists = new Set();
+
 let copiedSidebar = null;
 let allArtists = [];
 let copiedArtistsCache = null;
+
+// TTS toggle state
+window._ttsEnabled = true;
 
 /**
  * Returns the count of copied artists
@@ -26,12 +30,10 @@ function showToast(message) {
   toast.textContent = message;
   document.body.appendChild(toast);
 
-  // Text-to-speech: Feminine/dominant voice
-  if ("speechSynthesis" in window) {
+  // Text-to-speech: Feminine/dominant voice (if enabled)
+  if (window._ttsEnabled && "speechSynthesis" in window) {
     const utter = new SpeechSynthesisUtterance(message);
-    // Try to select a feminine/dominant voice
     const voices = window.speechSynthesis.getVoices();
-    // Prioritize Google voices, then any female voice
     let voice = voices.find(
       (v) =>
         /female|woman|girl|dominant|Google/.test(v.name + v.voiceURI) &&
@@ -47,6 +49,31 @@ function showToast(message) {
     utter.pitch = 1.3;
     utter.volume = 1;
     window.speechSynthesis.speak(utter);
+  }
+  // --- AUDIO PANEL TTS TOGGLE ---
+  if (typeof window !== "undefined") {
+    window.addEventListener("DOMContentLoaded", () => {
+      const audioPanel = document.getElementById("audio-panel");
+      if (audioPanel) {
+        let ttsBtn = document.getElementById("tts-toggle-btn");
+        if (!ttsBtn) {
+          ttsBtn = document.createElement("button");
+          ttsBtn.id = "tts-toggle-btn";
+          ttsBtn.className = "browse-btn";
+          ttsBtn.style.marginLeft = "0.7em";
+          ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
+          ttsBtn.onclick = () => {
+            window._ttsEnabled = !window._ttsEnabled;
+            ttsBtn.textContent = window._ttsEnabled
+              ? "🔊 TTS On"
+              : "🔇 TTS Off";
+          };
+          // Insert after moan-mute button
+          const controls = audioPanel.querySelector(".audio-controls");
+          if (controls) controls.appendChild(ttsBtn);
+        }
+      }
+    });
   }
 
   setTimeout(() => toast.remove(), 3000);
