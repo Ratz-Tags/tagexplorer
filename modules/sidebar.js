@@ -26,6 +26,29 @@ function showToast(message) {
   toast.textContent = message;
   document.body.appendChild(toast);
 
+  // Text-to-speech: Feminine/dominant voice
+  if ("speechSynthesis" in window) {
+    const utter = new SpeechSynthesisUtterance(message);
+    // Try to select a feminine/dominant voice
+    const voices = window.speechSynthesis.getVoices();
+    // Prioritize Google voices, then any female voice
+    let voice = voices.find(
+      (v) =>
+        /female|woman|girl|dominant|Google/.test(v.name + v.voiceURI) &&
+        v.lang.startsWith("en")
+    );
+    if (!voice)
+      voice = voices.find(
+        (v) => v.gender === "female" || v.name.toLowerCase().includes("female")
+      );
+    if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
+    if (voice) utter.voice = voice;
+    utter.rate = 1.05;
+    utter.pitch = 1.3;
+    utter.volume = 1;
+    window.speechSynthesis.speak(utter);
+  }
+
   setTimeout(() => toast.remove(), 3000);
 }
 
