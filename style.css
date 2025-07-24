@@ -1,4 +1,7 @@
-.tag-btn img, .tag-button img, .tag-btn svg, .tag-button svg {
+.tag-btn img,
+.tag-button img,
+.tag-btn svg,
+.tag-button svg {
   width: 1.1em !important;
   height: 1.1em !important;
   max-width: 20px !important;
@@ -37,10 +40,18 @@
   outline: 3px solid var(--accent2);
   outline-offset: 2px;
 }
-@import url('https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap");
 
 :root {
-  --background: repeating-linear-gradient(135deg, #fff0fa 0%, #ffd6f6 20%, #fd7bc5 40%, #fff0fa 60%, #ffd6f6 80%, #fd7bc5 100%);
+  --background: repeating-linear-gradient(
+    135deg,
+    #fff0fa 0%,
+    #ffd6f6 20%,
+    #fd7bc5 40%,
+    #fff0fa 60%,
+    #ffd6f6 80%,
+    #fd7bc5 100%
+  );
   --background-alt: #ffe0f6;
   --text-color: #a0005a;
   --border-color: #fd7bc5;
@@ -48,7 +59,7 @@
   --accent2: #ff63a5;
   --radius: 2em;
   --padding: 1rem;
-  --btn-font: 'Hi Melody', 'Inter', cursive, sans-serif;
+  --btn-font: "Hi Melody", "Inter", cursive, sans-serif;
 }
 
 /* Global box-sizing */
@@ -69,14 +80,15 @@
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: "Inter", sans-serif;
   background: var(--background);
   color: var(--text-color);
   margin: 0;
   line-height: 1.5;
   letter-spacing: 0.03em;
   font-size: 1.12em;
-  text-shadow: 0 1px 0 #fff8, 0 2px 12px rgba(253, 123, 197, 0.25), 0 0 2px rgba(255, 99, 165, 0.8);
+  text-shadow: 0 1px 0 #fff8, 0 2px 12px rgba(253, 123, 197, 0.25),
+    0 0 2px rgba(255, 99, 165, 0.8);
 }
 
 /* Animated top-bar gradient */
@@ -111,7 +123,8 @@ body {
   font-family: var(--btn-font);
   font-size: 0.55em;
   cursor: pointer;
-  box-shadow: 0 2px 24px rgba(253, 123, 197, 0.25), 0 0 8px rgba(255, 99, 165, 0.8);
+  box-shadow: 0 2px 24px rgba(253, 123, 197, 0.25),
+    0 0 8px rgba(255, 99, 165, 0.8);
   transition: background 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
@@ -170,7 +183,8 @@ body {
   width: 100%;
   background: rgba(255, 240, 250, 0.82);
   border-radius: 2.5em;
-  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
+  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25),
+    0 1.5px 8px rgba(255, 99, 165, 0.2);
   padding: 0.2em 0.2em;
 }
 
@@ -235,7 +249,8 @@ body {
 
 .artist-card:hover {
   transform: scale(1.035) translateY(-2px);
-  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.4), 0 2px 16px rgba(255, 99, 165, 0.2);
+  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.4),
+    0 2px 16px rgba(255, 99, 165, 0.2);
 }
 
 .artist-card::before,
@@ -247,14 +262,14 @@ body {
 }
 
 .artist-card::before {
-  content: '✧ Sissy ✧';
+  content: "✧ Sissy ✧";
   top: -1.2em;
   left: 1em;
   color: var(--accent1);
 }
 
 .artist-card::after {
-  content: 'Obey and drool 💋';
+  content: "Obey and drool 💋";
   bottom: -1.2em;
   right: 1em;
   color: var(--accent2);
@@ -469,12 +484,23 @@ body {
 }
 
 #audio-panel {
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  backdrop-filter: blur(12px) saturate(1.2);
-  border-radius: var(--radius) var(--radius) 0 0;
-  box-shadow: 0 -2px 32px rgba(253, 123, 197, 0.25);
+  position: fixed;
+  left: 1.5em;
+  bottom: 2.5em;
+  right: auto;
+  width: 340px;
+  max-width: 90vw;
+  min-width: 320px;
+  z-index: 1200;
+  background: var(--panel-bg, #fff0fa);
+  border: 2px solid #fd7bc5;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px #fd7bc540;
+  padding: 1em 1.2em 1em 1em;
+  transition: transform 0.25s cubic-bezier(0.7, 0.2, 0.2, 1), opacity 0.2s;
+  transform: translateY(120%) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
 }
 
 #audio-panel.hidden {
@@ -482,31 +508,33 @@ body {
 }
 
 #prompt-cache-container {
-position: fixed;
-right: 1.5em;
-bottom: 2.5em;
-left: auto;
-width: 340px;
-max-width: 90vw;
-min-width: 320px;
-z-index: 1200;
-background: var(--panel-bg, #fff0fa);
-border: 2px solid #fd7bc5;
-border-radius: 1.2em;
-box-shadow: 0 2px 16px #fd7bc540;
-padding: 1em 1.2em 1em 1em;
-transition: transform 0.25s cubic-bezier(.7,.2,.2,1), opacity 0.2s;
-transform: translateY(120%) scale(0.98);
-opacity: 0;
-pointer-events: none;
+  position: fixed;
+  left: 1.5em;
+  bottom: 2.5em;
+  right: auto;
+  width: 340px;
+  max-width: 90vw;
+  min-width: 320px;
+  z-index: 1200;
+  background: var(--panel-bg, #fff0fa);
+  border: 2px solid #fd7bc5;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px #fd7bc540;
+  padding: 1em 1.2em 1em 1em;
+  transition: transform 0.25s cubic-bezier(0.7, 0.2, 0.2, 1), opacity 0.2s;
+  transform: translateY(120%) scale(0.98);
+  opacity: 0;
+  pointer-events: none;
   border-radius: 1.2em;
   box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
+}
+
 #audio-panel:not(.hidden) {
   transform: translateY(0) scale(1);
   opacity: 1;
   pointer-events: auto;
 }
-}
+
 #audio-panel.hidden {
   opacity: 0;
   pointer-events: none;
@@ -627,11 +655,12 @@ pointer-events: none;
   gap: 0.7em;
   background: rgba(255, 240, 250, 0.92);
   border-radius: var(--radius);
-  box-shadow: 0 4px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
+  box-shadow: 0 4px 32px rgba(253, 123, 197, 0.25),
+    0 1.5px 8px rgba(255, 99, 165, 0.2);
   padding: 0.7em;
   pointer-events: auto;
   border: 1.5px solid #ffd6f6;
-  animation: floatingPop 0.7s cubic-bezier(.4, 2, .6, 1);
+  animation: floatingPop 0.7s cubic-bezier(0.4, 2, 0.6, 1);
 }
 
 .floating-controls button {
@@ -705,7 +734,7 @@ button[aria-label*="Back"]::after,
   z-index: 1;
   pointer-events: none;
   opacity: 0.35;
-  background-image: url('icons/bow.png');
+  background-image: url("icons/bow.png");
   background-size: contain;
   background-repeat: no-repeat;
   width: 64px;
@@ -719,7 +748,7 @@ button[aria-label*="Back"]::after,
   z-index: 5;
   pointer-events: none;
   opacity: 0.04;
-  background-image: url('icons/sparkle.png'), url('icons/bow.png');
+  background-image: url("icons/sparkle.png"), url("icons/bow.png");
   background-repeat: repeat;
   width: 100%;
   height: 100%;
@@ -730,7 +759,7 @@ button[aria-label*="Back"]::after,
 .toast-popup,
 .shame-badge,
 .gallery-shame-badge {
-  animation: bounceIn 0.7s cubic-bezier(.4, 2, .6, 1);
+  animation: bounceIn 0.7s cubic-bezier(0.4, 2, 0.6, 1);
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   border: 3px dashed var(--border-color);
   color: var(--text-color);
@@ -748,13 +777,13 @@ button[aria-label*="Back"]::after,
 }
 
 .toast-popup::before {
-  content: 'Sissy! ';
+  content: "Sissy! ";
   color: var(--accent1);
   font-size: 1.2em;
 }
 
 .toast-popup::after {
-  content: '💋';
+  content: "💋";
   margin-left: 0.5em;
 }
 
@@ -842,7 +871,8 @@ button[aria-label*="Back"]::after,
 }
 
 .fem-shadow {
-  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25), 0 0 32px rgba(255, 99, 165, 0.4);
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25),
+    0 0 32px rgba(255, 99, 165, 0.4);
 }
 
 .shimmer {
@@ -864,7 +894,7 @@ button[aria-label*="Back"]::after,
 }
 
 .screen-pulse {
-  animation: screenPulse 0.5s cubic-bezier(.4, 2, .6, 1);
+  animation: screenPulse 0.5s cubic-bezier(0.4, 2, 0.6, 1);
 }
 
 /* Keyframes */
@@ -1023,7 +1053,6 @@ button[aria-label*="Back"]::after,
 }
 
 @keyframes bounceText {
-
   0%,
   100% {
     transform: translateY(0);
@@ -1129,24 +1158,24 @@ html.tag-explorer-open {
     z-index: 12000 !important;
   }
 
-.copied-sidebar-close {
-  font-size: 1.7em;
-  background: #fd7bc5;
-  color: #fff;
-  border: none;
-  border-radius: 0.7em;
-  padding: 0.3em 0.7em;
-  cursor: pointer;
-  box-shadow: 0 2px 8px #fd7bc540;
-  transition: background 0.2s, color 0.2s;
-}
-.copied-sidebar-close:hover,
-.copied-sidebar-close:focus-visible {
-  background: #ff63a5;
-  color: #fff;
-  box-shadow: none;
-  outline: 2px solid #a0005a;
-}
+  .copied-sidebar-close {
+    font-size: 1.7em;
+    background: #fd7bc5;
+    color: #fff;
+    border: none;
+    border-radius: 0.7em;
+    padding: 0.3em 0.7em;
+    cursor: pointer;
+    box-shadow: 0 2px 8px #fd7bc540;
+    transition: background 0.2s, color 0.2s;
+  }
+  .copied-sidebar-close:hover,
+  .copied-sidebar-close:focus-visible {
+    background: #ff63a5;
+    color: #fff;
+    box-shadow: none;
+    outline: 2px solid #a0005a;
+  }
 
   .fem-btn,
   .tag-btn,

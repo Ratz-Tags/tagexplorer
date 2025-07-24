@@ -33,15 +33,32 @@ function showToast(message) {
   // Text-to-speech: Feminine/dominant voice (if enabled)
   if (window._ttsEnabled && "speechSynthesis" in window) {
     const utter = new SpeechSynthesisUtterance(message);
-    const voices = window.speechSynthesis.getVoices();
+    let voices = window.speechSynthesis.getVoices();
+    // Filter out 'Brian' and other male voices
+    voices = voices.filter((v) => !/brian/i.test(v.name + v.voiceURI));
+    // Prefer voices with gender 'female' or name/voiceURI containing 'female', 'woman', 'girl', 'dominant'
     let voice = voices.find(
       (v) =>
-        /female|woman|girl|dominant|Google/.test(v.name + v.voiceURI) &&
+        (v.gender === "female" ||
+          /female|woman|girl|dominant/.test(
+            (v.name + v.voiceURI).toLowerCase()
+          )) &&
         v.lang.startsWith("en")
     );
     if (!voice)
       voice = voices.find(
-        (v) => v.gender === "female" || v.name.toLowerCase().includes("female")
+        (v) => v.gender === "female" && v.lang.startsWith("en")
+      );
+    if (!voice)
+      voice = voices.find(
+        (v) =>
+          /female|woman|girl|dominant/.test(
+            (v.name + v.voiceURI).toLowerCase()
+          ) && v.lang.startsWith("en")
+      );
+    if (!voice)
+      voice = voices.find(
+        (v) => v.lang.startsWith("en") && !/brian/i.test(v.name + v.voiceURI)
       );
     if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
     if (voice) utter.voice = voice;
