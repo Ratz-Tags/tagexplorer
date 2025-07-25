@@ -40,6 +40,43 @@ function ensureTTSToggleButton() {
         };
         controls.appendChild(ttsBtn);
       }
+
+      // Add TTS voice selector dropdown
+      let ttsVoiceSelect = document.getElementById("tts-voice-select");
+      if (!ttsVoiceSelect) {
+        ttsVoiceSelect = document.createElement("select");
+        ttsVoiceSelect.id = "tts-voice-select";
+        ttsVoiceSelect.className = "browse-btn";
+        ttsVoiceSelect.style.marginLeft = "0.7em";
+        ttsVoiceSelect.title = "Choose TTS Voice";
+        controls.appendChild(ttsVoiceSelect);
+
+        function populateVoices() {
+          ttsVoiceSelect.innerHTML = "";
+          const voices = window.speechSynthesis.getVoices();
+          voices.forEach((voice) => {
+            const option = document.createElement("option");
+            option.value = voice.name;
+            option.textContent = `${voice.name} (${voice.lang})`;
+            if (
+              voice.name.toLowerCase().includes("female") ||
+              voice.gender === "female"
+            ) {
+              option.textContent += " ♀";
+            }
+            ttsVoiceSelect.appendChild(option);
+          });
+          // Restore previous selection
+          if (window._ttsVoiceName) {
+            ttsVoiceSelect.value = window._ttsVoiceName;
+          }
+        }
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+        populateVoices();
+        ttsVoiceSelect.onchange = () => {
+          window._ttsVoiceName = ttsVoiceSelect.value;
+        };
+      }
     }
   }
 }
@@ -61,32 +98,16 @@ function showToast(message) {
   if (window._ttsEnabled && "speechSynthesis" in window) {
     const utter = new SpeechSynthesisUtterance(message);
     let voices = window.speechSynthesis.getVoices();
-    // Filter out 'Brian' and other male voices
-    voices = voices.filter((v) => !/brian/i.test(v.name + v.voiceURI));
-    // Prefer voices with gender 'female' or name/voiceURI containing 'female', 'woman', 'girl', 'dominant'
-    let voice = voices.find(
-      (v) =>
-        (v.gender === "female" ||
-          /female|woman|girl|dominant/.test(
-            (v.name + v.voiceURI).toLowerCase()
-          )) &&
-        v.lang.startsWith("en")
-    );
-    if (!voice)
+    let voice = null;
+    if (window._ttsVoiceName) {
+      voice = voices.find((v) => v.name === window._ttsVoiceName);
+    }
+    if (!voice) {
+      // fallback: try to pick a female voice
       voice = voices.find(
-        (v) => v.gender === "female" && v.lang.startsWith("en")
+        (v) => v.name.toLowerCase().includes("female") || v.gender === "female"
       );
-    if (!voice)
-      voice = voices.find(
-        (v) =>
-          /female|woman|girl|dominant/.test(
-            (v.name + v.voiceURI).toLowerCase()
-          ) && v.lang.startsWith("en")
-      );
-    if (!voice)
-      voice = voices.find(
-        (v) => v.lang.startsWith("en") && !/brian/i.test(v.name + v.voiceURI)
-      );
+    }
     if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
     if (voice) utter.voice = voice;
     utter.rate = 1.05;
