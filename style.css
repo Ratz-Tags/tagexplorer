@@ -114,18 +114,35 @@ body {
 .copy-button,
 .reload-button,
 .floating-controls button,
-.audio-controls button {
+.audio-controls button,
+.audio-controls select {
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 50%, #fd7bc5 100%);
   border: 2.5px solid var(--border-color);
   color: var(--text-color);
   padding: 0.6rem 1.2rem;
   border-radius: var(--radius);
   font-family: var(--btn-font);
-  font-size: 0.55em;
+  font-size: 0.95em;
   cursor: pointer;
-  box-shadow: 0 2px 24px rgba(253, 123, 197, 0.25),
-    0 0 8px rgba(255, 99, 165, 0.8);
+  box-shadow: 0 2px 24px rgba(253, 123, 197, 0.18),
+    0 0 8px rgba(255, 99, 165, 0.5);
+  margin-right: 0.5em;
+  margin-bottom: 0.3em;
   transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+.audio-controls select {
+  min-width: 180px;
+  max-width: 260px;
+  font-size: 0.95em;
+  outline: none;
+}
+
+.audio-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5em;
 }
 
 .fem-btn:hover,
