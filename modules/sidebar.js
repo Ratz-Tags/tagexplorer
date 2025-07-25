@@ -72,6 +72,8 @@ function ensureTTSToggleButton() {
           }
         }
         window.speechSynthesis.onvoiceschanged = populateVoices;
+        ttsVoiceSelect.addEventListener("focus", populateVoices);
+        ttsVoiceSelect.addEventListener("touchstart", populateVoices);
         populateVoices();
         ttsVoiceSelect.onchange = () => {
           window._ttsVoiceName = ttsVoiceSelect.value;
