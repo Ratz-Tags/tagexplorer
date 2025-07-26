@@ -484,9 +484,9 @@ function updateAudioHumiliationMeter() {
 }
 
 // --- ENSURE AUDIO INITIALIZATION ---
-const origInitAudio = initAudio;
+const origInitAudio_1 = initAudio;
 initAudio = function () {
-  origInitAudio.apply(this, arguments);
+  origInitAudio_1.apply(this, arguments);
   setupAudioPanelToggle();
   updateAudioHumiliationMeter();
 };
@@ -514,21 +514,21 @@ if (
 import { showAzureVoiceSelector } from "./azure-tts.js";
 
 function addAzureVoiceSelectorButton() {
-  const controls = document.querySelector('.audio-controls');
-  if (!controls || document.getElementById('azure-voice-btn')) return;
-  const btn = document.createElement('button');
-  btn.id = 'azure-voice-btn';
-  btn.textContent = 'Azure Voice';
-  btn.className = 'browse-btn';
-  btn.style.marginLeft = '1em';
+  const controls = document.querySelector(".audio-controls");
+  if (!controls || document.getElementById("azure-voice-btn")) return;
+  const btn = document.createElement("button");
+  btn.id = "azure-voice-btn";
+  btn.textContent = "Azure Voice";
+  btn.className = "browse-btn";
+  btn.style.marginLeft = "1em";
   btn.onclick = showAzureVoiceSelector;
   controls.appendChild(btn);
 }
 
 // Patch into initAudio to always add the button
-const origInitAudio = initAudio;
+const origInitAudio_2 = initAudio;
 initAudio = function () {
-  origInitAudio.apply(this, arguments);
+  origInitAudio_2.apply(this, arguments);
   addAzureVoiceSelectorButton();
 };
 
