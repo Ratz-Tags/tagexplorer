@@ -1,0 +1,2 @@
+# Ignore local Azure TTS secrets
+azure-tts.local.js
