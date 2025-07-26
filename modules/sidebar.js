@@ -88,33 +88,50 @@ if (typeof window !== "undefined") {
 /**
  * Shows a toast notification message
  */
+import { azureSpeak } from "./azure-tts.js";
+
+async function speakToast(text) {
+  if (window._ttsEnabled) {
+    if (window._azureTTSKey && window._azureTTSRegion) {
+      try {
+        const url = await azureSpeak(text);
+        const audio = new Audio(url);
+        audio.play();
+        return;
+      } catch (e) {
+        // Fallback to browser TTS if Azure fails
+      }
+    }
+    // Fallback: browser SpeechSynthesis
+    if (window.speechSynthesis) {
+      const utter = new window.SpeechSynthesisUtterance(text);
+      let voices = window.speechSynthesis.getVoices();
+      let voice = null;
+      if (window._ttsVoiceName) {
+        voice = voices.find((v) => v.name === window._ttsVoiceName);
+      }
+      if (!voice) {
+        voice = voices.find(
+          (v) =>
+            v.name.toLowerCase().includes("female") || v.gender === "female"
+        );
+      }
+      if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
+      if (voice) utter.voice = voice;
+      utter.rate = 1.05;
+      utter.pitch = 1.3;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }
+  }
+}
+
 function showToast(message) {
   const toast = document.createElement("div");
   toast.className = "toast-popup";
   toast.textContent = message;
   document.body.appendChild(toast);
-
-  // Text-to-speech: Feminine/dominant voice (if enabled)
-  if (window._ttsEnabled && "speechSynthesis" in window) {
-    const utter = new SpeechSynthesisUtterance(message);
-    let voices = window.speechSynthesis.getVoices();
-    let voice = null;
-    if (window._ttsVoiceName) {
-      voice = voices.find((v) => v.name === window._ttsVoiceName);
-    }
-    if (!voice) {
-      // fallback: try to pick a female voice
-      voice = voices.find(
-        (v) => v.name.toLowerCase().includes("female") || v.gender === "female"
-      );
-    }
-    if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
-    if (voice) utter.voice = voice;
-    utter.rate = 1.05;
-    utter.pitch = 1.3;
-    utter.volume = 1;
-    window.speechSynthesis.speak(utter);
-  }
+  speakToast(message);
   ensureTTSToggleButton();
   setTimeout(() => toast.remove(), 3000);
 }
