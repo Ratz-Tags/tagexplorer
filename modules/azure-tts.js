@@ -26,10 +26,22 @@ async function azureSpeak(text, opts = {}) {
   return URL.createObjectURL(blob);
 }
 
+async function fetchAzureVoices(key, region) {
+  const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/voices/list`;
+  const res = await fetch(endpoint, {
+    method: "GET",
+    headers: {
+      "Ocp-Apim-Subscription-Key": key,
+    },
+  });
+  if (!res.ok) throw new Error("Failed to fetch voices: " + res.status);
+  return await res.json();
+}
+
 // Optionally: expose a UI to set key/region globally
 function setAzureTTSConfig({ key, region }) {
   window._azureTTSKey = key;
   window._azureTTSRegion = region;
 }
 
-export { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE };
+export { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE, fetchAzureVoices };
