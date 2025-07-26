@@ -2,7 +2,8 @@ try {
   await import("../azure-tts.local.js");
 } catch (e) {}
 
-const DEFAULT_VOICE = "en-US-MichelleNeural";
+// Set Ava Dragon HD as the default if available
+const DEFAULT_VOICE = "en-US-AvaMultilingualNeural"; // Ava Dragon HD (latest)
 
 async function azureSpeak(text, opts = {}) {
   const key = opts.key || window._azureTTSKey;
@@ -55,8 +56,20 @@ async function showAzureVoiceSelector() {
   if (!container) {
     container = document.createElement("div");
     container.id = "azure-voice-selector";
-    container.style =
-      "position:fixed;bottom:5em;right:1em;z-index:3000;background:#fff0fa;border:2px solid #fd7bc5;border-radius:1.2em;padding:1em;box-shadow:0 2px 16px #fd7bc540;max-width:90vw;width:340px;";
+    container.style = [
+      "position:fixed",
+      "left:50%",
+      "transform:translateX(-50%)",
+      "bottom:3em",
+      "z-index:3000",
+      "background:#fff0fa",
+      "border:2px solid #fd7bc5",
+      "border-radius:1.2em",
+      "padding:1em",
+      "box-shadow:0 2px 16px #fd7bc540",
+      "max-width:90vw",
+      "width:340px",
+    ].join(";");
     document.body.appendChild(container);
   }
   // Add filter controls
@@ -70,6 +83,14 @@ async function showAzureVoiceSelector() {
       window._azureTTSRegion
     );
     if (!Array.isArray(voices)) throw new Error("No voices returned");
+
+    // If no voice is set, default to Ava if available
+    if (!window._azureTTSVoice) {
+      const ava = voices.find(
+        (v) => v.ShortName === "en-US-AvaMultilingualNeural"
+      );
+      window._azureTTSVoice = ava ? ava.ShortName : DEFAULT_VOICE;
+    }
 
     // Filtering logic
     function renderVoiceSelect() {
