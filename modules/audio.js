@@ -510,6 +510,28 @@ if (
   };
 }
 
+// --- AZURE TTS VOICE SELECTOR BUTTON ---
+import { showAzureVoiceSelector } from "./azure-tts.js";
+
+function addAzureVoiceSelectorButton() {
+  const controls = document.querySelector('.audio-controls');
+  if (!controls || document.getElementById('azure-voice-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'azure-voice-btn';
+  btn.textContent = 'Azure Voice';
+  btn.className = 'browse-btn';
+  btn.style.marginLeft = '1em';
+  btn.onclick = showAzureVoiceSelector;
+  controls.appendChild(btn);
+}
+
+// Patch into initAudio to always add the button
+const origInitAudio = initAudio;
+initAudio = function () {
+  origInitAudio.apply(this, arguments);
+  addAzureVoiceSelectorButton();
+};
+
 // All functions in this file are defined and used as follows:
 
 // getAudioSrc: used by loadTrack
