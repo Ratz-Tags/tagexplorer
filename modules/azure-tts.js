@@ -38,13 +38,74 @@ async function fetchAzureVoices(key, region) {
   return await res.json();
 }
 
-// Optionally: expose a UI to set key/region globally
-function setAzureTTSConfig({ key, region }) {
-  window._azureTTSKey = key;
-  window._azureTTSRegion = region;
+// Optionally: expose a UI to set key/region and voice globally
+function setAzureTTSConfig({ key, region, voice }) {
+  if (key) window._azureTTSKey = key;
+  if (region) window._azureTTSRegion = region;
+  if (voice) window._azureTTSVoice = voice;
 }
 
-export { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE, fetchAzureVoices };
+// UI: Show Azure voice selector (fetches voices from Azure)
+async function showAzureVoiceSelector() {
+  if (!window._azureTTSKey || !window._azureTTSRegion) {
+    alert("Set your Azure TTS key and region first!");
+    return;
+  }
+  let container = document.getElementById("azure-voice-selector");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "azure-voice-selector";
+    container.style =
+      "position:fixed;bottom:5em;right:1em;z-index:3000;background:#fff0fa;border:2px solid #fd7bc5;border-radius:1.2em;padding:1em;box-shadow:0 2px 16px #fd7bc540;max-width:90vw;width:340px;";
+    document.body.appendChild(container);
+  }
+  container.innerHTML = `<b>Azure TTS Voices</b><br><div id='azure-voices-loading' style='color:#a0005a;'>Loading voices...</div>`;
+  try {
+    const voices = await fetchAzureVoices(
+      window._azureTTSKey,
+      window._azureTTSRegion
+    );
+    if (!Array.isArray(voices)) throw new Error("No voices returned");
+    const select = document.createElement("select");
+    select.style = "width:100%;margin-top:0.7em;margin-bottom:0.7em;";
+    voices.forEach((v) => {
+      const opt = document.createElement("option");
+      opt.value = v.ShortName;
+      opt.textContent = `${v.ShortName} — ${v.FriendlyName} (${v.Locale}, ${v.Gender})`;
+      if (window._azureTTSVoice === v.ShortName) opt.selected = true;
+      select.appendChild(opt);
+    });
+    container.innerHTML = `<b>Azure TTS Voices</b><br>`;
+    container.appendChild(select);
+    const saveBtn = document.createElement("button");
+    saveBtn.textContent = "Set Voice";
+    saveBtn.className = "browse-btn";
+    saveBtn.style = "margin-left:0.7em;";
+    saveBtn.onclick = () => {
+      window._azureTTSVoice = select.value;
+      setAzureTTSConfig({ voice: select.value });
+      alert("Azure TTS voice set to: " + select.value);
+    };
+    container.appendChild(saveBtn);
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "×";
+    closeBtn.className = "zoom-close";
+    closeBtn.style = "float:right;";
+    closeBtn.onclick = () => container.remove();
+    container.appendChild(closeBtn);
+  } catch (e) {
+    container.innerHTML = `<b>Azure TTS Voices</b><br><span style='color:#a0005a;'>Failed to load voices: ${e.message}</span>`;
+  }
+}
 
-// Expose fetchAzureVoices globally for debugging
+export {
+  azureSpeak,
+  setAzureTTSConfig,
+  DEFAULT_VOICE,
+  fetchAzureVoices,
+  showAzureVoiceSelector,
+};
+
+// Expose fetchAzureVoices and showAzureVoiceSelector globally for debugging/UI
 window.fetchAzureVoices = fetchAzureVoices;
+window.showAzureVoiceSelector = showAzureVoiceSelector;
