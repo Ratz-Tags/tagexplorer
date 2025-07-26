@@ -1,6 +1,11 @@
 // Azure TTS module - Handles requests to Azure Cognitive Services Text-to-Speech
 // Usage: await azureSpeak(text, {voice, key, region})
 
+// Default Azure TTS config (user can override in UI)
+window._azureTTSKey =
+  "4j6HXsUkTc0l9IpTaFPnBJc5Sgi7qLqqUz5lbo1zpii4ddmPkRMtJQQJ99BGAC1i4TkXJ3w3AAAYACOGOBrd";
+window._azureTTSRegion = "centralus";
+
 const DEFAULT_VOICE = "en-US-MichelleNeural";
 
 async function azureSpeak(text, opts = {}) {
