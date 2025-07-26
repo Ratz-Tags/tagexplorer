@@ -1,16 +1,6 @@
-// Azure TTS module - Handles requests to Azure Cognitive Services Text-to-Speech
-// Usage: await azureSpeak(text, {voice, key, region})
-
-// Optionally load Azure TTS config from a local file (not tracked by git)
 try {
-  // This file should set window._azureTTSKey and window._azureTTSRegion
-  // Example content:
-  // window._azureTTSKey = "YOUR_KEY_HERE";
-  // window._azureTTSRegion = "YOUR_REGION_HERE";
   await import("../azure-tts.local.js");
-} catch (e) {
-  // No local config found, user must set via UI
-}
+} catch (e) {}
 
 const DEFAULT_VOICE = "en-US-MichelleNeural";
 
