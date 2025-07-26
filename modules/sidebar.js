@@ -22,6 +22,7 @@ function getCopiedCount() {
 }
 
 // Ensures the TTS toggle button is present in the audio-controls
+import { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE } from "./azure-tts.js";
 function ensureTTSToggleButton() {
   const audioPanel = document.getElementById("audio-panel");
   if (audioPanel) {
@@ -66,15 +67,12 @@ function ensureTTSToggleButton() {
             }
             ttsVoiceSelect.appendChild(option);
           });
-          // Restore previous selection
-          if (window._ttsVoiceName) {
-            ttsVoiceSelect.value = window._ttsVoiceName;
-          }
         }
-        window.speechSynthesis.onvoiceschanged = populateVoices;
-        ttsVoiceSelect.addEventListener("focus", populateVoices);
-        ttsVoiceSelect.addEventListener("touchstart", populateVoices);
+
+        // Populate voices initially and when voiceschanged fires
         populateVoices();
+        window.speechSynthesis.onvoiceschanged = populateVoices;
+
         ttsVoiceSelect.onchange = () => {
           window._ttsVoiceName = ttsVoiceSelect.value;
         };
@@ -605,3 +603,4 @@ if (typeof module !== "undefined" && module.exports) {
 // window._showGalleryEmptyState: used by gallery.js (assumed via window)
 
 // No unused or undefined functions in this file.
+// (End of file)
