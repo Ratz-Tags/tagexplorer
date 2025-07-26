@@ -88,7 +88,6 @@ if (typeof window !== "undefined") {
 /**
  * Shows a toast notification message
  */
-import { azureSpeak } from "./azure-tts.js";
 
 async function speakToast(text) {
   if (window._ttsEnabled) {
