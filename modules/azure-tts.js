@@ -59,32 +59,69 @@ async function showAzureVoiceSelector() {
       "position:fixed;bottom:5em;right:1em;z-index:3000;background:#fff0fa;border:2px solid #fd7bc5;border-radius:1.2em;padding:1em;box-shadow:0 2px 16px #fd7bc540;max-width:90vw;width:340px;";
     document.body.appendChild(container);
   }
-  container.innerHTML = `<b>Azure TTS Voices</b><br><div id='azure-voices-loading' style='color:#a0005a;'>Loading voices...</div>`;
+  // Add filter controls
+  container.innerHTML = `<b>Azure TTS Voices</b><br>
+    <label style='font-size:0.98em;'><input type='checkbox' id='azure-voice-female' checked> Show only feminine voices</label><br>
+    <label style='font-size:0.98em;'><input type='checkbox' id='azure-voice-english' checked> Show only English voices</label>
+    <div id='azure-voices-loading' style='color:#a0005a;margin-top:0.5em;'>Loading voices...</div>`;
   try {
     const voices = await fetchAzureVoices(
       window._azureTTSKey,
       window._azureTTSRegion
     );
     if (!Array.isArray(voices)) throw new Error("No voices returned");
-    const select = document.createElement("select");
-    select.style = "width:100%;margin-top:0.7em;margin-bottom:0.7em;";
-    voices.forEach((v) => {
-      const opt = document.createElement("option");
-      opt.value = v.ShortName;
-      opt.textContent = `${v.ShortName} — ${v.FriendlyName} (${v.Locale}, ${v.Gender})`;
-      if (window._azureTTSVoice === v.ShortName) opt.selected = true;
-      select.appendChild(opt);
-    });
-    container.innerHTML = `<b>Azure TTS Voices</b><br>`;
-    container.appendChild(select);
+
+    // Filtering logic
+    function renderVoiceSelect() {
+      const onlyFemale = document.getElementById("azure-voice-female").checked;
+      const onlyEnglish = document.getElementById(
+        "azure-voice-english"
+      ).checked;
+      let filtered = voices;
+      if (onlyFemale) filtered = filtered.filter((v) => v.Gender === "Female");
+      if (onlyEnglish)
+        filtered = filtered.filter(
+          (v) => v.Locale && v.Locale.toLowerCase().startsWith("en")
+        );
+      const select = document.createElement("select");
+      select.style = "width:100%;margin-top:0.7em;margin-bottom:0.7em;";
+      filtered.forEach((v) => {
+        const opt = document.createElement("option");
+        opt.value = v.ShortName;
+        opt.textContent = `${v.ShortName} — ${v.FriendlyName} (${v.Locale}, ${v.Gender})`;
+        if (window._azureTTSVoice === v.ShortName) opt.selected = true;
+        select.appendChild(opt);
+      });
+      // Replace or add select
+      let prev = document.getElementById("azure-voice-select");
+      if (prev) prev.remove();
+      select.id = "azure-voice-select";
+      container.insertBefore(
+        select,
+        document.getElementById("azure-voices-loading")
+      );
+    }
+
+    // Initial render
+    renderVoiceSelect();
+    document.getElementById("azure-voices-loading").style.display = "none";
+
+    // Add event listeners for checkboxes
+    document.getElementById("azure-voice-female").onchange = renderVoiceSelect;
+    document.getElementById("azure-voice-english").onchange = renderVoiceSelect;
+
+    // Save and close buttons
     const saveBtn = document.createElement("button");
     saveBtn.textContent = "Set Voice";
     saveBtn.className = "browse-btn";
     saveBtn.style = "margin-left:0.7em;";
     saveBtn.onclick = () => {
-      window._azureTTSVoice = select.value;
-      setAzureTTSConfig({ voice: select.value });
-      alert("Azure TTS voice set to: " + select.value);
+      const select = document.getElementById("azure-voice-select");
+      if (select && select.value) {
+        window._azureTTSVoice = select.value;
+        setAzureTTSConfig({ voice: select.value });
+        alert("Azure TTS voice set to: " + select.value);
+      }
     };
     container.appendChild(saveBtn);
     const closeBtn = document.createElement("button");
