@@ -45,3 +45,6 @@ function setAzureTTSConfig({ key, region }) {
 }
 
 export { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE, fetchAzureVoices };
+
+// Expose fetchAzureVoices globally for debugging
+window.fetchAzureVoices = fetchAzureVoices;
