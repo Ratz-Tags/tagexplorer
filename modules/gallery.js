@@ -933,7 +933,7 @@ async function filterArtists(reset = true, force = false) {
     filtered = allArtists.filter((artist) => {
       const tags = artist.kinkTags || [];
       return (
-        Array.from(activeTags).every((tag) => tags.includes(tag)) &&
+        Array.from(activeTags).some((tag) => tags.includes(tag)) &&
         (artist.artistName.toLowerCase().includes(artistNameFilter) ||
           artistNameFilter === "")
       );
