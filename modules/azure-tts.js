@@ -8,7 +8,7 @@ const DEFAULT_VOICE = "en-US-AvaMultilingualNeural"; // Ava Dragon HD (latest)
 async function azureSpeak(text, opts = {}) {
   const key = opts.key || window._azureTTSKey;
   const region = opts.region || window._azureTTSRegion;
-  const voice = opts.voice || DEFAULT_VOICE;
+  const voice = opts.voice || window._azureTTSVoice || DEFAULT_VOICE;
   if (!key || !region) throw new Error("Azure TTS key/region not set");
   const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
   const ssml = `<?xml version='1.0'?><speak version='1.0' xml:lang='en-US'><voice name='${voice}'>${text}</voice></speak>`;
