@@ -930,14 +930,21 @@ async function filterArtists(reset = true, force = false) {
     const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
     // Filter artists
-    filtered = allArtists.filter((artist) => {
-      const tags = artist.kinkTags || [];
-      return (
-        Array.from(activeTags).some((tag) => tags.includes(tag)) &&
-        (artist.artistName.toLowerCase().includes(artistNameFilter) ||
-          artistNameFilter === "")
+    if (activeTags.size === 0) {
+      filtered = allArtists.filter((artist) =>
+        artist.artistName.toLowerCase().includes(artistNameFilter) ||
+        artistNameFilter === ""
       );
-    });
+    } else {
+      filtered = allArtists.filter((artist) => {
+        const tags = artist.kinkTags || [];
+        return (
+          Array.from(activeTags).some((tag) => tags.includes(tag)) &&
+          (artist.artistName.toLowerCase().includes(artistNameFilter) ||
+            artistNameFilter === "")
+        );
+      });
+    }
 
     if (spinner.setTotal) spinner.setTotal(filtered.length);
     if (spinner.updateProgress) spinner.updateProgress(0);
