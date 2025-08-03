@@ -938,8 +938,13 @@ async function filterArtists(reset = true, force = false) {
     } else {
       filtered = allArtists.filter((artist) => {
         const tags = artist.kinkTags || [];
+        // Use AND logic for tag sorting/count modes, OR logic otherwise
+        const tagMatch =
+          sortMode === "top" || sortMode === "count"
+            ? Array.from(activeTags).every((tag) => tags.includes(tag))
+            : Array.from(activeTags).some((tag) => tags.includes(tag));
         return (
-          Array.from(activeTags).some((tag) => tags.includes(tag)) &&
+          tagMatch &&
           (artist.artistName.toLowerCase().includes(artistNameFilter) ||
             artistNameFilter === "")
         );
