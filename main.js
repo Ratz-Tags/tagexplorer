@@ -43,7 +43,9 @@ import {
 import { loadAppData } from "./modules/api.js";
 import { startTauntTicker } from "./modules/humiliation.js";
 
+
 import { renderPromptCacheUI } from "./modules/prompt-cache.js";
+import { createTTSToggleButton } from "./modules/tts-toggle.js";
 
 /**
  * Initialize the application
@@ -58,6 +60,9 @@ async function initApp() {
     initSidebar();
     initAudio();
     initAudioUI();
+
+    // Add TTS toggle button to audio controls
+    createTTSToggleButton();
     initTags();
     initGallery();
 

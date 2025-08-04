@@ -5,7 +5,10 @@ try {
 // Set Ava Dragon HD as the default if available
 const DEFAULT_VOICE = "en-US-AvaMultilingualNeural"; // Ava Dragon HD (latest)
 
+import { isTTSEnabled } from "./tts-toggle.js";
+
 async function azureSpeak(text, opts = {}) {
+  if (!isTTSEnabled()) return null;
   const key = opts.key || window._azureTTSKey;
   const region = opts.region || window._azureTTSRegion;
   const voice = opts.voice || window._azureTTSVoice || DEFAULT_VOICE;
