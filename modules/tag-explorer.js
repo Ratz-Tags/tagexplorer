@@ -103,7 +103,15 @@ async function filterTags() {
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
-  closeBtn.onclick = () => wrapper.remove();
+  closeBtn.onclick = () => {
+    wrapper.remove();
+    // --- Fix: Remove any margin/left style from .container and #artist-gallery after tag-explorer closes ---
+    const container = document.querySelector('.container');
+    if (container && container.style.marginLeft) container.style.marginLeft = '';
+    const gallery = document.getElementById('artist-gallery');
+    if (gallery && gallery.style.marginLeft) gallery.style.marginLeft = '';
+    if (gallery && gallery.style.left) gallery.style.left = '';
+  };
   closeBtn.title = "Close (Esc)";
   header.appendChild(closeBtn); // <-- Move this line here
 

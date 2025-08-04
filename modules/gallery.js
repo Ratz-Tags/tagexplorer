@@ -459,12 +459,10 @@ async function openArtistZoom(artist) {
     wrapper.querySelector(".zoom-content").prepend(tauntHeader);
   }
 
-  // Fetch and show artist images
+  // Fetch and show ALL images for the artist, regardless of selected tags
   try {
-    // Fetch all images for the artist only (not filtered by tags)
-    posts = await import("./api.js").then((api) =>
-      api.fetchAllArtistImages(artist.artistName, [], { limit: 200 })
-    );
+    const api = await import("./api.js");
+    posts = await api.fetchAllArtistImages(artist.artistName, [], { limit: 200 });
     // If artist has a thumbnailUrl, prepend it as the first image if not already present
     if (artist.thumbnailUrl) {
       const thumbUrl = artist.thumbnailUrl;
