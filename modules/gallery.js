@@ -938,11 +938,8 @@ async function filterArtists(reset = true, force = false) {
     } else {
       filtered = allArtists.filter((artist) => {
         const tags = artist.kinkTags || [];
-        // Use AND logic for tag sorting/count modes, OR logic otherwise
-        const tagMatch =
-          sortMode === "top" || sortMode === "count"
-            ? Array.from(activeTags).every((tag) => tags.includes(tag))
-            : Array.from(activeTags).some((tag) => tags.includes(tag));
+        // Use AND logic (all tags must match) for main gallery filtering
+        const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
         return (
           tagMatch &&
           (artist.artistName.toLowerCase().includes(artistNameFilter) ||
@@ -1215,10 +1212,22 @@ async function showTopArtistsByTagCount() {
   const topArtists = artistTagCounts
     .filter(({ count }) => count > 0)
     .map(({ artist }) => artist);
+
+  // Show a summary of how many artists are displayed
+  const summaryDiv = document.createElement("div");
+  summaryDiv.className = "filtered-results-summary";
+  summaryDiv.style.margin = "1em 0 1em 0";
+  summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
+  summaryDiv.style.fontSize = "1.1em";
+  summaryDiv.style.color = "#a0005a";
+  summaryDiv.textContent = `Showing ${topArtists.length} artist${topArtists.length === 1 ? '' : 's'} with all selected tags.`;
+  artistGallery.innerHTML = "";
+  artistGallery.appendChild(summaryDiv);
+
   if (topArtists.length > 0) {
     renderArtistCards(topArtists);
   } else {
-    artistGallery.innerHTML =
+    artistGallery.innerHTML +=
       '<div class="no-entries-msg">No artists found with all selected tags.</div>';
   }
 }
