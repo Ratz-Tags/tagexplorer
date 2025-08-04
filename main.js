@@ -294,3 +294,36 @@ promptBtn.onclick = () => {
   renderPromptCacheUI();
 };
 if (controlsBar) controlsBar.appendChild(promptBtn);
+
+// --- Wire up static Top Artists button (fixes non-working UI button) ---
+const staticTopArtistsBtn = document.getElementById("show-top-artists");
+if (staticTopArtistsBtn) {
+  staticTopArtistsBtn.addEventListener("click", () => {
+    if (
+      typeof window.kexplorer !== "undefined" &&
+      typeof window.kexplorer.showTopArtistsByTagCount === "function"
+    ) {
+      window.kexplorer.showTopArtistsByTagCount();
+    }
+  });
+}
+
+// --- Add floating chibi mascot image (fixes chibi.png placement) ---
+window.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById("floating-chibi-mascot")) {
+    const chibi = document.createElement("img");
+    chibi.id = "floating-chibi-mascot";
+    chibi.src = "icons/chibi.png";
+    chibi.alt = "Chibi Mascot";
+    chibi.style.position = "fixed";
+    chibi.style.bottom = "2.5em";
+    chibi.style.right = "2.5em";
+    chibi.style.width = "90px";
+    chibi.style.height = "auto";
+    chibi.style.zIndex = "13000";
+    chibi.style.pointerEvents = "none";
+    chibi.style.userSelect = "none";
+    chibi.style.filter = "drop-shadow(0 2px 12px #fd7bc5cc)";
+    document.body.appendChild(chibi);
+  }
+});
