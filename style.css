@@ -1,4 +1,4 @@
-.tag-btn img,
+
 
 /* --- Modernized Artist Card --- */
 .artist-card {
@@ -29,25 +29,29 @@
   font-size: 1rem;
 }
 
-.copy-button,
-.reload-button,
-.floating-controls button {
-  background: #fff;
-  padding: 1.2em 1.2em 1em 1.2em;
-  max-width: 700px;
-  border-radius: 14px;
-  box-shadow: 0 2px 12px #fd7bc520;
-  display: flex;
-  flex-direction: column;
-  font-family: 'Inter', sans-serif;
-  font-family: var(--btn-font);
-  font-size: 0.95em;
-  cursor: pointer;
-  box-shadow: 0 2px 24px rgba(253, 123, 197, 0.18),
-    0 0 8px rgba(255, 99, 165, 0.5);
-  margin-right: 0.5em;
-  margin-bottom: 0.3em;
-  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+
+@keyframes topBarGradient {
+  0% {
+    background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
+  }
+  100% {
+    background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
+  }
+}
+
+@keyframes floatingPop {
+  0% {
+    transform: scale(0.7) translateY(32px);
+    opacity: 0.2;
+  }
+  60% {
+    transform: scale(1.08) translateY(-4px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
 }
 
 .audio-controls select {
