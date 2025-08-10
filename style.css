@@ -267,17 +267,18 @@ body.feminization-theme {
   background: rgba(255, 240, 250, 1);
   backdrop-filter: blur(2.5px) saturate(1.1);
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: row;
+  align-items: stretch;
   justify-content: center;
   z-index: 12000;
+  overflow: hidden;
 }
 
 .zoom-content {
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: stretch;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 8px 32px 0 rgba(253, 123, 197, 0.10);
@@ -286,34 +287,11 @@ body.feminization-theme {
   max-width: 90vw;
   min-height: 40vh;
   max-height: 90vh;
-  overflow: auto;
+  overflow: hidden;
+  width: 100vw;
+  height: 100vh;
 }
 
-.zoom-close {
-  position: absolute;
-  top: 1.2em;
-  right: 1.5em;
-  z-index: 2;
-  font-size: 2em;
-  background: #ffd6f6;
-  border: none;
-  color: #a0005a;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(253, 123, 197, 0.10);
-  transition: background 0.15s, color 0.15s;
-}
-.zoom-close:hover {
-  background: #ff63a5;
-  color: #fff;
-}
-
-/* --- Fullscreen Zoom Navigation Fixes --- */
 .zoom-left, .zoom-right {
   display: flex;
   flex-direction: column;
@@ -322,6 +300,24 @@ body.feminization-theme {
   position: relative;
   min-width: 3.5em;
   min-height: 100%;
+  height: 100%;
+}
+
+.zoom-right {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fff0fa 100%);
+  padding: 2em 2.5em 2em 1.5em;
+  border-top-right-radius: 2em;
+  border-bottom-right-radius: 2em;
+  min-width: 22vw;
+  max-width: 32vw;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 1.2em;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .zoom-prev, .zoom-next {
@@ -342,30 +338,7 @@ body.feminization-theme {
   pointer-events: auto;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
-/* Modern modal redesign for left and right panels */
-.zoom-left {
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
-  padding: 2em 1.5em 2em 2.5em;
-  border-top-left-radius: 2em;
-  border-bottom-left-radius: 2em;
-  min-width: 40vw;
-  max-width: 60vw;
-  box-sizing: border-box;
-}
-.zoom-right {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fff0fa 100%);
-  padding: 2em 2.5em 2em 1.5em;
-  border-top-right-radius: 2em;
-  border-bottom-right-radius: 2em;
-  min-width: 22vw;
-  max-width: 32vw;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
-  gap: 1.2em;
-}
+
 .zoom-prev {
   left: 0.5em;
   right: auto;
