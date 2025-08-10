@@ -224,6 +224,81 @@ async function openArtistZoom(artist) {
     nextBtn,
   } = viewer;
 
+  // --- UI/UX IMPROVEMENTS FOR ZOOMED MODAL ---
+  // Make image larger and centered
+  zoomed.style.maxWidth = '80vw';
+  zoomed.style.maxHeight = '80vh';
+  zoomed.style.width = 'auto';
+  zoomed.style.height = 'auto';
+  zoomed.style.display = 'block';
+  zoomed.style.margin = '2.5vh auto 1.5vh auto';
+  zoomed.style.boxShadow = '0 4px 32px #fd7bc540';
+  zoomed.style.borderRadius = '1.2em';
+  zoomed.style.background = '#fff0fa';
+  zoomed.style.zIndex = '10';
+
+  // Move tagList and topTags below the image, stack vertically, and minimize whitespace
+  if (tagList && tagList.parentNode) {
+    tagList.style.display = 'block';
+    tagList.style.fontSize = '1.05em';
+    tagList.style.fontFamily = "'Hi Melody', sans-serif";
+    tagList.style.margin = '0.5em auto 0.2em auto';
+    tagList.style.padding = '0.2em 1.2em';
+    tagList.style.background = '#fff0fa';
+    tagList.style.borderRadius = '1em';
+    tagList.style.boxShadow = '0 1px 8px #fd7bc520';
+    tagList.style.maxWidth = '70vw';
+    tagList.style.textAlign = 'center';
+    tagList.style.color = '#a0005a';
+    tagList.style.overflowWrap = 'break-word';
+    // Move below image
+    if (zoomed.nextSibling !== tagList) {
+      zoomed.parentNode.insertBefore(tagList, zoomed.nextSibling);
+    }
+  }
+  if (topTags && topTags.parentNode) {
+    topTags.style.display = 'block';
+    topTags.style.fontSize = '0.98em';
+    topTags.style.fontFamily = "'Hi Melody', sans-serif";
+    topTags.style.margin = '0.2em auto 0.5em auto';
+    topTags.style.padding = '0.2em 1.2em';
+    topTags.style.background = '#fff0fa';
+    topTags.style.borderRadius = '1em';
+    topTags.style.boxShadow = '0 1px 8px #fd7bc520';
+    topTags.style.maxWidth = '70vw';
+    topTags.style.textAlign = 'center';
+    topTags.style.color = '#a0005a';
+    // Move below tagList
+    if (tagList && tagList.nextSibling !== topTags) {
+      tagList.parentNode.insertBefore(topTags, tagList.nextSibling);
+    }
+    // Shrink individual tag font size
+    setTimeout(() => {
+      topTags.querySelectorAll('.zoom-top-tag').forEach(el => {
+        el.style.fontSize = '0.93em';
+        el.style.margin = '0 0.4em';
+        el.style.display = 'inline-block';
+        el.style.padding = '0.1em 0.7em';
+        el.style.background = '#fd7bc510';
+        el.style.borderRadius = '1em';
+      });
+    }, 0);
+  }
+  // Remove excessive white area from modal content
+  if (wrapper && wrapper.querySelector('.zoom-content')) {
+    const content = wrapper.querySelector('.zoom-content');
+    content.style.display = 'flex';
+    content.style.flexDirection = 'column';
+    content.style.alignItems = 'center';
+    content.style.justifyContent = 'flex-start';
+    content.style.padding = '0.5em 0.5em 0.5em 0.5em';
+    content.style.background = 'rgba(255,255,255,0.97)';
+    content.style.minWidth = 'unset';
+    content.style.maxWidth = '90vw';
+    content.style.boxShadow = '0 2px 24px #fd7bc520';
+    content.style.borderRadius = '1.5em';
+  }
+
   let currentIndex = 0;
   let posts = [];
 
@@ -233,57 +308,14 @@ async function openArtistZoom(artist) {
   let artistTopTags = [];
 
   function showNoEntries(
-    message = "No images found for this artist and filter."
+    message = "No images found for this artist."
   ) {
     zoomed.style.display = "none";
     noEntriesMsg.style.display = "block";
     noEntriesMsg.textContent = message;
-    // Add fallback button if filtered fetch failed
-    if (!noEntriesMsg.querySelector(".show-all-btn")) {
-      const showAllBtn = document.createElement("button");
-      showAllBtn.className = "show-all-btn";
-      showAllBtn.textContent = "Show all images for this artist";
-      showAllBtn.style.marginTop = "1em";
-      showAllBtn.onclick = async () => {
-        noEntriesMsg.textContent = "Loading all images...";
-        showAllBtn.disabled = true;
-        try {
-          const allData = await fetchAllArtistImages(artist.artistName, []);
-          if (Array.isArray(allData) && allData.length > 0) {
-            posts = allData;
-            processApiData(posts, true);
-            zoomed.style.display = "block";
-            noEntriesMsg.style.display = "none";
-          } else {
-            noEntriesMsg.textContent = "No images found for this artist.";
-          }
-        } catch {
-          noEntriesMsg.textContent = "Error loading images.";
-        }
-        showAllBtn.disabled = false;
-      };
-      noEntriesMsg.appendChild(showAllBtn);
-    }
-    // Add retry button if not present
-    if (!noEntriesMsg.querySelector(".retry-btn")) {
-      const retryBtn = document.createElement("button");
-      retryBtn.className = "retry-btn";
-      retryBtn.textContent = "Retry";
-      retryBtn.style.zIndex = "100000";
-      retryBtn.setAttribute("aria-label", "Retry loading tags");
-      retryBtn.onclick = () => {
-        const cacheKey = `allPosts-${artist.artistName}-${
-          getActiveTags ? Array.from(getActiveTags()).join(",") : ""
-        }`;
-        sessionStorage.removeItem(cacheKey);
-        noEntriesMsg.textContent = "Retrying...";
-        openArtistZoom(artist);
-      };
-      noEntriesMsg.appendChild(retryBtn);
-    }
   }
 
-  function processApiData(data, isFallback = false) {
+  function processApiData(data) {
     const validPosts = Array.isArray(data)
       ? data.filter((post) => {
           const url = post?.large_file_url || post?.file_url;
@@ -340,15 +372,7 @@ async function openArtistZoom(artist) {
     }
 
     if (validPosts.length === 0) {
-      if (
-        !isFallback &&
-        getActiveTags &&
-        Array.from(getActiveTags()).length > 0
-      ) {
-        showNoEntries("No images found for this artist and selected tags.");
-      } else {
-        showNoEntries("No images found for this artist.");
-      }
+      showNoEntries("No images found for this artist.");
       return;
     }
 
@@ -1093,124 +1117,6 @@ async function showTopArtistsByTagCount() {
     return selectedTags.every((tag) => tags.includes(tag));
   });
 
-  // Show spinner and loading bar while loading
-  if (artistGallery) {
-    artistGallery.innerHTML = "";
-    const spinner = document.createElement("div");
-    spinner.className = "gallery-spinner";
-    spinner.style.position = "fixed";
-    spinner.style.top = "50%";
-    spinner.style.left = "50%";
-    spinner.style.transform = "translate(-50%, -50%)";
-    spinner.style.zIndex = "10000";
-    spinner.style.background = "rgba(255,255,255,0.95)";
-    spinner.style.borderRadius = "2em";
-    spinner.style.padding = "2em 2em 2.5em 2em";
-    spinner.innerHTML = `<img src=\"spinner.gif\" alt=\"Loading...\" style=\"display:block;margin:0 auto;\" />`;
-    // Add loading bar, styled center and large
-    const loadingBar = document.createElement("progress");
-    loadingBar.className = "loading-bar";
-    loadingBar.value = 0;
-    loadingBar.max = filteredArtists.length;
-    loadingBar.style.display = "block";
-    loadingBar.style.width = "80vw";
-    loadingBar.style.maxWidth = "400px";
-    loadingBar.style.height = "2.5em";
-    loadingBar.style.margin = "2em auto 0 auto";
-    loadingBar.style.position = "absolute";
-    loadingBar.style.left = "50%";
-    loadingBar.style.top = "calc(50% + 60px)";
-    loadingBar.style.transform = "translate(-50%, 0)";
-    spinner.appendChild(loadingBar);
-    // Add status text
-    const statusText = document.createElement("div");
-    statusText.className = "loading-status";
-    statusText.style.textAlign = "center";
-    statusText.style.fontSize = "1.2em";
-    statusText.style.marginTop = "1em";
-    statusText.style.position = "absolute";
-    statusText.style.left = "50%";
-    statusText.style.top = "calc(50% + 120px)";
-    statusText.style.transform = "translate(-50%, 0)";
-    spinner.appendChild(statusText);
-    artistGallery.appendChild(spinner);
-  }
-
-  // Use Danbooru /counts/posts API for each artist+tags
-  const { fetchPostCountForTags, fetchArtistImages } = await import("./api.js");
-  const artistTagCounts = [];
-  let done = 0;
-  const spinnerElem = artistGallery
-    ? artistGallery.querySelector(".gallery-spinner")
-    : null;
-  const loadingBarElem = spinnerElem
-    ? spinnerElem.querySelector(".loading-bar")
-    : null;
-  const statusTextElem = spinnerElem
-    ? spinnerElem.querySelector(".loading-status")
-    : null;
-
-  // Helper to format artist tag for Danbooru
-  function formatArtistTag(tag) {
-    return tag.replace(/\s+/g, "_").toLowerCase();
-  }
-  // Helper to format selected tags for Danbooru
-  function formatTag(tag) {
-    return tag.replace(/\s+/g, "_").toLowerCase();
-  }
-
-  let allZero = true;
-  for (const artist of filteredArtists) {
-    let matchCount = 0;
-    try {
-      // Use artistTag for API calls
-      const apiTags = [
-        formatArtistTag(artist.artistTag || artist.artistName),
-        ...selectedTags.map(formatTag),
-      ];
-      matchCount = await fetchPostCountForTags(apiTags);
-    } catch (e) {
-      matchCount = 0;
-    }
-    artist._tagMatchCount = matchCount;
-    if (matchCount > 0) allZero = false;
-    artistTagCounts.push({ artist, count: matchCount });
-    done++;
-    if (spinnerElem) {
-      if (loadingBarElem) loadingBarElem.value = done;
-      if (loadingBarElem && !spinnerElem.contains(loadingBarElem)) {
-        spinnerElem.appendChild(loadingBarElem);
-      }
-      if (statusTextElem) {
-        statusTextElem.textContent = `Fetching: ${
-          artist.artistTag || artist.artistName
-        } (${done}/${filteredArtists.length})`;
-      }
-    }
-    // Ensure image is cached for card display
-    const cacheKey = `danbooru-image-${artist.artistName}`;
-    if (!localStorage.getItem(cacheKey)) {
-      try {
-        const posts = await fetchArtistImages(artist.artistName, [], {
-          limit: 1,
-        });
-        if (Array.isArray(posts) && posts.length > 0) {
-          const post = posts[0];
-          const url = post.large_file_url || post.file_url;
-          if (url) localStorage.setItem(cacheKey, url);
-        }
-      } catch {}
-    }
-  }
-
-  // Sort artists by count descending
-  artistTagCounts.sort((a, b) => b.count - a.count);
-
-  // Only show artists with matches
-  const topArtists = artistTagCounts
-    .filter(({ count }) => count > 0)
-    .map(({ artist }) => artist);
-
   // Show a summary of how many artists are displayed
   const summaryDiv = document.createElement("div");
   summaryDiv.className = "filtered-results-summary";
@@ -1218,12 +1124,12 @@ async function showTopArtistsByTagCount() {
   summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
   summaryDiv.style.fontSize = "1.1em";
   summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${topArtists.length} artist${topArtists.length === 1 ? '' : 's'} with all selected tags.`;
+  summaryDiv.textContent = `Showing ${filteredArtists.length} artist${filteredArtists.length === 1 ? '' : 's'} with all selected tags.`;
   artistGallery.innerHTML = "";
   artistGallery.appendChild(summaryDiv);
 
-  if (topArtists.length > 0) {
-    renderArtistCards(topArtists);
+  if (filteredArtists.length > 0) {
+    renderArtistCards(filteredArtists);
   } else {
     artistGallery.innerHTML +=
       '<div class="no-entries-msg">No artists found with all selected tags.</div>';
