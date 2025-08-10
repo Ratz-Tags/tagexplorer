@@ -88,25 +88,30 @@ body.feminization-theme {
   color: #fff;
 }
 
-.fem-btn:active,
-.tag-btn:active,
-.tag-button:active,
-.browse-btn:active,
-.copy-button:active,
-.reload-button:active {
-  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+.fem-btn, .browse-btn, .tag-btn, .tag-button, .copy-button, .reload-button {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  border: 2.5px solid #fd7bc5;
   color: #fff;
-  box-shadow: 0 0 0 4px #fd7bc580;
-  transform: scale(0.97);
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580;
+  font-family: var(--btn-font);
+  font-size: 1.1em;
+  border-radius: 2em;
+  padding: 0.7em 1.4em;
+  margin: 0.2em 0.3em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+  outline: none;
 }
 
-.fem-btn:focus-visible,
-.tag-btn:focus-visible,
-.tag-button:focus-visible,
-.browse-btn:focus-visible,
-.copy-button:focus-visible,
-.reload-button:focus-visible {
-  outline: 3px solid var(--accent2);
+.fem-btn:hover, .browse-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580;
+  transform: scale(1.06);
+}
+
+.fem-btn:focus-visible, .browse-btn:focus-visible, .tag-btn:focus-visible, .tag-button:focus-visible, .copy-button:focus-visible, .reload-button:focus-visible {
+  outline: 3px solid #fd7bc5;
   outline-offset: 2px;
 }
 
@@ -387,7 +392,7 @@ body.feminization-theme {
 .zoom-nav-btn:focus-visible,
 .zoom-close-btn:focus-visible,
 .zoom-close:focus-visible {
-  outline: 3px solid var(--accent2);
+  outline: 3px solid #fd7bc5;
 }
 
 .zoom-left,
