@@ -39,19 +39,18 @@ let getArtistNameFilter = null;
  */
 async function setRandomBackground() {
   if (!backgroundBlur) return;
-
   try {
     if (document.body.classList.contains("incognito-theme")) {
       backgroundBlur.style.backgroundImage = "none";
       backgroundBlur.style.backgroundColor = "#111";
       return;
     }
-
+    // Restore randomized backgrounds
     const { getRandomBackgroundImage } = await import("./api.js");
     const imageUrl = await getRandomBackgroundImage();
-
     if (imageUrl) {
       backgroundBlur.style.backgroundImage = `url(${imageUrl})`;
+      backgroundBlur.style.backgroundColor = "";
     } else {
       backgroundBlur.style.backgroundColor = "#111";
     }
@@ -722,7 +721,7 @@ function renderArtistsPage() {
 }
 
 // Helper to render a list of artists using the normal card structure
-function renderArtistCards(artists) {
+function renderArtistCards(artists, selectedTagsOverride) {
   if (!artistGallery) return;
   artistGallery.innerHTML = "";
   // Use DocumentFragment for performance
@@ -762,14 +761,22 @@ function renderArtistCards(artists) {
     tagCountDiv.className = "artist-tag-count";
     tagCountDiv.textContent = "";
 
-    const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+    // Use override if provided (for Top Artists by Tag Count)
+    const selectedTags = Array.isArray(selectedTagsOverride)
+      ? selectedTagsOverride
+      : getActiveTags
+      ? Array.from(getActiveTags())
+      : [];
     let taglistText = "";
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       taglistText = artist.kinkTags
         .map((tag) => {
           if (selectedTags.includes(tag)) {
+            // Show per-tag count if available
             const count =
-              artist._tagMatchCount !== undefined ? artist._tagMatchCount : "?";
+              artist._selectedTagCounts && artist._selectedTagCounts[tag]
+                ? artist._selectedTagCounts[tag]
+                : 1;
             return `${tag.replace(/_/g, " ")} [${count}]`;
           }
           return tag.replace(/_/g, " ");
@@ -794,7 +801,9 @@ function renderArtistCards(artists) {
           .map((tag) => {
             if (selectedTags.includes(tag)) {
               const count =
-                this._tagMatchCount !== undefined ? this._tagMatchCount : "?";
+                this._selectedTagCounts && this._selectedTagCounts[tag]
+                  ? this._selectedTagCounts[tag]
+                  : 1;
               return `${tag.replace(/_/g, " ")} [${count}]`;
             }
             return tag.replace(/_/g, " ");
@@ -1118,11 +1127,18 @@ async function showTopArtistsByTagCount() {
   const selectedTags = Array.from(getActiveTags());
   if (selectedTags.length === 0) return;
 
-  // For each artist, count how many selected tags are present in their kinkTags
+  // For each artist, count how many selected tags are present in their kinkTags and store per-tag counts
   const artistsWithCounts = allArtists.map((artist) => {
     const tags = artist.kinkTags || [];
-    const matchCount = selectedTags.reduce((acc, tag) => acc + (tags.includes(tag) ? 1 : 0), 0);
-    return { ...artist, _selectedTagMatchCount: matchCount };
+    let matchCount = 0;
+    let tagCounts = {};
+    selectedTags.forEach((tag) => {
+      if (tags.includes(tag)) {
+        matchCount++;
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      }
+    });
+    return { ...artist, _selectedTagMatchCount: matchCount, _selectedTagCounts: tagCounts };
   });
 
   // Only show artists with at least one matching tag
@@ -1148,7 +1164,7 @@ async function showTopArtistsByTagCount() {
   artistGallery.appendChild(summaryDiv);
 
   if (filteredArtists.length > 0) {
-    renderArtistCards(filteredArtists);
+    renderArtistCards(filteredArtists, selectedTags);
   } else {
     artistGallery.innerHTML +=
       '<div class="no-entries-msg">No artists found with any selected tags.</div>';
