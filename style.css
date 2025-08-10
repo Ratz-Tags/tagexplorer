@@ -136,23 +136,28 @@ body {
 
 .top-bar {
   animation: topBarGradient 8s ease-in-out infinite alternate;
+  width: 340px;
+  background: #fff;
+  box-shadow: -2px 0 16px rgba(253, 123, 197, 0.10);
+  border-radius: 12px 0 0 12px;
+  overflow-y: auto;
+  display: none;
+  padding: 1.2em 1em 1em 1em;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
 }
 
-/* Utility: all feminine buttons */
-.fem-btn,
-.tag-btn,
-.tag-button,
-.browse-btn,
 .copy-button,
 .reload-button,
-.floating-controls button,
-.audio-controls button,
-.audio-controls select {
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 50%, #fd7bc5 100%);
-  border: 2.5px solid var(--border-color);
-  color: var(--text-color);
-  padding: 0.6rem 1.2rem;
-  border-radius: var(--radius);
+.floating-controls button {
+  background: #fff;
+  padding: 1.2em 1.2em 1em 1.2em;
+  max-width: 700px;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px #fd7bc520;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
   font-family: var(--btn-font);
   font-size: 0.95em;
   cursor: pointer;
@@ -165,25 +170,26 @@ body {
 
 .audio-controls select {
   min-width: 180px;
-  max-width: 260px;
-  font-size: 0.95em;
-  outline: none;
+  gap: 0.25em;
+  justify-content: flex-start;
+  overflow: auto;
+  margin-top: 0.5em;
 }
 
 .audio-controls {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5em;
-}
-
-.fem-btn:hover,
-.tag-btn:hover,
-.tag-button:hover,
-.browse-btn:hover,
-.copy-button:hover,
-.reload-button:hover {
-  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  background: #ffd6f6;
+  border: none;
+  color: #a0005a;
+  padding: 0.28em 0.9em;
+  border-radius: 7px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.97em;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(253, 123, 197, 0.10);
+  margin: 0.08em;
+  transition: background 0.15s, color 0.15s;
   color: #fff;
 }
 
@@ -224,6 +230,7 @@ body {
 
 .top-bar {
   display: flex;
+    padding: 0.7em 0.2em 0.7em 0.2em;
   flex-direction: column;
   flex-wrap: wrap;
   align-items: center;
@@ -374,17 +381,17 @@ body {
 .zoom-content {
   position: relative;
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
   background: #fff;
-  border-radius: 2em;
-  box-shadow: 0 8px 48px 0 rgba(253, 123, 197, 0.18), 0 1.5px 8px 0 rgba(0,0,0,0.08);
-  padding: 0;
-  min-width: 60vw;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(253, 123, 197, 0.10);
+  padding: 0.7em 0.7em 1.2em 0.7em;
+  min-width: 320px;
   max-width: 90vw;
-  min-height: 60vh;
+  min-height: 40vh;
   max-height: 90vh;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .zoom-close {
@@ -392,12 +399,23 @@ body {
   top: 1.2em;
   right: 1.5em;
   z-index: 2;
-  font-size: 2.2em;
-  background: transparent;
+  font-size: 2em;
+  background: #ffd6f6;
   border: none;
   color: #a0005a;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: color 0.2s;
+  box-shadow: 0 1px 4px rgba(253, 123, 197, 0.10);
+  transition: background 0.15s, color 0.15s;
+}
+.zoom-close:hover {
+  background: #ff63a5;
+  color: #fff;
 }
 
 /* --- Fullscreen Zoom Navigation Fixes --- */
@@ -462,12 +480,14 @@ body {
   left: auto;
 }
 .fullscreen-img {
-  max-width: 70vw;
-  max-height: 80vh;
-  border-radius: 1.5em;
-  box-shadow: 0 2px 32px rgba(253, 123, 197, 0.8);
-  margin: 0 2.5em;
+  width: 100%;
+  max-width: 600px;
+  max-height: 70vh;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.10);
+  margin: 0 auto 1.1em auto;
   display: block;
+  object-fit: contain;
 }
 
 .taunt-header {
@@ -519,16 +539,15 @@ body {
   object-fit: contain;
 }
 
-.zoom-tags {
-  font-family: var(--btn-font);
-  font-size: 1.1em;
-  color: #a0005a;
-  margin-bottom: 1em;
-  word-break: break-word;
-  background: #fff8fc;
-  border-radius: 1em;
-  padding: 0.7em 1.2em;
-  box-shadow: 0 1px 8px #fd7bc520;
+.zoom-tags, .zoom-top-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  margin-bottom: 0.7em;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .zoom-top-tags {
