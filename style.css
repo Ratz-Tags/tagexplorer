@@ -1,44 +1,76 @@
 .tag-btn img,
-.tag-button img,
-.tag-btn svg,
-.tag-button svg {
-  width: 1.1em !important;
-  height: 1.1em !important;
-  max-width: 20px !important;
-  max-height: 20px !important;
-  object-fit: contain;
-  vertical-align: middle;
-  margin: 0 0.15em 0 0;
-  display: inline-block;
-  pointer-events: none;
+
+/* --- Modernized Artist Card --- */
+.artist-card {
+  background: #fff;
+  border: 1.5px solid #ffd6f6;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(253, 123, 197, 0.10);
+  position: relative;
+  overflow: hidden;
+  padding: 0.7em 0.7em 1.1em 0.7em;
+  transition: transform 0.16s, box-shadow 0.16s;
+}
+.artist-card:hover {
+  transform: translateY(-3px) scale(1.025);
+  box-shadow: 0 6px 24px rgba(253, 123, 197, 0.18);
+}
+.artist-card::before,
+.artist-card::after {
+  display: none;
+}
+.artist-image {
+  width: 100%;
+  aspect-ratio: 1/1;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: none;
+  margin-bottom: 0.6em;
+  transition: transform 0.18s;
+}
+.artist-card:hover .artist-image {
+  transform: scale(1.04);
 }
 
-/* Ensure all overlays and modals are above everything */
-.modal,
-.fullscreen-wrapper,
-.tag-explorer-wrapper,
-.joi-modal,
-.taunt-modal,
-#prompt-cache-container,
-#copied-sidebar,
-.floating-controls {
-  z-index: 12000 !important;
+/* --- Modernized Gallery Grid --- */
+#artist-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.2em;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1em 0;
 }
 
-/* Sidebar always fixed and above content */
-#copied-sidebar {
-  position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  left: auto !important;
-  z-index: 12000 !important;
+/* --- Compact Tag Chips --- */
+.artist-tags, .zoom-tags, .zoom-top-tags, .tag-explorer .tag-btn, .tag-explorer .tag-button {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+  margin-bottom: 0.7em;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
 }
-
-/* Focus-visible for zoom modal buttons */
-.zoom-close-btn:focus-visible,
-.zoom-nav-btn:focus-visible {
-  outline: 3px solid var(--accent2);
-  outline-offset: 2px;
+.tag-chip {
+  background: #ffd6f6;
+  color: #a0005a;
+  font-size: 0.92em;
+  font-family: 'Inter', sans-serif;
+  border-radius: 6px;
+  padding: 0.18em 0.7em;
+  margin: 0 0.1em 0.1em 0;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 500;
+  border: 1px solid #fd7bc5;
+  transition: background 0.15s, color 0.15s;
+}
+.tag-chip img, .tag-chip svg {
+  width: 1em;
+  height: 1em;
+  margin-right: 0.3em;
 }
 @import url("https://fonts.googleapis.com/css2?family=Hi+Melody&family=Inter:wght@400;600&display=swap");
 
