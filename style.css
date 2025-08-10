@@ -681,34 +681,51 @@ body {
 }
 
 /* Floating controls */
+
 .floating-controls {
   position: fixed;
-  bottom: 2.2em;
-  right: 2.2em;
+  bottom: 1.2em;
+  right: 1.2em;
   z-index: 13000;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 1.1em;
+  gap: 0.7em;
   pointer-events: none;
 }
-
 .floating-controls .toggle-buttons-container {
   display: flex;
   flex-direction: column;
-  gap: 0.7em;
-  background: rgba(255, 240, 250, 0.92);
-  border-radius: var(--radius);
-  box-shadow: 0 4px 32px rgba(253, 123, 197, 0.25),
-    0 1.5px 8px rgba(255, 99, 165, 0.2);
-  padding: 0.7em;
+  gap: 0.5em;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(253, 123, 197, 0.10);
+  padding: 0.5em;
   pointer-events: auto;
   border: 1.5px solid #ffd6f6;
   animation: floatingPop 0.7s cubic-bezier(0.4, 2, 0.6, 1);
 }
-
 .floating-controls button {
   pointer-events: auto;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3em;
+  background: #ffd6f6;
+  color: #a0005a;
+  box-shadow: 0 1px 4px rgba(253, 123, 197, 0.10);
+  margin: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.floating-controls button:hover {
+  background: #ff63a5;
+  color: #fff;
 }
 
 @keyframes floatingPop {

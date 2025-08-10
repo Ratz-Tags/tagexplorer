@@ -1087,6 +1087,13 @@ function setSortMode(mode) {
       filtered.sort(
         (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
       );
+    } else if (sortMode === "top") {
+      filtered.sort((a, b) => {
+        if ((b._selectedTagMatchCount || 0) !== (a._selectedTagMatchCount || 0)) {
+          return (b._selectedTagMatchCount || 0) - (a._selectedTagMatchCount || 0);
+        }
+        return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
+      });
     } else {
       filtered.sort((a, b) =>
         a.artistName.localeCompare(b.artistName, undefined, {
@@ -1111,10 +1118,22 @@ async function showTopArtistsByTagCount() {
   const selectedTags = Array.from(getActiveTags());
   if (selectedTags.length === 0) return;
 
-  // Filter artists to only those that have all selected tags in their kinkTags
-  const filteredArtists = allArtists.filter((artist) => {
+  // For each artist, count how many selected tags are present in their kinkTags
+  const artistsWithCounts = allArtists.map((artist) => {
     const tags = artist.kinkTags || [];
-    return selectedTags.every((tag) => tags.includes(tag));
+    const matchCount = selectedTags.reduce((acc, tag) => acc + (tags.includes(tag) ? 1 : 0), 0);
+    return { ...artist, _selectedTagMatchCount: matchCount };
+  });
+
+  // Only show artists with at least one matching tag
+  const filteredArtists = artistsWithCounts.filter(a => a._selectedTagMatchCount > 0);
+
+  // Sort by number of matching tags (desc), then by name
+  filteredArtists.sort((a, b) => {
+    if (b._selectedTagMatchCount !== a._selectedTagMatchCount) {
+      return b._selectedTagMatchCount - a._selectedTagMatchCount;
+    }
+    return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
   });
 
   // Show a summary of how many artists are displayed
@@ -1124,7 +1143,7 @@ async function showTopArtistsByTagCount() {
   summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
   summaryDiv.style.fontSize = "1.1em";
   summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${filteredArtists.length} artist${filteredArtists.length === 1 ? '' : 's'} with all selected tags.`;
+  summaryDiv.textContent = `Showing ${filteredArtists.length} artist${filteredArtists.length === 1 ? '' : 's'} matching selected tags (sorted by # of matches).`;
   artistGallery.innerHTML = "";
   artistGallery.appendChild(summaryDiv);
 
@@ -1132,7 +1151,7 @@ async function showTopArtistsByTagCount() {
     renderArtistCards(filteredArtists);
   } else {
     artistGallery.innerHTML +=
-      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
+      '<div class="no-entries-msg">No artists found with any selected tags.</div>';
   }
 }
 
