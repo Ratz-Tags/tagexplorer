@@ -281,11 +281,12 @@ body.feminization-theme {
 
 /* Improved zoom-content layout for proper arrow and tag placement */
 /* True 3-column flex layout for zoom modal */
+/* Force 3-column layout: arrow | main | arrow */
 .zoom-content {
   position: relative;
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   background: #fff;
   border-radius: 16px;
@@ -298,6 +299,120 @@ body.feminization-theme {
   width: auto;
   height: auto;
   overflow: visible;
+  gap: 0;
+}
+
+.zoom-prev, .zoom-next {
+  position: static;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  min-width: 54px;
+  height: 100%;
+  margin: 0;
+  z-index: 1;
+}
+
+.zoom-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  flex: 1 1 0;
+  max-height: 86vh;
+  position: relative;
+  overflow: visible;
+}
+
+.zoom-image {
+  max-width: 60vw;
+  max-height: 60vh;
+  width: auto;
+  height: auto;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
+  object-fit: contain;
+  display: block;
+}
+
+.zoomed-tags {
+  margin-top: 1.1em;
+  max-width: 60vw;
+  width: 100%;
+  min-height: 2.2em;
+  max-height: 18vh;
+  flex-grow: 1;
+  overflow-x: auto;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: flex-start;
+  background: rgba(255,240,250,0.85);
+  border-radius: 0.7em;
+  padding: 0.7em 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+}
+
+/* Make sure .zoom-main doesn't shrink below content */
+.zoom-main > * {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .zoom-content {
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  .zoom-main {
+    max-width: 98vw;
+    max-height: 90vh;
+  }
+  .zoom-image {
+    max-width: 90vw;
+    max-height: 50vh;
+  }
+  .zoomed-tags {
+    max-width: 90vw;
+    max-height: 24vh;
+    font-size: 0.95em;
+  }
+  .zoom-prev, .zoom-next {
+    width: 38px;
+    min-width: 38px;
+  }
+}
+
+@media (max-width: 600px) {
+  .zoom-content {
+    flex-direction: column;
+    align-items: center;
+    max-width: 100vw;
+    max-height: 100vh;
+    padding: 0.2em;
+  }
+  .zoom-main {
+    max-width: 98vw;
+    max-height: 80vh;
+  }
+  .zoom-image {
+    max-width: 98vw;
+    max-height: 40vh;
+  }
+  .zoomed-tags {
+    max-width: 98vw;
+    max-height: 30vh;
+    font-size: 0.9em;
+  }
+  .zoom-prev, .zoom-next {
+    width: 32px;
+    min-width: 32px;
+    height: 44px;
+    margin: 0.1em 0;
+  }
 }
 
 .zoom-prev, .zoom-next {
