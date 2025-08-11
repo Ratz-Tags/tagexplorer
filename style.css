@@ -1282,18 +1282,19 @@ html.tag-explorer-open {
 
 
 /* Themed and fixed zoom arrows for modal */
+
+/* Flexbox layout for zoom arrows (desktop/tablet) */
 .zoom-prev, .zoom-next {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 13001;
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
-  min-height: 54px;
+  position: static;
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 54px;
+  min-width: 54px;
+  height: 100%;
+  margin: 0;
+  z-index: 1;
   font-size: 2.1em;
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   color: #fff;
@@ -1305,14 +1306,6 @@ html.tag-explorer-open {
   outline: none;
   opacity: 0.96;
   touch-action: manipulation;
-}
-.zoom-prev {
-  left: 1.2em;
-  right: auto;
-}
-.zoom-next {
-  right: 1.2em;
-  left: auto;
 }
 .zoom-prev:hover, .zoom-next:hover {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);

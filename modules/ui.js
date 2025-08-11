@@ -179,11 +179,52 @@ function createFullscreenViewer() {
   tauntHeader.textContent = ""; // Fill as needed
   wrapper.appendChild(tauntHeader);
 
-  // Zoom content container
+  // Zoom content container (strict 3-column flex)
   const content = document.createElement("div");
   content.className = "zoom-content";
 
-  // Close button (top right of zoom-content)
+  // Prev arrow column
+  const prevBtn = document.createElement("button");
+  prevBtn.className = "zoom-prev";
+  prevBtn.textContent = "←";
+  content.appendChild(prevBtn);
+
+  // Main column: image and tags stacked vertically
+  const main = document.createElement("div");
+  main.className = "zoom-main";
+
+  const img = document.createElement("img");
+  img.className = "fullscreen-img";
+  main.appendChild(img);
+
+  // No entries message (below image)
+  const noEntriesMsg = document.createElement("div");
+  noEntriesMsg.className = "no-entries-msg";
+  noEntriesMsg.textContent = "No images found for this artist.";
+  noEntriesMsg.style.display = "none";
+  main.appendChild(noEntriesMsg);
+
+  // Tag list (below image)
+  const tagList = document.createElement("div");
+  tagList.className = "zoom-tags";
+  tagList.style.display = "none";
+  main.appendChild(tagList);
+
+  // Top tags (below tag list)
+  const topTags = document.createElement("div");
+  topTags.className = "zoom-top-tags";
+  topTags.style.display = "none";
+  main.appendChild(topTags);
+
+  content.appendChild(main);
+
+  // Next arrow column
+  const nextBtn = document.createElement("button");
+  nextBtn.className = "zoom-next";
+  nextBtn.textContent = "→";
+  content.appendChild(nextBtn);
+
+  // Close button (top right, absolutely/flex positioned by CSS)
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
@@ -193,45 +234,6 @@ function createFullscreenViewer() {
   };
   content.appendChild(closeBtn);
 
-  // Left side: image and prev button
-  const left = document.createElement("div");
-  left.className = "zoom-left";
-
-  const prevBtn = document.createElement("button");
-  prevBtn.className = "zoom-prev";
-  prevBtn.textContent = "←";
-  left.appendChild(prevBtn);
-
-  const img = document.createElement("img");
-  img.className = "fullscreen-img";
-  left.appendChild(img);
-
-  // No entries message
-  const noEntriesMsg = document.createElement("div");
-  noEntriesMsg.className = "no-entries-msg";
-  noEntriesMsg.textContent = "No images found for this artist.";
-  noEntriesMsg.style.display = "none";
-  left.appendChild(noEntriesMsg);
-
-  // Right side: next button
-  const right = document.createElement("div");
-  right.className = "zoom-right";
-
-  const tagList = document.createElement("div");
-  tagList.className = "zoom-tags";
-  tagList.style.display = "none";
-  right.appendChild(tagList);
-
-  const topTags = document.createElement("div");
-  topTags.className = "zoom-top-tags";
-  topTags.style.display = "none";
-  right.appendChild(topTags);
-  const nextBtn = document.createElement("button");
-  nextBtn.className = "zoom-next";
-  nextBtn.textContent = "→";
-  right.appendChild(nextBtn);
-
-  content.append(left, right);
   wrapper.appendChild(content);
 
   // Tap/click image to show tags

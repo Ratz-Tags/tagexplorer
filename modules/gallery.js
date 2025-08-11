@@ -224,50 +224,17 @@ async function openArtistZoom(artist) {
   } = viewer;
 
   // --- UI/UX IMPROVEMENTS FOR ZOOMED MODAL ---
-  // Make image larger and centered
+  // Only apply image-specific visual styles that do not affect layout; let CSS handle layout and flexbox
   zoomed.style.maxWidth = '80vw';
   zoomed.style.maxHeight = '80vh';
   zoomed.style.width = 'auto';
   zoomed.style.height = 'auto';
-  zoomed.style.display = 'block';
-  zoomed.style.margin = '2.5vh auto 1.5vh auto';
   zoomed.style.boxShadow = '0 4px 32px #fd7bc540';
   zoomed.style.borderRadius = '1.2em';
   zoomed.style.background = '#fff0fa';
   zoomed.style.zIndex = '10';
 
-  // Move tagList and topTags below the image, stack vertically, and minimize whitespace
-  if (tagList && tagList.parentNode) {
-    tagList.style.display = 'block';
-    tagList.style.fontSize = '1.05em';
-    tagList.style.fontFamily = "'Hi Melody', sans-serif";
-    tagList.style.margin = '0.5em auto 0.2em auto';
-    tagList.style.padding = '0.2em 1.2em';
-    tagList.style.background = '#fff0fa';
-    tagList.style.borderRadius = '1em';
-    tagList.style.boxShadow = '0 1px 8px #fd7bc520';
-    tagList.style.maxWidth = '70vw';
-    tagList.style.textAlign = 'center';
-    tagList.style.color = '#a0005a';
-    tagList.style.overflowWrap = 'break-word';
-    // Move below image
-    if (zoomed.nextSibling !== tagList) {
-      zoomed.parentNode.insertBefore(tagList, zoomed.nextSibling);
-    }
-  }
-  if (topTags && topTags.parentNode) {
-    topTags.style.display = 'block';
-    topTags.style.fontSize = '0.98em';
-    topTags.style.fontFamily = "'Hi Melody', sans-serif";
-    topTags.style.margin = '0.2em auto 0.5em auto';
-    topTags.style.padding = '0.2em 1.2em';
-    topTags.style.background = '#fff0fa';
-    topTags.style.borderRadius = '1em';
-    topTags.style.boxShadow = '0 1px 8px #fd7bc520';
-    topTags.style.maxWidth = '70vw';
-    topTags.style.textAlign = 'center';
-    topTags.style.color = '#a0005a';
-    // Move below tagList
+  // Do not override tagList/topTags layout or display here; let CSS and modal structure handle it
     if (tagList && tagList.nextSibling !== topTags) {
       tagList.parentNode.insertBefore(topTags, tagList.nextSibling);
     }
