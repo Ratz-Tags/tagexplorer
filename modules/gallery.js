@@ -1268,6 +1268,5 @@ export {
   getPaginationInfo,
   getFilteredArtists,
   setArtistsPerPage,
-  hideZoomTauntOverlay,
-  showTopArtistsByTagCount
+  hideZoomTauntOverlay
 };
