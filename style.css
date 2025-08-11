@@ -515,7 +515,11 @@ body.feminization-theme {
     font-size: 0.9em;
   }
   .zoom-prev, .zoom-next {
-    margin: 0.2em 0;
+    position: absolute;
+    top: 50%;
+    left: 0.3em;
+    right: 0.3em;
+    transform: translateY(-50%);
   }
 }
 
@@ -614,6 +618,60 @@ body.feminization-theme {
     right: 0.3em;
     transform: translateY(-50%);
   }
+}
+
+/* === Cleanup & Overrides: Fix zoom navigation button layout/appearance === */
+.fullscreen-wrapper .zoom-content { 
+  flex-direction: row !important; 
+  align-items: stretch !important; 
+  gap: 0 !important;
+}
+.fullscreen-wrapper .zoom-content .zoom-prev,
+.fullscreen-wrapper .zoom-content .zoom-next {
+  position: relative !important;
+  flex: 0 0 60px !important;
+  width: 60px !important;
+  min-width: 60px !important;
+  height: auto !important;
+  align-self: stretch !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: linear-gradient(180deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  border: 0 !important;
+  border-right: 2px solid #fd7bc522 !important;
+  border-left: 2px solid #fd7bc522 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  font-size: 2.2rem !important;
+  line-height: 1 !important;
+  font-family: var(--btn-font, 'Hi Melody', sans-serif) !important;
+  color: #a0005a !important;
+  cursor: pointer !important;
+  transition: background .18s, color .18s, transform .15s !important;
+}
+.fullscreen-wrapper .zoom-content .zoom-prev:hover,
+.fullscreen-wrapper .zoom-content .zoom-next:hover,
+.fullscreen-wrapper .zoom-content .zoom-prev:focus-visible,
+.fullscreen-wrapper .zoom-content .zoom-next:focus-visible {
+  background: linear-gradient(180deg, #ffd6f6 0%, #fff0fa 100%) !important;
+  color: #fd2d8b !important;
+  outline: none !important;
+}
+/* Prevent circular buttons from earlier rules */
+.fullscreen-wrapper .zoom-content .zoom-prev,
+.fullscreen-wrapper .zoom-content .zoom-next { box-shadow: inset 0 0 0 0 transparent !important; }
+
+/* Ensure main section flexes correctly after overrides */
+.fullscreen-wrapper .zoom-content .zoom-main { flex: 1 1 auto !important; min-width: 0 !important; }
+
+/* Mobile refinement */
+@media (max-width: 700px) {
+  .fullscreen-wrapper .zoom-content { max-width: 100vw !important; }
+  .fullscreen-wrapper .zoom-content .zoom-prev,
+  .fullscreen-wrapper .zoom-content .zoom-next { flex: 0 0 46px !important; width: 46px !important; min-width:46px !important; font-size: 1.9rem !important; }
 }
 
 /* Tag explorer specifics */
