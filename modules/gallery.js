@@ -225,8 +225,8 @@ async function openArtistZoom(artist) {
 
   // --- UI/UX IMPROVEMENTS FOR ZOOMED MODAL ---
   // Only apply image-specific visual styles that do not affect layout; let CSS handle layout and flexbox
-  zoomed.style.maxWidth = '80vw';
-  zoomed.style.maxHeight = '80vh';
+  zoomed.style.maxWidth = '90vw';
+  zoomed.style.maxHeight = '90vh';
   zoomed.style.width = 'auto';
   zoomed.style.height = 'auto';
   zoomed.style.boxShadow = '0 4px 32px #fd7bc540';
@@ -370,8 +370,16 @@ async function openArtistZoom(artist) {
       zoomed.onerror = null;
       zoomed.onload = null;
       if (tagList && raw.tag_string) {
-        tagList.textContent = raw.tag_string.split(" ").join(", ");
-        tagList.style.display = "block";
+        // Rebuild tag list as wrapped pill elements instead of one long line
+        tagList.innerHTML = '';
+        raw.tag_string.split(' ').forEach(t => {
+          if(!t) return;
+          const pill = document.createElement('span');
+            pill.className = 'zoom-tag-pill';
+            pill.textContent = t.replace(/_/g,' ');
+            tagList.appendChild(pill);
+        });
+        tagList.style.display = 'flex';
       }
       if (topTags && topTags.textContent) {
         topTags.style.display = "block";
