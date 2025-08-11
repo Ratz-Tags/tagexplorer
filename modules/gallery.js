@@ -226,7 +226,7 @@ async function openArtistZoom(artist) {
   // --- UI/UX IMPROVEMENTS FOR ZOOMED MODAL ---
   // Only apply image-specific visual styles that do not affect layout; let CSS handle layout and flexbox
   zoomed.style.maxWidth = '90vw';
-  zoomed.style.maxHeight = '90vh';
+  zoomed.style.maxHeight = '75vh';
   zoomed.style.width = 'auto';
   zoomed.style.height = 'auto';
   zoomed.style.boxShadow = '0 4px 32px #fd7bc540';
