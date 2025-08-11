@@ -961,32 +961,114 @@ html.tag-explorer-open {
     margin: 0.12em;
   }
 
-  .zoom-prev,
-  .zoom-next {
-    font-size: 1em;
-    left: 0.2em;
-    right: 0.2em;
-    padding: 0.5em 1em;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10001;
-    box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
-    background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-    border: 2.5px solid var(--accent2);
-    border-radius: 2em;
-    color: var(--accent2);
-    cursor: pointer;
-    touch-action: manipulation;
-  }
 
+/* Themed and fixed zoom arrows for modal */
+.zoom-prev, .zoom-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 13001;
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.1em;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #fff;
+  border: 3px solid #fd7bc5;
+  border-radius: 50%;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+  outline: none;
+  opacity: 0.96;
+  touch-action: manipulation;
+}
+.zoom-prev {
+  left: 1.2em;
+  right: auto;
+}
+.zoom-next {
+  right: 1.2em;
+  left: auto;
+}
+.zoom-prev:hover, .zoom-next:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 8px 32px #fd7bc5cc, 0 0 0 8px #fd7bc580;
+  transform: scale(1.08);
+}
+.zoom-prev:focus-visible, .zoom-next:focus-visible {
+  outline: 3px solid #fd7bc5;
+  outline-offset: 2px;
+}
+
+/* Themed close/X buttons for all modals, sidebars, etc. */
+.close, .modal-close, .zoom-close, .copied-sidebar-close, .tag-explorer-close, .joi-modal-close, .taunt-modal-close {
+  position: absolute;
+  top: 1.2em;
+  right: 1.2em;
+  z-index: 13002;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7em;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  color: #fff;
+  border: 2.5px solid #fd7bc5;
+  border-radius: 50%;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
+  outline: none;
+}
+.close:hover, .modal-close:hover, .zoom-close:hover, .copied-sidebar-close:hover, .tag-explorer-close:hover, .joi-modal-close:hover, .taunt-modal-close:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580;
+  transform: scale(1.06);
+}
+.close:focus-visible, .modal-close:focus-visible, .zoom-close:focus-visible, .copied-sidebar-close:focus-visible, .tag-explorer-close:focus-visible, .joi-modal-close:focus-visible, .taunt-modal-close:focus-visible {
+  outline: 3px solid #fd7bc5;
+  outline-offset: 2px;
+}
+
+/* Ensure close buttons in sidebars and modals are always visible on mobile */
+@media (max-width: 600px) {
+  .close, .modal-close, .zoom-close, .copied-sidebar-close, .tag-explorer-close, .joi-modal-close, .taunt-modal-close {
+    top: 0.7em;
+    right: 0.7em;
+    font-size: 1.3em;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+  .zoom-prev, .zoom-next {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    font-size: 1.3em;
+    left: 0.3em;
+    right: 0.3em;
+  }
   .zoom-prev {
-    left: 0.2em !important;
+    left: 0.3em !important;
     right: auto !important;
   }
   .zoom-next {
-    right: 0.2em !important;
+    right: 0.3em !important;
     left: auto !important;
   }
+}
 
   .artist-card {
     width: 98vw;
