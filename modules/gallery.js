@@ -1,4 +1,3 @@
-
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
   fetchArtistImages,
@@ -13,6 +12,8 @@ import { handleArtistCopy } from "./sidebar.js";
  */
 function getThumbnailUrl(artist) {
   return artist && artist.thumbnailUrl ? artist.thumbnailUrl : undefined;
+}
+
 /**
  * Gallery module - Handles artist gallery display and image management
  */
@@ -248,7 +249,6 @@ async function openArtistZoom(artist) {
         el.style.borderRadius = '1em';
       });
     }, 0);
-  }
   // Remove excessive white area from modal content
   if (wrapper && wrapper.querySelector('.zoom-content')) {
     const content = wrapper.querySelector('.zoom-content');
@@ -617,31 +617,7 @@ async function openArtistZoom(artist) {
       sparkleOverlay.style.animation = "sparkleMove 8s linear infinite";
     }
   }
-}
-
-// There are no syntax errors or duplicate function declarations in this file now.
-// However, to ensure robust compilation and runtime behavior, check the following:
-
-// 1. Only one definition of getPaginationInfo exists (you already removed the duplicate).
-// lazyLoadBestImage: used by renderArtistCards
-// openArtistZoom: exported, used by renderArtistCards and sidebar.js
-// getFilteredArtists: exported, not used internally (for external use)
-// setArtistsPerPage: exported, not used internally (for external use)
-// renderArtistsPage: exported, used by setSortMode, forceSortAndRender, setArtistsPerPage, filterArtists, and internally
-// renderArtistCards: used by renderArtistsPage, showTopArtistsByTagCount
-// getPaginationInfo: exported, used by main.js (infinite scroll), showTopArtistsByTagCount
-// filterArtists: exported, used by main.js, tags.js, and internally
-// showTopArtistsByTagCount: exported, used by addTopTagCountButton
-// addTopTagCountButton: used by initGallery
-// initGallery: exported, used by main.js
-// setSortMode: exported, used by main.js, filterArtists, showTopArtistsByTagCount
-// forceSortAndRender: exported, used by main.js
-// setAllArtists: exported, used by main.js
-// setGetActiveTagsCallback: exported, used by main.js
-// setGetArtistNameFilterCallback: exported, used by main.js
-// setSortPreference: exported, used by main.js
-
-// No unused or undefined functions in this file.
+} // end openArtistZoom
 
 /**
  * Returns a copy of the currently filtered artists.
@@ -1018,13 +994,6 @@ async function filterArtists(reset = true, force = false) {
   }
 }
 
-// Optionally, expose this function for UI integration
-export { showTopArtistsByTagCount };
-
-if (typeof window !== "undefined" && typeof window.kexplorer === "object") {
-  window.kexplorer.showTopArtistsByTagCount = showTopArtistsByTagCount;
-}
-
 let lastSortMode = null;
 
 function addTopTagCountButton() {
@@ -1268,5 +1237,6 @@ export {
   getPaginationInfo,
   getFilteredArtists,
   setArtistsPerPage,
-  hideZoomTauntOverlay
+  hideZoomTauntOverlay,
+  showTopArtistsByTagCount
 };
