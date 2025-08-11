@@ -1,12 +1,3 @@
-/**
- * Returns the thumbnail URL for an artist (used by sidebar and cards)
- */
-export function getThumbnailUrl(artist) {
-  return artist && artist.thumbnailUrl ? artist.thumbnailUrl : undefined;
-}
-/**
- * Gallery module - Handles artist gallery display and image management
- */
 
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
@@ -16,6 +7,15 @@ import {
   fetchAllArtistImages,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
+
+/**
+ * Returns the thumbnail URL for an artist (used by sidebar and cards)
+ */
+export function getThumbnailUrl(artist) {
+  return artist && artist.thumbnailUrl ? artist.thumbnailUrl : undefined;
+/**
+ * Gallery module - Handles artist gallery display and image management
+ */
 
 // Gallery state
 let filtered = [];
@@ -43,7 +43,6 @@ async function setRandomBackground() {
     if (document.body.classList.contains("incognito-theme")) {
       backgroundBlur.style.backgroundImage = "none";
       backgroundBlur.style.backgroundColor = "#111";
-      return;
     }
     // Restore randomized backgrounds
     const { getRandomBackgroundImage } = await import("./api.js");
@@ -407,75 +406,79 @@ async function openArtistZoom(artist) {
 
   // --- HUMILIATION: Add taunt header to zoom modal ---
   if (wrapper && !wrapper.querySelector(".taunt-header")) {
-    let taunt = "";
-    // Try to get a tag-specific taunt if possible
-    if (
-      artist.kinkTags &&
-      Array.isArray(artist.kinkTags) &&
-      artist.kinkTags.length > 0
-    ) {
-      // Import tag taunts if available
-      try {
-        const tagsMod = await import("./tags.js");
-        const tagTaunts = tagsMod && tagsMod.tagTaunts ? tagsMod.tagTaunts : {};
-        const tag =
-          artist.kinkTags[Math.floor(Math.random() * artist.kinkTags.length)];
-        if (tagTaunts && tagTaunts[tag] && tagTaunts[tag].length > 0) {
-          taunt =
-            tagTaunts[tag][Math.floor(Math.random() * tagTaunts[tag].length)];
-        }
-      } catch {}
-    }
-    // Fallback to a general taunt if no tag-specific taunt
-    if (!taunt) {
-      try {
-        const humiliation = await import("./humiliation.js");
-        if (
-          humiliation &&
-          humiliation.startTauntTicker &&
-          window._generalTaunts
-        ) {
-          taunt =
-            window._generalTaunts[
-              Math.floor(Math.random() * window._generalTaunts.length)
-            ];
-        }
-      } catch {}
-    }
-    if (!taunt) taunt = "You really can't get enough, can you?";
-    const tauntHeader = document.createElement("div");
-    tauntHeader.className = "taunt-header";
-    tauntHeader.textContent = taunt;
-    wrapper.querySelector(".zoom-content").prepend(tauntHeader);
+    (async () => {
+      let taunt = "";
+      // Try to get a tag-specific taunt if possible
+      if (
+        artist.kinkTags &&
+        Array.isArray(artist.kinkTags) &&
+        artist.kinkTags.length > 0
+      ) {
+        // Import tag taunts if available
+        try {
+          const tagsMod = await import("./tags.js");
+          const tagTaunts = tagsMod && tagsMod.tagTaunts ? tagsMod.tagTaunts : {};
+          const tag =
+            artist.kinkTags[Math.floor(Math.random() * artist.kinkTags.length)];
+          if (tagTaunts && tagTaunts[tag] && tagTaunts[tag].length > 0) {
+            taunt =
+              tagTaunts[tag][Math.floor(Math.random() * tagTaunts[tag].length)];
+          }
+        } catch {}
+      }
+      // Fallback to a general taunt if no tag-specific taunt
+      if (!taunt) {
+        try {
+          const humiliation = await import("./humiliation.js");
+          if (
+            humiliation &&
+            humiliation.startTauntTicker &&
+            window._generalTaunts
+          ) {
+            taunt =
+              window._generalTaunts[
+                Math.floor(Math.random() * window._generalTaunts.length)
+              ];
+          }
+        } catch {}
+      }
+      if (!taunt) taunt = "You really can't get enough, can you?";
+      const tauntHeader = document.createElement("div");
+      tauntHeader.className = "taunt-header";
+      tauntHeader.textContent = taunt;
+      wrapper.querySelector(".zoom-content").prepend(tauntHeader);
+    })();
   }
 
   // Fetch and show ALL images for the artist, regardless of selected tags
-  try {
-    const api = await import("./api.js");
-    posts = await api.fetchAllArtistImages(artist.artistName, [], { limit: 200 });
-    // If artist has a thumbnailUrl, prepend it as the first image if not already present
-    if (artist.thumbnailUrl) {
-      const thumbUrl = artist.thumbnailUrl;
-      const alreadyIncluded = posts.some(
-        (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
-      );
-      if (!alreadyIncluded) {
-        posts.unshift({
-          large_file_url: thumbUrl,
-          tag_string: "thumbnail",
-          file_url: thumbUrl,
-        });
+  (async () => {
+    try {
+      const api = await import("./api.js");
+      posts = await api.fetchAllArtistImages(artist.artistName, [], { limit: 200 });
+      // If artist has a thumbnailUrl, prepend it as the first image if not already present
+      if (artist.thumbnailUrl) {
+        const thumbUrl = artist.thumbnailUrl;
+        const alreadyIncluded = posts.some(
+          (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
+        );
+        if (!alreadyIncluded) {
+          posts.unshift({
+            large_file_url: thumbUrl,
+            tag_string: "thumbnail",
+            file_url: thumbUrl,
+          });
+        }
       }
+      if (!posts || posts.length === 0) {
+        showNoEntries();
+        return;
+      }
+      // Show the first image (thumbnail or first post)
+      tryShow(0);
+    } catch (error) {
+      showNoEntries("Error loading images for this artist.");
     }
-    if (!posts || posts.length === 0) {
-      showNoEntries();
-      return;
-    }
-    // Show the first image (thumbnail or first post)
-    tryShow(0);
-  } catch (error) {
-    showNoEntries("Error loading images for this artist.");
-  }
+  })();
   tagList.style.display = "block";
   topTags.style.display = "block";
   tagList.setAttribute("aria-live", "polite");
