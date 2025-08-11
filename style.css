@@ -280,11 +280,12 @@ body.feminization-theme {
 }
 
 /* Improved zoom-content layout for proper arrow and tag placement */
+/* True 3-column flex layout for zoom modal */
 .zoom-content {
   position: relative;
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   background: #fff;
   border-radius: 16px;
@@ -297,6 +298,110 @@ body.feminization-theme {
   width: auto;
   height: auto;
   overflow: visible;
+}
+
+.zoom-prev, .zoom-next {
+  position: static;
+  align-self: center;
+  flex: 0 0 auto;
+  margin: 0 0.5em;
+  top: auto;
+  left: auto;
+  right: auto;
+  transform: none;
+}
+
+.zoom-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-height: 86vh;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: visible;
+  position: relative;
+}
+
+.zoom-close {
+  position: absolute;
+  top: 1.2em;
+  right: 1.2em;
+  z-index: 13002;
+}
+
+.zoom-image {
+  max-width: 60vw;
+  max-height: 60vh;
+  width: auto;
+  height: auto;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.25);
+  object-fit: contain;
+  display: block;
+}
+
+.zoomed-tags {
+  margin-top: 1.1em;
+  max-width: 60vw;
+  width: 100%;
+  max-height: 18vh;
+  overflow-x: auto;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: flex-start;
+  background: rgba(255,240,250,0.85);
+  border-radius: 0.7em;
+  padding: 0.7em 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
+}
+
+@media (max-width: 900px) {
+  .zoom-content {
+    max-width: 98vw;
+    max-height: 98vh;
+  }
+  .zoom-main {
+    max-width: 98vw;
+    max-height: 90vh;
+  }
+  .zoom-image {
+    max-width: 90vw;
+    max-height: 50vh;
+  }
+  .zoomed-tags {
+    max-width: 90vw;
+    max-height: 24vh;
+    font-size: 0.95em;
+  }
+}
+
+@media (max-width: 600px) {
+  .zoom-content {
+    flex-direction: column;
+    align-items: center;
+    max-width: 100vw;
+    max-height: 100vh;
+    padding: 0.2em;
+  }
+  .zoom-main {
+    max-width: 98vw;
+    max-height: 80vh;
+  }
+  .zoom-image {
+    max-width: 98vw;
+    max-height: 40vh;
+  }
+  .zoomed-tags {
+    max-width: 98vw;
+    max-height: 30vh;
+    font-size: 0.9em;
+  }
+  .zoom-prev, .zoom-next {
+    margin: 0.2em 0;
+  }
 }
 
 /* Ensure the image and tag area are in a column, with tags always visible and scrollable if needed */
