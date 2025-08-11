@@ -307,8 +307,15 @@ function setupKeyboardShortcuts(shortcuts = {}) {
  * Initializes general UI components
  */
 function initUI() {
-  setupBackToTop();
+  // Ensure background layer exists
+  let bg = document.getElementById("background-blur");
+  if (!bg) {
+    bg = document.createElement("div");
+    bg.id = "background-blur";
+    document.body.prepend(bg);
+  }
   addLipstickKiss();
+  setupBackToTop();
 }
 
 /**

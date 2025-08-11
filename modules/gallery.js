@@ -39,11 +39,13 @@ let getArtistNameFilter = null;
  * Sets the background image with a random image
  */
 async function setRandomBackground() {
+  if (!backgroundBlur) backgroundBlur = document.getElementById("background-blur");
   if (!backgroundBlur) return;
   try {
     if (document.body.classList.contains("incognito-theme")) {
       backgroundBlur.style.backgroundImage = "none";
       backgroundBlur.style.backgroundColor = "#111";
+      return; // don't fetch image in incognito
     }
     // Restore randomized backgrounds
     const { getRandomBackgroundImage } = await import("./api.js");

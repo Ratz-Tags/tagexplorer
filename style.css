@@ -1,13 +1,48 @@
-/* Sissy and Feminization Themes */
-body.sissy-theme {
-  background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  color: var(--accent1);
+/* === Theme variables and background layer === */
+:root {
+  --accent1: #fd7bc5;
+  --accent2: #a0005a;
+  --border-color: #fd7bc5;
+  --radius: 14px;
+  --btn-font: 'Hi Melody', cursive, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --padding: 1rem;
 }
+
+/* Alias: fem-theme behaves like feminization-theme */
+body.fem-theme,
 body.feminization-theme {
   background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
   color: var(--accent2);
 }
 
+/* Incognito theme */
+body.incognito-theme {
+  background: #0f0f12;
+  color: #e6e6e6;
+}
+
+/* Rotating random background canvas */
+#background-blur {
+  position: fixed;
+  inset: 0;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: blur(12px) saturate(1.05);
+  opacity: 0.55;
+  z-index: 0;
+  pointer-events: none;
+}
+/* Hide background image in incognito */
+body.incognito-theme #background-blur { display: none; }
+
+/* Ensure app content sits above the background layer */
+body > header,
+body > main,
+body > aside,
+body > nav,
+#artist-gallery,
+.top-bar { position: relative; z-index: 1; }
 
 /* --- Modernized Artist Card --- */
 .artist-card {

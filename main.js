@@ -61,6 +61,9 @@ async function initApp() {
     initAudio();
     initAudioUI();
 
+    // Set initial background now that bg layer exists
+    setRandomBackground();
+
     // Add TTS toggle button to audio controls
     createTTSToggleButton();
     initTags();
@@ -228,14 +231,15 @@ if (savedTheme === "incognito") {
   bodyEl.classList.add("incognito-theme");
   bodyEl.classList.remove("fem-theme");
   setRandomBackground();
+} else {
+  bodyEl.classList.add("fem-theme");
+  bodyEl.classList.remove("incognito-theme");
 }
 if (themeToggle) {
   themeToggle.addEventListener("click", () => {
     bodyEl.classList.toggle("incognito-theme");
     bodyEl.classList.toggle("fem-theme");
-    const current = bodyEl.classList.contains("incognito-theme")
-      ? "incognito"
-      : "fem";
+    const current = bodyEl.classList.contains("incognito-theme") ? "incognito" : "fem";
     localStorage.setItem("theme", current);
     setRandomBackground();
   });
