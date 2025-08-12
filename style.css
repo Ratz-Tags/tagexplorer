@@ -28,13 +28,13 @@ body.incognito-theme {
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: blur(12px) saturate(1.05);
-  opacity: 0.55;
+  filter: blur(8px) saturate(1.08);
+  opacity: 0.7;
   z-index: 0;
   pointer-events: none;
 }
 /* Hide background image in incognito */
-body.incognito-theme #background-blur { display: none; }
+body.incognito-theme #background-blur { display:none; }
 
 /* Ensure app content sits above the background layer */
 body > header,
@@ -313,6 +313,25 @@ body > nav,
   z-index: 12000;
   overflow: hidden;
 }
+
+/* --- Background tuning --- */
+#background-blur { filter: blur(8px) saturate(1.08); opacity: 0.7; }
+body.incognito-theme #background-blur { display:none; }
+
+/* --- Zoom toolbar & focus mode --- */
+.zoom-content { position: relative; }
+.zoom-toolbar { position:absolute; bottom: 0.6em; right: 0.6em; display:flex; gap:0.4em; z-index:2; }
+.zoom-toolbar .zoom-tool { padding: 0.35em 0.8em; font-size: 0.9em; }
+
+/* Focus mode: darker backdrop, tighter fit image */
+.fullscreen-wrapper.zoom-focus-mode .zoom-content { box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 6px rgba(0,0,0,0.15); background: rgba(0,0,0,0.7); border-color: transparent; }
+.fullscreen-wrapper.zoom-focus-mode .zoom-main { padding: 0.2em 1em; }
+.fullscreen-wrapper.zoom-focus-mode .fullscreen-img { max-width: 96vw; max-height: 92vh; background: #000; }
+.fullscreen-wrapper.zoom-focus-mode .zoom-prev,
+.fullscreen-wrapper.zoom-focus-mode .zoom-next { background: rgba(0,0,0,0.35) !important; color: #fff !important; border-color: transparent !important; }
+
+/* Better in-view image defaults */
+.fullscreen-wrapper .fullscreen-img { object-fit: contain; max-width: 94vw; max-height: 86vh; }
 
 /* Improved zoom-content layout for proper arrow and tag placement */
 /* True 3-column flex layout for zoom modal */

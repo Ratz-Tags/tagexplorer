@@ -1,67 +1,44 @@
-import fs from 'fs/promises';
+name: Update kink-tags.json
 
-// List of core tags used to limit collected tags
-const coreTags = [
-  'chastity_cage',
-  'femdom',
-  'futanari'
-];
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: '0 6 * * *'  # daily at 06:00 UTC
 
-// Additional Danbooru kink tags to include
-const extraTags = [
-  'bdsm',
-  'hypnosis',
-  'leash',
-  'pet_play',
-  'spanking',
-  'tickling'
-];
+permissions:
+  contents: write  # allow committing changes
 
-async function tagExistsOnDanbooru(tag) {
-  try {
-    const resp = await fetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(tag)}&limit=1`);
-    if (!resp.ok) return false;
-    const data = await resp.json();
-    return data.length > 0 && data[0].name === tag;
-  } catch (err) {
-    // Assume valid if verification fails so tags can still be added
-    return true;
-  }
-}
+concurrency:
+  group: update-kink-tags
+  cancel-in-progress: false
 
-async function updateKinkTags() {
-  let artists;
-  try {
-    artists = JSON.parse(await fs.readFile('artists.json', 'utf8'));
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      process.exit(1);
-    } else {
-      throw err;
-    }
-  }
-  const tagSet = new Set();
+jobs:
+  update-kink-tags:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
 
-  for (const artist of artists) {
-    const tags = artist.kinkTags || [];
-    if (!tags.some(tag => coreTags.includes(tag))) continue;
-    tags.forEach(tag => tagSet.add(tag));
-  }
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-  for (const tag of extraTags) {
-    if (await tagExistsOnDanbooru(tag)) {
-      tagSet.add(tag);
-    } else {
-      console.warn(`⚠️ skipped invalid Danbooru tag: ${tag}`);
-    }
-  }
+      - name: Run tag updater
+        run: node scripts/updateKinkTags.js
 
-  const tags = Array.from(tagSet).sort();
-  await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
-  console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
-}
-
-updateKinkTags().catch(err => {
-  console.error('Failed to update kink tags:', err);
-  process.exit(1);
-});
+      - name: Commit and push changes (if any)
+        shell: bash
+        run: |
+          set -e
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: update kink-tags.json [skip ci]"
+          git push

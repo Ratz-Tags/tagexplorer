@@ -1231,6 +1231,19 @@ function hideZoomTauntOverlay() {
   if (old) old.remove();
 }
 
+function buildDanbooruArtistUrl(artistName) {
+  if (!artistName) return "https://danbooru.donmai.us/posts";
+  const q = encodeURIComponent(String(artistName).trim().replace(/\s+/g, "_"));
+  return `https://danbooru.donmai.us/posts?tags=${q}+order%3Aapproval`;
+}
+
+function openArtistOnDanbooru(artist) {
+  const name = typeof artist === "string" ? artist : artist?.artistName;
+  const url = buildDanbooruArtistUrl(name);
+  try { window.open(url, "_blank", "noopener"); } catch (_) { location.href = url; }
+}
+
+// --- EXPORTS ---
 export {
   getThumbnailUrl,
   initGallery,
@@ -1248,5 +1261,6 @@ export {
   getFilteredArtists,
   setArtistsPerPage,
   hideZoomTauntOverlay,
-  showTopArtistsByTagCount
+  showTopArtistsByTagCount,
+  openArtistOnDanbooru
 };
