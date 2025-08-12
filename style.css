@@ -326,9 +326,13 @@ body.incognito-theme #background-blur { display:none; }
 /* Focus mode: darker backdrop, tighter fit image */
 .fullscreen-wrapper.zoom-focus-mode .zoom-content { box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 6px rgba(0,0,0,0.15); background: rgba(0,0,0,0.7); border-color: transparent; }
 .fullscreen-wrapper.zoom-focus-mode .zoom-main { padding: 0.2em 1em; }
-.fullscreen-wrapper.zoom-focus-mode .fullscreen-img { max-width: 96vw; max-height: 92vh; background: #000; }
+.fullscreen-wrapper.zoom-focus-mode .fullscreen-img { max-width: 96vw; max-height: 92vh; background:#000; }
 .fullscreen-wrapper.zoom-focus-mode .zoom-prev,
-.fullscreen-wrapper.zoom-focus-mode .zoom-next { background: rgba(0,0,0,0.35) !important; color: #fff !important; border-color: transparent !important; }
+.fullscreen-wrapper.zoom-focus-mode .zoom-next { background: rgba(0,0,0,0.35) !important; color:#fff !important; border-color: transparent !important; }
+
+/* Hide tags in focus mode if specified */
+.fullscreen-wrapper.hide-tags .zoom-tags { display:none !important; }
+.fullscreen-wrapper.hide-tags .zoom-top-tags { display:none !important; }
 
 /* Better in-view image defaults */
 .fullscreen-wrapper .fullscreen-img { object-fit: contain; max-width: 94vw; max-height: 86vh; }

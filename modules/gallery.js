@@ -424,7 +424,8 @@ async function openArtistZoom(artist) {
     focusBtn.title = 'Toggle focus mode';
     focusBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      wrapper.classList.toggle('zoom-focus-mode');
+      const isFocused = wrapper.classList.toggle('zoom-focus-mode');
+      focusBtn.setAttribute('aria-pressed', String(isFocused));
     });
 
     const tagsBtn = document.createElement('button');
@@ -434,14 +435,9 @@ async function openArtistZoom(artist) {
     tagsBtn.title = 'Show/hide tags';
     tagsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (tagList) {
-        const show = tagList.style.display === 'none';
-        tagList.style.display = show ? 'flex' : 'none';
-      }
-      if (topTags) {
-        const showTop = topTags.style.display === 'none';
-        topTags.style.display = showTop ? 'block' : 'none';
-      }
+      const hidden = wrapper.classList.toggle('hide-tags');
+      // Reflect state for accessibility
+      tagsBtn.setAttribute('aria-pressed', String(!hidden));
     });
 
     const danbooruBtn = document.createElement('button');
