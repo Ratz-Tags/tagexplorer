@@ -444,17 +444,19 @@ async function openArtistZoom(artist) {
       }
     });
 
-    const danbooruLink = document.createElement('a');
-    danbooruLink.className = 'zoom-tool';
-    danbooruLink.textContent = 'Go to Danbooru';
-    danbooruLink.href = buildDanbooruArtistUrl(artist.artistName);
-    danbooruLink.target = '_blank';
-    danbooruLink.rel = 'noopener';
-    danbooruLink.title = 'Open on Danbooru (order:approval)';
+    const danbooruBtn = document.createElement('button');
+    danbooruBtn.type = 'button';
+    danbooruBtn.className = 'zoom-tool';
+    danbooruBtn.title = 'Open on Danbooru (order:approval)';
+    danbooruBtn.innerHTML = 'Go to Danbooru';
+    danbooruBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openArtistOnDanbooru(artist);
+    });
 
     toolbar.appendChild(focusBtn);
     toolbar.appendChild(tagsBtn);
-    toolbar.appendChild(danbooruLink);
+    toolbar.appendChild(danbooruBtn);
     content.appendChild(toolbar);
   }
 
