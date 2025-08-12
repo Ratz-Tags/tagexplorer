@@ -31,7 +31,17 @@ async function tagExistsOnDanbooru(tag) {
 }
 
 async function updateKinkTags() {
-  const artists = JSON.parse(await fs.readFile('artists.json', 'utf8'));
+  let artists;
+  try {
+    artists = JSON.parse(await fs.readFile('artists.json', 'utf8'));
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.error("Error: 'artists.json' file not found. Please ensure the file exists in the current directory.");
+      process.exit(1);
+    } else {
+      throw err;
+    }
+  }
   const tagSet = new Set();
 
   for (const artist of artists) {
