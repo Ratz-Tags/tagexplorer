@@ -19,6 +19,7 @@ import {
   getArtistNameFilter,
   renderTagButtons,
   setTagSearchMode,
+  setKinkTags,
 } from "./modules/tags.js";
 import {
   initGallery,
@@ -53,7 +54,8 @@ import { createTTSToggleButton } from "./modules/tts-toggle.js";
 async function initApp() {
   try {
     // Load data files
-    const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
+    const { artists, tooltips, generalTaunts, tagTaunts, kinkTags } =
+      await loadAppData();
 
     // Initialize modules
     initUI();
@@ -85,6 +87,7 @@ async function initApp() {
     setTagTooltips(tooltips);
     setTagTaunts(tagTaunts);
     setTaunts(generalTaunts);
+    setKinkTags(kinkTags);
     startTauntTicker(generalTaunts, 30000);
 
     // Initial render

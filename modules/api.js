@@ -200,18 +200,21 @@ function clearArtistCache(artistName) {
  */
 async function loadAppData() {
   try {
-    const [artists, tooltips, generalTaunts, tagTaunts] = await Promise.all([
-      fetchFn("artists.json").then((r) => r.json()),
-      fetchFn("tag-tooltips.json").then((r) => r.json()),
-      fetchFn("taunts.json").then((r) => r.json()),
-      fetchFn("tag-taunts.json").then((r) => r.json()),
-    ]);
+    const [artists, tooltips, generalTaunts, tagTaunts, kinkTags] =
+      await Promise.all([
+        fetchFn("artists.json").then((r) => r.json()),
+        fetchFn("tag-tooltips.json").then((r) => r.json()),
+        fetchFn("taunts.json").then((r) => r.json()),
+        fetchFn("tag-taunts.json").then((r) => r.json()),
+        fetchFn("kink-tags.json").then((r) => r.json()),
+      ]);
 
     return {
       artists,
       tooltips,
       generalTaunts,
       tagTaunts,
+      kinkTags,
     };
   } catch (error) {
     console.error("Failed to load required data files:", error);
