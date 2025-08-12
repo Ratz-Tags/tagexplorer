@@ -411,6 +411,53 @@ async function openArtistZoom(artist) {
   document.body.appendChild(wrapper);
   wrapper.focus();
 
+  // --- ZOOM TOOLBAR (Focus / Tags / Go to Danbooru) ---
+  if (wrapper && !wrapper.querySelector('.zoom-toolbar')) {
+    const content = wrapper.querySelector('.zoom-content') || wrapper;
+    const toolbar = document.createElement('div');
+    toolbar.className = 'zoom-toolbar';
+
+    const focusBtn = document.createElement('button');
+    focusBtn.type = 'button';
+    focusBtn.className = 'zoom-tool';
+    focusBtn.textContent = 'Focus';
+    focusBtn.title = 'Toggle focus mode';
+    focusBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      wrapper.classList.toggle('zoom-focus-mode');
+    });
+
+    const tagsBtn = document.createElement('button');
+    tagsBtn.type = 'button';
+    tagsBtn.className = 'zoom-tool';
+    tagsBtn.textContent = 'Tags';
+    tagsBtn.title = 'Show/hide tags';
+    tagsBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (tagList) {
+        const show = tagList.style.display === 'none';
+        tagList.style.display = show ? 'flex' : 'none';
+      }
+      if (topTags) {
+        const showTop = topTags.style.display === 'none';
+        topTags.style.display = showTop ? 'block' : 'none';
+      }
+    });
+
+    const danbooruLink = document.createElement('a');
+    danbooruLink.className = 'zoom-tool';
+    danbooruLink.textContent = 'Go to Danbooru';
+    danbooruLink.href = buildDanbooruArtistUrl(artist.artistName);
+    danbooruLink.target = '_blank';
+    danbooruLink.rel = 'noopener';
+    danbooruLink.title = 'Open on Danbooru (order:approval)';
+
+    toolbar.appendChild(focusBtn);
+    toolbar.appendChild(tagsBtn);
+    toolbar.appendChild(danbooruLink);
+    content.appendChild(toolbar);
+  }
+
   // Add overlay above zoom modal
   showZoomTauntOverlay();
 
