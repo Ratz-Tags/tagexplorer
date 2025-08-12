@@ -24,7 +24,6 @@ async function tagExistsOnDanbooru(tag) {
     const data = await resp.json();
     return data.length > 0 && data[0].name === tag;
   } catch (err) {
-    console.warn(`⚠️ could not verify ${tag} on Danbooru: ${err.message}`);
     // Assume valid if verification fails so tags can still be added
     return true;
   }
@@ -36,7 +35,6 @@ async function updateKinkTags() {
     artists = JSON.parse(await fs.readFile('artists.json', 'utf8'));
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.error("Error: 'artists.json' file not found. Please ensure the file exists in the current directory.");
       process.exit(1);
     } else {
       throw err;
