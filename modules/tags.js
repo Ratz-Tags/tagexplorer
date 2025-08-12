@@ -24,8 +24,8 @@ let allArtists = [];
 let renderArtists = null;
 let setRandomBackground = null;
 
-// Kink tags list
-const kinkTags = [
+// Kink tags list (loaded from kink-tags.json)
+let kinkTags = [
   "femdom",
   "chastity_cage",
   "trap",
@@ -69,6 +69,10 @@ const kinkTags = [
   "netorase",
   "futanari",
 ];
+
+function setKinkTags(tags) {
+  kinkTags = Array.isArray(tags) ? tags : [];
+}
 
 // Tag icons mapping
 const tagIcons = {
@@ -421,6 +425,7 @@ export {
   setTagTooltips,
   setTagTaunts,
   setTaunts,
+  setKinkTags,
   getActiveTags,
   getSearchFilter,
   getArtistNameFilter,
