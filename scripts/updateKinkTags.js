@@ -1,10 +1,12 @@
 import fs from 'fs/promises';
+import { getArtistImageCount } from '../modules/api.js';
 
 // List of core tags used to limit collected tags
 const coreTags = [
   'chastity_cage',
   'femdom',
-  'futanari'
+  'futanari',
+  'trap'
 ];
 
 // Additional Danbooru kink tags to include
@@ -14,8 +16,57 @@ const extraTags = [
   'leash',
   'pet_play',
   'spanking',
-  'tickling'
+  'dark_skin',
+  'mind_control',
+  'oral',
+  'cum_in_mouth',
+  'cum_in_ass',
+  'swallowing',
+  'cheating_(relationship)',
+  'pubic_hair',
+  'fellatio',
+  'irrumatio',
+  'rape',
+  'condom',
+  'drinking_from_condom',
+  'forced',
+  'crossdressing_(mtf)',
+  'stomach_bulge',
+  'before_and_after',
+  'chastity_cage_emission',
+  'crossdressing',
+  'male_penetrated',
+  'precum',
+  'bdsm',
+  'bound',
+  'immobilization',
+  'restrained',
+  'bondage',
+  'sex_toy',
+  'clothed_female_nude_male',
+  'leash',
+  'gag',
+  'pussy_juice',
+  'assertive_female',
+  'anal_fingering',
+  'anal_fisting',
+  'handsfree_ejaculation',
+  'ejaculating_while_penetrated',
+  'small_penis_humiliation',
+  'premature_ejaculation',
+  'viewer_on_leash',
+  'annoyed',
+  'sadism',
+  'public nudity',
+  'bullying',
+  'body_writing',
+  'cumdump',
+  'assisted_exposure'
 ];
+
+// Basic throttle to avoid hammering Danbooru
+const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+const RATE_DELAY_MS = 300;
 
 async function tagExistsOnDanbooru(tag) {
   try {
@@ -28,6 +79,61 @@ async function tagExistsOnDanbooru(tag) {
     // Assume valid if verification fails so tags can still be added
     return true;
   }
+}
+
+async function getPostCountForQuery(query) {
+  // Danbooru counts API
+  const url = `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(query)}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`counts failed ${resp.status}`);
+  const data = await resp.json();
+  return data?.counts?.posts ?? 0;
+}
+
+async function getArtistTotalCount(artistName, cache) {
+  if (cache.has(artistName)) return cache.get(artistName);
+  const count = await getArtistImageCount(artistName);
+  cache.set(artistName, count);
+  await sleep(RATE_DELAY_MS);
+  return count;
+}
+
+async function buildTagArtistCounts(tags, artists) {
+  const totalCache = new Map();
+  const result = {};
+  for (const tag of tags) {
+    // Only consider artists we already mark with this tag
+    const withTag = artists.filter(a => Array.isArray(a.kinkTags) && a.kinkTags.includes(tag));
+    const rows = [];
+    for (const artist of withTag) {
+      const artistName = artist.artistName;
+      // Count posts that match artist + tag
+      let tagCount = 0;
+      try {
+        tagCount = await getPostCountForQuery(`${artistName} ${tag}`);
+      } catch (e) {
+        console.warn(`⚠️ count failed for ${artistName} ${tag}: ${e.message}`);
+      }
+      await sleep(RATE_DELAY_MS);
+
+      // Skip artists with zero posts for this tag
+      if (!tagCount) continue;
+
+      // Get total posts for artist (cached)
+      let totalPosts = 0;
+      try {
+        totalPosts = await getArtistTotalCount(artistName, totalCache);
+      } catch (e) {
+        console.warn(`⚠️ total count failed for ${artistName}: ${e.message}`);
+      }
+
+      rows.push({ artistName, tagCount, totalPosts });
+    }
+    // Sort by tagCount desc
+    rows.sort((a, b) => b.tagCount - a.tagCount);
+    result[tag] = rows;
+  }
+  return result;
 }
 
 async function updateKinkTags() {
@@ -61,6 +167,12 @@ async function updateKinkTags() {
   const tags = Array.from(tagSet).sort();
   await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
   console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
+
+  // NEW: Build per-tag artist counts (for artists in artists.json)
+  console.log('⏳ fetching per-tag artist counts from Danbooru...');
+  const tagArtistCounts = await buildTagArtistCounts(tags, artists);
+  await fs.writeFile('kink-tag-artists.json', JSON.stringify(tagArtistCounts, null, 2) + '\n');
+  console.log('✅ wrote kink-tag-artists.json');
 }
 
 updateKinkTags().catch(err => {
