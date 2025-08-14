@@ -68,6 +68,78 @@ const extraTags = [
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const RATE_DELAY_MS = 300;
 
+// Adaptive rate limiting and concurrency
+const MAX_CONCURRENCY = Number(process.env.DANBOORU_CONCURRENCY || 8);
+const BASE_DELAY_MS = Number(process.env.DANBOORU_BASE_DELAY_MS || 150);
+let dynamicDelay = BASE_DELAY_MS;
+let _active = 0;
+const _queue = [];
+async function withConcurrency(fn) {
+  if (_active >= MAX_CONCURRENCY) {
+    await new Promise((resolve) => _queue.push(resolve));
+  }
+  _active++;
+  try {
+    return await fn();
+  } finally {
+    _active--;
+    const next = _queue.shift();
+    if (next) next();
+  }
+}
+
+async function rateLimitedFetch(url, opts = {}, retries = 3) {
+  // Initial delay before acquiring a slot
+  if (dynamicDelay > 0) await sleep(dynamicDelay);
+  return withConcurrency(async () => {
+    let attempt = 0;
+    while (true) {
+      let resp;
+      try {
+        resp = await fetch(url, opts);
+      } catch (err) {
+        if (attempt >= retries) throw err;
+        attempt++;
+        dynamicDelay = Math.min(dynamicDelay * 1.5 + 50, 8000);
+        await sleep(dynamicDelay);
+        continue;
+      }
+
+      if (resp.status === 429 || resp.status === 503) {
+        // Backoff using Retry-After if provided
+        let wait = Math.max(dynamicDelay * 1.5 + 100, BASE_DELAY_MS);
+        const ra = resp.headers.get('retry-after');
+        if (ra) {
+          if (/^\d+$/.test(ra)) {
+            wait = Math.max(wait, parseInt(ra, 10) * 1000);
+          } else {
+            const ts = Date.parse(ra);
+            if (!Number.isNaN(ts)) wait = Math.max(wait, ts - Date.now());
+          }
+        }
+        dynamicDelay = Math.min(Math.max(dynamicDelay, Math.floor(wait / Math.max(1, MAX_CONCURRENCY))), 12000);
+        if (attempt >= retries) throw new Error(`HTTP ${resp.status} after retries`);
+        attempt++;
+        await sleep(wait);
+        continue;
+      }
+
+      if (!resp.ok && resp.status >= 500 && attempt < retries) {
+        attempt++;
+        dynamicDelay = Math.min(dynamicDelay * 1.5 + 100, 8000);
+        await sleep(dynamicDelay);
+        continue;
+      }
+
+      // Success: gently reduce delay toward base
+      if (resp.ok) {
+        dynamicDelay = Math.max(BASE_DELAY_MS, Math.floor(dynamicDelay * 0.9));
+      }
+      return resp;
+    }
+  });
+}
+
 function normalizeTag(tag) {
   return String(tag).trim().toLowerCase().replace(/\s+/g, '_');
 }
@@ -75,21 +147,19 @@ function normalizeTag(tag) {
 async function tagExistsOnDanbooru(tag) {
   try {
     const norm = normalizeTag(tag);
-    const resp = await fetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(norm)}&limit=1`);
+    const resp = await rateLimitedFetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(norm)}&limit=1`);
     if (!resp.ok) return false;
     const data = await resp.json();
     return data.length > 0 && (data[0].name?.toLowerCase?.() === norm);
   } catch (err) {
     console.warn(`⚠️ could not verify ${tag} on Danbooru: ${err.message}`);
-    // Assume valid if verification fails so tags can still be added
     return true;
   }
 }
 
 async function getPostCountForQuery(query) {
-  // Danbooru counts API
   const url = `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(query)}`;
-  const resp = await fetch(url);
+  const resp = await rateLimitedFetch(url);
   if (!resp.ok) throw new Error(`counts failed ${resp.status}`);
   const data = await resp.json();
   return data?.counts?.posts ?? 0;
@@ -99,7 +169,6 @@ async function getArtistTotalCount(artistName, cache) {
   if (cache.has(artistName)) return cache.get(artistName);
   const count = await getArtistImageCount(artistName);
   cache.set(artistName, count);
-  await sleep(RATE_DELAY_MS);
   return count;
 }
 
@@ -107,34 +176,26 @@ async function buildTagArtistCounts(tags, artists) {
   const totalCache = new Map();
   const result = {};
   for (const tag of tags) {
-    // Only consider artists we already mark with this tag
     const withTag = artists.filter(a => Array.isArray(a.kinkTags) && a.kinkTags.includes(tag));
     const rows = [];
-    for (const artist of withTag) {
-      const artistName = artist.artistName;
-      // Count posts that match artist + tag
-      let tagCount = 0;
+    // Concurrency for per-artist tag counts
+    const limit = Number(process.env.PER_TAG_CONCURRENCY || 6);
+    let idx = 0;
+    async function next() {
+      if (idx >= withTag.length) return;
+      const current = withTag[idx++];
       try {
-        tagCount = await getPostCountForQuery(`${artistName} ${tag}`);
+        const tagCount = await getPostCountForQuery(`${current.artistName} ${tag}`);
+        if (tagCount) {
+          const totalPosts = await getArtistTotalCount(current.artistName, totalCache);
+          rows.push({ artistName: current.artistName, tagCount, totalPosts });
+        }
       } catch (e) {
-        console.warn(`⚠️ count failed for ${artistName} ${tag}: ${e.message}`);
+        console.warn(`⚠️ count failed for ${current.artistName} ${tag}: ${e.message}`);
       }
-      await sleep(RATE_DELAY_MS);
-
-      // Skip artists with zero posts for this tag
-      if (!tagCount) continue;
-
-      // Get total posts for artist (cached)
-      let totalPosts = 0;
-      try {
-        totalPosts = await getArtistTotalCount(artistName, totalCache);
-      } catch (e) {
-        console.warn(`⚠️ total count failed for ${artistName}: ${e.message}`);
-      }
-
-      rows.push({ artistName, tagCount, totalPosts });
+      return next();
     }
-    // Sort by tagCount desc
+    await Promise.all(Array.from({ length: limit }, next));
     rows.sort((a, b) => b.tagCount - a.tagCount);
     result[tag] = rows;
   }
@@ -143,18 +204,18 @@ async function buildTagArtistCounts(tags, artists) {
 
 async function fetchPostsForQuery(query, page = 1, limit = 100) {
   const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}&limit=${limit}&page=${page}`;
-  const resp = await fetch(url);
+  const resp = await rateLimitedFetch(url);
   if (!resp.ok) throw new Error(`posts failed ${resp.status}`);
   return await resp.json();
 }
 
 async function discoverArtistsByCoreAndKink(coreTags, kinkTags, options = {}) {
   const { maxPages = 100, perPage = 200, maxArtistsPerCombo = 0 } = options;
-  const found = new Map(); // artistName -> Set(tags)
+  const found = new Map();
   for (const core of coreTags) {
     for (const tag of kinkTags) {
       const q = `${normalizeTag(core)} ${normalizeTag(tag)}`;
-      let collectedForCombo = new Set();
+      const collectedForCombo = new Set();
       for (let p = 1; p <= maxPages; p++) {
         let posts = [];
         try {
@@ -164,7 +225,6 @@ async function discoverArtistsByCoreAndKink(coreTags, kinkTags, options = {}) {
           break;
         }
         if (!Array.isArray(posts) || posts.length === 0) break;
-
         for (const post of posts) {
           const artistsStr = post.tag_string_artist || "";
           if (!artistsStr) continue;
@@ -178,10 +238,8 @@ async function discoverArtistsByCoreAndKink(coreTags, kinkTags, options = {}) {
           }
           if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
         }
-
-        await sleep(RATE_DELAY_MS);
-        if (posts.length < perPage) break; // last page
         if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
+        if (posts.length < perPage) break; // last page
       }
     }
   }
@@ -221,8 +279,8 @@ async function updateKinkTags() {
       throw err;
     }
   }
-  const tagSet = new Set();
 
+  const tagSet = new Set();
   for (const artist of artists) {
     const tags = artist.kinkTags || [];
     if (!tags.some(tag => coreTags.includes(tag))) continue;
@@ -242,22 +300,28 @@ async function updateKinkTags() {
   await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
   console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
 
-  // NEW: Discover artists by (coreTag + kinkTag) and augment artists.json
+  // Discover artists by (coreTag + kinkTag) and augment artists.json
   console.log('⏳ discovering artists by core+kink tags...');
-  const discovered = await discoverArtistsByCoreAndKink(coreTags, tags, { pages: 1, perPage: 100, maxArtistsPerCombo: 50 });
+  const discovered = await discoverArtistsByCoreAndKink(coreTags, tags, { maxPages: 100, perPage: 200, maxArtistsPerCombo: 0 });
   const { updated: updatedArtists, added } = mergeDiscoveredIntoArtists(artists, discovered);
 
-  // Optionally set postCount for newly added artists
-  for (const a of added) {
-    try {
-      a.postCount = await getArtistImageCount(a.artistName);
-    } catch (e) {
-      console.warn(`⚠️ postCount failed for ${a.artistName}: ${e.message}`);
+  // Set postCount for newly added artists with limited concurrency
+  if (added.length) {
+    const limit = Number(process.env.NEW_ARTIST_COUNT_CONCURRENCY || 6);
+    let i = 0;
+    async function next() {
+      if (i >= added.length) return;
+      const a = added[i++];
+      try {
+        a.postCount = await getArtistImageCount(a.artistName);
+      } catch (e) {
+        console.warn(`⚠️ postCount failed for ${a.artistName}: ${e.message}`);
+      }
+      return next();
     }
-    await sleep(RATE_DELAY_MS);
+    await Promise.all(Array.from({ length: limit }, next));
   }
 
-  // Write back updated artists.json if changed
   const changed = JSON.stringify(artists) !== JSON.stringify(updatedArtists);
   if (changed) {
     await fs.writeFile('artists.json', JSON.stringify(updatedArtists, null, 2) + '\n');
@@ -266,7 +330,6 @@ async function updateKinkTags() {
     console.log('ℹ️ no changes to artists.json');
   }
 
-  // Build per-tag artist counts using the UPDATED list
   console.log('⏳ fetching per-tag artist counts from Danbooru...');
   const tagArtistCounts = await buildTagArtistCounts(tags, changed ? updatedArtists : artists);
   await fs.writeFile('kink-tag-artists.json', JSON.stringify(tagArtistCounts, null, 2) + '\n');
