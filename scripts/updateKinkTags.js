@@ -57,7 +57,7 @@ const extraTags = [
   'viewer_on_leash',
   'annoyed',
   'sadism',
-  'public nudity',
+  'public_nudity',
   'bullying',
   'body_writing',
   'cumdump',
@@ -68,12 +68,17 @@ const extraTags = [
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 const RATE_DELAY_MS = 300;
 
+function normalizeTag(tag) {
+  return String(tag).trim().toLowerCase().replace(/\s+/g, '_');
+}
+
 async function tagExistsOnDanbooru(tag) {
   try {
-    const resp = await fetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(tag)}&limit=1`);
+    const norm = normalizeTag(tag);
+    const resp = await fetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(norm)}&limit=1`);
     if (!resp.ok) return false;
     const data = await resp.json();
-    return data.length > 0 && data[0].name === tag;
+    return data.length > 0 && (data[0].name?.toLowerCase?.() === norm);
   } catch (err) {
     console.warn(`⚠️ could not verify ${tag} on Danbooru: ${err.message}`);
     // Assume valid if verification fails so tags can still be added
@@ -157,14 +162,15 @@ async function updateKinkTags() {
   }
 
   for (const tag of extraTags) {
-    if (await tagExistsOnDanbooru(tag)) {
-      tagSet.add(tag);
+    const norm = normalizeTag(tag);
+    if (await tagExistsOnDanbooru(norm)) {
+      tagSet.add(norm);
     } else {
-      console.warn(`⚠️ skipped invalid Danbooru tag: ${tag}`);
+      console.warn(`⚠️ skipped invalid Danbooru tag: ${tag} -> ${norm}`);
     }
   }
 
-  const tags = Array.from(tagSet).sort();
+  const tags = Array.from(new Set(tagSet)).sort();
   await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
   console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
 
