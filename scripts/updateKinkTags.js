@@ -267,6 +267,38 @@ function mergeDiscoveredIntoArtists(existing, discoveredMap) {
   return { updated, added };
 }
 
+async function consolidateCountsFromKinkTagArtists(artists) {
+  let data;
+  try {
+    const raw = await fs.readFile('kink-tag-artists.json', 'utf8');
+    data = JSON.parse(raw);
+  } catch {
+    return { artists, changed: false }; // File not present; nothing to consolidate
+  }
+  const byNameMax = new Map();
+  for (const tag of Object.keys(data || {})) {
+    const rows = Array.isArray(data[tag]) ? data[tag] : [];
+    for (const row of rows) {
+      const name = row?.artistName;
+      const total = Number(row?.totalPosts || 0);
+      if (!name) continue;
+      const prev = byNameMax.get(name) || 0;
+      if (total > prev) byNameMax.set(name, total);
+    }
+  }
+  if (byNameMax.size === 0) return { artists, changed: false };
+  let changed = false;
+  const updated = artists.map((a) => {
+    const max = byNameMax.get(a.artistName);
+    if (typeof max === 'number' && max >= 0 && a.postCount !== max) {
+      changed = true;
+      return { ...a, postCount: max };
+    }
+    return a;
+  });
+  return { artists: updated, changed };
+}
+
 async function updateKinkTags() {
   let artists;
   try {
@@ -322,18 +354,40 @@ async function updateKinkTags() {
     await Promise.all(Array.from({ length: limit }, next));
   }
 
-  const changed = JSON.stringify(artists) !== JSON.stringify(updatedArtists);
+  // Consolidate counts from existing kink-tag-artists.json (if present)
+  const consolidated = await consolidateCountsFromKinkTagArtists(updatedArtists);
+  let finalArtists = consolidated.artists;
+  let changed = JSON.stringify(artists) !== JSON.stringify(finalArtists);
   if (changed) {
-    await fs.writeFile('artists.json', JSON.stringify(updatedArtists, null, 2) + '\n');
-    console.log(`✅ artists.json augmented (${added.length} new, total ${updatedArtists.length})`);
+    await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
+    console.log(`✅ artists.json updated (consolidated counts${added.length ? `, ${added.length} new` : ''})`);
   } else {
     console.log('ℹ️ no changes to artists.json');
   }
 
-  console.log('⏳ fetching per-tag artist counts from Danbooru...');
-  const tagArtistCounts = await buildTagArtistCounts(tags, changed ? updatedArtists : artists);
-  await fs.writeFile('kink-tag-artists.json', JSON.stringify(tagArtistCounts, null, 2) + '\n');
-  console.log('✅ wrote kink-tag-artists.json');
+  // Optional: refresh all counts from API if requested
+  if (process.env.REFRESH_ALL_COUNTS === '1') {
+    console.log('⏳ refreshing all artist post counts from API...');
+    const limit = Number(process.env.REFRESH_COUNTS_CONCURRENCY || 8);
+    let i = 0;
+    async function next() {
+      if (i >= finalArtists.length) return;
+      const a = finalArtists[i++];
+      try {
+        const c = await getArtistImageCount(a.artistName);
+        a.postCount = c;
+      } catch (e) {
+        console.warn(`⚠️ refresh count failed for ${a.artistName}: ${e.message}`);
+      }
+      return next();
+    }
+    await Promise.all(Array.from({ length: limit }, next));
+    await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
+    console.log('✅ artists.json counts refreshed');
+  }
+
+  // Skip generating kink-tag-artists.json to save time
+  console.log('ℹ️ skipping kink-tag-artists.json generation.');
 }
 
 updateKinkTags().catch(err => {
