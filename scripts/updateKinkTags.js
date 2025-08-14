@@ -141,6 +141,74 @@ async function buildTagArtistCounts(tags, artists) {
   return result;
 }
 
+async function fetchPostsForQuery(query, page = 1, limit = 100) {
+  const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}&limit=${limit}&page=${page}`;
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`posts failed ${resp.status}`);
+  return await resp.json();
+}
+
+async function discoverArtistsByCoreAndKink(coreTags, kinkTags, options = {}) {
+  const { maxPages = 100, perPage = 200, maxArtistsPerCombo = 0 } = options;
+  const found = new Map(); // artistName -> Set(tags)
+  for (const core of coreTags) {
+    for (const tag of kinkTags) {
+      const q = `${normalizeTag(core)} ${normalizeTag(tag)}`;
+      let collectedForCombo = new Set();
+      for (let p = 1; p <= maxPages; p++) {
+        let posts = [];
+        try {
+          posts = await fetchPostsForQuery(q, p, perPage);
+        } catch (e) {
+          console.warn(`⚠️ discover failed for ${q} p${p}: ${e.message}`);
+          break;
+        }
+        if (!Array.isArray(posts) || posts.length === 0) break;
+
+        for (const post of posts) {
+          const artistsStr = post.tag_string_artist || "";
+          if (!artistsStr) continue;
+          const names = artistsStr.split(" ").filter(Boolean);
+          for (const name of names) {
+            collectedForCombo.add(name);
+            if (!found.has(name)) found.set(name, new Set());
+            const set = found.get(name);
+            set.add(normalizeTag(core));
+            set.add(normalizeTag(tag));
+          }
+          if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
+        }
+
+        await sleep(RATE_DELAY_MS);
+        if (posts.length < perPage) break; // last page
+        if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
+      }
+    }
+  }
+  return found;
+}
+
+function mergeDiscoveredIntoArtists(existing, discoveredMap) {
+  const byName = new Map(existing.map((a) => [a.artistName, a]));
+  const added = [];
+  for (const [artistName, tagSet] of discoveredMap.entries()) {
+    const normName = String(artistName).trim();
+    const addTags = Array.from(tagSet);
+    const entry = byName.get(normName);
+    if (entry) {
+      const s = new Set(entry.kinkTags || []);
+      addTags.forEach((t) => s.add(t));
+      entry.kinkTags = Array.from(s).sort();
+    } else {
+      const newArtist = { artistName: normName, kinkTags: addTags.sort() };
+      byName.set(normName, newArtist);
+      added.push(newArtist);
+    }
+  }
+  const updated = Array.from(byName.values()).sort((a, b) => a.artistName.localeCompare(b.artistName));
+  return { updated, added };
+}
+
 async function updateKinkTags() {
   let artists;
   try {
@@ -174,9 +242,33 @@ async function updateKinkTags() {
   await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
   console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
 
-  // NEW: Build per-tag artist counts (for artists in artists.json)
+  // NEW: Discover artists by (coreTag + kinkTag) and augment artists.json
+  console.log('⏳ discovering artists by core+kink tags...');
+  const discovered = await discoverArtistsByCoreAndKink(coreTags, tags, { pages: 1, perPage: 100, maxArtistsPerCombo: 50 });
+  const { updated: updatedArtists, added } = mergeDiscoveredIntoArtists(artists, discovered);
+
+  // Optionally set postCount for newly added artists
+  for (const a of added) {
+    try {
+      a.postCount = await getArtistImageCount(a.artistName);
+    } catch (e) {
+      console.warn(`⚠️ postCount failed for ${a.artistName}: ${e.message}`);
+    }
+    await sleep(RATE_DELAY_MS);
+  }
+
+  // Write back updated artists.json if changed
+  const changed = JSON.stringify(artists) !== JSON.stringify(updatedArtists);
+  if (changed) {
+    await fs.writeFile('artists.json', JSON.stringify(updatedArtists, null, 2) + '\n');
+    console.log(`✅ artists.json augmented (${added.length} new, total ${updatedArtists.length})`);
+  } else {
+    console.log('ℹ️ no changes to artists.json');
+  }
+
+  // Build per-tag artist counts using the UPDATED list
   console.log('⏳ fetching per-tag artist counts from Danbooru...');
-  const tagArtistCounts = await buildTagArtistCounts(tags, artists);
+  const tagArtistCounts = await buildTagArtistCounts(tags, changed ? updatedArtists : artists);
   await fs.writeFile('kink-tag-artists.json', JSON.stringify(tagArtistCounts, null, 2) + '\n');
   console.log('✅ wrote kink-tag-artists.json');
 }
