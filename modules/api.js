@@ -152,10 +152,17 @@ async function loadArtists() {
   return artistsCache;
 }
 
-export async function getArtistImageCount(artistName) {
+export async function getArtistImageCount(artistName, options = {}) {
+  const { force = false } = options;
   const artists = await loadArtists();
   const artist = artists.find((a) => a.artistName === artistName);
-  if (artist && typeof artist.postCount === "number") {
+  // Only trust cached values that are positive. Zero is treated as unknown/stale.
+  if (
+    !force &&
+    artist &&
+    Number.isInteger(artist.postCount) &&
+    artist.postCount > 0
+  ) {
     return artist.postCount;
   }
   try {
@@ -273,7 +280,7 @@ async function fetchAllArtistImages(
  */
 export async function fetchPostCountForTags(tags) {
   const url = `https://danbooru.donmai.us/counts/posts?tags=${tags.join("+")}`;
-  const response = await fetch(url);
+  const response = await fetchFn(url);
   if (!response.ok) return 0;
   const html = await response.text();
   // Extract the post count from the HTML using a regex
