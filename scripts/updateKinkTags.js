@@ -345,7 +345,8 @@ async function updateKinkTags() {
       if (i >= added.length) return;
       const a = added[i++];
       try {
-        a.postCount = await getArtistImageCount(a.artistName);
+        const c = await getArtistImageCount(a.artistName, { force: true });
+        if (Number.isInteger(c) && c > 0) a.postCount = c;
       } catch (e) {
         console.warn(`⚠️ postCount failed for ${a.artistName}: ${e.message}`);
       }
@@ -365,6 +366,39 @@ async function updateKinkTags() {
     console.log('ℹ️ no changes to artists.json');
   }
 
+  // Always refresh zero/missing counts (fast pass) unless explicitly disabled
+  const REFRESH_ZERO_COUNTS = process.env.REFRESH_ZERO_COUNTS !== '0';
+  if (REFRESH_ZERO_COUNTS) {
+    const zeroList = finalArtists.filter(a => !Number.isInteger(a.postCount) || a.postCount <= 0);
+    if (zeroList.length) {
+      console.log(`⏳ refreshing ${zeroList.length} zero/missing artist post counts...`);
+      const limit = Number(process.env.ZERO_COUNT_CONCURRENCY || process.env.REFRESH_COUNTS_CONCURRENCY || 8);
+      let i = 0;
+      let anyChanged = false;
+      async function next() {
+        if (i >= zeroList.length) return;
+        const a = zeroList[i++];
+        try {
+          const c = await getArtistImageCount(a.artistName, { force: true });
+          if (Number.isInteger(c) && c > 0) {
+            a.postCount = c;
+            anyChanged = true;
+          }
+        } catch (e) {
+          console.warn(`⚠️ zero-count refresh failed for ${a.artistName}: ${e.message}`);
+        }
+        return next();
+      }
+      await Promise.all(Array.from({ length: limit }, next));
+      if (anyChanged) {
+        await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
+        console.log('✅ artists.json zero/missing counts refreshed');
+      } else {
+        console.log('ℹ️ no zero/missing counts could be refreshed');
+      }
+    }
+  }
+
   // Optional: refresh all counts from API if requested
   if (process.env.REFRESH_ALL_COUNTS === '1') {
     console.log('⏳ refreshing all artist post counts from API...');
@@ -374,8 +408,8 @@ async function updateKinkTags() {
       if (i >= finalArtists.length) return;
       const a = finalArtists[i++];
       try {
-        const c = await getArtistImageCount(a.artistName);
-        a.postCount = c;
+        const c = await getArtistImageCount(a.artistName, { force: true });
+        if (Number.isInteger(c) && c >= 0) a.postCount = c;
       } catch (e) {
         console.warn(`⚠️ refresh count failed for ${a.artistName}: ${e.message}`);
       }
