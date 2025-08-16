@@ -466,10 +466,11 @@ body.incognito-theme #background-blur { display:none; }
     font-size: 0.9em;
   }
   .zoom-prev, .zoom-next {
-    width: 32px;
-    min-width: 32px;
-    height: 44px;
-    margin: 0.1em 0;
+    position: absolute;
+    top: 50%;
+    left: 0.3em;
+    right: 0.3em;
+    transform: translateY(-50%);
   }
 }
 
@@ -1627,4 +1628,82 @@ html.tag-explorer-open {
   .fullscreen-wrapper .zoom-content .zoom-prev, .fullscreen-wrapper .zoom-content .zoom-next { width:36px !important; height:64px !important; }
   .fullscreen-wrapper .zoom-content img.fullscreen-img { max-width:96vw; max-height:70vh; }
   .zoom-tags { max-height:24vh !important; }
+}
+
+/* Mobile-friendly tag-explorer improvements */
+.tag-explorer {
+  max-width: 96vw; /* allow modal to use nearly full width on small screens */
+  width: auto;
+  margin: 1em;
+  box-sizing: border-box;
+}
+
+/* Keep the tag explorer content scrollable while keeping header and footer buttons visible */
+.tag-explorer {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(90vh);
+  overflow: hidden;
+}
+
+/* Tag list area becomes its own scroll region */
+#tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  justify-content: center;
+  overflow: auto; /* allow scrolling when many tags */
+  -webkit-overflow-scrolling: touch; /* smooth scrolling on iOS */
+  padding: 0.4em 0.2em;
+  margin-top: 1em;
+  max-height: calc(70vh - 6rem); /* keep room for header + sticky buttons */
+  align-items: flex-start;
+}
+
+/* Improve tap targets and avoid buttons stretching off-screen */
+.tag-explorer .tag-btn,
+.tag-explorer .tag-button {
+  padding: 0.6em 0.9em;
+  font-size: 1.02em;
+  min-width: 92px;
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Ensure sticky bottom buttons remain visible on small screens */
+.tag-explorer-buttons {
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  backdrop-filter: blur(4px);
+  padding: 0.8em;
+}
+
+/* Small-screen grid: show tags in two columns to avoid horizontal scrolling */
+@media (max-width: 700px) {
+  #tag-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45em;
+    max-height: calc(70vh - 6rem);
+    overflow: auto;
+    padding: 0.2em;
+  }
+  .tag-explorer .tag-btn,
+  .tag-explorer .tag-button {
+    min-width: 0;
+    padding: 0.7em 0.8em;
+    font-size: 1.05rem;
+    border-radius: 0.9em;
+  }
+  /* Ensure modal wrapper allows scrolling when content is tall */
+  .tag-explorer-wrapper { align-items: flex-start; overflow: auto; padding: 1.2em 0; }
+}
+
+/* Extremely small screens: single column list for easier tapping */
+@media (max-width: 380px) {
+  #tag-list { grid-template-columns: 1fr; }
+  .tag-explorer .tag-btn,
+  .tag-explorer .tag-button { font-size: 1.06rem; padding: 0.8em; }
 }
