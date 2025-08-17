@@ -358,6 +358,19 @@ async function updateKinkTags() {
   // Consolidate counts from existing kink-tag-artists.json (if present)
   const consolidated = await consolidateCountsFromKinkTagArtists(updatedArtists);
   let finalArtists = consolidated.artists;
+
+  // Remove artists below minimum post count threshold (configurable)
+  const MIN_ARTIST_POSTS = Number(process.env.MIN_ARTIST_POSTS || 40);
+  const beforeCount = finalArtists.length;
+  const removedArtists = finalArtists.filter(a => !(Number.isInteger(a.postCount) && a.postCount >= MIN_ARTIST_POSTS));
+  finalArtists = finalArtists.filter(a => Number.isInteger(a.postCount) && a.postCount >= MIN_ARTIST_POSTS);
+  const removedCount = beforeCount - finalArtists.length;
+  if (removedCount > 0) {
+    console.log(`ℹ️ removed ${removedCount} artists with postCount < ${MIN_ARTIST_POSTS}`);
+    if (removedArtists.length <= 50) console.log('Removed artists:', removedArtists.map(a => a.artistName).join(', '));
+    else console.log('Removed sample:', removedArtists.slice(0,50).map(a => a.artistName).join(', ') + ' …');
+  }
+
   let changed = JSON.stringify(artists) !== JSON.stringify(finalArtists);
   if (changed) {
     await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');

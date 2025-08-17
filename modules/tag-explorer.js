@@ -24,7 +24,7 @@ function setAllArtists(artists) {
 }
 
 function getFilteredCounts(active) {
-  const nameFilter = (getArtistNameFilter && getArtistNameFilter()) || "";
+  const nameFilter = (getArtistNameFilter && getArtistNameFilter() || '').toLowerCase();
   // Use cache if active tags and nameFilter haven't changed
   if (
     lastCountsCache &&
@@ -34,15 +34,21 @@ function getFilteredCounts(active) {
   ) {
     return lastCountsCache;
   }
+
+  // counts will represent totalPosts for each tag (sum of artist.postCount)
   const counts = {};
   allArtists.forEach((a) => {
-    const tags = a.kinkTags || [];
+    const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
+    // enforce AND logic: artist must include all active tags
     if (![...active].every((t) => tags.includes(t))) return;
+    // enforce name filter
     if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return;
+    const artistPosts = Number.isInteger(a.postCount) && a.postCount > 0 ? a.postCount : 0;
     tags.forEach((t) => {
-      counts[t] = (counts[t] || 0) + 1;
+      counts[t] = (counts[t] || 0) + artistPosts;
     });
   });
+
   lastCountsCache = counts;
   lastActiveCache = new Set(active);
   lastNameFilterCache = nameFilter;

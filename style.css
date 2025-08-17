@@ -4,8 +4,15 @@
   --accent2: #a0005a;
   --border-color: #fd7bc5;
   --radius: 14px;
-  --btn-font: 'Hi Melody', cursive, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --btn-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --padding: 1rem;
+}
+
+/* Use a clear, readable base font for the app */
+body {
+  font-family: var(--btn-font);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Alias: fem-theme behaves like feminization-theme */
