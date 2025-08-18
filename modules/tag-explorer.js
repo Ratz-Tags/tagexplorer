@@ -310,4 +310,4 @@ function openTagExplorer() {
 
 // No unused or undefined functions in this file.
 
-export { openTagExplorer, setAllArtists };
+export { openTagExplorer, setAllArtists, getFilteredCounts };
