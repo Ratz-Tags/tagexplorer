@@ -5,10 +5,7 @@ import {
   getArtistNameFilter,
   handleArtistNameFilter,
 } from "./tags.js";
-
-let allArtists = [];
-let allArtistsCache = null;
-
+import { artists } from "../src/app.js";
 let filteredArtistsCache = null;
 let filteredActiveCache = null;
 let filteredNameCache = null;
@@ -17,15 +14,8 @@ let lastCountsCache = null;
 let lastActiveCache = null;
 let lastNameFilterCache = null;
 
-function setAllArtists(artists) {
-  if (
-    allArtistsCache &&
-    JSON.stringify(allArtistsCache) === JSON.stringify(artists)
-  )
-    return;
-  allArtists = Array.isArray(artists) ? artists : [];
-  allArtistsCache = artists;
-  // Invalidate caches
+function setAllArtists(list) {
+  artists.value = Array.isArray(list) ? list : [];
   lastCountsCache = null;
   filteredArtistsCache = null;
 }
@@ -40,7 +30,7 @@ function getFilteredArtists(active) {
   ) {
     return filteredArtistsCache;
   }
-  const filtered = allArtists.filter((a) => {
+  const filtered = artists.value.filter((a) => {
     const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
     if (![...active].every((t) => tags.includes(t))) return false;
     if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return false;

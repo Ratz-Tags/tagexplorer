@@ -1,32 +1,8 @@
-/* === Theme variables and background layer === */
-:root {
-  --accent1: #fd7bc5;
-  --accent2: #a0005a;
-  --border-color: #fd7bc5;
-  --radius: 14px;
-  --btn-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --padding: 1rem;
-  --text-color: var(--accent2);
-}
-
 /* Use a clear, readable base font for the app */
 body {
   font-family: var(--btn-font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-/* Alias: fem-theme behaves like feminization-theme */
-body.fem-theme,
-body.feminization-theme {
-  background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
-  color: var(--accent2);
-}
-
-/* Incognito theme */
-body.incognito-theme {
-  background: #0f0f12;
-  color: #e6e6e6;
 }
 
 /* Rotating random background canvas */
@@ -41,9 +17,6 @@ body.incognito-theme {
   z-index: 0;
   pointer-events: none;
 }
-/* Hide background image in incognito */
-body.incognito-theme #background-blur { display:none; }
-
 /* Ensure app content sits above the background layer */
 body > header,
 body > main,
@@ -324,7 +297,6 @@ body > nav,
 
 /* --- Background tuning --- */
 #background-blur { filter: blur(8px) saturate(1.08); opacity: 0.7; }
-body.incognito-theme #background-blur { display:none; }
 
 /* --- Zoom toolbar & focus mode --- */
 .zoom-content { position: relative; }
