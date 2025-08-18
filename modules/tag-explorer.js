@@ -63,11 +63,17 @@ function getFilteredCounts(active) {
     return lastCountsCache;
   }
   const counts = {};
+  const countedArtists = {};
   const filtered = getFilteredArtists(active);
   filtered.forEach((a) => {
+    const artistName = a.artistName;
     const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
     tags.forEach((t) => {
-      counts[t] = (counts[t] || 0) + 1;
+      if (!countedArtists[t]) countedArtists[t] = new Set();
+      if (!countedArtists[t].has(artistName)) {
+        countedArtists[t].add(artistName);
+        counts[t] = (counts[t] || 0) + 1;
+      }
     });
   });
   lastCountsCache = counts;
