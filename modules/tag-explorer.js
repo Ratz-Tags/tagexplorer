@@ -8,6 +8,11 @@ import {
 
 let allArtists = [];
 let allArtistsCache = null;
+
+let filteredArtistsCache = null;
+let filteredActiveCache = null;
+let filteredNameCache = null;
+
 let lastCountsCache = null;
 let lastActiveCache = null;
 let lastNameFilterCache = null;
@@ -20,12 +25,35 @@ function setAllArtists(artists) {
     return;
   allArtists = Array.isArray(artists) ? artists : [];
   allArtistsCache = artists;
-  lastCountsCache = null; // Invalidate tag counts cache
+  // Invalidate caches
+  lastCountsCache = null;
+  filteredArtistsCache = null;
+}
+
+function getFilteredArtists(active) {
+  const nameFilter = (getArtistNameFilter && getArtistNameFilter() || '').toLowerCase();
+  if (
+    filteredArtistsCache &&
+    filteredActiveCache &&
+    filteredNameCache === nameFilter &&
+    JSON.stringify([...active]) === JSON.stringify([...filteredActiveCache])
+  ) {
+    return filteredArtistsCache;
+  }
+  const filtered = allArtists.filter((a) => {
+    const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
+    if (![...active].every((t) => tags.includes(t))) return false;
+    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return false;
+    return true;
+  });
+  filteredArtistsCache = filtered;
+  filteredActiveCache = new Set(active);
+  filteredNameCache = nameFilter;
+  return filtered;
 }
 
 function getFilteredCounts(active) {
   const nameFilter = (getArtistNameFilter && getArtistNameFilter() || '').toLowerCase();
-  // Use cache if active tags and nameFilter haven't changed
   if (
     lastCountsCache &&
     lastActiveCache &&
@@ -34,21 +62,14 @@ function getFilteredCounts(active) {
   ) {
     return lastCountsCache;
   }
-
-  // counts will represent totalPosts for each tag (sum of artist.postCount)
   const counts = {};
-  allArtists.forEach((a) => {
+  const filtered = getFilteredArtists(active);
+  filtered.forEach((a) => {
     const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
-    // enforce AND logic: artist must include all active tags
-    if (![...active].every((t) => tags.includes(t))) return;
-    // enforce name filter
-    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return;
-    const artistPosts = Number.isInteger(a.postCount) && a.postCount > 0 ? a.postCount : 0;
     tags.forEach((t) => {
-      counts[t] = (counts[t] || 0) + artistPosts;
+      counts[t] = (counts[t] || 0) + 1;
     });
   });
-
   lastCountsCache = counts;
   lastActiveCache = new Set(active);
   lastNameFilterCache = nameFilter;
@@ -235,7 +256,7 @@ async function filterTags() {
   wrapper.focus();
   try {
     // Fetch tag counts, handle errors
-    const counts = await fetchTagCounts();
+    const counts = fetchTagCounts();
     if (!counts) throw new Error("No tag counts");
   } catch (err) {
     showTagLoadingError(list, "Error loading tags.");
@@ -245,16 +266,13 @@ async function filterTags() {
 }
 
 // Lazy fetch for tag counts (only for visible tags)
-async function fetchTagCounts(visibleTags = null) {
+function fetchTagCounts(visibleTags = null) {
   // visibleTags: array of tags to count, or null for all
-  const artists = allArtists || [];
   const active = getActiveTags ? getActiveTags() : new Set();
-  const nameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+  const filtered = getFilteredArtists(active);
   const counts = {};
-  artists.forEach((a) => {
+  filtered.forEach((a) => {
     const tags = a.kinkTags || [];
-    if (![...active].every((t) => tags.includes(t))) return;
-    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return;
     tags.forEach((t) => {
       if (!visibleTags || visibleTags.includes(t)) {
         counts[t] = (counts[t] || 0) + 1;
