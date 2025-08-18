@@ -1,4 +1,5 @@
 import { vibrate } from "./ui.js";
+import { fetchWithCache } from "./fetch-cache.js";
 
 /**
  * Tags module - Handles tag filtering, buttons, and related functionality
@@ -362,7 +363,7 @@ function handleArtistNameFilter(value) {
 /**
  * Initializes the tags module with DOM elements and event listeners
  */
-function initTags() {
+async function initTags() {
   // Get DOM references
   tagButtonsContainer = document.getElementById("tag-buttons");
   tagSearchInput = document.getElementById("tag-search");
@@ -394,6 +395,12 @@ function initTags() {
     artistNameFilterInput.addEventListener("input", (e) => {
       handleArtistNameFilter(e.target.value);
     });
+  }
+
+  // Load kink tags from file
+  const loadedTags = await fetchWithCache("kink-tags.json");
+  if (Array.isArray(loadedTags)) {
+    setKinkTags(loadedTags);
   }
 }
 
