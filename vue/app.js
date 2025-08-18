@@ -174,7 +174,7 @@ export default {
       this.audioPanelVisible = !this.audioPanelVisible;
       if (this.audioPanelVisible) {
         this.$nextTick(() => {
-          this.$refs.audioPanel && this.$refs.audioPanel.focus && this.$refs.audioPanel.focus();
+          this.$refs.audioPanel && this.$refs.audioPanel.focus();
         });
       }
     },
