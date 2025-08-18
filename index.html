@@ -10,7 +10,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 </head>
 
-<body class="fem-theme">
+<body id="app" :class="[themeClass, { 'sidebar-open': sidebarVisible }]">
   <!-- Background decoration -->
   <div id="background-blur" aria-hidden="true"></div>
   
@@ -22,13 +22,15 @@
         <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
         <span class="tagline" id="tagline">Pathetic..~</span>
         <div class="sort-controls">
-          <select id="sort-preference">
+          <select id="sort-preference" v-model="sortPreference">
             <option value="name">Sort: Name (A-Z)</option>
             <option value="count">Sort: Tag Count</option>
             <option value="top">Top Artists (by tag count)</option>
           </select>
-          <button id="sort-button">Sort</button>
-          <button id="toggle-filters" type="button" class="browse-btn" aria-expanded="false">Browse Tags</button>
+          <button id="sort-button" @click="onSortButtonClick">Sort</button>
+          <button id="toggle-filters" type="button" class="browse-btn" aria-expanded="false" @click="openTagExplorer">Browse Tags</button>
+          <button id="joi-button" class="browse-btn humiliation-glow" style="margin-left:1em;" @click="toggleJOI" :class="{ active: joiActive }">{{ joiActive ? 'Stop JOI Mode' : 'JOI Mode' }}</button>
+          <button id="prompt-button" class="browse-btn" style="margin-left:1em;" @click="showPrompts">Prompts</button>
           <!-- Only one Top Artists button, handled by JS -->
         </div>
         <div class="top-actions">
@@ -40,12 +42,17 @@
         <div id="tag-filter">
         <div class="filter-inputs">
           <label for="tag-search" class="visually-hidden">Filter tags</label>
-          <input 
-            type="text" 
-            id="tag-search" 
+          <input
+            type="text"
+            id="tag-search"
             placeholder="Type to filter tags..."
-            aria-describedby="tag-search-help" 
+            aria-describedby="tag-search-help"
           />
+          <select id="tag-search-mode" style="margin-left:0.5em;" v-model="tagSearchMode">
+            <option value="contains">Contains</option>
+            <option value="starts">Starts with</option>
+            <option value="ends">Ends with</option>
+          </select>
           
           <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
           <input
@@ -91,8 +98,8 @@
 
   <!-- Sidebar for copied artists -->
   <aside class="sidebar-wrapper" aria-label="Copied artists">
-    <div id="copied-sidebar" class="sidebar-hidden" role="complementary" aria-label="Artists you've copied">
-      <button class="copied-sidebar-close" aria-label="Close sidebar">×</button>
+    <div id="copied-sidebar" class="sidebar-hidden" :class="{ visible: sidebarVisible }" role="complementary" aria-label="Artists you've copied">
+      <button class="copied-sidebar-close" aria-label="Close sidebar" @click="sidebarVisible = false">×</button>
       <h2 class="visually-hidden">Copied Artists</h2>
       <!-- Copied artists will be injected here -->
     </div>
@@ -103,7 +110,7 @@
 
   <!-- Audio controls -->
   <section id="audio-section" aria-label="Audio controls">
-    <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
+    <div id="audio-panel" class="audio-panel" :class="{ hidden: !audioPanelVisible }" role="region" aria-label="Hypnosis audio player" :aria-hidden="(!audioPanelVisible).toString()" ref="audioPanel" tabindex="-1">
       <div class="audio-header">
         <span aria-label="Audio indicator">🎧</span>
         <span id="audio-track-name">No track playing</span>
@@ -130,9 +137,9 @@
   <!-- Floating controls -->
   <nav class="floating-controls" aria-label="Quick access controls">
     <div class="toggle-buttons-container">
-      <button class="sidebar-toggle" aria-label="Show copied artists sidebar">🎀</button>
-      <button class="audio-toggle" aria-label="Show audio panel">🎶</button>
-      <button class="theme-toggle" aria-label="Toggle theme">🌓</button>
+      <button class="sidebar-toggle" aria-label="Show copied artists sidebar" @click="sidebarVisible = !sidebarVisible">🎀</button>
+      <button class="audio-toggle" aria-label="Show audio panel" @click="toggleAudioPanel">🎶</button>
+      <button class="theme-toggle" aria-label="Toggle theme" @click="toggleTheme">🌓</button>
     </div>
     
     <button id="back-to-top" title="Back to top" aria-label="Scroll to top">
@@ -141,7 +148,6 @@
     </button>
   </nav>
 
-  <div id="app"></div>
   <!-- Load the modular JavaScript -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script type="module" src="main.js"></script>
