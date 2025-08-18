@@ -1,0 +1,28 @@
+/* Theme variables and classes */
+:root {
+  --accent1: #fd7bc5;
+  --accent2: #a0005a;
+  --border-color: #fd7bc5;
+  --radius: 14px;
+  --btn-font: 'Comic Sans MS', 'Comic Sans', cursive;
+  --padding: 1rem;
+  --text-color: var(--accent2);
+}
+
+/* Alias: fem-theme behaves like feminization-theme */
+body.fem-theme,
+body.feminization-theme {
+  background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
+  color: var(--accent2);
+}
+
+/* Incognito theme */
+body.incognito-theme {
+  background: #0f0f12;
+  color: #e6e6e6;
+}
+
+/* Hide background image in incognito */
+body.incognito-theme #background-blur {
+  display: none;
+}
