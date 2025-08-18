@@ -1715,3 +1715,21 @@ html.tag-explorer-open {
   .tag-explorer .tag-btn,
   .tag-explorer .tag-button { font-size: 1.06rem; padding: 0.8em; }
 }
+
+/* Responsive feminine humiliation theme additions */
+@media (max-width: 600px) {
+  header .top-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.sidebar-taunt-banner {
+  color: var(--accent2);
+  font-style: italic;
+}
+
+.browse-btn {
+  background-color: var(--accent1);
+  color: #fff;
+}
