@@ -4,11 +4,11 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
+import { artists } from "../src/app.js";
 
 let copiedArtists = new Set();
 
 let copiedSidebar = null;
-let allArtists = [];
 let copiedArtistsCache = null;
 
 // TTS toggle state
@@ -235,7 +235,7 @@ function updateCopiedSidebar() {
 
   copiedArtists.forEach((artistTag, idx) => {
     // Find the artist object by normalized name
-    const artist = allArtists.find(
+    const artist = artists.value.find(
       (a) => a.artistName.replace(/_/g, " ") === artistTag
     );
     const div = document.createElement("div");
@@ -369,8 +369,8 @@ function initSidebar() {
 /**
  * Sets the reference to all artists data
  */
-function setAllArtists(artists) {
-  allArtists = artists;
+function setAllArtists(list) {
+  artists.value = Array.isArray(list) ? list : [];
 }
 
 /**
@@ -544,7 +544,7 @@ if (typeof window !== "undefined") {
         galleryTaunts[Math.floor(Math.random() * galleryTaunts.length)];
       // Add shame badge if needed
       const artistName = card.getAttribute("data-artist");
-      const artist = allArtists.find((a) => a.artistName === artistName);
+      const artist = artists.value.find((a) => a.artistName === artistName);
       addShameBadgeToCard(card, artist);
       // Add hover animation
       addGalleryCardHover(card);
