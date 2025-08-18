@@ -200,7 +200,15 @@ export default {
         this.sortPreference === 'top' &&
         typeof window.kexplorer !== 'undefined' &&
         typeof window.kexplorer.showTopArtistsByTagCount === 'function'
-      ) {
+    shouldShowTopArtistsByTagCount() {
+      return (
+        this.sortPreference === 'top' &&
+        typeof window.kexplorer !== 'undefined' &&
+        typeof window.kexplorer.showTopArtistsByTagCount === 'function'
+      );
+    },
+    onSortButtonClick() {
+      if (this.shouldShowTopArtistsByTagCount()) {
         window.kexplorer.showTopArtistsByTagCount();
       } else {
         setSortMode(this.sortPreference);
