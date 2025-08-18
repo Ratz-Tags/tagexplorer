@@ -1,14 +1,13 @@
 import { vibrate } from "./ui.js";
 import { fetchWithCache } from "./fetch-cache.js";
+import { artists, activeTags, artistNameFilter } from "../src/app.js";
 
 /**
  * Tags module - Handles tag filtering, buttons, and related functionality
  */
 
 // Tag state
-let activeTags = new Set();
 let searchFilter = "";
-let artistNameFilter = "";
 let tagTooltips = {};
 let tagTaunts = {};
 let taunts = [];
@@ -21,7 +20,6 @@ let clearTagsBtn = null;
 let jrpgBubbles = null;
 
 // External dependencies that will be injected
-let allArtists = [];
 let renderArtists = null;
 let setRandomBackground = null;
 
@@ -177,12 +175,14 @@ function updateFilteredResultsSummary(filteredCount, totalCount) {
   const filteredResultsEl = document.getElementById("filtered-results");
   if (!filteredResultsEl) return;
 
-  if (activeTags.size > 0 || artistNameFilter) {
+  if (activeTags.value.size > 0 || artistNameFilter.value) {
     // Show summary when filters are active
     const tagText =
-      activeTags.size > 0 ? `Tags: ${Array.from(activeTags).join(", ")}` : "";
-    const nameText = artistNameFilter
-      ? `Name filter: "${artistNameFilter}"`
+      activeTags.value.size > 0
+        ? `Tags: ${Array.from(activeTags.value).join(", ")}`
+        : "";
+    const nameText = artistNameFilter.value
+      ? `Name filter: "${artistNameFilter.value}"`
       : "";
     const filterText = [tagText, nameText].filter((t) => t).join(" | ");
 
@@ -208,17 +208,17 @@ function renderTagButtons() {
   tagButtonsContainer.innerHTML = "";
 
   // Get artists matching current filters
-  let filteredArtists = allArtists.filter((artist) => {
+  let filteredArtists = artists.value.filter((artist) => {
     const tags = artist.kinkTags || [];
     return (
-      Array.from(activeTags).every((tag) => tags.includes(tag)) &&
-      (artist.artistName.toLowerCase().includes(artistNameFilter) ||
-        artistNameFilter === "")
+      Array.from(activeTags.value).every((tag) => tags.includes(tag)) &&
+      (artist.artistName.toLowerCase().includes(artistNameFilter.value) ||
+        artistNameFilter.value === "")
     );
   });
 
   // Update filtered results summary
-  updateFilteredResultsSummary(filteredArtists.length, allArtists.length);
+  updateFilteredResultsSummary(filteredArtists.length, artists.value.length);
 
   // Get all tags present in filtered artists
   let possibleTags = new Set();
@@ -231,23 +231,23 @@ function renderTagButtons() {
   let tagsToShow = kinkTags
     .filter((tag) => {
       const filter = searchFilter.trim().toLowerCase();
-      if (!filter) return possibleTags.has(tag) || activeTags.has(tag);
+      if (!filter) return possibleTags.has(tag) || activeTags.value.has(tag);
       if (tagSearchMode === "starts") {
         return (
           tag.toLowerCase().startsWith(filter) &&
-          (possibleTags.has(tag) || activeTags.has(tag))
+          (possibleTags.has(tag) || activeTags.value.has(tag))
         );
       }
       if (tagSearchMode === "ends") {
         return (
           tag.toLowerCase().endsWith(filter) &&
-          (possibleTags.has(tag) || activeTags.has(tag))
+          (possibleTags.has(tag) || activeTags.value.has(tag))
         );
       }
       // default: contains
       return (
         tag.toLowerCase().includes(filter) &&
-        (possibleTags.has(tag) || activeTags.has(tag))
+        (possibleTags.has(tag) || activeTags.value.has(tag))
       );
     })
     .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
@@ -265,7 +265,7 @@ function renderTagButtons() {
     customBtn.style.background = "#ffd6f6";
     customBtn.style.color = "#a0005a";
     customBtn.onclick = () => {
-      activeTags.add(filter);
+      activeTags.value.add(filter);
       renderTagButtons();
       if (renderArtists) renderArtists(true);
       if (setRandomBackground) setRandomBackground();
@@ -288,12 +288,12 @@ function renderTagButtons() {
     btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
     btn.dataset.tag = tag;
     if (tagTooltips[tag]) btn.title = tagTooltips[tag];
-    if (activeTags.has(tag)) btn.classList.add("active");
+    if (activeTags.value.has(tag)) btn.classList.add("active");
     btn.onclick = () => {
-      if (activeTags.has(tag)) {
-        activeTags.delete(tag);
+      if (activeTags.value.has(tag)) {
+        activeTags.value.delete(tag);
       } else {
-        activeTags.add(tag);
+        activeTags.value.add(tag);
         spawnBubble(tag);
       }
       renderTagButtons();
@@ -304,14 +304,14 @@ function renderTagButtons() {
     tagButtonsContainer.appendChild(btn);
   });
 
-  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.value.size ? "" : "none";
 }
 
 /**
  * Clears all active tags
  */
 function clearAllTags() {
-  activeTags.clear();
+  activeTags.value.clear();
   renderTagButtons();
   if (navigator.vibrate) navigator.vibrate(50);
   if (renderArtists) renderArtists(true); // <-- force full update
@@ -322,10 +322,10 @@ function clearAllTags() {
  * Toggles a single tag on or off
  */
 function toggleTag(tag) {
-  if (activeTags.has(tag)) {
-    activeTags.delete(tag);
+  if (activeTags.value.has(tag)) {
+    activeTags.value.delete(tag);
   } else {
-    activeTags.add(tag);
+    activeTags.value.add(tag);
     spawnBubble(tag);
   }
   renderTagButtons();
@@ -355,7 +355,7 @@ function setTagSearchMode(mode) {
  * Handles artist name filter input
  */
 function handleArtistNameFilter(value) {
-  artistNameFilter = value.trim().toLowerCase();
+  artistNameFilter.value = value.trim().toLowerCase();
   renderTagButtons(); // Update the summary display
   if (renderArtists) renderArtists(true);
 }
@@ -407,8 +407,8 @@ async function initTags() {
 /**
  * Sets the reference to all artists data
  */
-function setAllArtists(artists) {
-  allArtists = artists;
+function setAllArtists(list) {
+  artists.value = Array.isArray(list) ? list : [];
 }
 
 /**
@@ -450,7 +450,7 @@ function setTaunts(tauntsData) {
  * Gets the current active tags
  */
 function getActiveTags() {
-  return new Set(activeTags);
+  return new Set(activeTags.value);
 }
 
 /**
@@ -464,7 +464,7 @@ function getSearchFilter() {
  * Gets the current artist name filter
  */
 function getArtistNameFilter() {
-  return artistNameFilter;
+  return artistNameFilter.value;
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   fetchAllArtistImages,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
+import { artists } from "../src/app.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -31,7 +32,6 @@ let artistGallery = null;
 let backgroundBlur = null;
 
 // External dependencies
-let allArtists = [];
 let getActiveTags = null;
 let getArtistNameFilter = null;
 
@@ -963,12 +963,13 @@ async function filterArtists(reset = true, force = false) {
 
     // Filter artists
     if (activeTags.size === 0) {
-      filtered = allArtists.filter((artist) =>
-        artist.artistName.toLowerCase().includes(artistNameFilter) ||
-        artistNameFilter === ""
+      filtered = artists.value.filter(
+        (artist) =>
+          artist.artistName.toLowerCase().includes(artistNameFilter) ||
+          artistNameFilter === ""
       );
     } else {
-      filtered = allArtists.filter((artist) => {
+      filtered = artists.value.filter((artist) => {
         const tags = artist.kinkTags || [];
         // Use AND logic (all tags must match) for main gallery filtering
         const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
@@ -1114,7 +1115,7 @@ function forceSortAndRender() {
 }
 
 async function showTopArtistsByTagCount() {
-  if (!allArtists || allArtists.length === 0) return;
+  if (!artists.value || artists.value.length === 0) return;
   sortMode = "top";
   lastSortMode = "top";
   if (!getActiveTags) return;
@@ -1122,7 +1123,7 @@ async function showTopArtistsByTagCount() {
   if (selectedTags.length === 0) return;
 
   // Only include artists that have ALL selected tags (AND logic)
-  const artistsWithCounts = allArtists
+  const artistsWithCounts = artists.value
     .filter((artist) => {
       const tags = artist.kinkTags || [];
       return selectedTags.every((tag) => tags.includes(tag));
@@ -1160,8 +1161,8 @@ async function showTopArtistsByTagCount() {
   }
 }
 
-function setAllArtists(artists) {
-  allArtists = artists;
+function setAllArtists(list) {
+  artists.value = Array.isArray(list) ? list : [];
 }
 
 function setGetActiveTagsCallback(callback) {
