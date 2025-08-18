@@ -110,7 +110,16 @@
 
   <!-- Audio controls -->
   <section id="audio-section" aria-label="Audio controls">
-    <div id="audio-panel" class="audio-panel" :class="{ hidden: !audioPanelVisible }" role="region" aria-label="Hypnosis audio player" :aria-hidden="(!audioPanelVisible).toString()" ref="audioPanel" tabindex="-1">
+    <div
+      id="audio-panel"
+      class="audio-panel"
+      :class="{ hidden: !audioPanelVisible }"
+      role="region"
+      aria-label="Hypnosis audio player"
+      :aria-hidden="(!audioPanelVisible).toString()"
+      ref="audioPanel"
+      tabindex="-1"
+    >
       <div class="audio-header">
         <span aria-label="Audio indicator">🎧</span>
         <span id="audio-track-name">No track playing</span>
