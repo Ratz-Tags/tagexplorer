@@ -5,6 +5,8 @@
 // Use the global fetch implementation (available in modern browsers and Node 18+)
 const fetchFn = fetch;
 
+import { fetchWithCache } from "./fetch-cache.js";
+
 /**
  * Checks if a post has all the specified tags
  */
@@ -142,8 +144,7 @@ async function loadArtists() {
       const data = await fs.readFile(filePath, "utf8");
       artistsCache = JSON.parse(data);
     } else {
-      const response = await fetchFn("artists.json");
-      artistsCache = await response.json();
+      artistsCache = await fetchWithCache("artists.json");
     }
   } catch (e) {
     console.warn("Failed to load artists.json:", e);
@@ -207,13 +208,12 @@ function clearArtistCache(artistName) {
  */
 async function loadAppData() {
   try {
-    const [artists, tooltips, generalTaunts, tagTaunts, kinkTags] =
+    const [artists, tooltips, generalTaunts, tagTaunts] =
       await Promise.all([
-        fetchFn("artists.json").then((r) => r.json()),
-        fetchFn("tag-tooltips.json").then((r) => r.json()),
-        fetchFn("taunts.json").then((r) => r.json()),
-        fetchFn("tag-taunts.json").then((r) => r.json()),
-        fetchFn("kink-tags.json").then((r) => r.json()),
+        fetchWithCache("artists.json"),
+        fetchWithCache("tag-tooltips.json"),
+        fetchWithCache("taunts.json"),
+        fetchWithCache("tag-taunts.json"),
       ]);
 
     return {
@@ -221,7 +221,6 @@ async function loadAppData() {
       tooltips,
       generalTaunts,
       tagTaunts,
-      kinkTags,
     };
   } catch (error) {
     console.error("Failed to load required data files:", error);

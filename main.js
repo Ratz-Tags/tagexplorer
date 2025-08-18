@@ -19,7 +19,6 @@ import {
   getArtistNameFilter,
   renderTagButtons,
   setTagSearchMode,
-  setKinkTags,
 } from "./modules/tags.js";
 import {
   initGallery,
@@ -54,8 +53,7 @@ import { createTTSToggleButton } from "./modules/tts-toggle.js";
 async function initApp() {
   try {
     // Load data files
-    const { artists, tooltips, generalTaunts, tagTaunts, kinkTags } =
-      await loadAppData();
+    const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
 
     // Initialize modules
     initUI();
@@ -68,7 +66,7 @@ async function initApp() {
 
     // Add TTS toggle button to audio controls
     createTTSToggleButton();
-    initTags();
+    await initTags();
     initGallery();
 
     // Set up data sharing between modules
@@ -87,8 +85,15 @@ async function initApp() {
     setTagTooltips(tooltips);
     setTagTaunts(tagTaunts);
     setTaunts(generalTaunts);
-    setKinkTags(kinkTags);
     startTauntTicker(generalTaunts, 30000);
+
+    // Use loaded tooltips to set a random tagline
+    const quotes = Object.values(tooltips).filter(Boolean);
+    if (quotes.length > 0) {
+      const random = quotes[Math.floor(Math.random() * quotes.length)];
+      const taglineElem = document.getElementById("tagline");
+      if (taglineElem) taglineElem.textContent = random;
+    }
 
     // Initial render
     renderTagButtons();
@@ -128,21 +133,7 @@ if (document.readyState === "loading") {
   initApp();
 }
 
-// Load tag-tooltips.json and set a random quote as the tagline
-fetch("tag-tooltips.json")
-  .then((res) => res.json())
-  .then((tooltips) => {
-    // tooltips is expected to be an object: { tag: "tooltip", ... }
-    const quotes = Object.values(tooltips).filter(Boolean);
-    if (quotes.length > 0) {
-      const random = quotes[Math.floor(Math.random() * quotes.length)];
-      const taglineElem = document.getElementById("tagline");
-      if (taglineElem) taglineElem.textContent = random;
-    }
-  })
-  .catch(() => {
-    // fallback: do nothing or keep default tagline
-  });
+// tag-tooltips are loaded in initApp and used for tagline
 
 // Global error handling
 window.addEventListener("error", (event) => {
