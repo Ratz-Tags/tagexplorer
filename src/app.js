@@ -251,6 +251,7 @@ if (typeof document !== "undefined") {
       localStorage.setItem("theme", current);
       setRandomBackground();
     });
+  }
   const sortPreferenceElem = document.getElementById("sort-preference");
   if (sortPreferenceElem) {
     sortPreferenceElem.addEventListener("change", (e) => {
