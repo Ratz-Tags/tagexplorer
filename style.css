@@ -6,6 +6,7 @@
   --radius: 14px;
   --btn-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --padding: 1rem;
+  --text-color: var(--accent2);
 }
 
 /* Use a clear, readable base font for the app */
