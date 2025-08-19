@@ -41,29 +41,6 @@ body > nav,
   box-shadow: 0 6px 24px rgba(253, 123, 197, 0.18);
 }
 
-.top-bar {
-  animation: topBarGradient 8s ease-in-out infinite alternate;
-  width: 340px;
-  background: #fff;
-  box-shadow: -2px 0 16px rgba(253, 123, 197, 0.10);
-  border-radius: 12px 0 0 12px;
-  overflow-y: auto;
-  display: none;
-  padding: 1.2em 1em 1em 1em;
-  font-family: 'Inter', sans-serif;
-  font-size: 1rem;
-}
-
-
-@keyframes topBarGradient {
-  0% {
-    background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  }
-  100% {
-    background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
-  }
-}
-
 @keyframes floatingPop {
   0% {
     transform: scale(0.7) translateY(32px);
@@ -129,6 +106,21 @@ body > nav,
 .fem-btn:focus-visible, .browse-btn:focus-visible, .tag-btn:focus-visible, .tag-button:focus-visible, .copy-button:focus-visible, .reload-button:focus-visible, .zoom-tool:focus-visible {
   outline: 3px solid #fd7bc5;
   outline-offset: 2px;
+}
+
+.fem-select {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 0.4em 0.6em;
+  color: var(--accent2);
+  font-family: var(--btn-font);
+  font-size: 1em;
+}
+
+.browse-btn {
+  background-color: var(--accent1);
+  color: #fff;
 }
 
 /* Utility: sidebar-hidden helper */
@@ -766,6 +758,14 @@ body > nav,
 }
 
 /* Filter UI */
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: rgba(255, 240, 250, 0.95);
+  box-shadow: 0 2px 8px rgba(253, 123, 197, 0.15);
+}
+
 .filter-toggle {
   background: var(--accent1);
   border: none;
@@ -779,7 +779,7 @@ body > nav,
   padding: var(--padding);
 }
 
-.filter-bar.collapsed {
+.filter-bar.collapsed #tag-filter {
   display: none;
 }
 
@@ -1087,16 +1087,6 @@ button[aria-label*="Back"]::after,
 }
 
 /* Keyframes */
-@keyframes topBarGradient {
-  0% {
-    background: linear-gradient(120deg, #fff0fa 60%, #ffd6f6 100%);
-  }
-
-  100% {
-    background: linear-gradient(120deg, #ffd6f6 0%, #fff0fa 100%);
-  }
-}
-
 @keyframes floatingPop {
   0% {
     transform: scale(0.7) translateY(32px);
@@ -1701,7 +1691,3 @@ html.tag-explorer-open {
   font-style: italic;
 }
 
-.browse-btn {
-  background-color: var(--accent1);
-  color: #fff;
-}
