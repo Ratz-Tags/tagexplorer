@@ -234,7 +234,8 @@ export default {
         />
 
         <label for="category-select" class="visually-hidden">Tag category</label>
-        <select id="category-select" v-model="selectedCategory">
+        <select id="category-select" class="fem-select" v-model="selectedCategory">
+        <select id="category-select" v-model="selectedC
           <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
         </select>
 

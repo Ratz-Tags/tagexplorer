@@ -3,7 +3,6 @@ import {
   forceSortAndRender,
   setSortPreference,
 } from '../../modules/gallery.js';
-import { openTagExplorer } from '../../modules/tag-explorer.js';
 
 export default {
   name: 'Header',
@@ -28,15 +27,10 @@ export default {
       setSortPreference(sortPreference.value);
     }
 
-    function toggleFilters() {
-      openTagExplorer();
-    }
-
     return {
       sortPreference,
       handleSort,
       updatePreference,
-      toggleFilters,
     };
   },
   template: `
@@ -47,13 +41,12 @@ export default {
           <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
           <span class="tagline" id="tagline">Pathetic..~</span>
           <div class="sort-controls">
-            <select id="sort-preference" v-model="sortPreference" @change="updatePreference">
+            <select id="sort-preference" class="fem-select" v-model="sortPreference" @change="updatePreference">
               <option value="name">Sort: Name (A-Z)</option>
               <option value="count">Sort: Tag Count</option>
               <option value="top">Top Artists (by tag count)</option>
             </select>
-            <button id="sort-button" @click="handleSort">Sort</button>
-            <button id="toggle-filters" type="button" class="browse-btn" aria-expanded="false" @click="toggleFilters">Browse Tags</button>
+            <button id="sort-button" class="fem-btn" @click="handleSort">Sort</button>
             <!-- Only one Top Artists button, handled by JS -->
           </div>
           <div class="top-actions"></div>
