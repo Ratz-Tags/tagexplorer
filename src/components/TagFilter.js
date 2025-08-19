@@ -9,6 +9,7 @@ import {
   clearAllTags,
   tagSearchMode,
 } from "../../modules/tags.js";
+import { getFilteredCounts } from "../../modules/tag-explorer.js";
 
 const { ref, computed } = Vue;
 
@@ -28,6 +29,95 @@ const tagIcons = {
   pregnant: "icons/pregnant.png",
 };
 
+// Hand-picked tag categories
+const tagCategories = {
+  Bondage: [
+    "bdsm",
+    "bondage",
+    "shibari",
+    "restraints",
+    "restrained",
+    "hogtie",
+    "leash",
+    "spreader_bar",
+    "chastity_cage",
+    "chastity_cage_emission",
+    "flat_chastity_cage",
+    "holding_key",
+    "immobilization",
+  ],
+  Feminization: [
+    "feminization",
+    "forced_feminization",
+    "bimbofication",
+    "crossdressing",
+    "crossdressing_(mtf)",
+    "trap",
+  ],
+  Penetration: [
+    "anal_fingering",
+    "anal_fisting",
+    "anal_object_insertion",
+    "object_insertion",
+    "object_insertion_from_behind",
+    "urethral_insertion",
+    "prostate_milking",
+    "pegging",
+    "male_penetrated",
+    "dildo_riding",
+    "strap-on",
+    "large_insertion",
+    "huge_dildo",
+    "sounding",
+    "knotting",
+    "tentacle_sex",
+    "tentacle_pit",
+  ],
+  Oral: [
+    "oral",
+    "fellatio",
+    "irrumatio",
+    "cum_in_mouth",
+    "gokkun",
+    "swallowing",
+    "drinking_from_condom",
+    "pouring_from_condom",
+    "precum",
+    "cum",
+    "cumdump",
+    "pussy_juice",
+    "ejaculating_while_penetrated",
+    "handsfree_ejaculation",
+    "penis_milking",
+    "hand_milking",
+    "milking_machine",
+    "lactation",
+  ],
+  Control: [
+    "hypnosis",
+    "mind_break",
+    "mind_control",
+    "orgasm_denial",
+    "dominatrix",
+    "assertive_female",
+    "sadism",
+    "pet_play",
+    "sex_machine",
+  ],
+  Humiliation: [
+    "humiliation",
+    "small_penis",
+    "small_penis_humiliation",
+    "public_nudity",
+    "body_writing",
+    "assisted_exposure",
+    "bullying",
+    "annoyed",
+    "cheating_(relationship)",
+  ],
+  Feet: ["foot_worship", "sockjob", "toe_sucking"],
+};
+
 export default {
   name: "TagFilter",
   props: {
@@ -38,6 +128,26 @@ export default {
   },
   setup(props) {
     const bubbles = ref([]);
+    const collapsed = ref(true);
+    const selectedCategory = ref("All");
+
+    const tagToCategory = computed(() => {
+      const mapping = {};
+      Object.entries(tagCategories).forEach(([cat, tags]) => {
+        tags.forEach((t) => (mapping[t] = cat));
+      });
+      props.tags.forEach((t) => {
+        if (!mapping[t]) mapping[t] = "Other";
+      });
+      return mapping;
+    });
+
+    const categories = computed(() => [
+      "All",
+      ...new Set(Object.values(tagToCategory.value)),
+    ]);
+
+    const tagCounts = computed(() => getFilteredCounts(activeTags.value));
 
     function spawnBubble(tag) {
       const pool = tagTaunts[tag] || taunts;
@@ -59,8 +169,17 @@ export default {
 
     const filteredTags = computed(() => {
       const filter = searchFilter.value.trim().toLowerCase();
+      const counts = tagCounts.value;
+      const mapping = tagToCategory.value;
       return props.tags
         .filter((tag) => {
+          const cat = mapping[tag] || "Other";
+          if (
+            selectedCategory.value !== "All" &&
+            cat !== selectedCategory.value
+          )
+            return false;
+          if (!counts[tag] && !activeTags.value.has(tag)) return false;
           if (!filter) return true;
           const t = tag.toLowerCase();
           if (tagSearchMode === "starts") return t.startsWith(filter);
@@ -71,6 +190,10 @@ export default {
     });
 
     const showClear = computed(() => activeTags.value.size > 0);
+
+    function toggleCollapse() {
+      collapsed.value = !collapsed.value;
+    }
 
     return {
       activeTags,
@@ -83,31 +206,44 @@ export default {
       tagIcons,
       bubbles,
       showClear,
+      categories,
+      selectedCategory,
+      collapsed,
+      toggleCollapse,
     };
   },
   template: `
-    <nav class="filter-bar" role="navigation" aria-label="Tag filters">
-      <div id="tag-filter">
-        <div class="filter-inputs">
-          <label for="tag-search" class="visually-hidden">Filter tags</label>
-          <input
-            type="text"
-            id="tag-search"
-            placeholder="Type to filter tags..."
-            v-model="searchFilter"
-            aria-describedby="tag-search-help"
-          />
+    <nav class="filter-bar" :class="{ collapsed }" role="navigation" aria-label="Tag filters">
+      <div class="filter-inputs">
+        <label for="tag-search" class="visually-hidden">Filter tags</label>
+        <input
+          type="text"
+          id="tag-search"
+          placeholder="Type to filter tags..."
+          v-model="searchFilter"
+          aria-describedby="tag-search-help"
+        />
 
-          <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
-          <input
-            type="text"
-            id="artist-name-filter"
-            placeholder="Filter by artist name..."
-            v-model="artistNameFilter"
-            aria-describedby="artist-filter-help"
-          />
-        </div>
+        <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
+        <input
+          type="text"
+          id="artist-name-filter"
+          placeholder="Filter by artist name..."
+          v-model="artistNameFilter"
+          aria-describedby="artist-filter-help"
+        />
 
+        <label for="category-select" class="visually-hidden">Tag category</label>
+        <select id="category-select" v-model="selectedCategory">
+          <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+        </select>
+
+        <button class="filter-toggle" @click="toggleCollapse" :aria-expanded="!collapsed">
+          {{ collapsed ? 'Show Tags' : 'Hide Tags' }}
+        </button>
+      </div>
+
+      <div id="tag-filter" v-show="!collapsed">
         <div id="tag-buttons" role="group" aria-label="Available tags">
           <button
             v-for="tag in filteredTags"
