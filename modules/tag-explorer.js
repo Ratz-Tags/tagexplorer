@@ -4,8 +4,8 @@ import {
   toggleTag,
   getArtistNameFilter,
   handleArtistNameFilter,
+  artists,
 } from "./tags.js";
-import { artists } from "../src/app.js";
 let filteredArtistsCache = null;
 let filteredActiveCache = null;
 let filteredNameCache = null;
