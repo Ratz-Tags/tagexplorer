@@ -74,7 +74,8 @@ export default {
 
     onMounted(() => {
       audioEl.value = document.getElementById('hypnoAudio');
-      moanEl.value = document.getElementById('moan-audio');
+      // Vue will automatically assign the DOM elements to audioEl and moanEl via template refs.
+      // Make sure to add ref="audioEl" to <audio id="hypnoAudio"> and ref="moanEl" to <audio id="moan-audio"> in the template.
       loadTracks();
       audioEl.value.addEventListener('ended', nextTrack);
     });
