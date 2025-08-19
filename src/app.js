@@ -63,7 +63,11 @@ export default {
         .then((tags) => (state.tags = tags));
       fetch('artists.json')
         .then((r) => r.json())
-        .then((artists) => (state.artists = artists));
+        .then((artists) => (state.artists = artists))
+        .catch((error) => {
+          console.error('Failed to load artists.json:', error);
+          state.artists = [];
+        });
     });
 
     provide('state', state);
