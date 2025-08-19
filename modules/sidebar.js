@@ -4,7 +4,7 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
-import { artists } from "../src/app.js";
+import { artists } from "./tags.js";
 
 let copiedArtists = new Set();
 

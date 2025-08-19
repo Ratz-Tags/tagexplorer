@@ -6,7 +6,7 @@ import {
   fetchAllArtistImages,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
-import { artists } from "../src/app.js";
+import { artists, activeTags, artistNameFilter } from "./tags.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -32,8 +32,6 @@ let artistGallery = null;
 let backgroundBlur = null;
 
 // External dependencies
-let getActiveTags = null;
-let getArtistNameFilter = null;
 
 /**
  * Sets the background image with a random image
@@ -70,7 +68,7 @@ function setBestImage(artist, img) {
   const cachedUrl = localStorage.getItem(cacheKey);
 
   // Get selected tags for filtering
-  const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+  const selectedTags = Array.from(activeTags.value);
 
   // Session storage cache for API results
   const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(
@@ -765,9 +763,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
     // Use override if provided (for Top Artists by Tag Count)
     const selectedTags = Array.isArray(selectedTagsOverride)
       ? selectedTagsOverride
-      : getActiveTags
-      ? Array.from(getActiveTags())
-      : [];
+      : Array.from(activeTags.value);
     let taglistText = "";
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       taglistText = artist.kinkTags
@@ -958,25 +954,25 @@ async function filterArtists(reset = true, force = false) {
     isFetching = true;
 
     // Get active tags and filters
-    const activeTags = getActiveTags ? getActiveTags() : new Set();
-    const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+    const active = activeTags.value;
+    const nameFilter = artistNameFilter.value;
 
     // Filter artists
-    if (activeTags.size === 0) {
+    if (active.size === 0) {
       filtered = artists.value.filter(
         (artist) =>
-          artist.artistName.toLowerCase().includes(artistNameFilter) ||
-          artistNameFilter === ""
+          artist.artistName.toLowerCase().includes(nameFilter) ||
+          nameFilter === ""
       );
     } else {
       filtered = artists.value.filter((artist) => {
         const tags = artist.kinkTags || [];
         // Use AND logic (all tags must match) for main gallery filtering
-        const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
+        const tagMatch = Array.from(active).every((tag) => tags.includes(tag));
         return (
           tagMatch &&
-          (artist.artistName.toLowerCase().includes(artistNameFilter) ||
-            artistNameFilter === "")
+          (artist.artistName.toLowerCase().includes(nameFilter) ||
+            nameFilter === "")
         );
       });
     }
@@ -1118,8 +1114,7 @@ async function showTopArtistsByTagCount() {
   if (!artists.value || artists.value.length === 0) return;
   sortMode = "top";
   lastSortMode = "top";
-  if (!getActiveTags) return;
-  const selectedTags = Array.from(getActiveTags());
+  const selectedTags = Array.from(activeTags.value);
   if (selectedTags.length === 0) return;
 
   // Only include artists that have ALL selected tags (AND logic)
@@ -1163,17 +1158,6 @@ async function showTopArtistsByTagCount() {
 
 function setAllArtists(list) {
   artists.value = Array.isArray(list) ? list : [];
-}
-
-function setGetActiveTagsCallback(callback) {
-  getActiveTags = callback;
-}
-
-/**
- * Sets the callback to get artist name filter
- */
-function setGetArtistNameFilterCallback(callback) {
-  getArtistNameFilter = callback;
 }
 
 function setSortPreference(preference) {
@@ -1300,8 +1284,6 @@ export {
   forceSortAndRender,
   setRandomBackground,
   setAllArtists,
-  setGetActiveTagsCallback,
-  setGetArtistNameFilterCallback,
   setSortMode,
   getPaginationInfo,
   getFilteredArtists,

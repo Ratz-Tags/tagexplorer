@@ -1,5 +1,5 @@
 import Header from './components/Header.js';
-import FilterBar from './components/FilterBar.js';
+import TagFilter from './components/TagFilter.js';
 import Gallery from './components/Gallery.js';
 import Sidebar from './components/Sidebar.js';
 import AudioSection from './components/Audio.js';
@@ -9,19 +9,32 @@ export default {
   name: 'RootApp',
   components: {
     Header,
-    FilterBar,
+    TagFilter,
     Gallery,
     Sidebar,
     AudioSection,
     Controls
   },
+  setup() {
+    const { ref, onMounted } = Vue;
+    const kinkTags = ref([]);
+    onMounted(async () => {
+      try {
+        const res = await fetch('kink-tags.json');
+        const data = await res.json();
+        kinkTags.value = Array.isArray(data) ? data : [];
+      } catch {
+        kinkTags.value = [];
+      }
+    });
+    return { kinkTags };
+  },
   template: `
     <div id="background-blur" aria-hidden="true"></div>
     <Header />
-    <FilterBar />
+    <TagFilter :tags="kinkTags" />
     <Gallery />
     <Sidebar />
-    <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
     <AudioSection />
     <Controls />
   `
