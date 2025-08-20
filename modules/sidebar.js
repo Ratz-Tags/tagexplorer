@@ -336,12 +336,9 @@ function initSidebar() {
       btn.addEventListener("click", (e) => {
         vibrate();
         copiedSidebar.classList.toggle("sidebar-hidden");
-        // Toggle body class when sidebar is opened or closed
-        if (!copiedSidebar.classList.contains("sidebar-hidden")) {
-          document.body.classList.add("sidebar-open");
-        } else {
-          document.body.classList.remove("sidebar-open");
-        }
+        const open = !copiedSidebar.classList.contains("sidebar-hidden");
+        document.body.classList.toggle("sidebar-open", open);
+        sidebarToggles.forEach(b => b.setAttribute('aria-expanded', String(open)));
       });
     });
   }

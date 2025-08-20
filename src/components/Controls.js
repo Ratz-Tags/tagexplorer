@@ -4,7 +4,7 @@ export default {
     <nav class="floating-controls" aria-label="Quick access controls">
       <div class="toggle-buttons-container">
         <button class="sidebar-toggle" aria-label="Show copied artists sidebar" aria-controls="copied-sidebar">🎀</button>
-        <button class="audio-toggle" aria-label="Show audio panel" aria-controls="audio-panel">🎶</button>
+        <button class="audio-toggle" aria-label="Show audio panel" aria-controls="audio-panel" aria-expanded="false">🎶</button>
         <button class="theme-toggle" aria-label="Toggle theme">🌓</button>
       </div>
 

@@ -20,7 +20,6 @@ const audioFiles = [
 ];
 
 // DOM element references
-let panelToggle = null;
 let panel = null;
 let trackName = null;
 let toggleBtn = null;
@@ -122,8 +121,10 @@ function togglePanel() {
   if (!panel) return;
   panel.classList.toggle("hidden");
   const expanded = !panel.classList.contains("hidden");
-  const toggler = document.getElementById("audio-panel-toggle");
-  if (toggler) toggler.setAttribute("aria-expanded", String(expanded));
+  // Update any toggles' aria-expanded
+  document.querySelectorAll('.audio-toggle').forEach(btn => {
+    btn.setAttribute('aria-expanded', String(expanded));
+  });
 }
 
 /**
@@ -139,7 +140,6 @@ function onTrackEnded() {
  */
 function initAudio() {
   // Get DOM references
-  panelToggle = document.getElementById("audio-panel-toggle");
   panel = document.getElementById("audio-panel");
   trackName = document.getElementById("audio-track-name");
   toggleBtn = document.getElementById("audio-toggle");
@@ -203,12 +203,8 @@ function initAudio() {
     });
   }
 
-  if (panelToggle) {
-    panelToggle.addEventListener("click", (e) => {
-      vibrate();
-      togglePanel(e);
-    });
-  }
+  // Remove dedicated toggle; support generic .audio-toggle buttons only
+  // if (panelToggle) { /* deprecated */ }
   // Support any generic audio toggle buttons
   document.querySelectorAll('.audio-toggle').forEach((btn) => {
     btn.addEventListener('click', (e) => {

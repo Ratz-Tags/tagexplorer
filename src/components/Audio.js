@@ -8,7 +8,6 @@ export default {
   },
   template: `
     <section id="audio-section" aria-label="Audio controls">
-      <button id="audio-panel-toggle" class="browse-btn" aria-controls="audio-panel" aria-expanded="false" style="position:fixed;left:1.5em;bottom:1.5em;z-index:1201;">🎧 Audio</button>
       <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
         <div class="audio-header">
           <span aria-label="Audio indicator">🎧</span>
