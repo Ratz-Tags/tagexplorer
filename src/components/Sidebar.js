@@ -5,7 +5,7 @@ export default {
   mounted() {
     initSidebar();
   },
-  render() {
-    return null;
-  }
+  template: `
+    <aside id="copied-sidebar" class="sidebar-hidden" aria-label="Copied artists sidebar"></aside>
+  `
 };

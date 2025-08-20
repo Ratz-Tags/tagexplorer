@@ -121,6 +121,9 @@ function toggleMoanPlayback() {
 function togglePanel() {
   if (!panel) return;
   panel.classList.toggle("hidden");
+  const expanded = !panel.classList.contains("hidden");
+  const toggler = document.getElementById("audio-panel-toggle");
+  if (toggler) toggler.setAttribute("aria-expanded", String(expanded));
 }
 
 /**
@@ -206,6 +209,13 @@ function initAudio() {
       togglePanel(e);
     });
   }
+  // Support any generic audio toggle buttons
+  document.querySelectorAll('.audio-toggle').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      vibrate();
+      togglePanel(e);
+    });
+  });
 
   if (hypnoAudio) {
     hypnoAudio.addEventListener("ended", onTrackEnded);
