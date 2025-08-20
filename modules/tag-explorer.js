@@ -5,7 +5,9 @@ import {
   getArtistNameFilter,
   handleArtistNameFilter,
   artists,
+  clearAllTags,
 } from "./tags.js";
+import { filterArtists } from "./gallery.js";
 let filteredArtistsCache = null;
 let filteredActiveCache = null;
 let filteredNameCache = null;
@@ -144,10 +146,13 @@ async function filterTags() {
   clearTagsBtn.textContent = "Clear Tags";
   clearTagsBtn.setAttribute("id", "clear-tags-btn");
   clearTagsBtn.onclick = () => {
-    if (typeof window.clearAllTags === "function") window.clearAllTags();
+    clearAllTags();
     searchInput.value = "";
     nameInput.value = "";
+    handleArtistNameFilter("");
     renderList();
+    // Refilter gallery on clear
+    filterArtists(true, true);
   };
   header.appendChild(clearTagsBtn);
 
@@ -173,6 +178,7 @@ async function filterTags() {
   nameInput.oninput = () => {
     handleArtistNameFilter(nameInput.value);
     renderList();
+    filterArtists(true, true);
   };
 
   header.appendChild(searchInput);
@@ -209,7 +215,9 @@ async function filterTags() {
       if (active.has(tag)) btn.classList.add("active");
       btn.onclick = () => {
         toggleTag(tag);
+        // Refresh counts and list, and filter gallery
         renderList();
+        filterArtists(true, true);
       };
       btn.tabIndex = 0;
       btn.dataset.idx = idx;
@@ -219,7 +227,7 @@ async function filterTags() {
 
   // Keyboard navigation for tag explorer
   let selectedIdx = 0;
-  wrapper.addEventListener("keydown", (e) => {
+  const onKey = (e) => {
     const tagBtns = list.querySelectorAll(".tag-button");
     if (e.key === "ArrowDown") {
       selectedIdx = Math.min(selectedIdx + 1, tagBtns.length - 1);
@@ -235,12 +243,16 @@ async function filterTags() {
       tagBtns[selectedIdx]?.click();
       e.preventDefault();
     }
+    if (e.key === "Escape") {
+      closeBtn.click();
+    }
     // Feature: clear tags with Ctrl+Backspace
     if (e.ctrlKey && e.key === "Backspace") {
       clearTagsBtn.click();
       e.preventDefault();
     }
-  });
+  };
+  wrapper.addEventListener("keydown", onKey);
 
   // Feature: auto-focus search on open
   setTimeout(() => searchInput.focus(), 100);
@@ -249,6 +261,7 @@ async function filterTags() {
   wrapper.appendChild(container);
 
   document.body.appendChild(wrapper);
+  wrapper.setAttribute('tabindex', '0');
   wrapper.focus();
   try {
     // Fetch tag counts, handle errors

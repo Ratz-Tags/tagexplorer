@@ -4,6 +4,7 @@ import Gallery from './components/Gallery.js';
 import Sidebar from './components/Sidebar.js';
 import AudioSection from './components/Audio.js';
 import Controls from './components/Controls.js';
+import { setKinkTags } from '../modules/tags.js';
 
 export default {
   name: 'RootApp',
@@ -23,8 +24,11 @@ export default {
         const res = await fetch('kink-tags.json');
         const data = await res.json();
         kinkTags.value = Array.isArray(data) ? data : [];
+        // Provide tags to modules/tag-explorer via global state
+        setKinkTags(kinkTags.value);
       } catch {
         kinkTags.value = [];
+        setKinkTags([]);
       }
     });
     return { kinkTags };

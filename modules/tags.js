@@ -17,12 +17,16 @@ export let tagSearchMode = "contains"; // "contains", "starts", "ends"
 let kinkTags = [];
 
 function toggleTag(tag) {
-  const set = activeTags.value;
-  set.has(tag) ? set.delete(tag) : set.add(tag);
+  // Reassign a new Set to trigger Vue reactivity
+  const current = new Set(activeTags.value);
+  if (current.has(tag)) current.delete(tag);
+  else current.add(tag);
+  activeTags.value = current;
 }
 
 function clearAllTags() {
-  activeTags.value.clear();
+  // Reassign a new Set to trigger Vue reactivity
+  activeTags.value = new Set();
 }
 
 function getActiveTags() {

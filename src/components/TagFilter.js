@@ -10,8 +10,9 @@ import {
   tagSearchMode,
 } from "../../modules/tags.js";
 import { getFilteredCounts } from "../../modules/tag-explorer.js";
+import { filterArtists } from "../../modules/gallery.js";
 
-const { ref, computed } = Vue;
+const { ref, computed, watch } = Vue;
 
 const tagIcons = {
   pegging: "icons/pegging.svg",
@@ -164,8 +165,15 @@ export default {
     function handleToggle(tag) {
       const wasActive = activeTags.value.has(tag);
       toggleTag(tag);
+      // Refilter gallery whenever selection changes
+      filterArtists(true, true);
       if (!wasActive) spawnBubble(tag);
     }
+
+    // Live-filter gallery as the artist name filter changes
+    watch(artistNameFilter, () => {
+      filterArtists(true, true);
+    });
 
     const filteredTags = computed(() => {
       const filter = searchFilter.value.trim().toLowerCase();
@@ -266,7 +274,7 @@ export default {
         <button
           id="clear-tags"
           v-if="showClear"
-          @click="clearAllTags"
+          @click="() => { clearAllTags(); filterArtists(true, true); }"
           aria-label="Clear all selected tags"
         >
           Clear All
