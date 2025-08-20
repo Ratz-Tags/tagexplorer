@@ -210,13 +210,6 @@ if (sortButtonElem && sortSelect) {
   });
 }
 
-const filterToggle = document.getElementById("toggle-filters");
-if (filterToggle) {
-  filterToggle.addEventListener("click", () => {
-    openTagExplorer();
-  });
-}
-
 // Theme toggling
 const themeToggle = document.querySelector(".theme-toggle");
 const bodyEl = document.body;
@@ -329,4 +322,49 @@ window.addEventListener("DOMContentLoaded", () => {
     chibi.style.filter = "drop-shadow(0 2px 12px #fd7bc5cc)";
     document.body.appendChild(chibi);
   }
+
+  // Tag Explorer Bar buttons
+  const topArtistsBtn = document.getElementById("top-artists-btn");
+  const joiModeBtn = document.getElementById("joi-mode-btn");
+  const promptsBtn = document.getElementById("prompts-btn");
+  const browseTagsBtn = document.getElementById("browse-tags-btn");
+  if (topArtistsBtn) {
+    topArtistsBtn.addEventListener("click", () => {
+      if (window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === "function") {
+        window.kexplorer.showTopArtistsByTagCount();
+      }
+    });
+  }
+  if (joiModeBtn) {
+    joiModeBtn.addEventListener("click", () => {
+      if (window.startJOIMode) window.startJOIMode();
+    });
+  }
+  if (promptsBtn) {
+    promptsBtn.addEventListener("click", () => {
+      if (window.renderPromptCacheUI) window.renderPromptCacheUI();
+    });
+  }
+  if (browseTagsBtn) {
+    browseTagsBtn.addEventListener("click", () => {
+      if (window.openTagExplorer) window.openTagExplorer();
+    });
+  }
+
+  // Make tag-explorer-bar fixed on scroll
+  const tagBar = document.getElementById("tag-explorer-bar");
+  let lastScrollY = 0;
+  window.addEventListener("scroll", () => {
+    if (!tagBar) return;
+    if (window.scrollY > 60) {
+      tagBar.classList.add("fixed");
+    } else {
+      tagBar.classList.remove("fixed");
+    }
+    lastScrollY = window.scrollY;
+  });
+
+  // Remove old filter toggle logic if present
+  const filterToggle = document.getElementById("toggle-filters");
+  if (filterToggle) filterToggle.style.display = "none";
 });

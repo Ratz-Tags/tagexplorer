@@ -21,60 +21,14 @@
         <h1 class="brand">Artist Explorer</h1>
         <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
         <span class="tagline" id="tagline">Pathetic..~</span>
-        <div class="sort-controls">
-          <select id="sort-preference">
-            <option value="name">Sort: Name (A-Z)</option>
-            <option value="count">Sort: Tag Count</option>
-            <option value="top">Top Artists (by tag count)</option>
-          </select>
-          <button id="sort-button">Sort</button>
-          <button id="toggle-filters" type="button" class="browse-btn" aria-expanded="false">Browse Tags</button>
-          <!-- Only one Top Artists button, handled by JS -->
-        </div>
-        <div class="top-actions">
-        </div>
       </div>
-
-      <!-- Tag filtering controls -->
-      <nav class="filter-bar collapsed" role="navigation" aria-label="Tag filters">
-        <div id="tag-filter">
-        <div class="filter-inputs">
-          <label for="tag-search" class="visually-hidden">Filter tags</label>
-          <input 
-            type="text" 
-            id="tag-search" 
-            placeholder="Type to filter tags..."
-            aria-describedby="tag-search-help" 
-          />
-          
-          <label for="artist-name-filter" class="visually-hidden">Filter by artist name</label>
-          <input
-            type="text"
-            id="artist-name-filter"
-            placeholder="Filter by artist name..."
-            aria-describedby="artist-filter-help"
-          >
-        </div>
-        
-        <div id="tag-buttons" role="group" aria-label="Available tags"></div>
-        
-        <button 
-          id="clear-tags" 
-          style="display:none;"
-          aria-label="Clear all selected tags"
-        >
-          Clear All
-        </button>
-        
-        <!-- Screen reader helpers -->
-        <div id="tag-search-help" class="visually-hidden">
-          Type to search and filter available tags
-        </div>
-        <div id="artist-filter-help" class="visually-hidden">
-          Type to filter artists by name
-        </div>
+      <!-- New compact tag explorer bar -->
+      <div class="tag-explorer-bar" id="tag-explorer-bar">
+        <button class="bar-btn" id="top-artists-btn">Top Artists</button>
+        <button class="bar-btn" id="joi-mode-btn">JOI Mode</button>
+        <button class="bar-btn" id="prompts-btn">Prompts</button>
+        <button class="bar-btn" id="browse-tags-btn">Browse Tags</button>
       </div>
-    </nav>
     </div>
   </header>
 

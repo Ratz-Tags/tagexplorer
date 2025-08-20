@@ -39,27 +39,30 @@ let getArtistNameFilter = null;
  * Sets the background image with a random image
  */
 async function setRandomBackground() {
-  if (!backgroundBlur) backgroundBlur = document.getElementById("background-blur");
-  if (!backgroundBlur) return;
+  const blur = document.getElementById("background-blur");
+  if (!blur) return;
+  blur.style.transition = "background-image 0.7s ease, opacity 0.7s ease";
+  blur.style.opacity = "0.3";
   try {
     if (document.body.classList.contains("incognito-theme")) {
-      backgroundBlur.style.backgroundImage = "none";
-      backgroundBlur.style.backgroundColor = "#111";
+      blur.style.backgroundImage = "none";
+      blur.style.backgroundColor = "#111";
       return; // don't fetch image in incognito
     }
     // Restore randomized backgrounds
     const { getRandomBackgroundImage } = await import("./api.js");
     const imageUrl = await getRandomBackgroundImage();
     if (imageUrl) {
-      backgroundBlur.style.backgroundImage = `url(${imageUrl})`;
-      backgroundBlur.style.backgroundColor = "";
+      blur.style.backgroundImage = `url(${imageUrl})`;
+      blur.style.backgroundColor = "";
     } else {
-      backgroundBlur.style.backgroundColor = "#111";
+      blur.style.backgroundColor = "#111";
     }
   } catch (error) {
     console.warn("Failed to set random background:", error);
-    backgroundBlur.style.backgroundColor = "#111";
+    blur.style.backgroundColor = "#111";
   }
+  setTimeout(() => { blur.style.opacity = "0.7"; }, 700);
 }
 
 /**
@@ -725,7 +728,6 @@ function renderArtistsPage() {
 function renderArtistCards(artists, selectedTagsOverride) {
   if (!artistGallery) return;
   artistGallery.innerHTML = "";
-  // Use DocumentFragment for performance
   const frag = document.createDocumentFragment();
   artists.forEach((artist) => {
     const card = document.createElement("div");
@@ -746,113 +748,34 @@ function renderArtistCards(artists, selectedTagsOverride) {
       lazyLoadBestImage(artist, img);
       img.style.display = "block";
     }
-    img.addEventListener("click", () => openArtistZoom(artist));
+    // Preload image for zoom
+    img.addEventListener("click", () => {
+      const preload = new Image();
+      preload.src = img.src;
+      preload.onload = () => openArtistZoom(artist);
+      preload.onerror = () => openArtistZoom(artist);
+    });
 
     const name = document.createElement("div");
     name.className = "artist-name";
-    const total =
-      typeof artist.postCount === "number" ? artist.postCount : undefined;
+    const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
     if (typeof total === "number") {
       name.textContent = `${artist.artistName.replace(/_/g, " ")} [${total}]`;
     } else {
       name.textContent = `${artist.artistName.replace(/_/g, " ")} [Loading…]`;
     }
 
-    const tagCountDiv = document.createElement("div");
-    tagCountDiv.className = "artist-tag-count";
-    tagCountDiv.textContent = "";
-
-    // Use override if provided (for Top Artists by Tag Count)
-    const selectedTags = Array.isArray(selectedTagsOverride)
-      ? selectedTagsOverride
-      : getActiveTags
-      ? Array.from(getActiveTags())
-      : [];
-    let taglistText = "";
-    if (artist.kinkTags && artist.kinkTags.length > 0) {
-      taglistText = artist.kinkTags
-        .map((tag) => {
-          if (selectedTags.includes(tag)) {
-            // Show per-tag count if available
-            const count =
-              artist._selectedTagCounts && artist._selectedTagCounts[tag]
-                ? artist._selectedTagCounts[tag]
-                : 1;
-            return `${tag.replace(/_/g, " ")} [${count}]`;
-          }
-          return tag.replace(/_/g, " ");
-        })
-        .join(", ");
-    }
+    // Render tags as .gallery-tag
     const taglist = document.createElement("div");
     taglist.className = "artist-tags";
-    taglist.textContent = taglistText;
-
-    artist._updateCountDisplay = function () {
-      const total =
-        typeof this.postCount === "number" ? this.postCount : undefined;
-      if (typeof total === "number") {
-        name.textContent = `${this.artistName.replace(/_/g, " ")} [${total}]`;
-      } else {
-        name.textContent = `${this.artistName.replace(/_/g, " ")} [Loading…]`;
-      }
-      tagCountDiv.textContent = "";
-      if (this.kinkTags && this.kinkTags.length > 0) {
-        taglist.textContent = this.kinkTags
-          .map((tag) => {
-            if (selectedTags.includes(tag)) {
-              const count =
-                this._selectedTagCounts && this._selectedTagCounts[tag]
-                  ? this._selectedTagCounts[tag]
-                  : 1;
-              return `${tag.replace(/_/g, " ")} [${count}]`;
-            }
-            return tag.replace(/_/g, " ");
-          })
-          .join(", ");
-      }
-      if (localStorage.getItem(`danbooru-image-${this.artistName}`)) {
-        img.src = localStorage.getItem(`danbooru-image-${this.artistName}`);
-        img.style.display = "block";
-      } else {
-        img.style.display = "block";
-      }
-    };
-    artist._updateCountDisplay();
-
-    Object.defineProperty(artist, "_imageCount", {
-      set(val) {
-        this.__imageCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
-      },
-      get() {
-        return this.__imageCount;
-      },
-      configurable: true,
-    });
-    Object.defineProperty(artist, "_totalImageCount", {
-      set(val) {
-        this.__totalImageCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
-      },
-      get() {
-        return this.__totalImageCount;
-      },
-      configurable: true,
-    });
-    Object.defineProperty(artist, "_tagMatchCount", {
-      set(val) {
-        this.__tagMatchCount = val;
-        if (typeof this._updateCountDisplay === "function")
-          this._updateCountDisplay();
-      },
-      get() {
-        return this.__tagMatchCount;
-      },
-      configurable: true,
-    });
+    if (artist.kinkTags && artist.kinkTags.length > 0) {
+      artist.kinkTags.forEach((tag) => {
+        const tagEl = document.createElement("span");
+        tagEl.className = "gallery-tag";
+        tagEl.textContent = tag.replace(/_/g, " ");
+        taglist.appendChild(tagEl);
+      });
+    }
 
     const copyBtn = document.createElement("button");
     copyBtn.className = "copy-button";
@@ -908,7 +831,11 @@ function renderArtistCards(artists, selectedTagsOverride) {
       }
     });
 
-    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
+    card.appendChild(img);
+    card.appendChild(name);
+    card.appendChild(taglist);
+    card.appendChild(copyBtn);
+    card.appendChild(reloadBtn);
     frag.appendChild(card);
   });
   artistGallery.appendChild(frag);
