@@ -14,10 +14,10 @@ export default {
           <span id="audio-track-name">No track playing</span>
         </div>
         <div class="audio-controls" role="group" aria-label="Audio playback controls">
-          <button id="audio-prev" aria-label="Previous track">⏮️</button>
-          <button id="audio-toggle" aria-label="Play/pause">⏯️</button>
-          <button id="audio-next" aria-label="Next track">⏭️</button>
-          <button id="moan-mute" aria-label="Toggle moan sound">🔇 Moan</button>
+          <button id="audio-prev" class="browse-btn" aria-label="Previous track">⏮️</button>
+          <button id="audio-toggle" class="browse-btn" aria-label="Play/pause">⏯️</button>
+          <button id="audio-next" class="browse-btn" aria-label="Next track">⏭️</button>
+          <button id="moan-mute" class="browse-btn" aria-label="Toggle moan sound">🔇 Moan</button>
         </div>
       </div>
 
