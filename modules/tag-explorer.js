@@ -275,16 +275,7 @@ async function filterTags() {
 // Duplicate fetchTagCounts removed
 
 // Add ARIA attributes and keyboard shortcuts for tag controls
-function enhanceTagControls(tagControls) {
-  tagControls.setAttribute("role", "toolbar");
-  tagControls.setAttribute("aria-label", "Tag controls");
-  // Keyboard shortcut: Clear tags (Ctrl+Shift+C)
-  document.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.shiftKey && e.code === "KeyC") {
-      if (typeof clearTags === "function") clearTags();
-    }
-  });
-}
+// Duplicate enhanceTagControls removed
 
 function openTagExplorer() {
   // Close any existing tag explorer
