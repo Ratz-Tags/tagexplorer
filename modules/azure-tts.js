@@ -167,5 +167,4 @@ export {
 window.fetchAzureVoices = fetchAzureVoices;
 window.showAzureVoiceSelector = showAzureVoiceSelector;
 
-  if (style) window._azureTTSStyle = style;
   // Remove this misplaced line or move it inside a function where 'style' is defined
