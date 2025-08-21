@@ -180,27 +180,21 @@ const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
 const copiedSidebarEl = document.getElementById("copied-sidebar");
 if (sidebarToggleBtn && copiedSidebarEl) {
     sidebarToggleBtn.addEventListener("click", () => {
-        if (sidebarContainer.style.display === "none" || getComputedStyle(sidebarContainer).display === "none") {
-            sidebarContainer.style.display = "block";
-            sidebarContainer.style.visibility = "visible";
-        } else {
-            sidebarContainer.style.display = "none";
-            sidebarContainer.style.visibility = "hidden";
-        }
+        // Toggle visibility via class so CSS can manage layout
+        copiedSidebarEl.classList.toggle("sidebar-hidden");
+        const isHidden = copiedSidebarEl.classList.contains("sidebar-hidden");
+        copiedSidebarEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
     });
 }
 
 const audioToggleBtn = document.querySelector(".audio-toggle");
-const audioControls = document.getElementById("audio-controls");
-if (audioToggleBtn && audioControls) {
+const audioPanelEl = document.getElementById("audio-panel");
+if (audioToggleBtn && audioPanelEl) {
     audioToggleBtn.addEventListener("click", () => {
-        if (audioControls.style.display === "none" || getComputedStyle(audioControls).display === "none") {
-            audioControls.style.display = "block";
-            audioControls.style.visibility = "visible";
-        } else {
-            audioControls.style.display = "none";
-            audioControls.style.visibility = "hidden";
-        }
+        // Toggle visibility for fixed audio panel container
+        audioPanelEl.classList.toggle("hidden");
+        const isHidden = audioPanelEl.classList.contains("hidden");
+        audioPanelEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
     });
 }
 
@@ -208,8 +202,10 @@ const sidebarCloseBtn = document.querySelector(".copied-sidebar-close");
 const copiedSidebar = document.getElementById("copied-sidebar");
 if (sidebarCloseBtn && copiedSidebar) {
   sidebarCloseBtn.addEventListener("click", () => {
-    copiedSidebar.classList.remove("visible");
+    // Hide the sidebar and clear any open state
+    copiedSidebar.classList.add("sidebar-hidden");
     document.body.classList.remove("sidebar-open");
+    copiedSidebar.setAttribute("aria-hidden", "true");
   });
 }
 
