@@ -191,8 +191,8 @@ if (sidebarToggleBtn && copiedSidebarEl) {
 }
 
 const audioToggleBtn = document.querySelector(".audio-toggle");
-const audioPanel = document.getElementById("audio-panel");
-if (audioToggleBtn && audioPanel) {
+const audioControls = document.getElementById("audio-controls");
+if (audioToggleBtn && audioControls) {
     audioToggleBtn.addEventListener("click", () => {
         if (audioControls.style.display === "none" || getComputedStyle(audioControls).display === "none") {
             audioControls.style.display = "block";
@@ -202,7 +202,6 @@ if (audioToggleBtn && audioPanel) {
             audioControls.style.visibility = "hidden";
         }
     });
-// Ensure Azure TTS is used and default voice is Ava
 }
 
 const sidebarCloseBtn = document.querySelector(".copied-sidebar-close");
