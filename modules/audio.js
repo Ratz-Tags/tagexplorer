@@ -522,8 +522,7 @@ if (
 }
 
 // --- AZURE TTS VOICE SELECTOR BUTTON ---
-import { showAzureVoiceSelector } from "./azure-tts.js";
-
+import { showAzureVoiceSelector } from "./azure-tts.js"; 
 function addAzureVoiceSelectorButton() {
   const controls = document.querySelector(".audio-controls");
   if (!controls || document.getElementById("azure-voice-btn")) return;

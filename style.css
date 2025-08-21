@@ -102,19 +102,36 @@ body > header,
 body > main,
 body > aside,
 body > nav,
-#artist-gallery,
-.top-bar { position: relative; z-index: 1; }
+#artist-gallery { position: relative; z-index: 1; }
+/* Removed .top-bar here to avoid forcing a low z-index on it */
 
-/* --- Modernized Artist Card --- */
+/* Elevate bars above gallery */
+.top-bar { position: relative; z-index: 6000 !important; }
+#tag-explorer-bar, .tag-explorer-bar { position: relative; z-index: 5800 !important; }
+
+/* Gallery grid: widen and tighten gaps */
+#artist-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: clamp(0.4em, 0.9vw, 0.8em);
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 0.5em 1vw 1.2em 1vw;
+  box-sizing: border-box;
+}
+
+/* Card spacing tweaks */
 .artist-card {
   background: #fff;
   border: 1.5px solid #ffd6f6;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(253, 123, 197, 0.10);
   position: relative;
-  overflow: hidden;
-  padding: 0.7em 0.7em 1.1em 0.7em;
+  padding: 0.6em;
   transition: transform 0.16s, box-shadow 0.16s;
+  margin: 0; /* rely on grid gap only */
+  overflow: hidden; /* contain decorations */
 }
 .artist-card:hover {
   transform: translateY(-3px) scale(1.025);
@@ -296,12 +313,12 @@ body > nav,
 /* Artist gallery grid */
 #artist-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 0.7em;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: clamp(0.4em, 0.9vw, 0.8em);
     width: 100%;
-    max-width: 1350px;
+    max-width: 1500px;
     margin: 0 auto;
-    padding: 0.3em 0.3em 1em 0.3em;
+    padding: 0.5em 1vw 1.2em 1vw;
     box-sizing: border-box;
 }
 
@@ -312,10 +329,10 @@ body > nav,
     border-radius: 1.1em;
     box-shadow: 0 0 32px rgba(255, 99, 165, 0.5);
     position: relative;
-    overflow: hidden; /* prevent decorative spills affecting layout */
-    padding: 0.7em;
+    padding: 0.6em;
     transition: transform 0.2s, box-shadow 0.2s;
-    margin: 0; /* rely on grid gap for spacing */
+    margin: 0; /* rely on grid gap only */
+    overflow: hidden; /* contain decorations */
 }
 
 .artist-card:hover {
@@ -830,178 +847,23 @@ body.incognito-theme #background-blur { display:none; }
   }
 }
 
-/* === Redesigned Top Bar, Tag Explorer, Gallery, and Bug Fixes === */
-
+/* Final header and gallery layout overrides */
 .top-bar {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  padding: 0.7em 2vw 0.7em 2vw;
-  box-sizing: border-box;
-  background: linear-gradient(90deg, #fff0fa 0%, #fd7bc5 100%);
-  border-bottom: 2px solid #fd7bc5;
-  position: relative;
-  animation: topBarGradient 8s ease-in-out infinite alternate;
+  /* full-width pill within page container */
+  width: 100% !important;
+  max-width: 1400px !important;
+  margin: 0.5em auto 0.4em auto !important;
 }
 
-#artist-gallery {
-  width: 100%;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 1em 2vw;
-  box-sizing: border-box;
-}
-
-.brand {
-  font-size: 2.2em;
-  font-weight: bold;
-  margin-right: 1.5em;
-  flex: 0 0 auto;
-  color: #a0005a;
-  border-width: 3px;
-}
-.brand-sissy {
-  font-size: 1.15em;
-  font-weight: 500;
-  margin-right: 1em;
-  color: #a0005a;
-  border-style: dashed;
-}
-.tagline {
-  font-size: 1.05em;
-  font-style: italic;
-  color: #a0005a;
-}
-
-/* Compact tag-explorer bar */
 .tag-explorer-bar {
-  width: 100%;
-  max-width: 700px;
-  margin: 0.5em auto 0.5em auto;
-  background: #fff0fa;
-  border-bottom: 1.5px solid #fd7bc5;
-  box-shadow: 0 2px 8px #fd7bc540;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7em;
-  padding: 0.3em 0.7em;
-  position: relative;
-  z-index: 10;
-}
-.tag-explorer-bar.fixed {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  box-shadow: 0 2px 16px #fd7bc540;
-}
-.tag-explorer-bar .bar-btn {
-  background: #fd7bc5;
-  color: #fff;
-  border: none;
-  border-radius: 0.7em;
-  padding: 0.4em 1em;
-  font-size: 1em;
-  margin-right: 0.5em;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.tag-explorer-bar .bar-btn:hover {
-  background: #a0005a;
+  max-width: 1400px !important;
+  width: 100% !important;
+  margin: 0.25em auto 0.75em auto !important;
 }
 
-/* Smaller tag buttons for tag explorer */
-.tag-explorer .tag-btn, .tag-explorer .tag-button {
-  font-size: 0.95em;
-  padding: 0.25em 0.7em;
-  margin: 0.15em 0.18em;
-  border-radius: 0.7em;
-  background: #ffd6f6;
-  color: #a0005a;
-  border: 1.2px solid #fd7bc5;
-  box-shadow: 0 1px 4px #fd7bc540;
-  transition: background 0.2s, color 0.2s;
+/* Use auto-fit to reduce unused side space in the grid */
+#artist-gallery {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+  padding-left: 1vw !important;
+  padding-right: 1vw !important;
 }
-.tag-explorer .tag-btn:hover, .tag-explorer .tag-button:hover {
-  background: #fd7bc5;
-  color: #fff;
-}
-
-/* Tag Explorer modal (not fullscreen) */
-.tag-explorer-wrapper {
-  position: fixed;
-  top: 4em;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 420px;
-  max-width: 96vw;
-  background: #fff0fa;
-  border: 2px solid #fd7bc5;
-  border-radius: 1.2em;
-  box-shadow: 0 2px 24px #fd7bc540;
-  z-index: 2000;
-  padding: 1.2em 1.2em 1em 1.2em;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  overflow: auto;
-}
-.tag-explorer-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.7em;
-}
-.tag-explorer-header h3 {
-  font-size: 1.25em;
-  font-weight: bold;
-  color: #a0005a;
-  margin: 0;
-}
-.tag-explorer-header .zoom-close {
-  font-size: 1.3em;
-  background: none;
-  border: none;
-  color: #fd7bc5;
-  cursor: pointer;
-  margin-left: 0.5em;
-}
-
-.artist-card .artist-name {
-  font-size: 1.25em;
-  font-weight: bold;
-  text-align: center;
-  color: #a0005a;
-  margin: 0.5em 0 0.2em 0;
-  letter-spacing: 0.02em;
-}
-.artist-card .gallery-tag {
-  display: inline-block;
-  background: #ffd6f6;
-  color: #a0005a;
-  border-radius: 0.7em;
-  padding: 0.18em 0.7em;
-  font-size: 0.98em;
-  margin: 0.08em 0.12em;
-  border: 1.2px solid #fd7bc5;
-  box-shadow: 0 1px 4px #fd7bc540;
-  font-weight: 500;
-  vertical-align: middle;
-}
-.artist-card .gallery-tag:hover {
-  background: #fd7bc5;
-  color: #fff;
-}
-
-/* Prevent background flicker on cycle */
-#background-blur {
-  transition: background-image 0.7s ease, opacity 0.7s ease;
-}
-
-/* Ensure headers stay above gallery content */
-.top-bar { z-index: 6000 !important; position: relative; }
-#tag-explorer-bar, .tag-explorer-bar { z-index: 5500 !important; position: relative; }
