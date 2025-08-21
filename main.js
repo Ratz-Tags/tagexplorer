@@ -183,6 +183,15 @@ window.kexplorer = {
 window.openTagExplorer = openTagExplorer;
 window.renderPromptCacheUI = renderPromptCacheUI;
 
+// Fallback: delegate clicks for Browse Tags if individual binding failed
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t && t.id === 'browse-tags-btn' && typeof window.openTagExplorer === 'function') {
+    e.preventDefault();
+    window.openTagExplorer();
+  }
+});
+
 // --- SIDEBAR TOGGLE BUTTON ---
 const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
 const copiedSidebarEl = document.getElementById("copied-sidebar");
@@ -382,17 +391,43 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Make tag-explorer-bar fixed on scroll
+  // Make tag-explorer-bar fixed on scroll with proper offset below top-bar
   const tagBar = document.getElementById("tag-explorer-bar");
-  let lastScrollY = 0;
-  window.addEventListener("scroll", () => {
+  const topBarEl = document.querySelector(".top-bar");
+
+  function setTagBarTop(useTopBarOffset) {
+    const topOffset = topBarEl ? (topBarEl.offsetHeight + 8) : 8;
+    const value = useTopBarOffset ? `${topOffset}px` : `0.25rem`;
+    document.documentElement.style.setProperty("--tagbar-top", value);
+  }
+
+  function updateContentPad() {
+    const pad = tagBar ? (tagBar.offsetHeight + 8) : 0;
+    document.documentElement.style.setProperty('--content-top-pad', `${pad}px`);
+  }
+
+  function updateTagBarFixed() {
     if (!tagBar) return;
-    if (window.scrollY > 60) {
+    const threshold = topBarEl ? (topBarEl.offsetHeight + 8) : 60;
+    if (window.scrollY > threshold) {
       tagBar.classList.add("fixed");
+      document.body.classList.add('tagbar-fixed');
+      setTagBarTop(false); // stick to very top when top-bar is out of view
     } else {
       tagBar.classList.remove("fixed");
+      document.body.classList.remove('tagbar-fixed');
+      setTagBarTop(true); // sit just beneath top-bar when on top
     }
-    lastScrollY = window.scrollY;
+    updateContentPad();
+  }
+
+  // Initialize position and bind events
+  setTagBarTop(true);
+  updateTagBarFixed();
+  window.addEventListener("scroll", updateTagBarFixed, { passive: true });
+  window.addEventListener("resize", () => {
+    setTagBarTop(window.scrollY <= (topBarEl ? topBarEl.offsetHeight + 8 : 60));
+    updateContentPad();
   });
 
   // Remove old filter toggle logic if present
