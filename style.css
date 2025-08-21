@@ -108,7 +108,7 @@ body > nav,
 
 /* Elevate bars above gallery */
 .top-bar { position: relative; z-index: 6000 !important; }
-#tag-explorer-bar, .tag-explorer-bar { position: relative; z-index: 5800 !important; }
+#tag-explorer-bar, .tag-explorer-bar { position: relative; z-index: 7000 !important; }
 
 /* Gallery grid: widen and tighten gaps */
 #artist-gallery {
@@ -909,7 +909,7 @@ main.container { padding-top: var(--content-top-pad, 0.5em); }
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 1400px) !important;
-  z-index: 6000 !important;
+  z-index: 7000 !important;
   margin: 0.25em auto !important;
 }
 
@@ -936,7 +936,7 @@ main.container { padding-top: var(--content-top-pad, 0.5em); }
 }
 
 
-.zoom-tag-pill, .gallery-tag-pill {
+.zoom-tag-pill, .gallery-tag {
   display: inline-flex;
   align-items: center;
   gap: 0.35em;

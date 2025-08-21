@@ -435,8 +435,8 @@ window.addEventListener("DOMContentLoaded", () => {
   if (filterToggle) filterToggle.style.display = "none";
 });
 
-// Ensure top bar and tag bar are layered above gallery
-const topBar = document.querySelector('.top-bar');
-if (topBar) topBar.style.zIndex = '5000';
-const tagBar = document.getElementById('tag-explorer-bar');
-if (tagBar) tagBar.style.zIndex = '4500';
+// Remove inline z-index overrides; CSS now controls stacking order
+// const topBar = document.querySelector('.top-bar');
+// if (topBar) topBar.style.zIndex = '5000';
+// const tagBar = document.getElementById('tag-explorer-bar');
+// if (tagBar) tagBar.style.zIndex = '4500';
