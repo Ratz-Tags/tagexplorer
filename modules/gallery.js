@@ -42,7 +42,35 @@ async function setRandomBackground() {
   const blur = document.getElementById("background-blur");
   if (!blur) return;
   blur.style.transition = "background-image 0.7s ease, opacity 0.7s ease";
-  blur.style.opacity = "0.3";
+  // Fade out current background
+  blur.style.opacity = "0";
+  setTimeout(async () => {
+    try {
+      if (document.body.classList.contains("incognito-theme")) {
+        blur.style.backgroundImage = "none";
+        blur.style.backgroundColor = "#111";
+        blur.style.opacity = "0.7";
+        return;
+      }
+      // Restore randomized backgrounds
+      const { getRandomBackgroundImage } = await import("./api.js");
+      const imageUrl = await getRandomBackgroundImage();
+      if (imageUrl) {
+        blur.style.backgroundImage = `url(${imageUrl})`;
+        blur.style.backgroundColor = "";
+      } else {
+        blur.style.backgroundColor = "#111";
+      }
+      // Fade in new background
+      setTimeout(() => {
+        blur.style.opacity = "0.7";
+      }, 100);
+    } catch (error) {
+      console.warn("Failed to set random background:", error);
+      blur.style.backgroundColor = "#111";
+      blur.style.opacity = "0.7";
+    }
+  }, 400);
   try {
     if (document.body.classList.contains("incognito-theme")) {
       blur.style.backgroundImage = "none";
