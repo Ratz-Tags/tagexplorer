@@ -139,22 +139,18 @@ async function showAzureVoiceSelector() {
     saveBtn.textContent = "Set Voice";
     saveBtn.className = "browse-btn";
     saveBtn.style = "margin-left:0.7em;";
-    saveBtn.onclick = () => {
-      const select = document.getElementById("azure-voice-select");
-      if (select && select.value) {
-        window._azureTTSVoice = select.value;
-        setAzureTTSConfig({ voice: select.value });
-        alert("Azure TTS voice set to: " + select.value);
-      }
-    };
-    container.appendChild(saveBtn);
-    const closeBtn = document.createElement("button");
-    closeBtn.textContent = "×";
-    closeBtn.className = "zoom-close";
-    closeBtn.style = "float:right;";
-    closeBtn.onclick = () => container.remove();
-    container.appendChild(closeBtn);
-  } catch (e) {
+  saveBtn.onclick = () => {
+    const select = document.getElementById("azure-voice-select");
+    window._azureTTSVoice = select.value;
+    setAzureTTSConfig({ voice: select.value });
+    alert("Azure TTS voice set to: " + select.value);
+  };
+  const closeBtn = document.createElement("button");
+  closeBtn.textContent = "×";
+  closeBtn.className = "zoom-close";
+  closeBtn.onclick = () => container.remove();
+  container.appendChild(closeBtn);
+} catch (e) {
     container.innerHTML = `<b>Azure TTS Voices</b><br><span style='color:#a0005a;'>Failed to load voices: ${e.message}</span>`;
   }
 }
@@ -170,3 +166,6 @@ export {
 // Expose fetchAzureVoices and showAzureVoiceSelector globally for debugging/UI
 window.fetchAzureVoices = fetchAzureVoices;
 window.showAzureVoiceSelector = showAzureVoiceSelector;
+
+  if (style) window._azureTTSStyle = style;
+  // Remove this misplaced line or move it inside a function where 'style' is defined

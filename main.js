@@ -137,10 +137,16 @@ if (document.readyState === "loading") {
 
 // Global error handling
 window.addEventListener("error", (event) => {
+  // Suppress media/network spam
+  if (event.error && event.error.name === 'DOMException') return;
+  if (event.error && event.error.message && event.error.message.includes('NetworkError')) return;
   console.error("Unhandled error:", event.error);
 });
 
 window.addEventListener("unhandledrejection", (event) => {
+  // Suppress media/network spam
+  if (event.reason && event.reason.name === 'DOMException') return;
+  if (event.reason && event.reason.message && event.reason.message.includes('NetworkError')) return;
   console.error("Unhandled promise rejection:", event.reason);
 });
 

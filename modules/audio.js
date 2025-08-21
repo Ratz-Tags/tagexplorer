@@ -51,7 +51,18 @@ function loadTrack(index) {
   saveLastTrack();
   hypnoAudio.src = getAudioSrc(index);
   trackName.textContent = audioFiles[index].replace(/\.mp3$/, "");
-  hypnoAudio.play().catch(console.warn);
+  safePlay(hypnoAudio);
+// Utility: Only play audio after user gesture and valid src
+function safePlay(audioEl) {
+  if (!audioEl || !audioEl.src || audioEl.src === '' || audioEl.src === 'null') return;
+  // Only play if triggered by user gesture
+  try {
+    const playPromise = audioEl.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => {}); // Suppress DOMException
+    }
+  } catch (e) {}
+}
 }
 
 /**

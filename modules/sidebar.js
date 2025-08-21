@@ -91,16 +91,22 @@ if (typeof window !== "undefined") {
 
 async function speakToast(text) {
   if (window._ttsEnabled) {
-    if (window._azureTTSKey && window._azureTTSRegion) {
-      try {
-        const url = await azureSpeak(text);
+  if (!window._ttsEnabled) return;
+  // Use Azure TTS Aria Whispering by default if available
+  if (window.azureSpeak) {
+    window.azureSpeak(text, { voice: 'en-US-AriaNeural', style: 'Whispering' }).then(url => {
+      if (url) {
         const audio = new Audio(url);
-        audio.play();
-        return;
-      } catch (e) {
-        // Fallback to browser TTS if Azure fails
+        audio.play().catch(() => {});
       }
-    }
+    }).catch(() => {});
+    return;
+  }
+  // Fallback to browser TTS
+  try {
+    const utter = new window.SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utter);
+  } catch (e) {}
     // Fallback: browser SpeechSynthesis
     if (window.speechSynthesis) {
       const utter = new window.SpeechSynthesisUtterance(text);
@@ -132,6 +138,16 @@ function showToast(message) {
   document.body.appendChild(toast);
   speakToast(message);
   ensureTTSToggleButton();
+  // Suppress audio play errors
+  const audioEl = document.getElementById('moan-audio');
+  if (audioEl && audioEl.src && audioEl.src !== '' && audioEl.src !== 'null') {
+    try {
+      const playPromise = audioEl.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+    } catch (e) {}
+  }
   setTimeout(() => toast.remove(), 3000);
 }
 

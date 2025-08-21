@@ -111,6 +111,13 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
     const url = randomPost.large_file_url || randomPost.file_url;
     return buildImageUrl(url);
   } catch (error) {
+    // Suppress CORS/network spam
+    if (error && error.message && error.message.includes('NetworkError')) {
+      if (typeof window !== 'undefined') {
+        window._danbooruUnavailable = true;
+      }
+      return null;
+    }
     console.warn("Failed to get random background:", error);
     return null;
   }
