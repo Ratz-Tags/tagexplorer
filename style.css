@@ -865,7 +865,7 @@ main.container { padding-top: var(--content-top-pad, 0.5em); }
 /* --- Enhancements and overrides --- */
 
 /* Zoom tag pills: make tags look like pretty gallery/artist tag chips */
-.zoom-tags, .gallery-tags {
+.zoom-tags, .artist-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45em;
