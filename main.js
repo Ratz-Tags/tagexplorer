@@ -1,3 +1,19 @@
+// Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
+import { setAzureTTSConfig, fetchAzureVoices } from "./modules/azure-tts.js";
+async function setDefaultAzureVoice() {
+  try {
+    const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
+    const avaWhisper = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural" && v.StyleList && v.StyleList.includes("Whispering"));
+    if (avaWhisper) {
+      setAzureTTSConfig({ voice: avaWhisper.ShortName, style: "Whispering" });
+    } else {
+      setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+    }
+  } catch (e) {
+    setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+  }
+}
+setDefaultAzureVoice();
 /**
  * Main entry point - Coordinates all modules and initializes the application
  */
@@ -163,24 +179,30 @@ window.kexplorer = {
 const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
 const copiedSidebarEl = document.getElementById("copied-sidebar");
 if (sidebarToggleBtn && copiedSidebarEl) {
-  sidebarToggleBtn.addEventListener("click", () => {
-    copiedSidebarEl.classList.toggle("visible");
-    document.body.classList.toggle("sidebar-open");
-  });
+    sidebarToggleBtn.addEventListener("click", () => {
+        if (sidebarContainer.style.display === "none" || getComputedStyle(sidebarContainer).display === "none") {
+            sidebarContainer.style.display = "block";
+            sidebarContainer.style.visibility = "visible";
+        } else {
+            sidebarContainer.style.display = "none";
+            sidebarContainer.style.visibility = "hidden";
+        }
+    });
 }
 
 const audioToggleBtn = document.querySelector(".audio-toggle");
 const audioPanel = document.getElementById("audio-panel");
 if (audioToggleBtn && audioPanel) {
-  audioToggleBtn.addEventListener("click", () => {
-    audioPanel.classList.toggle("hidden");
-    if (!audioPanel.classList.contains("hidden")) {
-      audioPanel.setAttribute("aria-hidden", "false");
-      audioPanel.focus && audioPanel.focus();
-    } else {
-      audioPanel.setAttribute("aria-hidden", "true");
-    }
-  });
+    audioToggleBtn.addEventListener("click", () => {
+        if (audioControls.style.display === "none" || getComputedStyle(audioControls).display === "none") {
+            audioControls.style.display = "block";
+            audioControls.style.visibility = "visible";
+        } else {
+            audioControls.style.display = "none";
+            audioControls.style.visibility = "hidden";
+        }
+    });
+// Ensure Azure TTS is used and default voice is Ava
 }
 
 const sidebarCloseBtn = document.querySelector(".copied-sidebar-close");
