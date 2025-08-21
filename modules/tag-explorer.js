@@ -272,21 +272,7 @@ async function filterTags() {
 }
 
 // Lazy fetch for tag counts (only for visible tags)
-function fetchTagCounts(visibleTags = null) {
-  // visibleTags: array of tags to count, or null for all
-  const active = getActiveTags ? getActiveTags() : new Set();
-  const filtered = getFilteredArtists(active);
-  const counts = {};
-  filtered.forEach((a) => {
-    const tags = a.kinkTags || [];
-    tags.forEach((t) => {
-      if (!visibleTags || visibleTags.includes(t)) {
-        counts[t] = (counts[t] || 0) + 1;
-      }
-    });
-  });
-  return counts;
-}
+// Duplicate fetchTagCounts removed
 
 // Add ARIA attributes and keyboard shortcuts for tag controls
 function enhanceTagControls(tagControls) {
