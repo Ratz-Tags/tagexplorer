@@ -4,6 +4,7 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
+import { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE } from "./azure-tts.js";
 
 let copiedArtists = new Set();
 
@@ -22,7 +23,6 @@ function getCopiedCount() {
 }
 
 // Ensures the TTS toggle button is present in the audio-controls
-import { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE } from "./azure-tts.js";
 function ensureTTSToggleButton() {
   const audioPanel = document.getElementById("audio-panel");
   if (audioPanel) {
@@ -42,40 +42,20 @@ function ensureTTSToggleButton() {
         controls.appendChild(ttsBtn);
       }
 
-      // Add TTS voice selector dropdown
-      let ttsVoiceSelect = document.getElementById("tts-voice-select");
-      if (!ttsVoiceSelect) {
-        ttsVoiceSelect = document.createElement("select");
-        ttsVoiceSelect.id = "tts-voice-select";
-        ttsVoiceSelect.className = "browse-btn";
-        ttsVoiceSelect.style.marginLeft = "0.7em";
-        ttsVoiceSelect.title = "Choose TTS Voice";
-        controls.appendChild(ttsVoiceSelect);
-
-        function populateVoices() {
-          ttsVoiceSelect.innerHTML = "";
-          const voices = window.speechSynthesis.getVoices();
-          voices.forEach((voice) => {
-            const option = document.createElement("option");
-            option.value = voice.name;
-            option.textContent = `${voice.name} (${voice.lang})`;
-            if (
-              voice.name.toLowerCase().includes("female") ||
-              voice.gender === "female"
-            ) {
-              option.textContent += " ♀";
-            }
-            ttsVoiceSelect.appendChild(option);
-          });
-        }
-
-        // Populate voices initially and when voiceschanged fires
-        populateVoices();
-        window.speechSynthesis.onvoiceschanged = populateVoices;
-
-        ttsVoiceSelect.onchange = () => {
-          window._ttsVoiceName = ttsVoiceSelect.value;
+      // Azure Voice/Style selector button
+      let voiceBtn = document.getElementById("azure-voice-style-btn");
+      if (!voiceBtn) {
+        voiceBtn = document.createElement("button");
+        voiceBtn.id = "azure-voice-style-btn";
+        voiceBtn.className = "browse-btn";
+        voiceBtn.style.marginLeft = "0.7em";
+        voiceBtn.textContent = "Azure Voice/Style";
+        voiceBtn.onclick = () => {
+          if (window.showAzureVoiceSelector) {
+            window.showAzureVoiceSelector();
+          }
         };
+        controls.appendChild(voiceBtn);
       }
     }
   }
@@ -90,44 +70,15 @@ if (typeof window !== "undefined") {
  */
 
 async function speakToast(text) {
-  if (window._ttsEnabled) {
   if (!window._ttsEnabled) return;
-  // Use Azure TTS Aria Whispering by default if available
-  if (window.azureSpeak) {
-    window.azureSpeak(text, { voice: 'en-US-AriaNeural', style: 'Whispering' }).then(url => {
-      if (url) {
-        const audio = new Audio(url);
-        audio.play().catch(() => {});
-      }
-    }).catch(() => {});
-    return;
-  }
-  // Fallback to browser TTS
   try {
-    const utter = new window.SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utter);
-  } catch (e) {}
-    // Fallback: browser SpeechSynthesis
-    if (window.speechSynthesis) {
-      const utter = new window.SpeechSynthesisUtterance(text);
-      let voices = window.speechSynthesis.getVoices();
-      let voice = null;
-      if (window._ttsVoiceName) {
-        voice = voices.find((v) => v.name === window._ttsVoiceName);
-      }
-      if (!voice) {
-        voice = voices.find(
-          (v) =>
-            v.name.toLowerCase().includes("female") || v.gender === "female"
-        );
-      }
-      if (!voice) voice = voices.find((v) => v.lang.startsWith("en"));
-      if (voice) utter.voice = voice;
-      utter.rate = 1.05;
-      utter.pitch = 1.3;
-      utter.volume = 1;
-      window.speechSynthesis.speak(utter);
+    const url = await azureSpeak(text, {});
+    if (url) {
+      const audio = new Audio(url);
+      audio.play().catch(() => {});
     }
+  } catch (e) {
+    // Swallow errors to avoid UI spam
   }
 }
 

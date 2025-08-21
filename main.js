@@ -1,14 +1,17 @@
 // Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
-import { setAzureTTSConfig, fetchAzureVoices } from "./modules/azure-tts.js";
+import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "./modules/azure-tts.js";
 async function setDefaultAzureVoice() {
   try {
-    const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
-    const avaWhisper = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural" && v.StyleList && v.StyleList.includes("Whispering"));
-    if (avaWhisper) {
-      setAzureTTSConfig({ voice: avaWhisper.ShortName, style: "Whispering" });
-    } else {
-      setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+    if (!window._azureTTSVoice && window._azureTTSKey && window._azureTTSRegion) {
+      const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
+      const ava = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural");
+      if (ava) {
+        const wantsWhisper = Array.isArray(ava.StyleList) && ava.StyleList.includes("Whispering");
+        setAzureTTSConfig({ voice: ava.ShortName, style: wantsWhisper ? "Whispering" : undefined });
+      }
     }
+    // Always ensure a default voice is set
+    if (!window._azureTTSVoice) setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
   } catch (e) {
     setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
   }
@@ -391,3 +394,9 @@ window.addEventListener("DOMContentLoaded", () => {
   const filterToggle = document.getElementById("toggle-filters");
   if (filterToggle) filterToggle.style.display = "none";
 });
+
+// Ensure top bar and tag bar are layered above gallery
+const topBar = document.querySelector('.top-bar');
+if (topBar) topBar.style.zIndex = '5000';
+const tagBar = document.getElementById('tag-explorer-bar');
+if (tagBar) tagBar.style.zIndex = '4500';

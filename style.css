@@ -229,7 +229,7 @@ body > nav,
 
 /* Core layout */
 .container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -299,7 +299,7 @@ body > nav,
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 0.7em;
     width: 100%;
-    max-width: 1000px;
+    max-width: 1350px;
     margin: 0 auto;
     padding: 0.3em 0.3em 1em 0.3em;
     box-sizing: border-box;
@@ -312,9 +312,10 @@ body > nav,
     border-radius: 1.1em;
     box-shadow: 0 0 32px rgba(255, 99, 165, 0.5);
     position: relative;
-    overflow: visible;
+    overflow: hidden; /* prevent decorative spills affecting layout */
     padding: 0.7em;
     transition: transform 0.2s, box-shadow 0.2s;
+    margin: 0; /* rely on grid gap for spacing */
 }
 
 .artist-card:hover {
@@ -333,15 +334,15 @@ body > nav,
 
 .artist-card::before {
   content: "✧ Sissy ✧";
-  top: -1.2em;
-  left: 1em;
+  top: 0.3em; /* keep label inside the card */
+  left: 0.6em;
   color: var(--accent1);
 }
 
 .artist-card::after {
   content: "Obey and drool 💋";
-  bottom: -1.2em;
-  right: 1em;
+  bottom: 0.3em; /* keep label inside the card */
+  right: 0.6em;
   color: var(--accent2);
 }
 
@@ -395,7 +396,6 @@ body > nav,
   overflow: hidden;
 }
 
-/* ...existing code... */
 html, body { max-width: 100%; overflow-x: hidden; }
 
 /* Fixed Audio Panel to ensure visibility regardless of scroll */
@@ -891,7 +891,6 @@ body.incognito-theme #background-blur { display:none; }
   padding: 0.3em 0.7em;
   position: relative;
   z-index: 10;
-  font-size: 1em;
 }
 .tag-explorer-bar.fixed {
   position: fixed;
@@ -1002,3 +1001,7 @@ body.incognito-theme #background-blur { display:none; }
 #background-blur {
   transition: background-image 0.7s ease, opacity 0.7s ease;
 }
+
+/* Ensure headers stay above gallery content */
+.top-bar { z-index: 6000 !important; position: relative; }
+#tag-explorer-bar, .tag-explorer-bar { z-index: 5500 !important; position: relative; }
