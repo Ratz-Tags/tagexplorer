@@ -552,7 +552,7 @@ body.incognito-theme #background-blur { display:none; }
   display: block;
 }
 
-.zoom-tags {
+.zoomed-tags {
   margin-top: 1.1em;
   max-width: 60vw;
   width: 100%;
@@ -847,23 +847,13 @@ body.incognito-theme #background-blur { display:none; }
   }
 }
 
-/* Final header and gallery layout overrides */
-.top-bar {
-  /* full-width pill within page container */
-  width: 100% !important;
-  max-width: 1400px !important;
-  margin: 0.5em auto 0.4em auto !important;
-}
-
-.tag-explorer-bar {
-  max-width: 1400px !important;
-  width: 100% !important;
-  margin: 0.25em auto 0.75em auto !important;
-}
-
-/* Use auto-fit to reduce unused side space in the grid */
-#artist-gallery {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
-  padding-left: 1vw !important;
-  padding-right: 1vw !important;
+/* Fixed state for the tag explorer bar when scrolled */
+.tag-explorer-bar.fixed {
+  position: fixed !important;
+  top: 0.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 1400px) !important;
+  z-index: 6000 !important;
+  margin: 0.25em auto !important;
 }

@@ -49,6 +49,7 @@ import {
   setSortMode,
   setSortPreference,
   forceSortAndRender,
+  showTopArtistsByTagCount,
 } from "./modules/gallery.js";
 import {
   initUI,
@@ -169,14 +170,18 @@ window.addEventListener("unhandledrejection", (event) => {
   console.error("Unhandled promise rejection:", event.reason);
 });
 
-// Expose some functions globally for debugging
+// Expose some functions globally for debugging and button handlers
 window.kexplorer = {
   filterArtists,
   setRandomBackground,
   getActiveTags,
   renderTagButtons,
   openTagExplorer,
+  showTopArtistsByTagCount,
 };
+// Ensure buttons that reference window.* work
+window.openTagExplorer = openTagExplorer;
+window.renderPromptCacheUI = renderPromptCacheUI;
 
 // --- SIDEBAR TOGGLE BUTTON ---
 const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
