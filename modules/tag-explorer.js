@@ -167,10 +167,12 @@ async function filterTags() {
     sortMode = sortSelect.value;
     renderList();
   };
+  sortSelect.title = "Sort tags";
 
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.placeholder = "Search tags";
+  searchInput.title = "Search tag names";
   searchInput.oninput = () => {
     searchText = searchInput.value.toLowerCase();
     renderList();
@@ -180,6 +182,7 @@ async function filterTags() {
   nameInput.type = "text";
   nameInput.placeholder = "Filter artists";
   nameInput.value = getArtistNameFilter ? getArtistNameFilter() : "";
+  nameInput.title = "Filter by artist name";
   nameInput.oninput = () => {
     handleArtistNameFilter(nameInput.value);
     renderList();
@@ -194,6 +197,7 @@ async function filterTags() {
   const list = document.createElement("div");
   list.className = "tag-explorer-tags";
   list.setAttribute("id", "tag-list");
+  list.setAttribute("role", "listbox");
   container.appendChild(list);
 
   function renderList() {
@@ -209,13 +213,18 @@ async function filterTags() {
       return a.localeCompare(b);
     });
     if (tags.length === 0) {
-      list.textContent = "No tags";
+      const empty = document.createElement("div");
+      empty.textContent = "No tags";
+      empty.style.color = "#a0005a";
+      empty.style.padding = "0.8em";
+      list.appendChild(empty);
       return;
     }
     tags.forEach((tag, idx) => {
       const btn = document.createElement("button");
       btn.className = "tag-button";
       btn.textContent = `${tag.replace(/_/g, " ")} (${counts[tag] || 0})`;
+      btn.setAttribute("role", "option");
       if (active.has(tag)) btn.classList.add("active");
       btn.onclick = () => {
         toggleTag(tag);
@@ -252,16 +261,15 @@ async function filterTags() {
     }
   });
 
-  // Feature: auto-focus search on open
-  setTimeout(() => searchInput.focus(), 100);
+  // Auto-focus search on open
+  setTimeout(() => searchInput.focus(), 60);
 
   // Assemble the modal
   wrapper.appendChild(container);
-
   document.body.appendChild(wrapper);
   wrapper.focus();
+
   try {
-    // Fetch tag counts, handle errors
     const counts = fetchTagCounts();
     if (!counts) throw new Error("No tag counts");
   } catch (err) {
