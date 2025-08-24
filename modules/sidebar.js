@@ -302,13 +302,8 @@ function initSidebar() {
     sidebarToggles.forEach((btn) => {
       btn.addEventListener("click", (e) => {
         vibrate();
-        copiedSidebar.classList.toggle("sidebar-hidden");
-        // Toggle body class when sidebar is opened or closed
-        if (!copiedSidebar.classList.contains("sidebar-hidden")) {
-          document.body.classList.add("sidebar-open");
-        } else {
-          document.body.classList.remove("sidebar-open");
-        }
+        copiedSidebar.classList.remove("sidebar-hidden");
+        document.body.classList.add("sidebar-open");
       });
     });
   }
