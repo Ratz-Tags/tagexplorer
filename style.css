@@ -226,6 +226,9 @@ body > nav,
   cursor: pointer !important;
   transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s !important;
   outline: none !important;
+  max-width: 220px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
 }
 .browse-btn:hover, .bar-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover, .zoom-tool:hover {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
@@ -235,9 +238,9 @@ body > nav,
 }
 
 /* --- Overlap fix: ensure enough padding below bars --- */
-.top-bar { margin-bottom: 1.2em !important; }
-.tag-explorer-bar { margin-bottom: 1.2em !important; }
-main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 1.2em) !important; }
+.top-bar { margin-bottom: 1.6em !important; z-index: 6000 !important; }
+.tag-explorer-bar { margin-bottom: 1.6em !important; z-index: 7000 !important; }
+main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2.8em) !important; }
 
 /* --- Artist card grid fill --- */
 #artist-gallery {

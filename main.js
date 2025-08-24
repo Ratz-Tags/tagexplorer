@@ -86,6 +86,18 @@ async function initApp() {
 
     // Add TTS toggle button to audio controls
     createTTSToggleButton();
+    // Add Azure TTS Voice Selector button to audio controls
+    const audioControls = document.querySelector('.audio-controls');
+    if (audioControls) {
+      const voiceBtn = document.createElement('button');
+      voiceBtn.textContent = 'Choose TTS Voice';
+      voiceBtn.className = 'browse-btn';
+      voiceBtn.style.marginLeft = '1em';
+      voiceBtn.onclick = () => {
+        showAzureVoiceSelector();
+      };
+      audioControls.appendChild(voiceBtn);
+    }
     await initTags();
     initGallery();
 
