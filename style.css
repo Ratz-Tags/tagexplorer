@@ -91,8 +91,8 @@ body.incognito-theme {
   background-position: center center;
   background-repeat: no-repeat;
   background-size: cover;
-  filter: blur(8px) saturate(1.08);
-  opacity: 0.7;
+  filter: blur(2px) saturate(1.08);
+  opacity: 0.8;
   z-index: 0;
   pointer-events: none;
 }
@@ -438,7 +438,7 @@ main.container,
   transition: transform 0.2s, box-shadow 0.2s;
   margin: 0; /* rely on grid gap only */
   overflow: hidden; /* contain decorations */
-  max-height: 25vw; /* prevent overly tall cards */
+  max-height: 35vw; /* prevent overly tall cards */
 }
 
 .artist-card:hover {
