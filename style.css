@@ -207,13 +207,30 @@ body > nav,
 }
 
 /* --- Button theme fix --- */
-.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle {
+.browse-btn, .bar-btn, .tag-btn, .tag-button {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 2.5px solid #fd7bc5 !important;
   color: #fff !important;
   box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
   font-family: var(--btn-font) !important;
   font-size: 0.55em !important;
+  border-radius: 2em !important;
+  padding: 0.7em 1.4em !important;
+  margin: 0.2em 0.3em !important;
+  cursor: pointer !important;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s !important;
+  outline: none !important;
+  max-width: 220px !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+.copy-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  border: 2.5px solid #fd7bc5 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
+  font-family: var(--btn-font) !important;
+  font-size: 0.9em !important;
   border-radius: 2em !important;
   padding: 0.7em 1.4em !important;
   margin: 0.2em 0.3em !important;
