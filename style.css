@@ -916,13 +916,12 @@ body.incognito-theme #background-blur { display:none; }
   overflow: visible;
 }
 .tag-explorer-bar {
-  position: relative; /* becomes fixed when scrolled */
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(100%, 1400px);
+  position: sticky !important; /* becomes fixed when scrolled */
+  top: 20px !important;
+  left: 20px !important;
+  width: min(50%, 1400px);
   margin: 0.25em auto;
-  z-index: 7000 !important;
+  z-index: 12000 !important;
   background: rgba(255, 240, 250, 0.82);
   border-radius: 2.5em;
   box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
@@ -930,7 +929,7 @@ body.incognito-theme #background-blur { display:none; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1em;
+  gap: 5px;
 }
 .tag-explorer-header input,
 .tag-explorer-header select {
