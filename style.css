@@ -207,7 +207,7 @@ body > nav,
 }
 
 /* --- Button theme fix --- */
-.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool {
+.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool, .sidebar-toggle, .audio-toggle, .theme-toggle {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 2.5px solid #fd7bc5 !important;
   color: #fff !important;
@@ -224,7 +224,7 @@ body > nav,
   white-space: normal !important;
   word-break: break-word !important;
 }
-.browse-btn:hover, .bar-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover, .zoom-tool:hover {
+.browse-btn:hover, .bar-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover, .zoom-tool:hover, .sidebar-toggle:hover, .audio-toggle:hover, .theme-toggle:hover {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
   color: #fff !important;
   box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
