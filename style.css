@@ -917,8 +917,8 @@ body.incognito-theme #background-blur { display:none; }
 }
 .tag-explorer-bar {
   position: sticky !important; /* becomes fixed when scrolled */
-  top: 20px !important;
-  left: 20px !important;
+  inset: 20px 20px 20px 20px;
+  top: var(--tagbar-top, 1.5em) !important;
   width: min(50%, 1400px);
   margin: 0.25em auto;
   z-index: 12000 !important;
