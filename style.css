@@ -115,9 +115,10 @@ body > nav,
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: clamp(0.4em, 0.9vw, 0.8em);
-  width: 100%;
-  max-width: 1500px;
-  margin: 0 auto;
+  width: 100vw;
+  max-width: 100vw;
+  min-height: 100vh;
+  margin: 0;
   padding: 0.5em 1vw 1.2em 1vw;
   box-sizing: border-box;
 }
@@ -145,20 +146,13 @@ body > nav,
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0.4em 1em 0.4em 1em;
-  box-sizing: border-box;
-  background: linear-gradient(90deg, #fff0fa 80%, #fd7bc5 100%);
-  border-bottom: 2px solid #fd7bc5;
-  border-radius: 0 0 1.2em 1.2em;
-  box-shadow: 0 2px 16px #fd7bc540;
-  font-family: 'Inter', 'Segoe UI', sans-serif;
-  font-size: 1em;
-  min-height: 2.2em;
-  max-height: 3em;
-  position: relative;
-  z-index: 100;
-  animation: topBarGradient 8s ease-in-out infinite alternate;
+  justify-content: center;
+  gap: 1.2em;
+  padding: 0.7em 2em 0.7em 2em;
+  z-index: 6000 !important;
+  background: rgba(255, 240, 250, 0.82);
+  border-radius: 2.5em;
+  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
 }
 
 
@@ -307,10 +301,10 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
 
 .top-bar {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 0.5em;
+  gap: 1.2em;
   width: 100%;
   max-width: 900px;
   margin-left: auto;
@@ -319,6 +313,7 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
   border-radius: 2.5em;
   box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
   padding: 0.7em 2em 0.7em 2em;
+  z-index: 6000 !important;
 }
 
 .sort-controls,
@@ -336,23 +331,21 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
   border: 2px solid var(--border-color);
   border-radius: var(--radius);
   padding: 0.3em 1.2em;
-  margin: 0.2em;
+  margin: 0.2em 0.4em;
   text-align: center;
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  flex: 0 1 auto;
 }
-
 .brand {
   font-size: 2.2rem;
   color: var(--accent2);
   border-width: 3px;
 }
-
 .brand-sissy {
   font-size: 1.2rem;
   color: var(--accent1);
   border-style: dashed;
 }
-
 .tagline {
   font-size: 1.3rem;
   color: var(--accent2);
@@ -363,9 +356,10 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: clamp(0.4em, 0.9vw, 0.8em);
-    width: 100%;
-    max-width: 1500px;
-    margin: 0 auto;
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 100vh;
+    margin: 0;
     padding: 0.5em 1vw 1.2em 1vw;
     box-sizing: border-box;
 }
@@ -429,6 +423,8 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
   box-shadow: 0 2px 32px #fd7bc540;
   display: flex;
   flex-direction: column;
+  max-height: 40vh;
+  overflow: auto;
 }
 
 .tag-explorer-header {
