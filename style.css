@@ -224,7 +224,7 @@ body > nav,
   white-space: normal !important;
   word-break: break-word !important;
 }
-.copy-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle {
+.copy-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle, #moan-mute, #audio-prev, #audio-next, #audio-play, #audio-toggle {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 2.5px solid #fd7bc5 !important;
   color: #fff !important;
