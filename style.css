@@ -282,7 +282,6 @@ body > nav,
   box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
   transform: scale(1.06) !important;
 }
-
 /* --- Overlap fix: ensure enough padding below bars --- */
 .top-bar {
   margin-bottom: 1.6em !important;
@@ -1084,7 +1083,7 @@ main.container {
 }
 
 /* Fixed state for the tag explorer bar when scrolled */
-.tag-explorer-bar.fixed {
+.tag-explorer-bar:fixed {
   position: fixed !important;
   top: var(--tagbar-top) !important;
   left: 50%;
@@ -1211,7 +1210,7 @@ main.container {
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(253, 123, 197, 0.35);
 }
-.tag-explorer .tag-button.active {
+.tag-explorer .tag-button:active {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
   box-shadow: 0 0 0 3px #fd7bc540, 0 6px 20px rgba(253, 123, 197, 0.35);
 }
