@@ -212,7 +212,53 @@ body > nav,
   color: #fff;
 }
 
-.fem-btn, .browse-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool {
+/* --- Button theme fix --- */
+.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool {
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
+  border: 2.5px solid #fd7bc5 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
+  font-family: var(--btn-font) !important;
+  font-size: 1.1em !important;
+  border-radius: 2em !important;
+  padding: 0.7em 1.4em !important;
+  margin: 0.2em 0.3em !important;
+  cursor: pointer !important;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s !important;
+  outline: none !important;
+}
+.browse-btn:hover, .bar-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover, .zoom-tool:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
+  transform: scale(1.06) !important;
+}
+
+/* --- Overlap fix: ensure enough padding below bars --- */
+.top-bar { margin-bottom: 1.2em !important; }
+.tag-explorer-bar { margin-bottom: 1.2em !important; }
+main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 1.2em) !important; }
+
+/* --- Artist card grid fill --- */
+#artist-gallery {
+  grid-auto-rows: minmax(320px, auto);
+}
+.artist-card {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+/* --- Prevent zoom tags overflow --- */
+.zoom-tags, .zoomed-tags {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  flex-wrap: wrap;
+}
+
+/* Fem theme button */
+.fem-btn {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   border: 2.5px solid #fd7bc5;
   color: #fff;
@@ -226,15 +272,13 @@ body > nav,
   transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
   outline: none;
 }
-
-.fem-btn:hover, .browse-btn:hover, .tag-btn:hover, .tag-button:hover, .copy-button:hover, .reload-button:hover, .zoom-tool:hover {
+.fem-btn:hover {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
   color: #fff;
   box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580;
   transform: scale(1.06);
 }
-
-.fem-btn:focus-visible, .browse-btn:focus-visible, .tag-btn:focus-visible, .tag-button:focus-visible, .copy-button:focus-visible, .reload-button:focus-visible, .zoom-tool:focus-visible {
+.fem-btn:focus-visible {
   outline: 3px solid #fd7bc5;
   outline-offset: 2px;
 }
