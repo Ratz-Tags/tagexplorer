@@ -207,7 +207,7 @@ body > nav,
 }
 
 /* --- Button theme fix --- */
-.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool, .sidebar-toggle, .audio-toggle, .theme-toggle {
+.browse-btn, .bar-btn, .tag-btn, .tag-button, .copy-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 2.5px solid #fd7bc5 !important;
   color: #fff !important;
@@ -418,7 +418,7 @@ main.container, .container { padding-top: calc(var(--content-top-pad, 2.5em) + 2
 .tag-explorer {
   background: #fff0fa;
   padding: 2em 2em 1.5em 2em;
-  max-width: 900px;
+  max-width: 100%;
   border-radius: 1.2em;
   box-shadow: 0 2px 32px #fd7bc540;
   display: flex;
@@ -894,8 +894,8 @@ body.incognito-theme #background-blur { display:none; }
 /* --- Tag Explorer UX improvements --- */
 .tag-explorer {
   /* keep centered card compact and within viewport */
-  width: min(900px, 92vw);
-  max-height: 86vh;
+  width: min(80vw, 100%);
+  max-height: 70vh;
   overflow: hidden; /* header sticky + inner scroll area */
   display: flex;
   flex-direction: column;
@@ -907,9 +907,8 @@ body.incognito-theme #background-blur { display:none; }
   left: 0;
   right: 0;
   width: 100vw;
-  height: 40vh;
-  background: rgba(255, 240, 250, 1);
-  backdrop-filter: blur(2.5px) saturate(1.1);
+  height: 70vh;
+  background: rgba(255, 240, 250, 0);
   display: flex;
   align-items: flex-start;
   justify-content: center;
