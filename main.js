@@ -440,3 +440,26 @@ window.addEventListener("DOMContentLoaded", () => {
 // if (topBar) topBar.style.zIndex = '5000';
 // const tagBar = document.getElementById('tag-explorer-bar');
 // if (tagBar) tagBar.style.zIndex = '4500';
+
+// Fallback: delegate clicks for tag-explorer-bar buttons if individual binding failed
+// This ensures all tag-explorer-bar buttons work regardless of render timing
+['top-artists-btn', 'joi-mode-btn', 'prompts-btn', 'browse-tags-btn'].forEach(id => {
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (t && t.id === id) {
+      e.preventDefault();
+      if (id === 'top-artists-btn' && window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === 'function') {
+        window.kexplorer.showTopArtistsByTagCount();
+      }
+      if (id === 'joi-mode-btn' && window.startJOIMode) {
+        window.startJOIMode();
+      }
+      if (id === 'prompts-btn' && window.renderPromptCacheUI) {
+        window.renderPromptCacheUI();
+      }
+      if (id === 'browse-tags-btn' && window.openTagExplorer) {
+        window.openTagExplorer();
+      }
+    }
+  });
+});
