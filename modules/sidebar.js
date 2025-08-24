@@ -313,6 +313,15 @@ function initSidebar() {
     });
   }
 
+  // Ensure close button always works
+  const closeBtn = copiedSidebar.querySelector(".copied-sidebar-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      copiedSidebar.classList.add("sidebar-hidden");
+      document.body.classList.remove("sidebar-open");
+    });
+  }
+
   // Handle scroll behavior for sidebar toggle
   const sidebarToggle = document.querySelector(".sidebar-toggle");
   if (sidebarToggle) {

@@ -901,25 +901,37 @@ body.incognito-theme #background-blur { display:none; }
   flex-direction: column;
 }
 
-.tag-explorer-header {
-  position: sticky;
+.tag-explorer-wrapper {
+  position: fixed !important;
   top: 0;
-  z-index: 1;
-  background: rgba(255,240,250,0.96);
-  backdrop-filter: blur(3px) saturate(1.05);
-  border-bottom: 2px solid #fd7bc533;
-  padding: 0.6em 0.8em;
-  border-radius: 0.8em;
-  margin: 0 0 0.5em 0;
+  left: 0;
+  right: 0;
+  width: 100vw;
+  height: 40vh;
+  background: rgba(255, 240, 250, 1);
+  backdrop-filter: blur(2.5px) saturate(1.1);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 12000;
+  overflow: visible;
+}
+.tag-explorer-bar {
+  position: relative; /* becomes fixed when scrolled */
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 1400px);
+  margin: 0.25em auto;
+  z-index: 7000 !important;
+  background: rgba(255, 240, 250, 0.82);
+  border-radius: 2.5em;
+  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25), 0 1.5px 8px rgba(255, 99, 165, 0.2);
+  padding: 0.7em 2em;
   display: flex;
   align-items: center;
-  gap: 0.6em;
-  flex-wrap: wrap;
-}
-.tag-explorer-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: var(--accent2);
+  justify-content: space-between;
+  gap: 1em;
 }
 .tag-explorer-header input,
 .tag-explorer-header select {
