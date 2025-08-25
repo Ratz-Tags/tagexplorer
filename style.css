@@ -152,7 +152,12 @@ body > nav,
   transform: translateY(-3px) scale(1.025);
   box-shadow: 0 6px 24px rgba(253, 123, 197, 0.18);
 }
-
+.artist-card::before {
+  content: "✧ Sissy Rat ✧";
+  top: 0.3em; /* keep label inside the card */
+  left: 0.6em;
+  color: var(--accent1);
+}
 .top-bar {
   width: 100%;
   max-width: 100%;
