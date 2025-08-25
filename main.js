@@ -213,8 +213,6 @@ if (sidebarToggleBtn && copiedSidebarEl) {
         copiedSidebarEl.classList.toggle("sidebar-hidden");
         const isHidden = copiedSidebarEl.classList.contains("sidebar-hidden");
         copiedSidebarEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
-        // Reflect open state on body to shift gallery
-        document.body.classList.toggle("sidebar-open", !isHidden);
     });
 }
 
