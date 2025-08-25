@@ -757,9 +757,13 @@ function renderArtistCards(artists, selectedTagsOverride) {
   if (!artistGallery) return;
   artistGallery.innerHTML = "";
   const frag = document.createDocumentFragment();
+  // Determine the selected tags to use for cache keys / reload
+  const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card";
+    // Store the raw artist tag for patches/overlays
+    card.setAttribute("data-artist", artist.artistName);
 
     const img = document.createElement("img");
     img.className = "artist-image";
@@ -784,6 +788,11 @@ function renderArtistCards(artists, selectedTagsOverride) {
       preload.onerror = () => openArtistZoom(artist);
     });
 
+    // Media wrapper so card background transparency doesn't affect the image
+    const media = document.createElement("div");
+    media.className = "artist-media";
+    media.appendChild(img);
+
     const name = document.createElement("div");
     name.className = "artist-name";
     const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
@@ -793,9 +802,12 @@ function renderArtistCards(artists, selectedTagsOverride) {
       name.textContent = `${artist.artistName.replace(/_/g, " ")} [Loading…]`;
     }
 
-    // Render tags as .gallery-tag
+    // Render tags as .gallery-tag (collapsed by default)
     const taglist = document.createElement("div");
     taglist.className = "artist-tags";
+    const tagsId = `tags-${artist.artistName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+    taglist.id = tagsId;
+    taglist.hidden = true; // hidden by default, revealed via toggle
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       artist.kinkTags.forEach((tag) => {
         const tagEl = document.createElement("span");
@@ -806,13 +818,17 @@ function renderArtistCards(artists, selectedTagsOverride) {
     }
 
     const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
     copyBtn.className = "copy-button";
+    copyBtn.setAttribute("aria-label", "Copy artist name");
     copyBtn.textContent = "📋";
     copyBtn.title = "Copy name";
-    copyBtn.onclick = () => handleArtistCopy(artist, img.src);
+    copyBtn.onclick = (e) => { e.stopPropagation(); handleArtistCopy(artist, img.src); };
 
     const reloadBtn = document.createElement("button");
+    reloadBtn.type = "button";
     reloadBtn.className = "reload-button";
+    reloadBtn.setAttribute("aria-label", "Reload artist");
     reloadBtn.textContent = "⟳";
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
@@ -834,6 +850,46 @@ function renderArtistCards(artists, selectedTagsOverride) {
         }
       }, 100);
     });
+
+    // Toggle to reveal/hide tags
+    const tagsToggle = document.createElement("button");
+    tagsToggle.type = "button";
+    tagsToggle.className = "tags-toggle";
+    tagsToggle.setAttribute("aria-controls", tagsId);
+    tagsToggle.setAttribute("aria-expanded", "false");
+    tagsToggle.title = "Show tags";
+    tagsToggle.textContent = "🏷️";
+    tagsToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isHidden = taglist.hasAttribute("hidden");
+      if (isHidden) {
+        taglist.removeAttribute("hidden");
+        tagsToggle.setAttribute("aria-expanded", "true");
+        tagsToggle.title = "Hide tags";
+      } else {
+        taglist.setAttribute("hidden", "");
+        tagsToggle.setAttribute("aria-expanded", "false");
+        tagsToggle.title = "Show tags";
+      }
+    });
+
+    // Action bar (side-by-side small buttons)
+    const actions = document.createElement("div");
+    actions.className = "artist-actions";
+    actions.appendChild(copyBtn);
+    actions.appendChild(reloadBtn);
+    actions.appendChild(tagsToggle);
+
+    // Footer at the bottom with name + actions
+    const footer = document.createElement("div");
+    footer.className = "artist-footer";
+    footer.appendChild(name);
+    footer.appendChild(actions);
+
+    // Assemble card
+    card.appendChild(media);
+    card.appendChild(footer);
+    card.appendChild(taglist);
 
     // Add humiliation overlay on hover
     card.addEventListener("mouseenter", () => {
@@ -859,11 +915,6 @@ function renderArtistCards(artists, selectedTagsOverride) {
       }
     });
 
-    card.appendChild(img);
-    card.appendChild(name);
-    card.appendChild(taglist);
-    card.appendChild(copyBtn);
-    card.appendChild(reloadBtn);
     frag.appendChild(card);
   });
   artistGallery.appendChild(frag);
