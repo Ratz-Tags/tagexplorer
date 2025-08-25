@@ -1159,37 +1159,50 @@ main.container {
   transform: translateY(-2px) !important;
 }
 
-/* Make reload/copy buttons smaller, square, and inline */
+/* Compact square action buttons with improved contrast */
 .copy-button,
 .reload-button {
-  width: 40px !important;
-  height: 40px !important;
-  min-width: 40px !important;
-  padding: 0.25em !important;
-  border-radius: 8px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 0.95em !important;
-  margin: 0 0.25em !important; /* sit nicely side-by-side */
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  padding: 0 !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, #ffb3da 0%, #fd7bc5 100%) !important;
+  border-width: 2px !important;
+  box-shadow: 0 2px 10px rgba(253, 123, 197, 0.3) !important;
 }
-
-/* Ensure artist tags remain visible on small screens and don't get covered by floating controls */
-.artist-tags {
-  position: relative;
-  z-index: 4500; /* above floating controls which are around 4000 */
+.copy-button:hover,
+.reload-button:hover {
+  background: linear-gradient(135deg, #ff8fc7 0%, #fd63b8 100%) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 14px rgba(253, 123, 197, 0.4) !important;
 }
-@media (max-width: 640px) {
-  .artist-tags {
-    padding-bottom: 3.2em; /* leave room for bottom-floating controls */
-    box-sizing: border-box;
-    max-width: calc(100% - 2.6em); /* avoid being hidden behind edge buttons */
-    margin-bottom: 0.6em;
-  }
-  /* slightly reduce floating control sizes on small screens so they overlap less */
-  .floating-controls,
-  #audio-controls {
-    min-width: 160px;
-    padding: 0.4em 0.6em;
+.copy-button:active,
+.reload-button:active {
+  transform: translateY(0) scale(0.98) !important;
+  box-shadow: 0 1px 6px rgba(253, 123, 197, 0.3) !important;
+}
+/* Make any icon inside center and scale */
+.copy-button > svg,
+.copy-button > img,
+.reload-button > svg,
+.reload-button > img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+/* Place them side by side cleanly */
+.copy-button + .reload-button,
+.reload-button + .copy-button {
+  margin-left: 0.35em !important;
+}
+/* Slightly reduce on very small screens */
+@media (max-width: 480px) {
+  .copy-button,
+  .reload-button {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 9px !important;
   }
 }

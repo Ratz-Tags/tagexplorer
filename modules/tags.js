@@ -278,6 +278,12 @@ function renderTagButtons() {
     const btn = document.createElement("button");
     btn.className = "tag-button";
     btn.type = "button";
+    btn.setAttribute("aria-label", `Toggle tag ${tag.replaceAll("_", " ")}`);
+    btn.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
+    btn.setAttribute("role", "switch");
+    // Optional: group role for container
+    tagButtonsContainer.setAttribute("role", "group");
+    tagButtonsContainer.setAttribute("aria-label", "Tag filters");
     if (tagIcons[tag]) {
       const icon = document.createElement("img");
       icon.src = tagIcons[tag];
@@ -296,6 +302,8 @@ function renderTagButtons() {
         activeTags.add(tag);
         spawnBubble(tag);
       }
+      // Update ARIA state after toggle
+      btn.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
       renderTagButtons();
       if (renderArtists) renderArtists(true); // <-- force full update
       if (setRandomBackground) setRandomBackground();
@@ -327,6 +335,11 @@ function toggleTag(tag) {
   } else {
     activeTags.add(tag);
     spawnBubble(tag);
+  }
+  // After changing state, try to update any visible tag buttons' aria-pressed
+  if (tagButtonsContainer) {
+    const btn = tagButtonsContainer.querySelector(`.tag-button[data-tag="${CSS.escape(tag)}"]`);
+    if (btn) btn.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
   }
   renderTagButtons();
   if (renderArtists) renderArtists(true);

@@ -225,6 +225,8 @@ async function filterTags() {
       btn.className = "tag-button";
       btn.textContent = `${tag.replace(/_/g, " ")} (${counts[tag] || 0})`;
       btn.setAttribute("role", "option");
+      btn.setAttribute("aria-label", `Toggle tag ${tag.replace(/_/g, " ")}`);
+      btn.setAttribute("aria-pressed", active.has(tag) ? "true" : "false");
       if (active.has(tag)) btn.classList.add("active");
       btn.onclick = () => {
         toggleTag(tag);
@@ -367,6 +369,7 @@ function openTagExplorer() {
   const list = document.createElement("div");
   list.className = "tag-explorer-tags";
   list.setAttribute("id", "tag-list");
+  list.setAttribute("role", "listbox");
   container.appendChild(list);
 
   function renderList() {
@@ -389,6 +392,9 @@ function openTagExplorer() {
       const btn = document.createElement("button");
       btn.className = "tag-button";
       btn.textContent = `${tag.replace(/_/g, " ")} (${counts[tag] || 0})`;
+      btn.setAttribute("role", "option");
+      btn.setAttribute("aria-label", `Toggle tag ${tag.replace(/_/g, " ")}`);
+      btn.setAttribute("aria-pressed", active.has(tag) ? "true" : "false");
       if (active.has(tag)) btn.classList.add("active");
       btn.onclick = () => {
         toggleTag(tag);
