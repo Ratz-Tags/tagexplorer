@@ -138,15 +138,15 @@ body > nav,
 
 /* Card spacing tweaks */
 .artist-card {
-  background: #fff;
-  border: 1.5px solid #ffd6f6;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(253, 123, 197, 0.1);
   position: relative;
-  padding: 0.6em;
-  transition: transform 0.16s, box-shadow 0.16s;
-  margin: 0; /* rely on grid gap only */
-  overflow: hidden; /* contain decorations */
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, rgba(255,240,250,0.2), rgba(255,214,246,0.2)); /* ~20% glossy */
+  border: 1.5px solid rgba(253,123,197,0.35);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(253,123,197,0.15);
+  overflow: hidden;
+  min-height: 320px;
 }
 .artist-card:hover {
   transform: translateY(-3px) scale(1.025);
@@ -171,7 +171,7 @@ body > nav,
   background: rgba(255, 240, 250, 0.82);
   border-radius: 2.5em;
   box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25),
-    0 1.5px 8px rgba(255, 99, 165, 0.2);
+  0 1.5px 8px rgba(255, 99, 165, 0.2);
 }
 
 @keyframes topBarGradient {
