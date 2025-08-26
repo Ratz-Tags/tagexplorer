@@ -887,13 +887,19 @@ main.container,
   background: linear-gradient(180deg, rgba(255,240,250,0.35), rgba(255,214,246,0.35));
 }
 
-.gallery-tag {
+.gallery-tag, .zoom-tag-pill {
   background: #fff0fa;
   border: 1.5px solid var(--border-color);
   border-radius: 999px;
   padding: 0.15rem 0.5rem;
   font-size: 0.85rem;
   color: var(--accent2);
+}
+
+.zoom-tag-pill:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(253, 123, 197, 0.45), 0 0 0 6px #fd7bc540;
 }
 
 /* Mobile tweaks */
