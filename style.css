@@ -141,7 +141,7 @@ body > nav,
   position: relative;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(255,240,250,0.2), rgba(255,214,246,0.2)); /* ~20% glossy */
+  background: linear-gradient(180deg, rgba(255,240,250,0.6), rgba(255,214,246,0.6)); /* ~20% glossy */
   border: 1.5px solid rgba(253,123,197,0.35);
   border-radius: 14px;
   box-shadow: 0 4px 18px rgba(253,123,197,0.15);
