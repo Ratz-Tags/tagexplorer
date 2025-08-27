@@ -230,6 +230,7 @@ body > nav,
 .browse-btn,
 .bar-btn,
 .tag-btn,
+/* Tag button base style and active state (consolidated) */
 .tag-button {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 2.5px solid #fd7bc5 !important;
@@ -246,6 +247,12 @@ body > nav,
   max-width: 220px !important;
   white-space: normal !important;
   word-break: break-word !important;
+}
+.tag-button.active {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
+  transform: scale(1.06) !important;
 }
   /* Active state for selected tags */
   .tag-button.active {
