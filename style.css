@@ -887,13 +887,21 @@ main.container,
   background: linear-gradient(180deg, rgba(255,240,250,0.35), rgba(255,214,246,0.35));
 }
 
-.gallery-tag, .zoom-tag-pill {
-  background: #fff0fa;
-  border: 1.5px solid var(--border-color);
+.zoom-tag-pill,
+.gallery-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.25em 0.5em;
   border-radius: 999px;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.85rem;
-  color: var(--accent2);
+  font-size: 0.62em;
+  line-height: 1.1;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  border: 2px solid #fd7bc5;
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(253, 123, 197, 0.35), 0 0 0 4px #fd7bc540;
+  white-space: nowrap;
+  user-select: none;
 }
 
 .zoom-tag-pill:hover {
@@ -979,7 +987,7 @@ main.container,
   color: #fff !important;
   box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
   font-family: var(--btn-font) !important;
-  font-size: 0.55em !important;
+  font-size: 0.65em !important;
   border-radius: 2em !important;
   padding: 0.7em 1.4em !important;
   margin: 0.2em 0.3em !important;
@@ -2093,7 +2101,7 @@ main.container,
   transform: translateY(-1px);
   box-shadow: 0 4px 14px rgba(253, 123, 197, 0.35);
 }
-.tag-explorer .tag-button:active {
+.tag-explorer .tag-button.active {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
   box-shadow: 0 0 0 3px #fd7bc540, 0 6px 20px rgba(253, 123, 197, 0.35);
 }
