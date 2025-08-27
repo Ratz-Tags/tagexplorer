@@ -535,9 +535,27 @@ body > nav,
   margin-bottom: 1em;
 }
 
+.tag-explorer-wrapper{
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height: 40vh !important;
+  background: rgba(255, 240, 250, 0);                
+  backdrop-filter: blur(2.5px) saturate(1.1);                  
+  display: flex;                  
+  flex-direction: row;                  
+  align-items: center;                    
+  justify-content: center;
+  z-index: 12000;
+  overflow: hidden;
+}
+
+
 .modal,
 .fullscreen-wrapper,
-.tag-explorer-wrapper,
 .joi-modal,
 .taunt-modal {
   position: fixed !important;
@@ -560,7 +578,6 @@ body > nav,
 /* Update modal-like wrappers to avoid 100vw/100vh horizontal scroll issues */
 .modal,
 .fullscreen-wrapper,
-.tag-explorer-wrapper,
 .joi-modal,
 .taunt-modal {
   top: 0;
