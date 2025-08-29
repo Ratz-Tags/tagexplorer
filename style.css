@@ -1974,7 +1974,7 @@ main.container,
   position: relative;
 }
 
-.zoom-close {
+.zoom-close, .copied-sidebar-close {
   position: absolute;
   top: 1.2em;
   right: 1.2em;
