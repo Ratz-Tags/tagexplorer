@@ -105,11 +105,11 @@ function openTagExplorer() {
   const container = document.createElement("div");
   container.className = "tag-explorer";
 
-  // Header
+  // Header (compact)
   const header = document.createElement("div");
   header.className = "tag-explorer-header";
   const title = document.createElement("h3");
-  title.textContent = "Browse Tags";
+  title.textContent = "Tags";
   header.appendChild(title);
   const closeBtn = document.createElement("button");
   closeBtn.className = "zoom-close";
@@ -117,11 +117,9 @@ function openTagExplorer() {
   closeBtn.onclick = () => wrapper.remove();
   closeBtn.title = "Close (Esc)";
   header.appendChild(closeBtn);
-
-  // Feature: Add clear tags button for quick reset
   const clearTagsBtn = document.createElement("button");
   clearTagsBtn.className = "tag-explorer-clear";
-  clearTagsBtn.textContent = "Clear Tags";
+  clearTagsBtn.textContent = "Clear";
   clearTagsBtn.setAttribute("id", "clear-tags-btn");
   clearTagsBtn.onclick = () => {
     if (typeof window.clearAllTags === "function") window.clearAllTags();
@@ -130,28 +128,13 @@ function openTagExplorer() {
     renderList();
   };
   header.appendChild(clearTagsBtn);
-
-  let allTags = getKinkTags();
-  let active = getActiveTags();
-
-  let sortMode = "name";
-  let searchText = "";
-
-  const sortSelect = document.createElement("select");
-  sortSelect.innerHTML = `<option value="name">Sort: Name</option><option value="count">Sort: Count</option>`;
-  sortSelect.onchange = () => {
-    sortMode = sortSelect.value;
-    renderList();
-  };
-
   const searchInput = document.createElement("input");
   searchInput.type = "text";
-  searchInput.placeholder = "Search tags";
+  searchInput.placeholder = "Search";
   searchInput.oninput = () => {
-    searchText = searchInput.value.toLowerCase();
     renderList();
   };
-
+  header.appendChild(searchInput);
   const nameInput = document.createElement("input");
   nameInput.type = "text";
   nameInput.placeholder = "Filter artists";
@@ -160,33 +143,65 @@ function openTagExplorer() {
     handleArtistNameFilter(nameInput.value);
     renderList();
   };
-
-  header.appendChild(searchInput);
   header.appendChild(nameInput);
+  const sortSelect = document.createElement("select");
+  sortSelect.innerHTML = `<option value="name">Sort: Name</option><option value="count">Sort: Count</option>`;
+  sortSelect.title = "Sort tags";
+  sortSelect.onchange = () => {
+    renderList();
+  };
   header.appendChild(sortSelect);
-
   container.appendChild(header);
 
+  // Selected tags bar (compact pills)
+  const selectedTagsBar = document.createElement("div");
+  selectedTagsBar.className = "selected-tags-bar";
+  container.appendChild(selectedTagsBar);
+
+  // Tag grid
   const list = document.createElement("div");
   list.className = "tag-explorer-tags";
   list.setAttribute("id", "tag-list");
   list.setAttribute("role", "listbox");
   container.appendChild(list);
 
+  let allTags = getKinkTags();
+  let sortMode = "name";
+
   function renderList() {
+    // Selected tags pills
+    selectedTagsBar.innerHTML = "";
+    const active = getActiveTags();
+    if (active.size > 0) {
+      active.forEach((tag) => {
+        const pill = document.createElement("span");
+        pill.className = "selected-tag-pill";
+        pill.textContent = tag.replace(/_/g, " ");
+        pill.title = `Remove tag: ${tag.replace(/_/g, " ")}`;
+        pill.onclick = () => {
+          toggleTag(tag);
+          renderList();
+        };
+        selectedTagsBar.appendChild(pill);
+      });
+    }
+    // Tag grid
     list.innerHTML = "";
-    active = getActiveTags();
     const counts = getFilteredCounts(active);
+    let searchText = searchInput.value.toLowerCase();
     let tags = allTags.filter((t) => t.toLowerCase().includes(searchText));
     tags = tags.filter((t) => counts[t] || active.has(t));
+    sortMode = sortSelect.value;
     tags.sort((a, b) => {
-      if (sortMode === "count") {
-        return (counts[b] || 0) - (counts[a] || 0);
-      }
+      if (sortMode === "count") return (counts[b] || 0) - (counts[a] || 0);
       return a.localeCompare(b);
     });
     if (tags.length === 0) {
-      list.textContent = "No tags";
+      const empty = document.createElement("div");
+      empty.textContent = "No tags";
+      empty.style.color = "#a0005a";
+      empty.style.gridColumn = "1/-1";
+      list.appendChild(empty);
       return;
     }
     tags.forEach((tag, idx) => {
@@ -237,7 +252,6 @@ function openTagExplorer() {
 
   // Assemble the modal
   wrapper.appendChild(container);
-
   document.body.appendChild(wrapper);
   wrapper.focus();
   try {
