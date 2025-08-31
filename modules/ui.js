@@ -169,7 +169,7 @@ function createModal(content, className = "modal") {
 /**
  * Creates a fullscreen image viewer
  */
-function createFullscreenViewer() {
+function createFullscreenViewer(options = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
 
@@ -236,11 +236,20 @@ function createFullscreenViewer() {
 
   wrapper.appendChild(content);
 
-  // Tap/click image to show tags
-  img.addEventListener("click", () => {
-    tagList.style.display = tagList.style.display === "none" ? "block" : "none";
-    topTags.style.display = topTags.style.display === "none" ? "block" : "none";
-  });
+  // Tap/click behavior for image
+  if (typeof options.onImageClick === "function") {
+    img.addEventListener("click", (e) => {
+      e.preventDefault();
+      options.onImageClick(e);
+    });
+  } else {
+    img.addEventListener("click", () => {
+      tagList.style.display =
+        tagList.style.display === "none" ? "block" : "none";
+      topTags.style.display =
+        topTags.style.display === "none" ? "block" : "none";
+    });
+  }
 
   // Keyboard navigation
   wrapper.tabIndex = 0;

@@ -242,207 +242,146 @@ function lazyLoadBestImage(artist, img) {
  * Opens the fullscreen artist zoom view
  */
 async function openArtistZoom(artist) {
-  // Remove any existing fullscreen viewer
+  // remove existing viewer
   document.querySelectorAll(".fullscreen-wrapper").forEach((el) => el.remove());
 
-  const viewer = createFullscreenViewer();
-  const {
-    wrapper,
-    img: zoomed,
-    tagList,
-    topTags,
-    noEntriesMsg,
-    prevBtn,
-    nextBtn,
-  } = viewer;
-
-  // --- UI/UX IMPROVEMENTS FOR ZOOMED MODAL ---
-  // Only apply image-specific visual styles that do not affect layout; let CSS handle layout and flexbox
-  zoomed.style.maxWidth = '90vw';
-  zoomed.style.maxHeight = '75vh';
-  zoomed.style.width = 'auto';
-  zoomed.style.height = 'auto';
-  zoomed.style.boxShadow = '0 4px 32px #fd7bc540';
-  zoomed.style.borderRadius = '1.2em';
-  zoomed.style.background = '#fff0fa';
-  zoomed.style.zIndex = '10';
-
-  // Do not override tagList/topTags layout or display here; let CSS and modal structure handle it
-    if (tagList && tagList.nextSibling !== topTags) {
-      tagList.parentNode.insertBefore(topTags, tagList.nextSibling);
-    }
-    // Shrink individual tag font size
-    setTimeout(() => {
-      topTags.querySelectorAll('.zoom-top-tag').forEach(el => {
-        el.style.fontSize = '0.93em';
-        el.style.margin = '0 0.4em';
-        el.style.display = 'inline-block';
-        el.style.padding = '0.1em 0.7em';
-        el.style.background = '#fd7bc510';
-        el.style.borderRadius = '1em';
-      });
-    }, 0);
-  // Remove excessive white area from modal content
-  if (wrapper && wrapper.querySelector('.zoom-content')) {
-    const content = wrapper.querySelector('.zoom-content');
-    content.style.display = 'flex';
-    content.style.flexDirection = 'column';
-    content.style.alignItems = 'center';
-    content.style.justifyContent = 'flex-start';
-    content.style.padding = '0.5em 0.5em 0.5em 0.5em';
-    content.style.background = 'rgba(255,255,255,0.97)';
-    content.style.minWidth = 'unset';
-    content.style.maxWidth = '90vw';
-    content.style.boxShadow = '0 2px 24px #fd7bc520';
-    content.style.borderRadius = '1.5em';
-  }
-
-  let currentIndex = 0;
+  let grid, zoomContent, backBtn;
   let posts = [];
+  let page = 1;
+  let loading = false;
+  let hasMore = true;
+  let currentIndex = 0;
 
-  // In-memory cache for top tags (limit to 20 artists per session)
-  const topTagsCache = new Map();
-  const TOP_TAGS_CACHE_LIMIT = 20;
-  let artistTopTags = [];
-
-  function showNoEntries(
-    message = "No images found for this artist."
-  ) {
-    zoomed.style.display = "none";
-    noEntriesMsg.style.display = "block";
-    noEntriesMsg.textContent = message;
+  function returnToGrid() {
+    if (zoomContent) zoomContent.style.display = "none";
+    if (backBtn) backBtn.style.display = "none";
+    if (grid) grid.style.display = "grid";
   }
 
-  function processApiData(data) {
-    const validPosts = Array.isArray(data)
-      ? data.filter((post) => {
-          const url = post?.large_file_url || post?.file_url;
-          const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-          return isImage && !post.is_banned;
-        })
-      : [];
+  const viewer = createFullscreenViewer({ onImageClick: returnToGrid });
+  const { wrapper, img: zoomed, tagList, topTags, noEntriesMsg, prevBtn, nextBtn } = viewer;
+  zoomContent = wrapper.querySelector(".zoom-content");
 
-    posts = validPosts;
+  backBtn = document.createElement("button");
+  backBtn.className = "zoom-back";
+  backBtn.textContent = "Back";
+  backBtn.addEventListener("click", returnToGrid);
+  zoomContent.appendChild(backBtn);
+  backBtn.style.display = "none";
 
-    // --- Calculate top 20 tags for this artist (excluding artist tag) ---
-    if (posts.length > 0) {
-      // Count tag frequencies
-      const tagCounts = {};
-      posts.forEach((post) => {
-        if (post.tag_string) {
-          post.tag_string.split(" ").forEach((tag) => {
-            // Exclude artist tag (danbooru: artist:xxx)
-            if (!tag.startsWith("artist:")) {
-              tagCounts[tag] = (tagCounts[tag] || 0) + 1;
-            }
-          });
-        }
-      });
-      // Remove the artist's own tag if present (e.g. artistName)
-      const artistTag = (
-        artist.artistTag ||
-        artist.artistName ||
-        ""
-      ).toLowerCase();
-      delete tagCounts[artistTag];
-      // Sort tags by frequency
-      artistTopTags = Object.entries(tagCounts)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([tag, count]) => ({ tag, count }));
-      // Render top tags in the modal
-      if (topTags) {
-        if (artistTopTags && artistTopTags.length > 0) {
-          topTags.innerHTML = "<strong>Top Tags:</strong><br>";
-          artistTopTags.forEach(({ tag, count }) => {
-            const tagDiv = document.createElement("div");
-            tagDiv.className = "zoom-top-tag";
-            tagDiv.textContent = `${tag.replace(/_/g, " ")} (${count})`;
-            topTags.appendChild(tagDiv);
-          });
-          topTags.style.display = "block";
-        } else {
-          topTags.innerHTML =
-            "<strong>Top Tags:</strong> <span style='opacity:0.6;'>None found</span>";
-          topTags.style.display = "block";
-        }
-      }
-    }
+  grid = document.createElement("div");
+  grid.className = "artist-thumb-grid";
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = "repeat(auto-fill, minmax(120px, 1fr))";
+  grid.style.gap = "4px";
+  grid.style.height = "100%";
+  grid.style.overflowY = "auto";
+  wrapper.appendChild(grid);
 
-    if (validPosts.length === 0) {
-      showNoEntries("No images found for this artist.");
-      return;
-    }
-
-    // Show the first image, navigation will use posts[]
-    tryShow(currentIndex);
-  }
-
-  function tryShow(index, attempts = 0) {
-    if (!posts || posts.length === 0) {
-      showNoEntries("No images found for this artist and filter.");
-      return;
-    }
-    if (attempts >= posts.length) {
-      showNoEntries("No valid images found for this artist.");
-      return;
-    }
-    const raw = posts[index];
-    const url = raw?.large_file_url || raw?.file_url;
-    const full = buildImageUrl(url);
-    zoomed.style.opacity = "0.5";
-    zoomed.src = "";
-    noEntriesMsg.style.display = "none";
-    zoomed.onerror = () => {
-      tryShow((index + 1) % posts.length, attempts + 1);
-    };
-    zoomed.onload = () => {
-      zoomed.style.display = "block";
-      zoomed.style.opacity = "1";
-      noEntriesMsg.style.display = "none";
-      zoomed.onerror = null;
-      zoomed.onload = null;
-      if (tagList && raw.tag_string) {
-        // Rebuild tag list as wrapped pill elements instead of one long line
-        tagList.innerHTML = '';
-        raw.tag_string.split(' ').forEach(t => {
-          if(!t) return;
-          const pill = document.createElement('span');
-            pill.className = 'zoom-tag-pill';
-            pill.textContent = t.replace(/_/g,' ');
-            tagList.appendChild(pill);
-        });
-        tagList.style.display = 'flex';
-      }
-      if (topTags && topTags.textContent) {
-        topTags.style.display = "block";
-      }
-    };
-    zoomed.src = full;
-  }
-
-  let navTimeout;
-  function debouncedShowPost(i) {
-    clearTimeout(navTimeout);
-    navTimeout = setTimeout(() => tryShow(i), 80);
-  }
-
-  prevBtn.onclick = () => {
-    if (!posts || posts.length === 0) return;
-    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-    debouncedShowPost(currentIndex);
-  };
-
-  nextBtn.onclick = () => {
-    if (!posts || posts.length === 0) return;
-    currentIndex = (currentIndex + 1) % posts.length;
-    debouncedShowPost(currentIndex);
-  };
+  zoomContent.style.display = "none";
 
   document.body.appendChild(wrapper);
   wrapper.focus();
 
-  // --- ZOOM TOOLBAR (Focus / Tags / Go to Danbooru) ---
+  async function loadPage() {
+    if (loading || !hasMore) return;
+    loading = true;
+    try {
+      const api = await import("./api.js");
+      const newPosts = await api.fetchArtistImages(artist.artistName, [], { limit: 40, page });
+      if (!Array.isArray(newPosts) || newPosts.length === 0) {
+        hasMore = false;
+        return;
+      }
+      const start = posts.length;
+      posts = posts.concat(newPosts);
+      renderThumbs(newPosts, start);
+      if (newPosts.length < 40) hasMore = false;
+      page++;
+    } finally {
+      loading = false;
+    }
+  }
+
+  function renderThumbs(list, startIndex) {
+    list.forEach((raw, idx) => {
+      const url = buildImageUrl(raw.preview_file_url || raw.large_file_url || raw.file_url);
+      if (!url) return;
+      const thumb = document.createElement("img");
+      thumb.src = url;
+      thumb.loading = "lazy";
+      thumb.className = "artist-thumb";
+      thumb.style.width = "100%";
+      thumb.style.height = "100%";
+      thumb.style.objectFit = "cover";
+      const index = startIndex + idx;
+      thumb.addEventListener("click", () => {
+        currentIndex = index;
+        showZoom(index);
+      });
+      grid.appendChild(thumb);
+    });
+  }
+
+  grid.addEventListener("scroll", () => {
+    if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
+      loadPage();
+    }
+  });
+
+  function showZoom(index) {
+    grid.style.display = "none";
+    zoomContent.style.display = "flex";
+    backBtn.style.display = "block";
+    showPost(index);
+  }
+
+  function showPost(index) {
+    const raw = posts[index];
+    if (!raw) return;
+    const full = buildImageUrl(raw.large_file_url || raw.file_url);
+    const preview = buildImageUrl(raw.preview_file_url || raw.large_file_url || raw.file_url);
+    zoomed.style.opacity = "0.5";
+    zoomed.src = preview;
+    zoomed.onload = () => {
+      zoomed.onload = null;
+      zoomed.src = full;
+      zoomed.style.opacity = "1";
+    };
+    if (tagList) {
+      tagList.innerHTML = "";
+      if (raw.tag_string) {
+        raw.tag_string.split(" ").forEach((t) => {
+          if (!t) return;
+          const pill = document.createElement("span");
+          pill.className = "zoom-tag-pill";
+          pill.textContent = t.replace(/_/g, " ");
+          tagList.appendChild(pill);
+        });
+        tagList.style.display = "flex";
+      } else {
+        tagList.style.display = "none";
+      }
+    }
+    if (topTags) topTags.style.display = "none";
+  }
+
+  prevBtn.addEventListener("click", () => {
+    if (posts.length === 0) return;
+    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
+    showPost(currentIndex);
+  });
+
+  nextBtn.addEventListener("click", async () => {
+    if (currentIndex === posts.length - 1 && hasMore) {
+      await loadPage();
+    }
+    if (currentIndex < posts.length - 1) {
+      currentIndex++;
+      showPost(currentIndex);
+    }
+  });
+
   if (wrapper && !wrapper.querySelector('.zoom-toolbar')) {
     const content = wrapper.querySelector('.zoom-content') || wrapper;
     const toolbar = document.createElement('div');
@@ -467,7 +406,6 @@ async function openArtistZoom(artist) {
     tagsBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const hidden = wrapper.classList.toggle('hide-tags');
-      // Reflect state for accessibility
       tagsBtn.setAttribute('aria-pressed', String(!hidden));
     });
 
@@ -487,222 +425,9 @@ async function openArtistZoom(artist) {
     content.appendChild(toolbar);
   }
 
-  // Add overlay above zoom modal
   showZoomTauntOverlay();
 
-  // --- HUMILIATION: Add taunt header to zoom modal ---
-  if (wrapper && !wrapper.querySelector(".taunt-header")) {
-    (async () => {
-      let taunt = "";
-      // Try to get a tag-specific taunt if possible
-      if (
-        artist.kinkTags &&
-        Array.isArray(artist.kinkTags) &&
-        artist.kinkTags.length > 0
-      ) {
-        // Import tag taunts if available
-        try {
-          const tagsMod = await import("./tags.js");
-          const tagTaunts = tagsMod && tagsMod.tagTaunts ? tagsMod.tagTaunts : {};
-          const tag =
-            artist.kinkTags[Math.floor(Math.random() * artist.kinkTags.length)];
-          if (tagTaunts && tagTaunts[tag] && tagTaunts[tag].length > 0) {
-            taunt =
-              tagTaunts[tag][Math.floor(Math.random() * tagTaunts[tag].length)];
-          }
-        } catch {}
-      }
-      // Fallback to a general taunt if no tag-specific taunt
-      if (!taunt) {
-        try {
-          const humiliation = await import("./humiliation.js");
-          if (
-            humiliation &&
-            humiliation.startTauntTicker &&
-            window._generalTaunts
-          ) {
-            taunt =
-              window._generalTaunts[
-                Math.floor(Math.random() * window._generalTaunts.length)
-              ];
-          }
-        } catch {}
-      }
-      if (!taunt) taunt = "You really can't get enough, can you?";
-      const tauntHeader = document.createElement("div");
-      tauntHeader.className = "taunt-header";
-      tauntHeader.textContent = taunt;
-      wrapper.querySelector(".zoom-content").prepend(tauntHeader);
-    })();
-  }
-
-  // Fetch and show ALL images for the artist, regardless of selected tags
-  (async () => {
-    try {
-      const api = await import("./api.js");
-      posts = await api.fetchAllArtistImages(artist.artistName, [], { limit: 200 });
-      // If artist has a thumbnailUrl, prepend it as the first image if not already present
-      if (artist.thumbnailUrl) {
-        const thumbUrl = artist.thumbnailUrl;
-        const alreadyIncluded = posts.some(
-          (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
-        );
-        if (!alreadyIncluded) {
-          posts.unshift({
-            large_file_url: thumbUrl,
-            tag_string: "thumbnail",
-            file_url: thumbUrl,
-          });
-        }
-      }
-      if (!posts || posts.length === 0) {
-        showNoEntries();
-        return;
-      }
-      // Show the first image (thumbnail or first post)
-      tryShow(0);
-    } catch (error) {
-      showNoEntries("Error loading images for this artist.");
-    }
-  })();
-  tagList.style.display = "block";
-  topTags.style.display = "block";
-  tagList.setAttribute("aria-live", "polite");
-  topTags.setAttribute("aria-live", "polite");
-  zoomed.setAttribute("tabindex", "0");
-  zoomed.setAttribute("aria-label", "Artist image, click to toggle tags");
-
-  // --- AESTHETIC TWEAKS & HUMILIATION ---
-  // Add sparkle/heart overlay to modal
-  if (wrapper && !wrapper.querySelector(".sparkle-overlay")) {
-    const sparkle = document.createElement("div");
-    sparkle.className = "sparkle-overlay";
-    sparkle.style.position = "absolute";
-    sparkle.style.top = "0";
-    sparkle.style.left = "0";
-    sparkle.style.width = "100%";
-    sparkle.style.height = "100%";
-    sparkle.style.pointerEvents = "none";
-    sparkle.style.zIndex = "1";
-    sparkle.style.backgroundImage =
-      "url('icons/sparkle.png'), url('icons/bow.png')";
-    sparkle.style.backgroundRepeat = "repeat";
-    sparkle.style.opacity = "0.025";
-    wrapper.appendChild(sparkle);
-  }
-  // Add humiliating taunt to modal header
-  if (wrapper && !wrapper.querySelector(".taunt-header")) {
-    const taunt = document.createElement("div");
-    taunt.className = "taunt-header";
-    taunt.style.fontFamily = "'Hi Melody', sans-serif";
-    taunt.style.fontSize = "1.5em";
-    taunt.style.color = "#fd7bc5";
-    taunt.style.textAlign = "center";
-    taunt.style.margin = "1em 0 0.5em 0";
-    taunt.innerHTML =
-      'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.2em;">Pathetic.</span> 💖✨';
-    wrapper.insertBefore(taunt, wrapper.firstChild);
-  }
-  // Style reload/copy buttons with playful tooltips
-  document.querySelectorAll(".reload-button").forEach((btn) => {
-    btn.style.background = "linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%)";
-    btn.style.borderRadius = "2em";
-    btn.style.color = "#fff";
-    btn.style.fontFamily = "'Hi Melody', sans-serif";
-    btn.style.fontSize = "1.1em";
-    btn.style.boxShadow = "0 2px 8px #fd7bc540";
-    btn.title = "Desperate for more?";
-  });
-  document.querySelectorAll(".copy-button").forEach((btn) => {
-    btn.style.background = "linear-gradient(90deg, #fff0fa 0%, #fd7bc5 100%)";
-    btn.style.borderRadius = "2em";
-    btn.style.color = "#a0005a";
-    btn.style.fontFamily = "'Hi Melody', sans-serif";
-    btn.style.fontSize = "1.1em";
-    btn.style.boxShadow = "0 2px 8px #fd7bc540";
-    btn.title = "Copying again? How needy.";
-  });
-  // Add shame badge to artists with few images
-  document.querySelectorAll(".artist-card").forEach((card) => {
-    const nameDiv = card.querySelector(".artist-name");
-    const imgCount = card.artist && card.artist._totalImageCount;
-    if (
-      imgCount !== undefined &&
-      imgCount < 5 &&
-      !card.querySelector(".shame-badge")
-    ) {
-      const badge = document.createElement("span");
-      badge.className = "shame-badge";
-      badge.textContent = "Shame: Only " + imgCount + " pics";
-      badge.style.background = "#fd7bc5";
-      badge.style.color = "#fff";
-      badge.style.fontFamily = "'Hi Melody', sans-serif";
-      badge.style.fontSize = "0.9em";
-      badge.style.borderRadius = "1em";
-      badge.style.padding = "0.2em 0.8em";
-      badge.style.marginLeft = "1em";
-      nameDiv.appendChild(badge);
-    }
-  });
-  // Add lipstick kiss watermark to modal background
-  if (wrapper && !wrapper.querySelector(".lipstick-kiss")) {
-    const kiss = document.createElement("div");
-    kiss.className = "lipstick-kiss";
-    kiss.style.position = "absolute";
-    kiss.style.bottom = "24px";
-    kiss.style.right = "32px";
-    kiss.style.width = "64px";
-    kiss.style.height = "64px";
-    kiss.style.backgroundImage = "url('icons/bow.png')";
-    kiss.style.backgroundSize = "contain";
-    kiss.style.backgroundRepeat = "no-repeat";
-    kiss.style.opacity = "0.35";
-    wrapper.appendChild(kiss);
-  }
-  // Add random taunt to empty states and tooltips
-  if (noEntriesMsg) {
-    const taunts = [
-      "No images? Maybe you should try harder. 💔",
-      "Not even Danbooru can help you. Tragic.",
-      "Did you really expect more? How embarrassing.",
-      "Keep searching, maybe you'll get lucky. Doubt it.",
-      "Shame! Not a single pic for you.",
-    ];
-    const randomTaunt = taunts[Math.floor(Math.random() * taunts.length)];
-    noEntriesMsg.innerHTML += `<br><span style='font-size:1.1em;color:#fd7bc5;'>${randomTaunt}</span>`;
-  }
-  // Add playful tooltips to sort/filter controls
-  document
-    .querySelectorAll(
-      ".browse-btn, .sort-controls select, .sort-controls button"
-    )
-    .forEach((el) => {
-      el.title = "Sorting again? You must be desperate.";
-      el.style.fontFamily = "'Hi Melody', sans-serif";
-      el.style.borderRadius = "2em";
-      el.style.background = "linear-gradient(90deg, #fff0fa 0%, #fd7bc5 100%)";
-      el.style.color = "#a0005a";
-    });
-  // Add playful tooltips to tag buttons
-  document.querySelectorAll(".tag-btn, .tag-button").forEach((el) => {
-    el.title = "Tagging up? You really want it all, don't you?";
-    el.style.fontFamily = "'Hi Melody', sans-serif";
-    el.style.borderRadius = "2em";
-    el.style.background = "linear-gradient(90deg, #fd7bc5 0%, #ff63a5 100%)";
-    el.style.color = "#fff";
-  });
-  // Animate shame badge for extra humiliation
-  document.querySelectorAll(".shame-badge").forEach((badge) => {
-    badge.style.animation = "shamePulse 1.2s infinite";
-    badge.title = "So few images? Shameful.";
-  });
-  // Animate sparkles overlay
-  if (wrapper) {
-    const sparkleOverlay = wrapper.querySelector(".sparkle-overlay");
-    if (sparkleOverlay) {
-      sparkleOverlay.style.animation = "sparkleMove 8s linear infinite";
-    }
-  }
+  await loadPage();
 } // end openArtistZoom
 
 /**
