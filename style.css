@@ -2415,13 +2415,12 @@ main.container,
   transform: translateX(-100%);
   transition: transform 0.3s ease;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
 }
 .tag-explorer-wrapper .tag-explorer.open {
   transform: translateX(0);
 }
 .tag-explorer-groups {
-  overflow-y: auto;
-  height: calc(100% - 4.5em);
   padding-right: 0.3em;
 }
 .tag-group {

@@ -104,7 +104,6 @@ function openTagExplorer() {
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'tag-explorer-groups';
   sidebar.appendChild(groupsContainer);
-
   const allTags = getKinkTags();
   const openGroups = new Set();
 
@@ -122,7 +121,9 @@ function openTagExplorer() {
       if (tags.length === 0) return;
       const section = document.createElement('div');
       section.className = 'tag-group';
-      if (openGroups.has(key) || searchText) section.classList.add('open');
+      if (openGroups.has(key) || searchText || tags.some((t) => active.has(t))) {
+        section.classList.add('open');
+      }
       const head = document.createElement('div');
       head.className = 'tag-group-header';
       head.textContent = key;
