@@ -104,7 +104,6 @@ function openTagExplorer() {
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'tag-explorer-groups';
   sidebar.appendChild(groupsContainer);
-
   const allTags = getKinkTags();
   const openGroups = new Set();
 
