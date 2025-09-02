@@ -2396,3 +2396,49 @@ main.container,
 .tag-explorer-tags {
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
 }
+
+/* Sidebar Tag Explorer */
+.tag-explorer-wrapper {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 12000;
+}
+.tag-explorer-wrapper .tag-explorer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 80%;
+  max-width: 320px;
+  border-radius: 0;
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.3);
+}
+.tag-explorer-wrapper .tag-explorer.open {
+  transform: translateX(0);
+}
+.tag-explorer-groups {
+  overflow-y: auto;
+  height: calc(100% - 4.5em);
+  padding-right: 0.3em;
+}
+.tag-group {
+  border-bottom: 1px solid #fd7bc540;
+}
+.tag-group-header {
+  padding: 0.4em 0.2em;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--accent2);
+}
+.tag-group-tags {
+  display: none;
+  padding: 0.2em 0.1em;
+}
+.tag-group.open .tag-group-tags {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.4em;
+}
