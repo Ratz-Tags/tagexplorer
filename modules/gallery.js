@@ -272,7 +272,7 @@ async function openArtistZoom(artist) {
   grid = document.createElement("div");
   grid.className = "artist-thumb-grid";
   grid.style.display = "grid";
-  grid.style.gridTemplateColumns = "repeat(7, minmax(120px, 5fr))";
+  grid.style.gridTemplateColumns = "repeat(5, minmax(300px, 550px))";
   grid.style.gap = "3px";
   grid.style.height = "100%";
   grid.style.overflowY = "auto";
