@@ -88,9 +88,6 @@ function setKinkTags(tagsByCategory) {
   }
 }
 
-function setKinkTags(tags) {
-  kinkTags = Array.isArray(tags) ? tags : [];
-}
 
 // Tag icons mapping
 const tagIcons = {
