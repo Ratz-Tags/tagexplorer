@@ -92,6 +92,11 @@ function openTagExplorer() {
   header.appendChild(nameInput);
   sidebar.appendChild(header);
 
+  // Selected tags bar
+  const selectedTagsBar = document.createElement('div');
+  selectedTagsBar.className = 'selected-tags-bar';
+  sidebar.appendChild(selectedTagsBar);
+
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'tag-explorer-groups';
   sidebar.appendChild(groupsContainer);
@@ -102,6 +107,21 @@ function openTagExplorer() {
     const active = getActiveTags();
     const counts = getFilteredCounts(active);
     const searchText = searchInput.value.toLowerCase();
+    // Render selected tags bar
+    selectedTagsBar.innerHTML = '';
+    if (active.size > 0) {
+      active.forEach((tag) => {
+        const pill = document.createElement('span');
+        pill.className = 'selected-tag-pill';
+        pill.textContent = tag.replace(/_/g, ' ');
+        pill.title = 'Remove tag';
+        pill.onclick = () => {
+          toggleTag(tag);
+          renderList();
+        };
+        selectedTagsBar.appendChild(pill);
+      });
+    }
     groupsContainer.innerHTML = '';
     // Flatten all tags for verification
     let allTagsFlat = [];
@@ -135,6 +155,7 @@ function openTagExplorer() {
         const btn = document.createElement('button');
         btn.className = 'tag-button';
         btn.textContent = `${tag.replace(/_/g,' ')} (${counts[tag] || 0})`;
+        // Only highlight if tag is in active set
         if (active.has(tag)) btn.classList.add('active');
         btn.onclick = () => {
           toggleTag(tag);

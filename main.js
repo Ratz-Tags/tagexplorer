@@ -383,6 +383,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (topArtistsBtn) {
     topArtistsBtn.addEventListener("click", () => {
       if (window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === "function") {
+        // Ensure gallery is sorted and displayed by tag count
         window.kexplorer.showTopArtistsByTagCount();
       }
     });
