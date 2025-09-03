@@ -331,19 +331,19 @@
   padding-bottom: 0.2em;
 }
   /* Tag Explorer Modal - Compact, Centered, Scrollable */
+/* Tag Explorer Modal - Fix scrolling and centering issues */
 .tag-explorer {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(30, 30, 40, 0.5);
-    z-index: 1000;
-    backdrop-filter: blur(6px);
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  overflow-y: auto;
+  background: rgba(30, 30, 40, 0.5);
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+}
   .tag-explorer-wrapper {
     background: rgba(255, 255, 255, 0.18);
     border-radius: 20px;
