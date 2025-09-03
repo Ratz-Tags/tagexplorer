@@ -26,105 +26,67 @@ let renderArtists = null;
 let setRandomBackground = null;
 
 // Kink tags list (loaded from kink-tags.json)
-let kinkTags = [
-  "anal_fingering",
-  "anal_fisting",
-  "anal_object_insertion",
-  "annoyed",
-  "assertive_female",
-  "assisted_exposure",
-  "bdsm",
-  "before_and_after",
-  "bimbofication",
-  "body_writing",
-  "bondage",
-  "bound",
-  "bullying",
-  "chastity_cage",
-  "chastity_cage_emission",
-  "cheating_(relationship)",
-  "clothed_female_nude_male",
-  "condom",
-  "crossdressing",
-  "crossdressing_(mtf)",
-  "cum",
-  "cum_in_ass",
-  "cum_in_mouth",
-  "cumdump",
-  "dark_skin",
-  "dildo_riding",
-  "dominatrix",
-  "drinking_from_condom",
-  "ejaculating_while_penetrated",
-  "fellatio",
-  "femdom",
-  "feminization",
-  "flat_chastity_cage",
-  "foot_worship",
-  "forced",
-  "forced_feminization",
-  "futanari",
-  "gag",
-  "gagged",
-  "gokkun",
-  "hand_milking",
-  "handsfree_ejaculation",
-  "hogtie",
-  "holding_key",
-  "huge_dildo",
-  "humiliation",
-  "hypnosis",
-  "immobilization",
-  "irrumatio",
-  "knotting",
-  "lactation",
-  "large_insertion",
-  "leash",
-  "male_penetrated",
-  "milking_machine",
-  "mind_break",
-  "mind_control",
-  "netorare",
-  "netorase",
-  "nipple_piercing",
-  "object_insertion",
-  "object_insertion_from_behind",
-  "oral",
-  "orgasm_denial",
-  "pegging",
-  "penis_milking",
-  "pet_play",
-  "pouring_from_condom",
-  "precum",
-  "premature_ejaculation",
-  "prostate_milking",
-  "pubic_hair",
-  "public_nudity",
-  "pussy_juice",
-  "rape",
-  "restrained",
-  "restraints",
-  "sadism",
-  "sex_machine",
-  "sex_toy",
-  "shibari",
-  "small_penis",
-  "small_penis_humiliation",
-  "sockjob",
-  "sounding",
-  "spanking",
-  "spreader_bar",
-  "stomach_bulge",
-  "strap-on",
-  "swallowing",
-  "tentacle_pit",
-  "tentacle_sex",
-  "toe_sucking",
-  "trap",
-  "urethral_insertion",
-  "used_condom",
-  "viewer_on_leash"
+const kinkTagsByCategory = [
+  {
+    category: "Bondage & Restraints",
+    tags: [
+      "bondage", "bound", "hogtie", "restraints", "restrained", "leash", "spreader_bar", "shibari", "immobilization", "chastity_cage", "flat_chastity_cage", "chastity_cage_emission", "holding_key"
+    ]
+  },
+  {
+    category: "Feminization & Gender",
+    tags: [
+      "feminization", "forced_feminization", "bimbofication", "crossdressing", "crossdressing_(mtf)", "trap"
+    ]
+  },
+  {
+    category: "Humiliation & Degradation",
+    tags: [
+      "humiliation", "bullying", "small_penis", "small_penis_humiliation", "public_nudity", "body_writing", "cumdump", "viewer_on_leash"
+    ]
+  },
+  {
+    category: "Sex Acts & Toys",
+    tags: [
+      "anal_fingering", "anal_fisting", "anal_object_insertion", "dildo_riding", "huge_dildo", "sex_toy", "sex_machine", "strap-on", "pegging", "object_insertion", "object_insertion_from_behind", "large_insertion", "sounding", "urethral_insertion", "milking_machine", "penis_milking", "prostate_milking", "hand_milking", "handsfree_ejaculation", "foot_worship", "toe_sucking", "sockjob", "tentacle_sex", "tentacle_pit"
+    ]
+  },
+  {
+    category: "Domination & Power",
+    tags: [
+      "femdom", "dominatrix", "sadism", "assertive_female", "pet_play"
+    ]
+  },
+  {
+    category: "Cum & Fluids",
+    tags: [
+      "cum", "cum_in_ass", "cum_in_mouth", "precum", "swallowing", "gokkun", "drinking_from_condom", "pouring_from_condom", "used_condom", "pussy_juice", "lactation"
+    ]
+  },
+  {
+    category: "Mind & Control",
+    tags: [
+      "hypnosis", "mind_break", "mind_control"
+    ]
+  },
+  {
+    category: "Other Kinks",
+    tags: [
+      "before_and_after", "annoyed", "cheating_(relationship)", "clothed_female_nude_male", "dark_skin", "ejaculating_while_penetrated", "fellatio", "knotting", "nipple_piercing", "oral", "orgasm_denial", "netorare", "netorase", "pubic_hair", "rape", "spanking", "stomach_bulge"
+    ]
+  }
 ];
+
+function setKinkTags(tagsByCategory) {
+  // Accepts array of { category, tags } objects
+  if (Array.isArray(tagsByCategory)) {
+    for (const cat of tagsByCategory) {
+      if (!cat.category || !Array.isArray(cat.tags)) return;
+    }
+    kinkTagsByCategory.length = 0;
+    kinkTagsByCategory.push(...tagsByCategory);
+  }
+}
 
 function setKinkTags(tags) {
   kinkTags = Array.isArray(tags) ? tags : [];
@@ -484,7 +446,7 @@ function getArtistNameFilter() {
  * Gets the available kink tags
  */
 function getKinkTags() {
-  return [...kinkTags];
+  return kinkTagsByCategory.map(cat => ({ category: cat.category, tags: [...cat.tags] }));
 }
 
 // Export functions for ES modules

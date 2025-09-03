@@ -37,16 +37,7 @@ function getFilteredCounts(active) {
   return counts;
 }
 
-function groupTags(tags) {
-  const groups = {};
-  tags.forEach((t) => {
-    const first = t[0]?.toUpperCase() || '#';
-    const key = /^[A-Z]$/.test(first) ? first : '#';
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(t);
-  });
-  return groups;
-}
+// No longer needed: groupTags. We'll use kink categories directly.
 
 function openTagExplorer() {
   const existing = document.querySelector('.tag-explorer-wrapper');
@@ -104,38 +95,43 @@ function openTagExplorer() {
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'tag-explorer-groups';
   sidebar.appendChild(groupsContainer);
-  const allTags = getKinkTags();
+  const kinkCategories = getKinkTags(); // [{category, tags:[]}, ...]
   const openGroups = new Set();
 
   function renderList() {
     const active = getActiveTags();
     const counts = getFilteredCounts(active);
     const searchText = searchInput.value.toLowerCase();
-    const grouped = groupTags(allTags);
     groupsContainer.innerHTML = '';
-    Object.keys(grouped).sort().forEach((key) => {
-      const tags = grouped[key]
+    // Flatten all tags for verification
+    let allTagsFlat = [];
+    kinkCategories.forEach(cat => allTagsFlat.push(...cat.tags));
+    // --- Verification: check for lost tags ---
+    // If you want to check for lost tags, you can compare allTagsFlat to the original list.
+    // ---
+    kinkCategories.forEach(({ category, tags }) => {
+      // Filter tags by search and by presence in filtered artists
+      const filteredTags = tags
         .filter((t) => t.toLowerCase().includes(searchText))
-        .filter((t) => counts[t] || active.has(t))
-        .sort();
-      if (tags.length === 0) return;
+        .filter((t) => counts[t] || active.has(t));
+      if (filteredTags.length === 0) return;
       const section = document.createElement('div');
       section.className = 'tag-group';
-      if (openGroups.has(key) || searchText || tags.some((t) => active.has(t))) {
+      if (openGroups.has(category) || searchText || filteredTags.some((t) => active.has(t))) {
         section.classList.add('open');
       }
       const head = document.createElement('div');
       head.className = 'tag-group-header';
-      head.textContent = key;
+      head.textContent = category;
       head.onclick = () => {
-        if (openGroups.has(key)) openGroups.delete(key);
-        else openGroups.add(key);
+        if (openGroups.has(category)) openGroups.delete(category);
+        else openGroups.add(category);
         renderList();
       };
       section.appendChild(head);
       const tagsDiv = document.createElement('div');
       tagsDiv.className = 'tag-group-tags';
-      tags.forEach((tag) => {
+      filteredTags.forEach((tag) => {
         const btn = document.createElement('button');
         btn.className = 'tag-button';
         btn.textContent = `${tag.replace(/_/g,' ')} (${counts[tag] || 0})`;

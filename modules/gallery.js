@@ -789,12 +789,10 @@ function addTopTagCountButton() {
   btn.id = "top-tag-count-btn";
   btn.className = "browse-btn";
   btn.textContent = "Show Top Artists by Tag Count";
-  btn.title =
-    "See which artists have the most images matching all selected tags";
+  btn.title = "See which artists have the most images matching all selected tags";
   btn.onclick = () => {
-    if (typeof showTopArtistsByTagCount === "function") {
-      showTopArtistsByTagCount();
-    }
+    // Directly call the local showTopArtistsByTagCount function
+    showTopArtistsByTagCount();
   };
   sortControls.appendChild(btn);
 }
