@@ -2,8 +2,7 @@
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   color: #a0005a;
   border: 2.5px solid #fd7bc5;
-  border-radius: 999px;
-  box-shadow: 0 2px 12px #fd7bc540, 0 0 0 4px #fd7bc520;
+  border-radius: 12px;
   font-family: var(--btn-font);
   font-size: 1.08em;
   font-weight: 700;
@@ -15,11 +14,25 @@
   cursor: pointer;
   text-shadow: 0 1px 6px #fd7bc520;
   box-sizing: border-box;
+  position: relative;
+  /* Lace effect: scalloped border using box-shadow */
+  box-shadow:
+    0 0 0 0 #fd7bc540,
+    0 0 0 6px #fff0fa,
+    0 0 0 8px #fd7bc540,
+    0 0 0 10px #fff0fa;
+  /* Simulate lace with repeating radial gradient on border */
+  border-image: repeating-radial-gradient(circle at 10px 10px, #fd7bc5 0 2px, transparent 2px 10px) 12;
+  background-clip: padding-box;
 }
 .tag-explorer-bar button:hover, #tag-explorer-bar button:hover {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
   color: #fff;
-  box-shadow: 0 4px 18px #fd7bc5cc, 0 0 0 6px #fd7bc540;
+  box-shadow:
+    0 0 0 0 #fd7bc540,
+    0 0 0 6px #ffd6f6,
+    0 0 0 8px #fd7bc540,
+    0 0 0 10px #ffd6f6;
   transform: scale(1.07) rotate(-2deg);
 }
 .tag-explorer-bar button:focus, #tag-explorer-bar button:focus {
