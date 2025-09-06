@@ -1,3 +1,29 @@
+/* Sticky stacking context fix for top bars */
+.tag-explorer-sticky-wrapper {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9999 !important;
+  background: transparent !important;
+  width: 100vw !important;
+  display: block !important;
+}
+.tag-explorer-bar, #tag-explorer-bar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 9000 !important;
+  /* ...existing code... */
+}
+.selected-tags-bar {
+  position: sticky !important;
+  top: 3.2em !important;
+  z-index: 8999 !important;
+  /* ...existing code... */
+}
+@media (max-width: 700px) {
+  .selected-tags-bar {
+    top: 2.7em !important;
+  }
+}
 .browse-btn,
 .bar-btn,
 .tag-btn,
