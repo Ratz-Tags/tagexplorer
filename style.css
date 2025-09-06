@@ -1,3 +1,31 @@
+.tag-explorer-bar button, #tag-explorer-bar button {
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  color: #a0005a;
+  border: 2.5px solid #fd7bc5;
+  border-radius: 999px;
+  box-shadow: 0 2px 12px #fd7bc540, 0 0 0 4px #fd7bc520;
+  font-family: var(--btn-font);
+  font-size: 1.08em;
+  font-weight: 700;
+  padding: 0.65em 1.7em;
+  margin: 0.18em 0.3em;
+  letter-spacing: 0.01em;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.13s;
+  outline: none;
+  cursor: pointer;
+  text-shadow: 0 1px 6px #fd7bc520;
+  box-sizing: border-box;
+}
+.tag-explorer-bar button:hover, #tag-explorer-bar button:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 4px 18px #fd7bc5cc, 0 0 0 6px #fd7bc540;
+  transform: scale(1.07) rotate(-2deg);
+}
+.tag-explorer-bar button:focus, #tag-explorer-bar button:focus {
+  outline: 2.5px solid #fd7bc5;
+  outline-offset: 2px;
+}
 /* === Theme variables and background layer === */
 /* Floating Controls - pinned bottom right */
 .floating-controls {
@@ -473,8 +501,60 @@ body > nav,
 }
 #tag-explorer-bar,
 .tag-explorer-bar {
-  position: relative;
-  z-index: 7000 !important;
+  position: sticky;
+  top: 0;
+  z-index: 9000 !important;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px) saturate(1.1);
+  box-shadow: 0 2px 16px rgba(253,123,197,0.08), 0 1.5px 8px rgba(255,99,165,0.08);
+  border-bottom: 1.5px solid #fd7bc540;
+  border-radius: 0 0 1.2em 1.2em;
+  padding: 0.7em 2em 0.5em 2em;
+  margin-bottom: 0.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3.2em;
+  font-size: 1.1em;
+  font-family: var(--btn-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.selected-tags-bar {
+  position: sticky;
+  top: 3.2em;
+  z-index: 8999;
+  background: rgba(255,255,255,0.88);
+  backdrop-filter: blur(6px) saturate(1.1);
+  box-shadow: 0 2px 12px rgba(253,123,197,0.07);
+  border-bottom: 1px solid #fd7bc540;
+  border-radius: 0 0 1em 1em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin: 0;
+  padding: 0.5em 1.5em 0.5em 1.5em;
+  justify-content: center;
+  min-height: 2.2em;
+  font-size: 1em;
+  font-family: var(--btn-font);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+@media (max-width: 700px) {
+  .tag-explorer-bar, #tag-explorer-bar {
+    padding: 0.5em 0.5em 0.4em 0.5em;
+    font-size: 1em;
+    border-radius: 0 0 0.7em 0.7em;
+  }
+  .selected-tags-bar {
+    top: 2.7em;
+    padding: 0.4em 0.5em;
+    font-size: 0.97em;
+    border-radius: 0 0 0.7em 0.7em;
+  }
 }
 
 /* Gallery grid: widen and tighten gaps */

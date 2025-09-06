@@ -452,8 +452,14 @@ function setArtistsPerPage(count) {
 function renderArtistsPage() {
   const start = (currentPage - 1) * artistsPerPage;
   const end = start + artistsPerPage;
-  const artistsToShow = filtered.slice(0, end);
-  renderArtistCards(artistsToShow);
+  const artistsToShow = filtered.slice(start, end);
+
+  // Only clear gallery if this is the first page (reset)
+  if (currentPage === 1) {
+    artistGallery.innerHTML = "";
+  }
+  // Append new artist cards
+  renderArtistCards(artistsToShow, undefined, true);
 
   // Pagination: Show "Show More" button if there are more artists
   if (filtered.length > end) {
@@ -480,7 +486,6 @@ function renderArtistsPage() {
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride) {
   if (!artistGallery) return;
-  artistGallery.innerHTML = "";
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
   const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
@@ -566,9 +571,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
       e.stopPropagation();
       if (typeof clearArtistCache === "function")
         clearArtistCache(artist.artistName);
-      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(
-        ","
-      )}`;
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
       sessionStorage.removeItem(cacheKey);
       localStorage.removeItem(`danbooru-image-${artist.artistName}`);
       artist._imageCount = undefined;
