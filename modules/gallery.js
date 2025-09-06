@@ -520,12 +520,18 @@ function renderArtistCards(artists, selectedTagsOverride) {
 
     const name = document.createElement("div");
     name.className = "artist-name";
-    const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
-    if (typeof total === "number") {
-      name.textContent = `${artist.artistName.replace(/_/g, " ")} [${total}]`;
+    let displayName = artist.artistName.replace(/_/g, " ");
+    if (sortMode === "top" && typeof artist._bottleneckCount === "number") {
+      displayName += ` (${artist._bottleneckCount})`;
     } else {
-      name.textContent = `${artist.artistName.replace(/_/g, " ")} [Loading…]`;
+      const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
+      if (typeof total === "number") {
+        displayName += ` [${total}]`;
+      } else {
+        displayName += " [Loading…]";
+      }
     }
+    name.textContent = displayName;
 
     // Render tags as .gallery-tag (collapsed by default)
     const taglist = document.createElement("div");
