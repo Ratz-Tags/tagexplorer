@@ -857,14 +857,32 @@ async function showTopArtistsByTagCount() {
       return selectedTags.every((tag) => tags.includes(tag));
     })
     .map((artist) => {
-      // Use postCount as the main count for sorting (if available)
-      return { ...artist, _selectedTagMatchCount: selectedTags.length, _totalImageCount: artist.postCount || 0 };
+      // For each selected tag, count the number of posts for that tag for this artist
+      // Assume artist.tagCounts is an object: { tag: count, ... }
+      // If not present, fallback to 1 (at least one post with that tag)
+      let minCount = Infinity;
+      let tagCounts = {};
+      if (artist.tagCounts) {
+        selectedTags.forEach((tag) => {
+          const count = artist.tagCounts[tag] || 0;
+          tagCounts[tag] = count;
+          if (count < minCount) minCount = count;
+        });
+      } else {
+        // Fallback: just use 1 for each tag (legacy data)
+        selectedTags.forEach((tag) => {
+          tagCounts[tag] = 1;
+          if (1 < minCount) minCount = 1;
+        });
+      }
+      if (minCount === Infinity) minCount = 0;
+      return { ...artist, _selectedTagMatchCount: selectedTags.length, _bottleneckCount: minCount, _selectedTagCounts: tagCounts };
     });
 
-  // Sort by postCount (descending), then name
+  // Sort by bottleneck count (descending), then name
   artistsWithCounts.sort((a, b) => {
-    if ((b._totalImageCount || 0) !== (a._totalImageCount || 0)) {
-      return (b._totalImageCount || 0) - (a._totalImageCount || 0);
+    if ((b._bottleneckCount || 0) !== (a._bottleneckCount || 0)) {
+      return (b._bottleneckCount || 0) - (a._bottleneckCount || 0);
     }
     return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
   });
@@ -876,11 +894,12 @@ async function showTopArtistsByTagCount() {
   summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
   summaryDiv.style.fontSize = "1.1em";
   summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by post count).`;
+  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by minimum tag count per artist).`;
   artistGallery.innerHTML = "";
   artistGallery.appendChild(summaryDiv);
 
   if (artistsWithCounts.length > 0) {
+    // Pass the bottleneck count to the card renderer for display
     renderArtistCards(artistsWithCounts, selectedTags);
   } else {
     artistGallery.innerHTML +=
