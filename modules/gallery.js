@@ -857,34 +857,56 @@ async function showTopArtistsByTagCount() {
   if (selectedTags.length === 0) return;
 
   // Only include artists that have ALL selected tags (AND logic)
-  const artistsWithCounts = allArtists
-    .filter((artist) => {
-      const tags = artist.kinkTags || [];
-      return selectedTags.every((tag) => tags.includes(tag));
-    })
-    .map((artist) => {
-      // For each selected tag, count the number of posts for that tag for this artist
-      // Use artist.tagCounts if available, otherwise fallback to 0
-      let minCount = Infinity;
-      let tagCounts = {};
-      if (artist.tagCounts) {
-        selectedTags.forEach((tag) => {
-          const count = typeof artist.tagCounts[tag] === 'number' ? artist.tagCounts[tag] : 0;
-          tagCounts[tag] = count;
-          if (count < minCount) minCount = count;
-        });
-      } else {
-        // Fallback: just use 0 for each tag (no data)
-        selectedTags.forEach((tag) => {
-          tagCounts[tag] = 0;
-          if (0 < minCount) minCount = 0;
-        });
-      }
-      if (minCount === Infinity) minCount = 0;
-      return { ...artist, _selectedTagMatchCount: selectedTags.length, _bottleneckCount: minCount, _selectedTagCounts: tagCounts };
-    });
+  let artistsWithCounts = allArtists.filter((artist) => {
+    const tags = artist.kinkTags || [];
+    return selectedTags.every((tag) => tags.includes(tag));
+  });
 
-  // Sort by bottleneck count (descending), then name
+  // Show spinner while fetching
+  let spinner = document.querySelector(".gallery-spinner");
+  if (!spinner) {
+    spinner = createSpinner();
+    artistGallery.innerHTML = "";
+    artistGallery.appendChild(spinner);
+  }
+  spinner.setTotal(artistsWithCounts.length);
+  spinner.updateProgress(0);
+
+  // For each artist, fetch all images and count those matching all selected tags
+  let done = 0;
+  for (const artist of artistsWithCounts) {
+    let posts = null;
+    const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        posts = JSON.parse(cached);
+      }
+    } catch (e) {}
+    if (!posts) {
+      try {
+        posts = await fetchAllArtistImages(artist.artistName, selectedTags);
+        if (posts) sessionStorage.setItem(cacheKey, JSON.stringify(posts));
+      } catch (e) { posts = []; }
+    }
+    let matchCount = 0;
+    if (Array.isArray(posts)) {
+      matchCount = posts.filter(post => {
+        // tags may be in post.tag_string or post.tags (array)
+        if (Array.isArray(post.tags)) {
+          return selectedTags.every(tag => post.tags.includes(tag));
+        } else if (typeof post.tag_string === "string") {
+          return selectedTags.every(tag => post.tag_string.split(" ").includes(tag));
+        }
+        return false;
+      }).length;
+    }
+    artist._bottleneckCount = matchCount;
+    done++;
+    spinner.updateProgress(done);
+  }
+
+  // Sort by match count (descending), then name
   artistsWithCounts.sort((a, b) => {
     if ((b._bottleneckCount || 0) !== (a._bottleneckCount || 0)) {
       return (b._bottleneckCount || 0) - (a._bottleneckCount || 0);
@@ -899,17 +921,17 @@ async function showTopArtistsByTagCount() {
   summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
   summaryDiv.style.fontSize = "1.1em";
   summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by minimum tag count per artist).`;
+  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by image count per artist).`;
   artistGallery.innerHTML = "";
   artistGallery.appendChild(summaryDiv);
 
   if (artistsWithCounts.length > 0) {
-    // Pass the bottleneck count to the card renderer for display
     renderArtistCards(artistsWithCounts, selectedTags);
   } else {
     artistGallery.innerHTML +=
       '<div class="no-entries-msg">No artists found with all selected tags.</div>';
   }
+  if (spinner) spinner.remove();
 }
 
 function setAllArtists(artists) {

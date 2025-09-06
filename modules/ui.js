@@ -27,10 +27,11 @@ function setupInfiniteScroll(callback) {
   window.addEventListener("scroll", () => {
     if (scrollTimeout) clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
+      // Use getPaginationInfo to determine if more artists should be loaded
+      const info = typeof getPaginationInfo === "function" ? getPaginationInfo() : null;
       const isNearBottom =
         window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
-
-      if (isNearBottom && callback) {
+      if (isNearBottom && callback && info && info.hasMore) {
         callback();
       }
     }, 100);
