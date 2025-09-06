@@ -857,18 +857,17 @@ async function showTopArtistsByTagCount() {
       return selectedTags.every((tag) => tags.includes(tag));
     })
     .map((artist) => {
-      const tags = artist.kinkTags || [];
-      let tagCounts = {};
-      selectedTags.forEach((tag) => {
-        tagCounts[tag] = tags.filter((t) => t === tag).length || 1;
-      });
-      return { ...artist, _selectedTagMatchCount: selectedTags.length, _selectedTagCounts: tagCounts };
+      // Use postCount as the main count for sorting (if available)
+      return { ...artist, _selectedTagMatchCount: selectedTags.length, _totalImageCount: artist.postCount || 0 };
     });
 
-  // Sort by name (since all have same match count)
-  artistsWithCounts.sort((a, b) =>
-    a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" })
-  );
+  // Sort by postCount (descending), then name
+  artistsWithCounts.sort((a, b) => {
+    if ((b._totalImageCount || 0) !== (a._totalImageCount || 0)) {
+      return (b._totalImageCount || 0) - (a._totalImageCount || 0);
+    }
+    return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
+  });
 
   // Show a summary of how many artists are displayed
   const summaryDiv = document.createElement("div");
@@ -877,7 +876,7 @@ async function showTopArtistsByTagCount() {
   summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
   summaryDiv.style.fontSize = "1.1em";
   summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags.`;
+  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by post count).`;
   artistGallery.innerHTML = "";
   artistGallery.appendChild(summaryDiv);
 

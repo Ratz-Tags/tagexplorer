@@ -95,6 +95,11 @@ function openTagExplorer() {
   // Selected tags bar
   const selectedTagsBar = document.createElement('div');
   selectedTagsBar.className = 'selected-tags-bar';
+  selectedTagsBar.style.marginBottom = '0.7em';
+  selectedTagsBar.style.display = 'flex';
+  selectedTagsBar.style.flexWrap = 'wrap';
+  selectedTagsBar.style.gap = '0.4em';
+  selectedTagsBar.style.justifyContent = 'center';
   sidebar.appendChild(selectedTagsBar);
 
   const groupsContainer = document.createElement('div');
@@ -110,11 +115,24 @@ function openTagExplorer() {
     // Render selected tags bar
     selectedTagsBar.innerHTML = '';
     if (active.size > 0) {
+      const label = document.createElement('span');
+      label.textContent = 'Selected:';
+      label.style.fontWeight = 'bold';
+      label.style.marginRight = '0.5em';
+      selectedTagsBar.appendChild(label);
       active.forEach((tag) => {
         const pill = document.createElement('span');
         pill.className = 'selected-tag-pill';
         pill.textContent = tag.replace(/_/g, ' ');
         pill.title = 'Remove tag';
+        pill.style.cursor = 'pointer';
+        pill.style.background = 'linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%)';
+        pill.style.color = '#a0005a';
+        pill.style.border = '1.5px solid #fd7bc5';
+        pill.style.padding = '0.4em 1em';
+        pill.style.borderRadius = '2em';
+        pill.style.fontWeight = '500';
+        pill.style.boxShadow = '0 1px 4px #fd7bc540';
         pill.onclick = () => {
           toggleTag(tag);
           renderList();

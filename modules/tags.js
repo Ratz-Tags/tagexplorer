@@ -34,7 +34,7 @@ const kinkTagsByCategory = [
     ]
   },
   {
-    category: "Feminization & Gender",
+    category: "Feminization & Gender Play",
     tags: [
       "feminization", "forced_feminization", "bimbofication", "crossdressing", "crossdressing_(mtf)", "trap"
     ]
@@ -46,35 +46,71 @@ const kinkTagsByCategory = [
     ]
   },
   {
-    category: "Sex Acts & Toys",
+    category: "Anal & Object Play",
     tags: [
-      "anal_fingering", "anal_fisting", "anal_object_insertion", "dildo_riding", "huge_dildo", "sex_toy", "sex_machine", "strap-on", "pegging", "object_insertion", "object_insertion_from_behind", "large_insertion", "sounding", "urethral_insertion", "milking_machine", "penis_milking", "prostate_milking", "hand_milking", "handsfree_ejaculation", "foot_worship", "toe_sucking", "sockjob", "tentacle_sex", "tentacle_pit"
+      "anal_fingering", "anal_fisting", "anal_object_insertion", "object_insertion", "object_insertion_from_behind", "large_insertion", "sounding", "urethral_insertion", "dildo_riding", "huge_dildo", "strap-on", "pegging", "sex_toy", "sex_machine", "milking_machine", "penis_milking", "prostate_milking", "hand_milking", "handsfree_ejaculation"
     ]
   },
   {
-    category: "Domination & Power",
+    category: "Domination, Power & Sadism",
     tags: [
-      "femdom", "dominatrix", "sadism", "assertive_female", "pet_play"
+      "femdom", "dominatrix", "sadism", "assertive_female", "pet_play", "cbt", "punishment", "boot_worship", "trample"
     ]
   },
   {
-    category: "Cum & Fluids",
+    category: "Feet & Legs",
+    tags: [
+      "foot_worship", "toe_sucking", "sockjob"
+    ]
+  },
+  {
+    category: "Tentacles & Monsters",
+    tags: [
+      "tentacle_sex", "tentacle_pit", "knotting"
+    ]
+  },
+  {
+    category: "Cum, Fluids & Orifices",
     tags: [
       "cum", "cum_in_ass", "cum_in_mouth", "precum", "swallowing", "gokkun", "drinking_from_condom", "pouring_from_condom", "used_condom", "pussy_juice", "lactation"
     ]
   },
   {
-    category: "Mind & Control",
+    category: "Mind, Hypnosis & Control",
     tags: [
       "hypnosis", "mind_break", "mind_control"
     ]
   },
   {
-    category: "Other Kinks",
+    category: "Public, Cheating & Social",
     tags: [
-      "before_and_after", "annoyed", "cheating_(relationship)", "clothed_female_nude_male", "dark_skin", "ejaculating_while_penetrated", "fellatio", "knotting", "nipple_piercing", "oral", "orgasm_denial", "netorare", "netorase", "pubic_hair", "rape", "spanking", "stomach_bulge"
+      "before_and_after", "annoyed", "cheating_(relationship)", "clothed_female_nude_male", "public_nudity"
     ]
-  }
+  },
+  {
+    category: "Body & Skin",
+    tags: [
+      "dark_skin", "nipple_piercing", "pubic_hair", "lactation", "stomach_bulge"
+    ]
+  },
+  {
+    category: "Oral & Face",
+    tags: [
+      "fellatio", "oral", "sitting_on_face"
+    ]
+  },
+  {
+    category: "Orgasm & Denial",
+    tags: [
+      "orgasm_denial", "forced_orgasm", "ruined_orgasm", "premature_ejaculation"
+    ]
+  },
+  {
+    category: "Nonconsensual & Extreme",
+    tags: [
+      "rape", "netorare", "netorase"
+    ]
+  },
 ];
 
 function setKinkTags(tagsByCategory) {
