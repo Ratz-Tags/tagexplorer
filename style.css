@@ -1460,7 +1460,6 @@ main.container,
   font-size: 1rem;
 }
 
-.tags-toggle { background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%); border: 2px solid var(--border-color); color: var(--accent2); }
 .tags-toggle[aria-expanded="true"] { background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%); color: #fff; }
 
 /* Collapsible tag list hidden by default */
