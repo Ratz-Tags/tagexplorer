@@ -864,21 +864,20 @@ async function showTopArtistsByTagCount() {
     })
     .map((artist) => {
       // For each selected tag, count the number of posts for that tag for this artist
-      // Assume artist.tagCounts is an object: { tag: count, ... }
-      // If not present, fallback to 1 (at least one post with that tag)
+      // Use artist.tagCounts if available, otherwise fallback to 0
       let minCount = Infinity;
       let tagCounts = {};
       if (artist.tagCounts) {
         selectedTags.forEach((tag) => {
-          const count = artist.tagCounts[tag] || 0;
+          const count = typeof artist.tagCounts[tag] === 'number' ? artist.tagCounts[tag] : 0;
           tagCounts[tag] = count;
           if (count < minCount) minCount = count;
         });
       } else {
-        // Fallback: just use 1 for each tag (legacy data)
+        // Fallback: just use 0 for each tag (no data)
         selectedTags.forEach((tag) => {
-          tagCounts[tag] = 1;
-          if (1 < minCount) minCount = 1;
+          tagCounts[tag] = 0;
+          if (0 < minCount) minCount = 0;
         });
       }
       if (minCount === Infinity) minCount = 0;

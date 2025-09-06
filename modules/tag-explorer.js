@@ -69,7 +69,11 @@ function openTagExplorer() {
   clearBtn.className = 'tag-explorer-clear';
   clearBtn.textContent = 'Clear';
   clearBtn.onclick = () => {
-    if (typeof window.clearAllTags === 'function') window.clearAllTags();
+    // Clear all tags using toggleTag until none left
+    const active = getActiveTags();
+    if (active && active.size) {
+      [...active].forEach(tag => toggleTag(tag));
+    }
     searchInput.value = '';
     nameInput.value = '';
     handleArtistNameFilter('');
@@ -119,6 +123,11 @@ function openTagExplorer() {
       label.textContent = 'Selected:';
       label.style.fontWeight = 'bold';
       label.style.marginRight = '0.5em';
+      label.style.color = '#a0005a';
+      label.style.background = '#fff0fa';
+      label.style.padding = '0.2em 0.7em';
+      label.style.borderRadius = '1em';
+      label.style.fontSize = '1.05em';
       selectedTagsBar.appendChild(label);
       active.forEach((tag) => {
         const pill = document.createElement('span');
