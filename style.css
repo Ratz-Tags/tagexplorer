@@ -72,29 +72,7 @@
 .browse-btn:focus,
 .bar-btn:focus,
 .tag-btn:focus,
-/* --- Button theme fix (old, now commented out for reference) --- */
-/*
-.browse-btn,
-.bar-btn,
-.tag-btn,
-.tag-button {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
-  border: 2.5px solid #fd7bc5 !important;
-  color: #fff !important;
-  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
-  font-family: var(--btn-font) !important;
-  font-size: 0.75em !important;
-  border-radius: 2em !important;
-  padding: 0.7em 1.4em !important;
-  margin: 0.2em 0.3em !important;
-  cursor: pointer !important;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s !important;
-  outline: none !important;
-  max-width: 220px !important;
-  white-space: normal !important;
-  word-break: break-word !important;
-}
-}
+
 
 /* === Theme variables and background layer === */
 /* Floating Controls - pinned bottom right */
@@ -162,40 +140,23 @@
     transform: scale(1.06) !important;
   }
 .copy-button,
-.reload-button,
-.zoom-tool,
-#back-to-top,
-.sidebar-toggle,
-.audio-toggle,
-.theme-toggle,
-#moan-mute,
-#audio-prev,
-#audio-next,
-#audio-play,
-#audio-toggle {
-  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
-  border: 2.5px solid #fd7bc5 !important;
-  color: #fff !important;
-  box-shadow: 0 2px 16px #fd7bc540, 0 0 0 4px #fd7bc580 !important;
-  font-family: var(--btn-font) !important;
-  font-size: 0.8em !important;
-  border-radius: 2em !important;
-  padding: 0.7em 1.4em !important;
-}
+
 .browse-btn:hover,
-.bar-btn:hover,
-.tag-btn:hover,
-.tag-button:hover,
-.copy-button:hover,
-.reload-button:hover,
-.zoom-tool:hover,
-.sidebar-toggle:hover,
-.audio-toggle:hover,
-.theme-toggle:hover {
-  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
-  transform: scale(1.06) !important;
+
+/* --- Sticky Top Bars --- */
+.tag-explorer-bar, #tag-explorer-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  box-shadow: 0 2px 12px 0 #fd7bc520;
+}
+.selected-tags-bar {
+  position: sticky;
+  top: 3.5em; /* Adjust if your .tag-explorer-bar is taller/shorter */
+  z-index: 999;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+  box-shadow: 0 2px 8px 0 #fd7bc510;
 }
 */
 .tag-explorer-header button,
