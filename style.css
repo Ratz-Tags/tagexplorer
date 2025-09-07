@@ -1,4 +1,5 @@
 .browse-btn,
+.browse-btn,
 .bar-btn,
 .tag-btn,
 .tag-button,
@@ -19,7 +20,7 @@
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
   color: #a0005a;
   border: 2.5px solid #fd7bc5;
-  border-radius: 12px;
+  border-radius: 10px;
   font-family: var(--btn-font);
   font-size: 1.08em;
   font-weight: 700;
@@ -69,10 +70,21 @@
     0 0 0 10px #ffd6f6;
   transform: scale(1.07) rotate(-2deg);
 }
-.browse-btn:focus,
-.bar-btn:focus,
-.tag-btn:focus,
-
+.browse-btn:hover,
+.bar-btn:hover,
+.tag-btn:hover,
+.tag-button:hover,
+.copy-button:hover,
+.reload-button:hover,
+.zoom-tool:hover,
+.sidebar-toggle:hover,
+.audio-toggle:hover,
+.theme-toggle:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
+  transform: scale(1.06) !important;
+}
 
 /* === Theme variables and background layer === */
 /* Floating Controls - pinned bottom right */
@@ -805,20 +817,7 @@ body > nav,
   word-break: break-word !important;
 }
 .browse-btn:hover,
-.bar-btn:hover,
-.tag-btn:hover,
-.tag-button:hover,
-.copy-button:hover,
-.reload-button:hover,
-.zoom-tool:hover,
-.sidebar-toggle:hover,
-.audio-toggle:hover,
-.theme-toggle:hover {
-  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
-  transform: scale(1.06) !important;
-}
+
 /* --- Overlap fix: ensure enough padding below bars --- */
 .top-bar {
   margin-bottom: 1.6em !important;
