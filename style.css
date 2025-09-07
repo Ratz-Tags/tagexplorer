@@ -1,4 +1,4 @@
-.browse-btn,
+
 .browse-btn,
 .bar-btn,
 .tag-btn,
@@ -17,32 +17,50 @@
 #audio-toggle,
 .tag-explorer-bar button,
 #tag-explorer-bar button {
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
-  color: #a0005a;
-  border: 2.5px solid #fd7bc5;
-  border-radius: 10px;
-  font-family: var(--btn-font);
-  font-size: 1.08em;
-  font-weight: 700;
-  padding: 0.65em 1.7em;
-  margin: 0.18em 0.3em;
-  letter-spacing: 0.01em;
-  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.13s;
-  outline: none;
-  cursor: pointer;
-  text-shadow: 0 1px 6px #fd7bc520;
-  box-sizing: border-box;
-  position: relative;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  color: #a0005a !important;
+  border: 2.5px solid #fd7bc5 !important;
+  border-radius: 10px !important;
+  font-family: var(--btn-font) !important;
+  font-size: 1.08em !important;
+  font-weight: 700 !important;
+  padding: 0.65em 1.7em !important;
+  margin: 0.18em 0.3em !important;
+  letter-spacing: 0.01em !important;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.13s !important;
+  outline: none !important;
+  cursor: pointer !important;
+  text-shadow: 0 1px 6px #fd7bc520 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
   /* Lace effect: scalloped border using box-shadow */
   box-shadow:
     0 0 0 0 #fd7bc540,
     0 0 0 6px #fff0fa,
     0 0 0 8px #fd7bc540,
-    0 0 0 10px #fff0fa;
+    0 0 0 10px #fff0fa !important;
   /* Simulate lace with repeating radial gradient on border */
-  border-image: repeating-radial-gradient(circle at 10px 10px, #fd7bc5 0 2px, transparent 2px 10px) 12;
-  background-clip: padding-box;
+  border-image: repeating-radial-gradient(circle at 10px 10px, #fd7bc5 0 2px, transparent 2px 10px) 12 !important;
+  background-clip: padding-box !important;
 }
+
+/* --- STICKY TOP BARS --- */
+.tag-explorer-bar, #tag-explorer-bar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  box-shadow: 0 2px 12px 0 #fd7bc520 !important;
+}
+.selected-tags-bar {
+  position: sticky !important;
+  top: 3.5em !important; /* Adjust if your .tag-explorer-bar is taller/shorter */
+  z-index: 999 !important;
+  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
+  box-shadow: 0 2px 8px 0 #fd7bc510 !important;
+}
+
+
 .browse-btn:hover,
 .bar-btn:hover,
 .tag-btn:hover,
