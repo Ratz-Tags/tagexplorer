@@ -461,25 +461,22 @@ function renderArtistsPage() {
   // Append new artist cards
   renderArtistCards(artistsToShow, undefined, true);
 
-  // Pagination: Show "Show More" button if there are more artists
-  if (filtered.length > end) {
-    let showMoreBtn = document.getElementById("show-more-artists-btn");
-    if (!showMoreBtn) {
-      showMoreBtn = document.createElement("button");
-      showMoreBtn.id = "show-more-artists-btn";
-      showMoreBtn.className = "browse-btn";
-      showMoreBtn.textContent = "Show More Artists";
-      showMoreBtn.style.display = "block";
-      showMoreBtn.style.margin = "2em auto";
-      showMoreBtn.onclick = () => {
+  // Infinite scroll: load more artists when near bottom
+  const onScroll = () => {
+    if (artistGallery.scrollTop + artistGallery.clientHeight >= artistGallery.scrollHeight - 100) {
+      if (filtered.length > currentPage * artistsPerPage) {
         currentPage++;
         renderArtistsPage();
-      };
-      artistGallery.appendChild(showMoreBtn);
+      }
     }
-  } else {
-    const btn = document.getElementById("show-more-artists-btn");
-    if (btn) btn.remove();
+  };
+  // Remove any old button
+  const btn = document.getElementById("show-more-artists-btn");
+  if (btn) btn.remove();
+  // Attach scroll listener only once
+  if (!artistGallery._infiniteScrollAttached) {
+    artistGallery.addEventListener("scroll", onScroll);
+    artistGallery._infiniteScrollAttached = true;
   }
 }
 
