@@ -49,36 +49,48 @@
   position: sticky !important;
   top: 0 !important;
   z-index: 1000 !important;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
-  box-shadow: 0 2px 12px 0 #fd7bc520 !important;
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(8px) saturate(1.1) !important;
+  box-shadow: 0 2px 16px rgba(253,123,197,0.08), 0 1.5px 8px rgba(255,99,165,0.08) !important;
+  border-bottom: 1.5px solid #fd7bc540 !important;
+  border-radius: 0 0 1.2em 1.2em !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  margin: 0 !important;
+  padding: 0.7em 2em 0.5em 2em !important;
+  margin: 0 0 0 0 !important;
+  min-height: 3.2em !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.1em !important;
+  font-family: var(--btn-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.01em !important;
+  transition: background 0.2s, box-shadow 0.2s !important;
 }
 .selected-tags-bar {
   position: sticky !important;
-  top: 3.5em !important; /* Adjust if your .tag-explorer-bar is taller/shorter */
-  z-index: 999 !important;
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
-  box-shadow: 0 2px 8px 0 #fd7bc510 !important;
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  border-bottom-left-radius: 1.2em !important;
-  border-bottom-right-radius: 1.2em !important;
+  top: 3.2em !important;
+  z-index: 9999 !important;
+  background: rgba(255,255,255,0.92) !important;
+  backdrop-filter: blur(8px) saturate(1.1) !important;
+  box-shadow: 0 2px 16px rgba(253,123,197,0.08), 0 1.5px 8px rgba(255,99,165,0.08) !important;
+  border-bottom: 1.5px solid #fd7bc540 !important;
+  border-radius: 0 0 1.2em 1.2em !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  padding: 0.5em 2em 0.5em 2em !important;
   margin: 0 !important;
-  overflow: visible !important;
+  min-height: 2.2em !important;
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 0.4em !important;
   justify-content: flex-start !important;
   align-items: center !important;
   text-align: left !important;
+  font-size: 1em !important;
+  font-family: var(--btn-font) !important;
+  transition: background 0.2s, box-shadow 0.2s !important;
 }
 
 
