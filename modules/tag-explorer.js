@@ -96,15 +96,21 @@ function openTagExplorer() {
   header.appendChild(nameInput);
   sidebar.appendChild(header);
 
-  // Selected tags bar
-  const selectedTagsBar = document.createElement('div');
-  selectedTagsBar.className = 'selected-tags-bar';
-  selectedTagsBar.style.marginBottom = '0.7em';
-  selectedTagsBar.style.display = 'flex';
-  selectedTagsBar.style.flexWrap = 'wrap';
-  selectedTagsBar.style.gap = '0.4em';
-  selectedTagsBar.style.justifyContent = 'center';
-  sidebar.appendChild(selectedTagsBar);
+
+  // Selected tags bar (global, outside modal)
+  let selectedTagsBar = document.querySelector('.selected-tags-bar');
+  if (!selectedTagsBar) {
+    selectedTagsBar = document.createElement('div');
+    selectedTagsBar.className = 'selected-tags-bar';
+    // Insert after .tag-explorer-bar if present
+    const topBar = document.querySelector('.tag-explorer-bar, #tag-explorer-bar');
+    if (topBar && topBar.parentNode) {
+      topBar.parentNode.insertBefore(selectedTagsBar, topBar.nextSibling);
+    } else {
+      document.body.insertBefore(selectedTagsBar, document.body.firstChild);
+    }
+  }
+  // Style for sticky and layout is handled in CSS
 
   const groupsContainer = document.createElement('div');
   groupsContainer.className = 'tag-explorer-groups';
@@ -116,7 +122,7 @@ function openTagExplorer() {
     const active = getActiveTags();
     const counts = getFilteredCounts(active);
     const searchText = searchInput.value.toLowerCase();
-    // Render selected tags bar
+    // Render selected tags bar (global)
     selectedTagsBar.innerHTML = '';
     if (active.size > 0) {
       const label = document.createElement('span');
