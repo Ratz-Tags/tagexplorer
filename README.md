@@ -1,18 +1,37 @@
-# Tag-Based Artist Explorer
+# Tag Explorer
 
-## Overview
-
-**Tag-Based Artist Explorer** is a mobile-first web tool for dynamically exploring artist content based on tag associations. The app is optimized for fast navigation, responsive design, and flexible theme control.
-
----
+A modern, visually unified web app for exploring, filtering, and discovering artists and tags with a focus on a playful, interactive UI/UX.
 
 ## Features
 
-- 🔍 Interactive Tag Filters  
-- 🎴 Live Artist Data Fetching  
-- 🎧 Optional Background Audio Mode  
-- 💬 Stylized UI with Bubble Dialogue  
-- 🎨 Multiple Themes including Incognito Mode  
-- 📱 Mobile-Optimized and Responsive  
-- 📌 Sticky Navigation  
-- 🏷️ Tag Explorer Modal  
+- **Artist Explorer**: Browse a gallery of artists with infinite scroll and quick tag-based filtering.
+- **Tag Explorer**: Browse, select, and combine tags to filter artists. Sticky, unified bars for navigation.
+- **Sidebar**: Minimal, icon-driven, collapsible sidebar for copied artists and actions.
+- **Modern UI**: Unified backgrounds, border radii, and compact layouts for all navigation bars and sidebar.
+- **Responsive Design**: Works on desktop and mobile, with adaptive layouts and touch-friendly controls.
+- **Fun Interactions**: Includes taunt banners, shame badges, and playful iconography.
+
+## Project Structure
+
+- `index.html` – Main HTML entry point
+- `main.js` – App bootstrap and logic
+- `modules/` – Modular JavaScript (gallery, tag explorer, sidebar, etc.)
+- `style.css` – Unified, modern styles for all UI elements
+- `audio/`, `icons/` – Media assets
+- `test/` – Test files
+
+## Getting Started
+
+1. Clone the repository
+2. Open `index.html` in your browser
+3. Explore artists, tags, and sidebar features
+
+## Customization
+
+- Add new tags or artists by editing the JSON files
+- Adjust styles in `style.css` for further theming
+- Extend sidebar or gallery features in the `modules/` directory
+
+## License
+
+MIT License
