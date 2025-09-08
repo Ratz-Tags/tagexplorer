@@ -49,47 +49,47 @@
   position: sticky !important;
   top: 0 !important;
   z-index: 1000 !important;
-  background: rgba(255,255,255,0.92) !important;
-  backdrop-filter: blur(8px) saturate(1.1) !important;
-  box-shadow: 0 2px 16px rgba(253,123,197,0.08), 0 1.5px 8px rgba(255,99,165,0.08) !important;
-  border-bottom: 1.5px solid #fd7bc540 !important;
-  border-radius: 0 0 1.2em 1.2em !important;
+  background: rgba(255, 240, 250, 0.92) !important;
+  backdrop-filter: blur(6px) saturate(1.05) !important;
+  box-shadow: 0 1.5px 8px rgba(253,123,197,0.07) !important;
+  border-radius: 1.1em 1.1em 0 0 !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  padding: 0.7em 2em 0.5em 2em !important;
-  margin: 0 0 0 0 !important;
-  min-height: 3.2em !important;
+  padding: 0.5em 1.5em 0.2em 1.5em !important;
+  margin: 0 !important;
+  min-height: 2.6em !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-size: 1.1em !important;
+  font-size: 1.08em !important;
   font-family: var(--btn-font) !important;
   font-weight: 600 !important;
   letter-spacing: 0.01em !important;
+  border-bottom: none !important;
   transition: background 0.2s, box-shadow 0.2s !important;
 }
 .selected-tags-bar {
   position: sticky !important;
-  top: 3.2em !important;
-  z-index: 9999 !important;
-  background: rgba(255,255,255,0.92) !important;
-  backdrop-filter: blur(8px) saturate(1.1) !important;
-  box-shadow: 0 2px 16px rgba(253,123,197,0.08), 0 1.5px 8px rgba(255,99,165,0.08) !important;
-  border-bottom: 1.5px solid #fd7bc540 !important;
-  border-radius: 0 0 1.2em 1.2em !important;
+  top: 2.6em !important;
+  z-index: 1000 !important;
+  background: rgba(255, 240, 250, 0.92) !important;
+  backdrop-filter: blur(6px) saturate(1.05) !important;
+  box-shadow: none !important;
+  border-radius: 0 0 1.1em 1.1em !important;
   width: 100% !important;
   box-sizing: border-box !important;
-  padding: 0.5em 2em 0.5em 2em !important;
+  padding: 0.3em 1.5em 0.3em 1.5em !important;
   margin: 0 !important;
-  min-height: 2.2em !important;
+  min-height: 1.8em !important;
   display: flex !important;
   flex-wrap: wrap !important;
   gap: 0.4em !important;
   justify-content: flex-start !important;
   align-items: center !important;
   text-align: left !important;
-  font-size: 1em !important;
+  font-size: 0.98em !important;
   font-family: var(--btn-font) !important;
+  border-top: 1px solid #fd7bc540 !important;
   transition: background 0.2s, box-shadow 0.2s !important;
 }
 
@@ -744,12 +744,35 @@ body > nav,
   align-items: center;
   justify-content: center;
   gap: 1.2em;
-  padding: 0.7em 2em 0.7em 2em;
+  padding: 0.5em 1.5em 0.5em 1.5em;
   z-index: 6000 !important;
-  background: rgba(255, 240, 250, 0.82);
-  border-radius: 2.5em;
-  box-shadow: 0 8px 32px rgba(253, 123, 197, 0.25),
-  0 1.5px 8px rgba(255, 99, 165, 0.2);
+  background: rgba(255, 240, 250, 0.92);
+  border-radius: 1.1em 1.1em 0 0;
+  box-shadow: 0 1.5px 8px rgba(253,123,197,0.07);
+  font-size: 1.08em;
+  font-family: var(--btn-font);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border-bottom: 1px solid #fd7bc540;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+/* Unified sidebar style for seamless integration */
+.sidebar {
+  background: rgba(255, 240, 250, 0.92) !important;
+  border-radius: 0 1.1em 1.1em 0 !important;
+  box-shadow: 0 1.5px 8px rgba(253,123,197,0.07) !important;
+  border: 1px solid #fd7bc540 !important;
+  padding: 1.2em 1.2em 1.2em 1.2em !important;
+  margin: 0 !important;
+  min-width: 220px;
+  max-width: 340px;
+  color: #a0005a;
+  font-family: var(--btn-font);
+  font-size: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 @keyframes topBarGradient {
