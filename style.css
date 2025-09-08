@@ -58,6 +58,19 @@
   z-index: 999 !important;
   background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%) !important;
   box-shadow: 0 2px 8px 0 #fd7bc510 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-left-radius: 1.2em !important;
+  border-bottom-right-radius: 1.2em !important;
+  width: 100% !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0.4em !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  text-align: left !important;
+  box-sizing: border-box !important;
 }
 
 
