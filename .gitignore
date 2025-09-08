@@ -2,3 +2,4 @@
 azure-tts.local.js
 .github/instructions/*
 .github/copilot-instructions.md
+.github/prompts/promptsfile.prompt.md
