@@ -1,3 +1,136 @@
+/* --- Modern Compact Sidebar --- */
+.sidebar {
+  background: rgba(255, 240, 250, 0.92);
+  border-radius: 0 1.1em 1.1em 0;
+  box-shadow: 0 1.5px 8px rgba(253,123,197,0.07);
+  border: 1px solid #fd7bc540;
+  padding: 1.1em 1.1em 1.1em 1.1em;
+  margin: 0;
+  min-width: 220px;
+  max-width: 340px;
+  color: #a0005a;
+  font-family: var(--btn-font);
+  font-size: 1em;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: background 0.2s, box-shadow 0.2s;
+  overflow-y: auto;
+}
+.sidebar-sections {
+  width: 100%;
+}
+.sidebar-section {
+  margin-bottom: 1.1em;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.sidebar-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  font-size: 1.08em;
+  font-weight: 700;
+  background: none;
+  border: none;
+  color: #a0005a;
+  padding: 0.2em 0 0.2em 0;
+  cursor: pointer;
+  width: 100%;
+  transition: color 0.18s;
+}
+.sidebar-section-header:hover {
+  color: #fd7bc5;
+}
+.sidebar-section:not(.open) .sidebar-copied-list {
+  display: none;
+}
+.sidebar-taunt-banner {
+  font-size: 0.98em;
+  color: #fd7bc5;
+  margin: 0.2em 0 0.5em 0;
+  font-weight: 500;
+  text-align: left;
+}
+.shame-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  background: #fd7bc5;
+  color: #fff;
+  font-size: 0.92em;
+  font-weight: 700;
+  border-radius: 1em;
+  padding: 0.2em 0.8em;
+  margin-bottom: 0.5em;
+  box-shadow: 0 0 12px #fd7bc555;
+}
+.sidebar-copied-list {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+.copied-artist-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7em;
+  background: #fff6fa;
+  border-radius: 0.7em;
+  padding: 0.5em 0.6em;
+  font-size: 1em;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 1px 4px #fd7bc520;
+}
+.copied-artist-row:hover {
+  background: #ffd6f6;
+  box-shadow: 0 2px 8px #fd7bc540;
+}
+.sidebar-thumb {
+  width: 36px;
+  height: 36px;
+  border-radius: 0.6em;
+  box-shadow: 0 0 6px #fd7bc540;
+  object-fit: cover;
+}
+.sidebar-icon {
+  font-size: 1.15em;
+  color: #fd7bc5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.sidebar-artist-name {
+  flex: 1;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: #a0005a;
+  font-family: var(--btn-font);
+  font-size: 1em;
+  text-align: left;
+}
+.sidebar-heart {
+  color: #ff63a5;
+  font-size: 1.2em;
+}
+.copied-sidebar-close {
+  background: none;
+  border: none;
+  color: #a0005a;
+  font-size: 1.3em;
+  position: absolute;
+  top: 0.7em;
+  right: 0.7em;
+  cursor: pointer;
+  padding: 0.2em;
+  z-index: 10;
+  transition: color 0.18s;
+}
+.copied-sidebar-close:hover {
+  color: #fd7bc5;
+}
 
 .browse-btn,
 .bar-btn,
