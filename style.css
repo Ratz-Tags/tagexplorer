@@ -1,3 +1,35 @@
+/* --- Unified .top-bar style: strictly rectangular, lace, modern, mobile-first --- */
+.top-bar {
+  flex-direction: column;
+}
+@media (max-width: 700px) {
+  .top-bar {
+    align-items: stretch;
+    padding: 0.7em 0.5em;
+    font-size: 0.98em;
+  }
+}
+/* --- Responsive Sidebar & Top-Bar --- */
+.sidebar-wrapper {
+  flex-direction: column;
+}
+@media (max-width: 700px) {
+  #copied-sidebar.sidebar-animated {
+    width: 98vw;
+  }
+}
+/* --- Strictly rectangular lace-style button base for all app buttons --- */
+.copy-button, .browse-btn, .tag-btn, .tag-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle, #moan-mute, #audio-prev, #audio-next, #audio-play, #audio-toggle, .tag-explorer-bar button, #tag-explorer-bar button, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn {
+  border-radius: 0 !important;
+}
+.copy-button:hover, .browse-btn:hover, .tag-btn:hover, .tag-button:hover, .reload-button:hover, .zoom-tool:hover, #back-to-top:hover, .sidebar-toggle:hover, .audio-toggle:hover, .theme-toggle:hover, #moan-mute:hover, #audio-prev:hover, #audio-next:hover, #audio-play:hover, #audio-toggle:hover, .tag-explorer-bar button:hover, #tag-explorer-bar button:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover, .bar-btn:hover,
+.copy-button:focus, .browse-btn:focus, .tag-btn:focus, .tag-button:focus, .reload-button:focus, .zoom-tool:focus, #back-to-top:focus, .sidebar-toggle:focus, .audio-toggle:focus, .theme-toggle:focus, #moan-mute:focus, #audio-prev:focus, #audio-next:focus, #audio-play:focus, #audio-toggle:focus, .tag-explorer-bar button:focus, #tag-explorer-bar button:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus {
+  border-radius: 0 !important;
+}
+/* --- Tag Explorer Header & Tag Button Styles --- */
+.tag-explorer-header h3 {
+  border-radius: 0 !important;
+}
 /* --- Unified .top-bar style: rectangular, lace, modern, mobile-first --- */
 .top-bar {
   width: 100%;
