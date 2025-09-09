@@ -265,38 +265,74 @@ function updateCopiedSidebar() {
 function initSidebar() {
   copiedSidebar = document.getElementById("copied-sidebar");
 
-  const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
-  if (sidebarToggles && copiedSidebar) {
-    sidebarToggles.forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        vibrate();
-        copiedSidebar.classList.remove("sidebar-hidden");
-        document.body.classList.add("sidebar-open");
-      });
-    });
-  }
-
-  // Ensure close button always works
-  const closeBtn = copiedSidebar.querySelector(".copied-sidebar-close");
-  if (closeBtn) {
-    closeBtn.addEventListener("click", () => {
+  // Add mobile-friendly slide-in/out and overlay
+  if (copiedSidebar) {
+    copiedSidebar.classList.add("sidebar-animated");
+    // Add overlay for mobile dismiss
+    let overlay = document.getElementById("sidebar-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "sidebar-overlay";
+      overlay.style.position = "fixed";
+      overlay.style.top = 0;
+      overlay.style.left = 0;
+      overlay.style.width = "100vw";
+      overlay.style.height = "100vh";
+      overlay.style.background = "rgba(0,0,0,0.25)";
+      overlay.style.zIndex = 1000;
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.appendChild(overlay);
+    }
+    function openSidebar() {
+      vibrate();
+      copiedSidebar.classList.remove("sidebar-hidden");
+      document.body.classList.add("sidebar-open");
+      overlay.style.display = "block";
+      overlay.setAttribute("aria-hidden", "false");
+      copiedSidebar.setAttribute("aria-modal", "true");
+      copiedSidebar.setAttribute("tabindex", "0");
+      copiedSidebar.focus();
+    }
+    function closeSidebar() {
       copiedSidebar.classList.add("sidebar-hidden");
       document.body.classList.remove("sidebar-open");
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden", "true");
+      copiedSidebar.removeAttribute("aria-modal");
+      copiedSidebar.removeAttribute("tabindex");
+    }
+    // Sidebar toggle buttons
+    const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
+    sidebarToggles.forEach((btn) => {
+      btn.addEventListener("click", openSidebar);
     });
-  }
-
-  // Handle scroll behavior for sidebar toggle
-  const sidebarToggle = document.querySelector(".sidebar-toggle");
-  if (sidebarToggle) {
-    window.addEventListener("scroll", () => {
-      if (window.scrollY > 100) {
-        sidebarToggle.classList.add("pinned-visible");
-      } else {
-        sidebarToggle.classList.remove("pinned-visible");
+    // Overlay click closes sidebar
+    overlay.addEventListener("click", closeSidebar);
+    // Close button
+    const closeBtn = copiedSidebar.querySelector(".copied-sidebar-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeSidebar);
+      closeBtn.setAttribute("aria-label", "Close sidebar");
+      closeBtn.setAttribute("tabindex", "0");
+    }
+    // Escape key closes sidebar
+    copiedSidebar.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") closeSidebar();
+    });
+    // Touch swipe left to close (mobile UX)
+    let touchStartX = null;
+    copiedSidebar.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
+    });
+    copiedSidebar.addEventListener("touchend", (e) => {
+      if (touchStartX !== null && e.changedTouches.length === 1) {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (dx < -60) closeSidebar();
       }
+      touchStartX = null;
     });
   }
-
   // ARIA improvements for sidebar controls
   const copyArtistBtn = document.getElementById("copy-artist-btn");
   if (copyArtistBtn) {

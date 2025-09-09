@@ -138,8 +138,10 @@ async function initApp() {
     setupInfiniteScroll(() => {
       import("./modules/gallery.js").then((gallery) => {
         const galleryInfo = gallery.getPaginationInfo();
-        if (galleryInfo.hasMore) {
-          filterArtists(false);
+        if (galleryInfo.hasMore && typeof gallery.renderArtistsPage === "function") {
+          // Increment currentPage and render next page
+          gallery.currentPage = galleryInfo.currentPage + 1;
+          gallery.renderArtistsPage();
         }
       });
     });

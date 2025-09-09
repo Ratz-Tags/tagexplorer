@@ -1,3 +1,112 @@
+/* --- Responsive Sidebar & Top-Bar --- */
+.sidebar-wrapper {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 1100;
+  pointer-events: none;
+}
+
+#copied-sidebar.sidebar-animated {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--sidebar-bg, #fff8fc);
+  box-shadow: -4px 0 24px 0 #b97fc9cc;
+  border-radius: 1.5em 0 0 1.5em;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(.7,.2,.2,1), box-shadow 0.2s;
+  pointer-events: auto;
+  overflow-y: auto;
+  z-index: 1200;
+}
+#copied-sidebar.sidebar-animated.sidebar-hidden {
+  transform: translateX(100%);
+  box-shadow: none;
+}
+#copied-sidebar.sidebar-animated:not(.sidebar-hidden) {
+  transform: translateX(0);
+  box-shadow: -4px 0 32px 0 #b97fc9ee;
+}
+#sidebar-overlay {
+  display: none;
+}
+#sidebar-overlay[aria-hidden="false"] {
+  display: block;
+}
+
+@media (max-width: 700px) {
+  #copied-sidebar.sidebar-animated {
+    width: 98vw;
+    max-width: 98vw;
+    border-radius: 1.2em 0 0 1.2em;
+    font-size: 1em;
+  }
+}
+
+/* Top-bar and tag-explorer-bar responsive */
+.top-bar, .tag-explorer-bar, .selected-tags-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bar-bg, #fff8fc);
+  border-radius: 1.5em;
+  box-shadow: 0 2px 12px 0 #b97fc933;
+  padding: 0.7em 1.2em;
+  margin-bottom: 0.7em;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar h1.brand {
+  font-size: 1.3em;
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-weight: 700;
+  margin: 0 0.5em 0 0;
+}
+.brand-sissy, .tagline {
+  font-size: 1em;
+  opacity: 0.8;
+  margin: 0 0.5em;
+}
+.tag-explorer-bar {
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+.bar-btn {
+  background: none;
+  border: none;
+  color: #a04bb7;
+  font-weight: 700;
+  font-size: 1em;
+  padding: 0.4em 1em;
+  border-radius: 1em;
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+}
+.bar-btn:hover, .bar-btn:focus {
+  background: #f8e6ff;
+  color: #7a2e8a;
+}
+@media (max-width: 700px) {
+  .top-bar, .tag-explorer-bar, .selected-tags-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.7em 0.5em;
+    font-size: 0.98em;
+  }
+  .top-bar h1.brand {
+    font-size: 1.1em;
+  }
+  .brand-sissy, .tagline {
+    font-size: 0.95em;
+  }
+}
 /* --- Tag Explorer Header & Tag Button Styles --- */
 .tag-explorer-header h3 {
   font-size: 1.5em;
@@ -7,10 +116,8 @@
 }
 .tag-button.active {
   background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 4px 24px #fd7bc5cc, 0 0 0 6px #fd7bc580 !important;
-  transform: scale(1.06) !important;
 }
+
 
 .tag-explorer-header button,
 .tag-explorer-header input,
@@ -52,6 +159,55 @@
   font-weight: 600;
   color: #a0005a;
   background: rgba(255,240,250,0.7);
+
+/* Lace-style ornate button base */
+.copy-button, .browse-btn, .tag-group .tag, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn {
+  background: repeating-linear-gradient(135deg, #fff8fc 0 8px, #f8e6ff 8px 16px);
+  color: #7a2e8a;
+  border: 3px double #e0c6e6;
+  border-radius: 2em;
+  box-shadow: 0 2px 10px 0 rgba(120, 60, 180, 0.10), 0 0 0 4px #f8e6ff inset;
+  padding: 0.6em 1.5em;
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin: 0.25em 0.4em;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s, border 0.2s;
+  outline: none;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Ornate lace border effect */
+.copy-button:before, .browse-btn:before, .tag-group .tag:before, .sidebar-btn:before, .tts-toggle-btn:before, .artist-card .copy-btn:before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 2em;
+  pointer-events: none;
+  border: 3px dotted #e0c6e6;
+  box-shadow: 0 0 0 6px #f8e6ff;
+  opacity: 0.7;
+  z-index: 0;
+}
+
+.copy-button:hover, .browse-btn:hover, .tag-group .tag:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover,
+.copy-button:focus, .browse-btn:focus, .tag-group .tag:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus {
+  background: linear-gradient(135deg, #f8e6ff 60%, #e0c6e6 100%);
+  color: #a04bb7;
+  border-color: #b97fc9;
+  box-shadow: 0 6px 20px 0 rgba(120, 60, 180, 0.18), 0 0 0 6px #f8e6ff inset;
+}
+
+.copy-button:active, .browse-btn:active, .tag-group .tag:active, .sidebar-btn:active, .tts-toggle-btn:active, .artist-card .copy-btn:active {
+  background: #f3e0fa;
+  color: #7a2e8a;
+  border-color: #a04bb7;
+  box-shadow: 0 2px 8px 0 rgba(120, 60, 180, 0.10), 0 0 0 4px #e0c6e6 inset;
+}
   border-radius: 1em;
 }
 /* --- Unified Bar & Sidebar Styles (Mobile-First) --- */
