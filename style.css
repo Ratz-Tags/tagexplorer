@@ -163,14 +163,16 @@
 
 
 
-/* Rectangular lace-style ornate button base */
-.copy-button, .browse-btn, .tag-group .tag, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn {
-  background: repeating-linear-gradient(135deg, #fff8fc 0 12px, #f8e6ff 12px 24px),
-    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="6,6"/><rect x="6" y="6" width="calc(100%25 - 12px)" height="calc(100%25 - 12px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,4"/></svg>');
+
+/* Strictly rectangular lace-style ornate button base */
+.copy-button, .browse-btn, .tag-group .tag, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn,
+.reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle, #moan-mute, #audio-prev, #audio-next, #audio-play, #audio-toggle, .tag-explorer-bar button, #tag-explorer-bar button {
+  background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px),
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,5"/></svg>');
   background-blend-mode: lighten;
   color: #a0005a;
-  border: 0;
-  border-radius: 0.4em;
+  border: none;
+  border-radius: 0;
   box-shadow:
     0 2px 12px 0 rgba(120, 60, 180, 0.13),
     0 0 0 4px #f8e6ff inset;
@@ -195,9 +197,11 @@
 
 
 .copy-button:hover, .browse-btn:hover, .tag-group .tag:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover, .bar-btn:hover,
-.copy-button:focus, .browse-btn:focus, .tag-group .tag:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus {
+.copy-button:focus, .browse-btn:focus, .tag-group .tag:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus,
+.reload-button:hover, .zoom-tool:hover, #back-to-top:hover, .sidebar-toggle:hover, .audio-toggle:hover, .theme-toggle:hover, #moan-mute:hover, #audio-prev:hover, #audio-next:hover, #audio-play:hover, #audio-toggle:hover, .tag-explorer-bar button:hover, #tag-explorer-bar button:hover,
+.reload-button:focus, .zoom-tool:focus, #back-to-top:focus, .sidebar-toggle:focus, .audio-toggle:focus, .theme-toggle:focus, #moan-mute:focus, #audio-prev:focus, #audio-next:focus, #audio-play:focus, #audio-toggle:focus, .tag-explorer-bar button:focus, #tag-explorer-bar button:focus {
   background: linear-gradient(135deg, #f8e6ff 60%, #fd7bc5 100%),
-    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23b97fc9" stroke-width="3" stroke-dasharray="6,6"/><rect x="6" y="6" width="calc(100%25 - 12px)" height="calc(100%25 - 12px)" fill="none" stroke="%23fd7bc5" stroke-width="2" stroke-dasharray="2,4"/></svg>');
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23b97fc9" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23fd7bc5" stroke-width="2" stroke-dasharray="2,5"/></svg>');
   color: #fff;
   box-shadow:
     0 8px 28px 0 rgba(120, 60, 180, 0.22),
@@ -215,7 +219,8 @@
   opacity: 0.85;
   z-index: 0;
 }
-.copy-button:active, .browse-btn:active, .tag-group .tag:active, .sidebar-btn:active, .tts-toggle-btn:active, .artist-card .copy-btn:active, .bar-btn:active {
+.copy-button:active, .browse-btn:active, .tag-group .tag:active, .sidebar-btn:active, .tts-toggle-btn:active, .artist-card .copy-btn:active, .bar-btn:active,
+.reload-button:active, .zoom-tool:active, #back-to-top:active, .sidebar-toggle:active, .audio-toggle:active, .theme-toggle:active, #moan-mute:active, #audio-prev:active, #audio-next:active, #audio-play:active, #audio-toggle:active, .tag-explorer-bar button:active, #tag-explorer-bar button:active {
   background: #fd7bc5;
   color: #fff;
   box-shadow: 0 2px 8px 0 rgba(120, 60, 180, 0.13), 0 0 0 4px #fd7bc5 inset;
