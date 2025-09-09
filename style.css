@@ -162,17 +162,19 @@
 }
 
 
-/* Enhanced lace-style ornate button base */
+
+/* Rectangular lace-style ornate button base */
 .copy-button, .browse-btn, .tag-group .tag, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn {
-  background: repeating-linear-gradient(135deg, #fff8fc 0 10px, #f8e6ff 10px 20px);
+  background: repeating-linear-gradient(135deg, #fff8fc 0 12px, #f8e6ff 12px 24px),
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="6,6"/><rect x="6" y="6" width="calc(100%25 - 12px)" height="calc(100%25 - 12px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,4"/></svg>');
+  background-blend-mode: lighten;
   color: #a0005a;
-  border: 3px dashed #fd7bc5;
-  border-radius: 2.2em;
+  border: 0;
+  border-radius: 0.4em;
   box-shadow:
     0 2px 12px 0 rgba(120, 60, 180, 0.13),
-    0 0 0 7px #f8e6ff inset,
-    0 0 0 2px #fd7bc5 inset;
-  padding: 0.7em 1.7em;
+    0 0 0 4px #f8e6ff inset;
+  padding: 0.65em 1.3em;
   font-family: 'Playfair Display', 'Georgia', serif;
   font-size: 1.08em;
   font-weight: 700;
@@ -185,9 +187,23 @@
   overflow: hidden;
   z-index: 1;
   text-shadow: 0 1px 0 #fff, 0 0 6px #f8e6ff;
+  min-width: 2.5em;
+  min-height: 2.2em;
 }
 
-/* Ornate lace border effect (scalloped) */
+/* Remove before pseudo for lace, SVG border is now in background */
+
+
+.copy-button:hover, .browse-btn:hover, .tag-group .tag:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover, .bar-btn:hover,
+.copy-button:focus, .browse-btn:focus, .tag-group .tag:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus {
+  background: linear-gradient(135deg, #f8e6ff 60%, #fd7bc5 100%),
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23b97fc9" stroke-width="3" stroke-dasharray="6,6"/><rect x="6" y="6" width="calc(100%25 - 12px)" height="calc(100%25 - 12px)" fill="none" stroke="%23fd7bc5" stroke-width="2" stroke-dasharray="2,4"/></svg>');
+  color: #fff;
+  box-shadow:
+    0 8px 28px 0 rgba(120, 60, 180, 0.22),
+    0 0 0 8px #fd7bc5 inset;
+  text-shadow: 0 2px 8px #b97fc9, 0 0 8px #fff;
+}
 .copy-button:before, .browse-btn:before, .tag-group .tag:before, .sidebar-btn:before, .tts-toggle-btn:before, .artist-card .copy-btn:before, .bar-btn:before {
   content: "";
   position: absolute;
@@ -199,27 +215,13 @@
   opacity: 0.85;
   z-index: 0;
 }
-
-.copy-button:hover, .browse-btn:hover, .tag-group .tag:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover, .bar-btn:hover,
-.copy-button:focus, .browse-btn:focus, .tag-group .tag:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus {
-  background: linear-gradient(135deg, #f8e6ff 60%, #fd7bc5 100%);
-  color: #fff;
-  border-color: #b97fc9;
-  box-shadow:
-    0 8px 28px 0 rgba(120, 60, 180, 0.22),
-    0 0 0 10px #fd7bc5 inset,
-    0 0 0 2px #b97fc9 inset;
-  text-shadow: 0 2px 8px #b97fc9, 0 0 8px #fff;
-}
-
 .copy-button:active, .browse-btn:active, .tag-group .tag:active, .sidebar-btn:active, .tts-toggle-btn:active, .artist-card .copy-btn:active, .bar-btn:active {
   background: #fd7bc5;
   color: #fff;
-  border-color: #a04bb7;
-  box-shadow: 0 2px 8px 0 rgba(120, 60, 180, 0.13), 0 0 0 6px #fd7bc5 inset;
-  border-radius: 1em;
+  box-shadow: 0 2px 8px 0 rgba(120, 60, 180, 0.13), 0 0 0 4px #fd7bc5 inset;
 }
-/* --- Unified Bar & Sidebar Styles (Mobile-First) --- */
+
+
 .top-bar,
 .tag-explorer-bar,
 #tag-explorer-bar,
