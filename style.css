@@ -529,42 +529,48 @@
 
 /* Fix orphaned style block: wrap in a selector or remove if not needed */
 
-/* --- Unified Button and Tag Styles (Modern, Consistent, Accessible) --- */
-.browse-btn,
-.copy-button,
-.tag-btn,
-.tag-button,
-.reload-button,
-.zoom-tool,
-#back-to-top,
-.sidebar-toggle,
-.audio-toggle,
-.theme-toggle,
-#moan-mute,
-#audio-prev,
-#audio-next,
-#audio-play,
-#audio-toggle,
-.tag-explorer-bar button,
-#tag-explorer-bar button {
-  background: linear-gradient(90deg, #fff0fa 0%, #ffd6f6 100%);
+.copy-button, .browse-btn, .tag-btn, .tag-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle, #moan-mute, #audio-prev, #audio-next, #audio-play, #audio-toggle, .tag-explorer-bar button, #tag-explorer-bar button, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn {
+  background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px),
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,5"/></svg>');
+  background-blend-mode: lighten;
   color: #a0005a;
-  border: 2px solid #fd7bc5;
-  border-radius: 2em;
-  font-family: var(--btn-font);
-  font-size: 1em;
-  font-weight: 600;
-  padding: 0.6em 1.3em;
-  margin: 0.18em 0.3em;
-  letter-spacing: 0.01em;
-  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.13s;
-  outline: none;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    0 2px 12px 0 rgba(120, 60, 180, 0.13),
+    0 0 0 4px #f8e6ff inset;
+  padding: 0.65em 1.3em;
+  font-family: 'Playfair Display', 'Georgia', serif;
+  font-size: 1.08em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  margin: 0.28em 0.45em;
   cursor: pointer;
-  text-shadow: 0 1px 6px #fd7bc520;
-  box-sizing: border-box;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, border 0.18s;
+  outline: none;
   position: relative;
-  box-shadow: 0 2px 8px #fd7bc540;
+  overflow: hidden;
+  z-index: 1;
+  text-shadow: 0 1px 0 #fff, 0 0 6px #f8e6ff;
+  min-width: 2.5em;
+  min-height: 2.2em;
 }
+.copy-button:hover, .browse-btn:hover, .tag-btn:hover, .tag-button:hover, .reload-button:hover, .zoom-tool:hover, #back-to-top:hover, .sidebar-toggle:hover, .audio-toggle:hover, .theme-toggle:hover, #moan-mute:hover, #audio-prev:hover, #audio-next:hover, #audio-play:hover, #audio-toggle:hover, .tag-explorer-bar button:hover, #tag-explorer-bar button:hover, .sidebar-btn:hover, .tts-toggle-btn:hover, .artist-card .copy-btn:hover, .bar-btn:hover,
+.copy-button:focus, .browse-btn:focus, .tag-btn:focus, .tag-button:focus, .reload-button:focus, .zoom-tool:focus, #back-to-top:focus, .sidebar-toggle:focus, .audio-toggle:focus, .theme-toggle:focus, #moan-mute:focus, #audio-prev:focus, #audio-next:focus, #audio-play:focus, #audio-toggle:focus, .tag-explorer-bar button:focus, #tag-explorer-bar button:focus, .sidebar-btn:focus, .tts-toggle-btn:focus, .artist-card .copy-btn:focus, .bar-btn:focus {
+  background: linear-gradient(135deg, #f8e6ff 60%, #fd7bc5 100%),
+    url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23b97fc9" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23fd7bc5" stroke-width="2" stroke-dasharray="2,5"/></svg>');
+  color: #fff;
+  box-shadow:
+    0 8px 28px 0 rgba(120, 60, 180, 0.22),
+    0 0 0 8px #fd7bc5 inset;
+  text-shadow: 0 2px 8px #b97fc9, 0 0 8px #fff;
+}
+.copy-button:active, .browse-btn:active, .tag-btn:active, .tag-button:active, .reload-button:active, .zoom-tool:active, #back-to-top:active, .sidebar-toggle:active, .audio-toggle:active, .theme-toggle:active, #moan-mute:active, #audio-prev:active, #audio-next:active, #audio-play:active, #audio-toggle:active, .tag-explorer-bar button:active, #tag-explorer-bar button:active, .sidebar-btn:active, .tts-toggle-btn:active, .artist-card .copy-btn:active, .bar-btn:active {
+  background: #fd7bc5;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(120, 60, 180, 0.13), 0 0 0 4px #fd7bc5 inset;
+}
+
 .browse-btn:hover,
 .copy-button:hover,
 .tag-btn:hover,
