@@ -24,17 +24,24 @@ function showNoEntriesMsg(element, msg = "No valid entries") {
  */
 function setupInfiniteScroll(callback) {
   let scrollTimeout = null;
-  window.addEventListener("scroll", () => {
+  // Lower threshold for mobile, and support touchmove for better responsiveness
+  const SCROLL_THRESHOLD = window.innerWidth <= 700 ? 120 : 300;
+  function checkInfiniteScroll() {
     if (scrollTimeout) clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      // Use getPaginationInfo to determine if more artists should be loaded
       const info = typeof getPaginationInfo === "function" ? getPaginationInfo() : null;
       const isNearBottom =
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - 300;
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - SCROLL_THRESHOLD;
       if (isNearBottom && callback && info && info.hasMore) {
         callback();
       }
-    }, 100);
+    }, 80);
+  }
+  window.addEventListener("scroll", checkInfiniteScroll, { passive: true });
+  window.addEventListener("touchmove", checkInfiniteScroll, { passive: true });
+  window.addEventListener("resize", () => {
+    // Recalculate threshold on orientation change
+    checkInfiniteScroll();
   });
 }
 

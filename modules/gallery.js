@@ -672,7 +672,9 @@ async function filterArtists(reset = true, force = false) {
 
   let spinner;
   try {
+    // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
+      currentPage = 1;
       artistGallery.innerHTML = "";
     }
 
