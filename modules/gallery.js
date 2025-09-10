@@ -13,6 +13,8 @@ function setupInfiniteScroll() {
       if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 200) {
         const { shown, total } = getPaginationInfo();
         if (shown < total) {
+          const btn = document.getElementById("show-more-artists-btn");
+          if (btn) btn.remove();
           setCurrentPage(getCurrentPage() + 1);
           renderArtistsPage();
         }
@@ -369,11 +371,17 @@ async function openArtistZoom(artist) {
     });
   }
 
+  let thumbTicking = false;
   grid.addEventListener("scroll", () => {
-    if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
-      loadPage();
-    }
-  });
+    if (thumbTicking) return;
+    thumbTicking = true;
+    requestAnimationFrame(() => {
+      thumbTicking = false;
+      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
+        loadPage();
+      }
+    });
+  }, { passive: true });
 
   function showZoom(index) {
     grid.style.display = "none";
@@ -511,7 +519,21 @@ function renderArtistsPage() {
   // Remove any old button
   const btn = document.getElementById("show-more-artists-btn");
   if (btn) btn.remove();
-  // Infinite scroll is handled by window scroll event in setupInfiniteScroll
+
+  // Append a fallback "Show More" button if there are more artists
+  const { shown, total } = getPaginationInfo();
+  if (shown < total) {
+    const moreBtn = document.createElement("button");
+    moreBtn.id = "show-more-artists-btn";
+    moreBtn.className = "browse-btn";
+    moreBtn.textContent = "Show More";
+    moreBtn.addEventListener("click", () => {
+      moreBtn.remove();
+      setCurrentPage(getCurrentPage() + 1);
+      renderArtistsPage();
+    });
+    artistGallery.appendChild(moreBtn);
+  }
 }
 
 // Helper to render a list of artists using the normal card structure
@@ -572,7 +594,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
     taglist.className = "artist-tags";
     const tagsId = `tags-${artist.artistName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
     taglist.id = tagsId;
-    taglist.hidden = true; // hidden by default, revealed via toggle
+    taglist.hidden = true;
     if (artist.kinkTags && artist.kinkTags.length > 0) {
       artist.kinkTags.forEach((tag) => {
         const tagEl = document.createElement("span");
@@ -624,16 +646,10 @@ function renderArtistCards(artists, selectedTagsOverride) {
     tagsToggle.textContent = "🏷️";
     tagsToggle.addEventListener("click", (e) => {
       e.stopPropagation();
-      const isHidden = taglist.hasAttribute("hidden");
-      if (isHidden) {
-        taglist.removeAttribute("hidden");
-        tagsToggle.setAttribute("aria-expanded", "true");
-        tagsToggle.title = "Hide tags";
-      } else {
-        taglist.setAttribute("hidden", "");
-        tagsToggle.setAttribute("aria-expanded", "false");
-        tagsToggle.title = "Show tags";
-      }
+      const willShow = card.classList.toggle("show-tags");
+      taglist.hidden = !willShow;
+      tagsToggle.setAttribute("aria-expanded", String(willShow));
+      tagsToggle.title = willShow ? "Hide tags" : "Show tags";
     });
 
     // Action bar (side-by-side small buttons)
@@ -643,16 +659,16 @@ function renderArtistCards(artists, selectedTagsOverride) {
     actions.appendChild(reloadBtn);
     actions.appendChild(tagsToggle);
 
-    // Footer at the bottom with name + actions
+    // Footer at the bottom with name, tags, and actions
     const footer = document.createElement("div");
     footer.className = "artist-footer";
     footer.appendChild(name);
+    footer.appendChild(taglist);
     footer.appendChild(actions);
 
     // Assemble card
     card.appendChild(media);
     card.appendChild(footer);
-    card.appendChild(taglist);
 
     // Add humiliation overlay on hover
     card.addEventListener("mouseenter", () => {
