@@ -1,3 +1,10 @@
+// Getter and setter for currentPage (for infinite scroll)
+function getCurrentPage() {
+  return currentPage;
+}
+function setCurrentPage(val) {
+  currentPage = val;
+}
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
   fetchArtistImages,
@@ -1064,6 +1071,8 @@ function openArtistOnDanbooru(artist) {
 
 // --- EXPORTS ---
 export {
+  getCurrentPage,
+  setCurrentPage,
   getThumbnailUrl,
   initGallery,
   filterArtists,

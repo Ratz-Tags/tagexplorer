@@ -139,9 +139,11 @@ async function initApp() {
       import("./modules/gallery.js").then((gallery) => {
         const galleryInfo = gallery.getPaginationInfo();
         if (galleryInfo.hasMore && typeof gallery.renderArtistsPage === "function") {
-          // Increment currentPage and render next page
-          gallery.currentPage = galleryInfo.currentPage + 1;
-          gallery.renderArtistsPage();
+          // Use setter to increment currentPage and render next page
+          if (typeof gallery.setCurrentPage === "function" && typeof gallery.getCurrentPage === "function") {
+            gallery.setCurrentPage(gallery.getCurrentPage() + 1);
+            gallery.renderArtistsPage();
+          }
         }
       });
     });
