@@ -468,23 +468,10 @@ function renderArtistsPage() {
   // Append new artist cards
   renderArtistCards(artistsToShow, undefined, true);
 
-  // Infinite scroll: load more artists when near bottom
-  const onScroll = () => {
-    if (artistGallery.scrollTop + artistGallery.clientHeight >= artistGallery.scrollHeight - 100) {
-      if (filtered.length > currentPage * artistsPerPage) {
-        currentPage++;
-        renderArtistsPage();
-      }
-    }
-  };
   // Remove any old button
   const btn = document.getElementById("show-more-artists-btn");
   if (btn) btn.remove();
-  // Attach scroll listener only once
-  if (!artistGallery._infiniteScrollAttached) {
-    artistGallery.addEventListener("scroll", onScroll);
-    artistGallery._infiniteScrollAttached = true;
-  }
+  // Infinite scroll is handled by window scroll event in setupInfiniteScroll
 }
 
 // Helper to render a list of artists using the normal card structure
