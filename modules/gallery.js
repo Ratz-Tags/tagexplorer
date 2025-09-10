@@ -266,6 +266,10 @@ async function openArtistZoom(artist) {
 
   let currentIndex = 0;
   let posts = [];
+  let currentPage = 1;
+  const PAGE_LIMIT = 200;
+  let loadingMore = false;
+  let hasMore = true;
 
   // In-memory cache for top tags (limit to 20 artists per session)
   const topTagsCache = new Map();
@@ -280,7 +284,7 @@ async function openArtistZoom(artist) {
     noEntriesMsg.textContent = message;
   }
 
-  function processApiData(data) {
+  function processApiData(data, append = false) {
     const validPosts = Array.isArray(data)
       ? data.filter((post) => {
           const url = post?.large_file_url || post?.file_url;
@@ -289,10 +293,10 @@ async function openArtistZoom(artist) {
         })
       : [];
 
-    posts = validPosts;
+    posts = append ? posts.concat(validPosts) : validPosts;
 
     // --- Calculate top 20 tags for this artist (excluding artist tag) ---
-    if (posts.length > 0) {
+    if (!append && posts.length > 0) {
       // Count tag frequencies
       const tagCounts = {};
       posts.forEach((post) => {
@@ -336,13 +340,30 @@ async function openArtistZoom(artist) {
       }
     }
 
-    if (validPosts.length === 0) {
+    if (!append && validPosts.length === 0) {
       showNoEntries("No images found for this artist.");
       return;
     }
+    if (!append) {
+      // Show the first image, navigation will use posts[]
+      tryShow(currentIndex);
+    }
+  }
 
-    // Show the first image, navigation will use posts[]
-    tryShow(currentIndex);
+  async function loadMorePosts() {
+    if (loadingMore || !hasMore) return;
+    loadingMore = true;
+    try {
+      const api = await import("./api.js");
+      const more = await api.fetchArtistImages(artist.artistName, [], {
+        limit: PAGE_LIMIT,
+        page: currentPage + 1,
+      });
+      if (!more || more.length < PAGE_LIMIT) hasMore = false;
+      currentPage++;
+      processApiData(more, true);
+    } catch {}
+    loadingMore = false;
   }
 
   function tryShow(index, attempts = 0) {
@@ -400,9 +421,18 @@ async function openArtistZoom(artist) {
     debouncedShowPost(currentIndex);
   };
 
-  nextBtn.onclick = () => {
+  nextBtn.onclick = async () => {
     if (!posts || posts.length === 0) return;
-    currentIndex = (currentIndex + 1) % posts.length;
+    if (currentIndex === posts.length - 1) {
+      await loadMorePosts();
+      if (currentIndex < posts.length - 1) {
+        currentIndex++;
+      } else {
+        currentIndex = 0;
+      }
+    } else {
+      currentIndex++;
+    }
     debouncedShowPost(currentIndex);
   };
 
@@ -503,35 +533,34 @@ async function openArtistZoom(artist) {
     })();
   }
 
-  // Fetch and show ALL images for the artist, regardless of selected tags
-  (async () => {
-    try {
-      const api = await import("./api.js");
-      posts = await api.fetchAllArtistImages(artist.artistName, [], { limit: 200 });
-      // If artist has a thumbnailUrl, prepend it as the first image if not already present
-      if (artist.thumbnailUrl) {
-        const thumbUrl = artist.thumbnailUrl;
-        const alreadyIncluded = posts.some(
-          (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
-        );
-        if (!alreadyIncluded) {
-          posts.unshift({
-            large_file_url: thumbUrl,
-            tag_string: "thumbnail",
-            file_url: thumbUrl,
-          });
-        }
+  try {
+    const api = await import("./api.js");
+    let initialPosts = await api.fetchArtistImages(artist.artistName, [], {
+      limit: PAGE_LIMIT,
+      page: currentPage,
+    });
+    if (artist.thumbnailUrl) {
+      const thumbUrl = artist.thumbnailUrl;
+      const alreadyIncluded = initialPosts.some(
+        (p) => api.buildImageUrl(p.large_file_url || p.file_url) === thumbUrl
+      );
+      if (!alreadyIncluded) {
+        initialPosts.unshift({
+          large_file_url: thumbUrl,
+          tag_string: "thumbnail",
+          file_url: thumbUrl,
+        });
       }
-      if (!posts || posts.length === 0) {
-        showNoEntries();
-        return;
-      }
-      // Show the first image (thumbnail or first post)
-      tryShow(0);
-    } catch (error) {
-      showNoEntries("Error loading images for this artist.");
     }
-  })();
+    if (!initialPosts || initialPosts.length === 0) {
+      showNoEntries();
+    } else {
+      processApiData(initialPosts);
+      if (initialPosts.length < PAGE_LIMIT) hasMore = false;
+    }
+  } catch (error) {
+    showNoEntries("Error loading images for this artist.");
+  }
   tagList.style.display = "block";
   topTags.style.display = "block";
   tagList.setAttribute("aria-live", "polite");
@@ -697,25 +726,25 @@ function renderArtistsPage() {
   const artistsToShow = filtered.slice(0, end);
   renderArtistCards(artistsToShow);
 
-  // Pagination: Show "Show More" button if there are more artists
+  // Infinite scroll: observe sentinel to load more artists
+  const existingSentinel = document.getElementById("artist-scroll-sentinel");
+  if (existingSentinel) existingSentinel.remove();
+
   if (filtered.length > end) {
-    let showMoreBtn = document.getElementById("show-more-artists-btn");
-    if (!showMoreBtn) {
-      showMoreBtn = document.createElement("button");
-      showMoreBtn.id = "show-more-artists-btn";
-      showMoreBtn.className = "browse-btn";
-      showMoreBtn.textContent = "Show More Artists";
-      showMoreBtn.style.display = "block";
-      showMoreBtn.style.margin = "2em auto";
-      showMoreBtn.onclick = () => {
-        currentPage++;
-        renderArtistsPage();
-      };
-      artistGallery.appendChild(showMoreBtn);
-    }
-  } else {
-    const btn = document.getElementById("show-more-artists-btn");
-    if (btn) btn.remove();
+    const sentinel = document.createElement("div");
+    sentinel.id = "artist-scroll-sentinel";
+    artistGallery.appendChild(sentinel);
+
+    const observer = new IntersectionObserver((entries, obs) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          obs.disconnect();
+          currentPage++;
+          renderArtistsPage();
+        }
+      });
+    });
+    observer.observe(sentinel);
   }
 }
 
@@ -783,6 +812,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
     const taglist = document.createElement("div");
     taglist.className = "artist-tags";
     taglist.textContent = taglistText;
+    taglist.style.display = "none";
 
     artist._updateCountDisplay = function () {
       const total =
@@ -880,6 +910,15 @@ function renderArtistCards(artists, selectedTagsOverride) {
       }, 100);
     });
 
+    const tagToggleBtn = document.createElement("button");
+    tagToggleBtn.className = "tag-toggle-button";
+    tagToggleBtn.textContent = "🏷️";
+    tagToggleBtn.title = "Show/hide tags";
+    tagToggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      taglist.style.display = taglist.style.display === "none" ? "block" : "none";
+    });
+
     // Add humiliation overlay on hover
     card.addEventListener("mouseenter", () => {
       let overlay = card.querySelector(".gallery-humiliation-overlay");
@@ -904,7 +943,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
       }
     });
 
-    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn);
+    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn, tagToggleBtn);
     frag.appendChild(card);
   });
   artistGallery.appendChild(frag);
