@@ -465,8 +465,8 @@ function renderArtistsPage() {
   if (currentPage === 1) {
     artistGallery.innerHTML = "";
   }
-  // Append new artist cards
-  renderArtistCards(artistsToShow, undefined, true);
+  // Always append new artist cards for each page
+  renderArtistCards(artistsToShow, undefined, false);
 
   // Remove any old button
   const btn = document.getElementById("show-more-artists-btn");
@@ -523,8 +523,6 @@ function renderArtistCards(artists, selectedTagsOverride) {
       const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
       if (typeof total === "number") {
         displayName += ` [${total}]`;
-      } else {
-        displayName += " [Loading…]";
       }
     }
     name.textContent = displayName;
@@ -649,11 +647,11 @@ function getPaginationInfo() {
   const total = filtered.length;
   const shown = Math.min(currentPage * artistsPerPage, total);
   return {
-    total,
-    shown,
+    total: total,
+    shown: shown,
     hasMore: shown < total,
-    currentPage,
-    artistsPerPage,
+    currentPage: currentPage,
+    artistsPerPage: artistsPerPage
   };
 }
 
@@ -1016,28 +1014,32 @@ function showZoomTauntOverlay() {
   overlay.id = "taunt-overlay";
   overlay.style.position = "fixed";
   overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.width = "100vw";
-  overlay.style.height = "100vh";
+  overlay.style.left = "50%";
+  overlay.style.transform = "translateX(-50%)";
+  overlay.style.width = "auto";
+  overlay.style.maxWidth = "95vw";
+  overlay.style.height = "auto";
   overlay.style.display = "flex";
   overlay.style.alignItems = "flex-start";
   overlay.style.justifyContent = "center";
   overlay.style.pointerEvents = "none";
-  overlay.style.margin = "-1em";
+  overlay.style.margin = "0";
   overlay.style.zIndex = "13000";
+  overlay.style.padding = "0.5em 0";
   const taunt = document.createElement("div");
   taunt.className = "taunt-header";
   taunt.style.fontFamily = "'Hi Melody', sans-serif";
-  taunt.style.fontSize = "0.8em";
+  taunt.style.fontSize = window.innerWidth < 600 ? "1em" : "1.1em";
   taunt.style.color = "#fd7bc5";
   taunt.style.textAlign = "center";
-  taunt.style.margin = "2.5em 0 0 0";
-  taunt.style.background = "rgba(255,255,255,0.5)";
-  taunt.style.borderRadius = "2em";
-  taunt.style.boxShadow = "0 2px 24px rgba(253,123,197,0.15)";
-  taunt.style.padding = "0.6em 1.5em";
+  taunt.style.margin = "1.2em 0 0 0";
+  taunt.style.background = "rgba(255,255,255,0.85)";
+  taunt.style.borderRadius = "1.2em";
+  taunt.style.boxShadow = "0 2px 16px rgba(253,123,197,0.13)";
+  taunt.style.padding = window.innerWidth < 600 ? "0.7em 1.2em" : "0.8em 2.2em";
+  taunt.style.maxWidth = "90vw";
   taunt.innerHTML =
-    'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.2em;">Pathetic.</span> 💖✨';
+    'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.1em;">Pathetic.</span> 💖✨';
   overlay.appendChild(taunt);
   document.body.appendChild(overlay);
 }
