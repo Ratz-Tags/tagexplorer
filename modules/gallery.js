@@ -362,7 +362,9 @@ async function openArtistZoom(artist) {
       if (!more || more.length < PAGE_LIMIT) hasMore = false;
       currentPage++;
       processApiData(more, true);
-    } catch {}
+    } catch (err) {
+      console.error("Failed to load more posts:", err);
+    }
     loadingMore = false;
   }
 
