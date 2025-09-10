@@ -1,10 +1,4 @@
-// Getter and setter for currentPage (for infinite scroll)
-function getCurrentPage() {
-  return currentPage;
-}
-function setCurrentPage(val) {
-  currentPage = val;
-}
+// ...existing code...
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
   fetchArtistImages,
