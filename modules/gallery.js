@@ -31,7 +31,22 @@ let isFetching = false;
 let sortMode = "name";
 let filterGeneration = 0;
 let artistsPerPage = 100;
-let currentPage = 1;
+if (typeof window !== "undefined") {
+  if (typeof window._galleryCurrentPage !== "number") window._galleryCurrentPage = 1;
+}
+
+function getCurrentPage() {
+  if (typeof window !== "undefined" && typeof window._galleryCurrentPage === "number") {
+    return window._galleryCurrentPage;
+  }
+  return 1;
+}
+
+function setCurrentPage(val) {
+  if (typeof window !== "undefined") {
+    window._galleryCurrentPage = val;
+  }
+}
 
 // DOM references
 let artistGallery = null;
@@ -457,12 +472,13 @@ function setArtistsPerPage(count) {
  * Renders the current page of artists, with pagination.
  */
 function renderArtistsPage() {
-  const start = (currentPage - 1) * artistsPerPage;
+  const page = getCurrentPage();
+  const start = (page - 1) * artistsPerPage;
   const end = start + artistsPerPage;
   const artistsToShow = filtered.slice(start, end);
 
   // Only clear gallery if this is the first page (reset)
-  if (currentPage === 1) {
+  if (page === 1) {
     artistGallery.innerHTML = "";
   }
   // Always append new artist cards for each page
@@ -644,13 +660,14 @@ function renderArtistCards(artists, selectedTagsOverride) {
 }
 
 function getPaginationInfo() {
+  const page = getCurrentPage();
   const total = filtered.length;
-  const shown = Math.min(currentPage * artistsPerPage, total);
+  const shown = Math.min(page * artistsPerPage, total);
   return {
     total: total,
     shown: shown,
     hasMore: shown < total,
-    currentPage: currentPage,
+    currentPage: page,
     artistsPerPage: artistsPerPage
   };
 }
