@@ -458,7 +458,7 @@ function getFilteredArtists() {
  */
 function setArtistsPerPage(count) {
   artistsPerPage = Math.max(10, count);
-  currentPage = 1;
+  setCurrentPage(1);
   renderArtistsPage();
 }
 
@@ -683,7 +683,7 @@ async function filterArtists(reset = true, force = false) {
   try {
     // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
-      currentPage = 1;
+      setCurrentPage(1);
       artistGallery.innerHTML = "";
     }
 
