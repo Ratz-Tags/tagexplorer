@@ -114,6 +114,122 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   box-shadow: none;
 }
 
+/* Sidebar Wrapper: toggles visibility of sidebar */
+.sidebar-wrapper.hidden, .sidebar-wrapper[aria-hidden="true"] {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.sidebar-wrapper.visible, .sidebar-wrapper[aria-hidden="false"] {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Floating Controls (restored) */
+#floating-controls {
+  position: fixed;
+  bottom: 2.2em;
+  right: 2.2em;
+  z-index: 13000;
+  display: flex;
+  flex-direction: row;
+  gap: 1.1em;
+  background: rgba(255,255,255,0.92);
+  border-radius: 1.1em;
+  box-shadow: 0 2px 16px rgba(253,123,197,0.13);
+  padding: 0.7em 1.2em;
+  pointer-events: auto;
+}
+@media (max-width: 700px) {
+  #floating-controls {
+    bottom: 0.7em;
+    right: 0.7em;
+    padding: 0.5em 0.7em;
+    border-radius: 0.7em;
+  }
+}
+
+/* Audio Section (restored) */
+#audio-panel {
+  position: fixed;
+  left: 50%;
+  bottom: 0.7em;
+  transform: translateX(-50%);
+  z-index: 12010;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
+  border-radius: 1.1em;
+  box-shadow: 0 2px 16px rgba(253,123,197,0.13);
+  padding: 0.7em 1.2em;
+  display: flex;
+  align-items: center;
+  gap: 1em;
+  pointer-events: auto;
+}
+#audio-panel.hidden { display: none !important; }
+#audio-panel .audio-controls button {
+  background: none;
+  border: none;
+  color: #a0005a;
+  font-size: 1.2em;
+  margin: 0 0.3em;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+#audio-panel .audio-controls button:hover {
+  color: #fd7bc5;
+}
+
+/* JRPG Bubbles (restored) */
+.jrpg-bubble {
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  transform: translateX(-50%) translateY(-0.7em);
+  background: linear-gradient(120deg, #fff8fc 60%, #ffd6f6 100%);
+  color: #a0005a;
+  border: 2.5px solid #fd7bc5;
+  border-radius: 1.2em;
+  box-shadow: 0 2px 16px rgba(253,123,197,0.13);
+  padding: 0.7em 1.2em;
+  font-family: 'Hi Melody', 'Inter', sans-serif;
+  font-size: 1.1em;
+  font-weight: 600;
+  z-index: 15000;
+  pointer-events: none;
+  opacity: 0.98;
+  min-width: 120px;
+  max-width: 80vw;
+  text-align: center;
+  animation: jrpg-bubble-in 0.22s cubic-bezier(.7,1.7,.7,1.01);
+}
+@keyframes jrpg-bubble-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(0.7em) scale(0.95); }
+  to { opacity: 0.98; transform: translateX(-50%) translateY(-0.7em) scale(1); }
+}
+
+/* Close, Next, Prev Buttons (restored) */
+.close-btn, .next-btn, .prev-btn, .modal-close, .fullscreen-close {
+  background: linear-gradient(120deg, #fd7bc5 60%, #ffd6f6 100%);
+  color: #fff;
+  border: none;
+  border-radius: 2em;
+  font-size: 1.2em;
+  font-weight: 700;
+  padding: 0.4em 1.2em;
+  margin: 0.2em 0.5em;
+  box-shadow: 0 2px 8px #fd7bc540;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+  outline: none;
+  z-index: 1;
+}
+.close-btn:hover, .next-btn:hover, .prev-btn:hover, .modal-close:hover, .fullscreen-close:hover {
+  background: linear-gradient(120deg, #ff63a5 60%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px #fd7bc5cc;
+}
+
 #copied-sidebar.sidebar-animated {
   position: relative;
   top: 0;
@@ -285,18 +401,19 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   backdrop-filter: blur(6px);
 }
 .tag-explorer-wrapper {
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 20px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
-  padding: 24px 18px 18px 18px;
-  max-width: 420px;
-  width: 96vw;
+  background: linear-gradient(120deg, #fff8fc 60%, #ffd6f6 100%);
+  border-radius: 1.3em;
+  box-shadow: 0 6px 24px rgba(253,123,197,0.18);
+  padding: 1.5em 1.2em 1.2em 1.2em;
+  max-width: 440px;
+  width: 98vw;
   max-height: 80vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 1.1em;
   margin: 2em auto;
+  border: 2.5px solid #fd7bc540;
 }
 .tag-explorer-header {
   display: flex;
@@ -319,30 +436,37 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 }
 .tag-button {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
-  border: 2px solid #fd7bc5 !important;
-  color: #fff !important;
+  border: 2.5px solid #fd7bc5 !important;
+  color: #a0005a !important;
   box-shadow: 0 2px 8px #fd7bc540 !important;
   font-family: var(--btn-font);
   display: flex;
   border-radius: 1.2em !important;
-  padding: 0.5em 0.7em !important;
-  margin: 0.1em 0.1em !important;
+  padding: 0.7em 1.1em !important;
+  margin: 0.18em 0.18em !important;
   cursor: pointer;
+  font-size: 1.08em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
   transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.13s !important;
   outline: none !important;
   max-width: 100% !important;
   word-break: break-word !important;
   text-align: center !important;
+  user-select: none;
 }
+  
 .tag-button.active {
-  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px #fd7bc5cc;
-  transform: scale(1.07);
-  font-weight: 700;
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px #fd7bc5cc !important;
+  transform: scale(1.09);
+  font-weight: 800;
 }
 .tag-button:focus {
-  background: rgba(255, 255, 255, 0.18);
+  background: #fff8fc !important;
+  color: #a0005a !important;
+  outline: 2.5px solid #fd7bc5 !important;
   outline-offset: 2px;
 }
 .tag-group {
