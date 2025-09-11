@@ -285,8 +285,9 @@ function initSidebar() {
       document.body.appendChild(overlay);
     }
     function openSidebar() {
-      vibrate();
+      vibrate && vibrate();
       copiedSidebar.classList.remove("sidebar-hidden");
+      copiedSidebar.setAttribute("aria-hidden", "false");
       document.body.classList.add("sidebar-open");
       overlay.style.display = "block";
       overlay.setAttribute("aria-hidden", "false");
@@ -296,6 +297,7 @@ function initSidebar() {
     }
     function closeSidebar() {
       copiedSidebar.classList.add("sidebar-hidden");
+      copiedSidebar.setAttribute("aria-hidden", "true");
       document.body.classList.remove("sidebar-open");
       overlay.style.display = "none";
       overlay.setAttribute("aria-hidden", "true");
@@ -332,6 +334,11 @@ function initSidebar() {
       }
       touchStartX = null;
     });
+    // Ensure sidebar is hidden by default unless .sidebar-open is on body
+    if (!document.body.classList.contains("sidebar-open")) {
+      copiedSidebar.classList.add("sidebar-hidden");
+      copiedSidebar.setAttribute("aria-hidden", "true");
+    }
   }
   // ARIA improvements for sidebar controls
   const copyArtistBtn = document.getElementById("copy-artist-btn");

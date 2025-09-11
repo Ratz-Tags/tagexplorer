@@ -22,7 +22,13 @@ function setupInfiniteScroll() {
     });
   }
   window.removeEventListener("scroll", onScroll);
-  window.addEventListener("scroll", onScroll, { passive: true });
+  setTimeout(() => {
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }, 0);
+  // Also trigger on load in case content is short
+  setTimeout(() => {
+    onScroll();
+  }, 100);
 }
 // ...existing code...
 import { createFullscreenViewer, createSpinner } from "./ui.js";

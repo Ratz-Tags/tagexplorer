@@ -126,8 +126,9 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   pointer-events: auto;
 }
 
-/* Floating Controls (restored) */
-#floating-controls {
+
+
+.floating-controls {
   position: fixed;
   bottom: 2.2em;
   right: 2.2em;
