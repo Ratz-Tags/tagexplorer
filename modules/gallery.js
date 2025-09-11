@@ -1,3 +1,29 @@
+// --- Infinite Scroll for Main Gallery ---
+function setupInfiniteScroll() {
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    window.requestAnimationFrame(() => {
+      ticking = false;
+      if (isFetching) return;
+      const scrollY = window.scrollY || window.pageYOffset;
+      const viewport = window.innerHeight || document.documentElement.clientHeight;
+      const docHeight = Math.max(
+        document.body.scrollHeight,
+        document.documentElement.scrollHeight
+      );
+      // If near bottom and more artists to show
+      const { shown, total } = getPaginationInfo();
+      if (scrollY + viewport >= docHeight - 200 && shown < total) {
+        setCurrentPage(getCurrentPage() + 1);
+        renderArtistsPage();
+      }
+    });
+  }
+  window.removeEventListener("scroll", onScroll);
+  window.addEventListener("scroll", onScroll, { passive: true });
+}
 // ...existing code...
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
@@ -820,6 +846,7 @@ function initGallery() {
       lastSortMode = e.target.value;
     });
   }
+  setupInfiniteScroll();
 }
 
 function setSortMode(mode) {
