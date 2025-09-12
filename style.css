@@ -665,25 +665,28 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.7em;
+  gap: 0.5em;
   padding: 0.5em 0.2em 0.5em 0.2em;
   overflow-y: auto;
   max-height: 80vh;
-  width: 110px;
-  min-width: 90px;
-  max-width: 140px;
-  margin: 0 auto;
+  width: 100px;
+  max-width: 100px;
+  min-width: 80px;
+  margin-left: auto;
+  margin-right: auto;
   background: none;
 }
 .artist-thumb-grid img, .artist-thumb-grid .thumb {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   border-radius: 0.7em;
   margin-bottom: 0.1em;
   box-shadow: 0 2px 8px #fd7bc540;
   background: #fff8fc;
   display: block;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .zoom-tag-pills {
