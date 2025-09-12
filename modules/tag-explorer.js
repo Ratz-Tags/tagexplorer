@@ -110,6 +110,66 @@ async function filterTags() {
   let sortMode = "name";
   let searchText = "";
 
+  const tagCategories = {
+    Bondage: [
+      "bdsm",
+      "bondage",
+      "shibari",
+      "restraints",
+      "restrained",
+      "hogtie",
+      "leash",
+      "spreader_bar",
+      "chastity_cage",
+      "chastity_cage_emission",
+      "flat_chastity_cage",
+      "holding_key",
+      "immobilization",
+    ],
+    Feminization: [
+      "feminization",
+      "forced_feminization",
+      "bimbofication",
+      "crossdressing",
+      "crossdressing_(mtf)",
+      "trap",
+    ],
+    Penetration: [
+      "anal_fingering",
+      "anal_fisting",
+      "anal_object_insertion",
+      "object_insertion",
+      "object_insertion_from_behind",
+      "urethral_insertion",
+      "prostate_milking",
+      "pegging",
+      "male_penetrated",
+      "dildo_riding",
+      "strap-on",
+      "large_insertion",
+      "huge_dildo",
+      "sounding",
+      "knotting",
+      "tentacle_sex",
+      "tentacle_pit",
+    ],
+    Oral: [
+      "oral",
+      "fellatio",
+      "irrumatio",
+      "bukkake",
+      "face_fucking",
+      "spitroast",
+      "gokkun",
+      "blowjob",
+    ],
+  };
+  const collapsedCategories = new Set(Object.keys(tagCategories));
+  const categorizedTagSet = new Set(
+    Object.values(tagCategories).flat()
+  );
+  collapsedCategories.add("Other");
+
   // Create fullscreen wrapper similar to zoom viewer
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper tag-explorer-wrapper";
@@ -142,7 +202,7 @@ async function filterTags() {
 
   // Feature: Add clear tags button for quick reset
   const clearTagsBtn = document.createElement("button");
-  clearTagsBtn.className = "tag-explorer-clear";
+  clearTagsBtn.className = "tag-explorer-clear browse-btn";
   clearTagsBtn.textContent = "Clear Tags";
   clearTagsBtn.setAttribute("id", "clear-tags-btn");
   clearTagsBtn.onclick = () => {
@@ -198,31 +258,71 @@ async function filterTags() {
     const counts = getFilteredCounts(active);
     let tags = allTags.filter((t) => t.toLowerCase().includes(searchText));
     tags = tags.filter((t) => counts[t] || active.has(t));
-    tags.sort((a, b) => {
-      if (sortMode === "count") {
-        return (counts[b] || 0) - (counts[a] || 0);
-      }
-      return a.localeCompare(b);
-    });
     if (tags.length === 0) {
       list.textContent = "No tags";
       return;
     }
-    tags.forEach((tag, idx) => {
+
+    const categorized = {};
+    Object.entries(tagCategories).forEach(([cat, catTags]) => {
+      categorized[cat] = tags.filter((t) => catTags.includes(t));
+    });
+    const others = tags.filter((t) => !categorizedTagSet.has(t));
+
+    let idxCounter = 0;
+    const createBtn = (tag) => {
       const btn = document.createElement("button");
       btn.className = "tag-button";
       btn.textContent = `${tag.replace(/_/g, " ")} (${counts[tag] || 0})`;
       if (active.has(tag)) btn.classList.add("active");
       btn.onclick = () => {
         toggleTag(tag);
-        // Refresh counts and list, and filter gallery
         renderList();
         filterArtists(true, true);
       };
       btn.tabIndex = 0;
-      btn.dataset.idx = idx;
-      list.appendChild(btn);
-    });
+      btn.dataset.idx = idxCounter++;
+      return btn;
+    };
+
+    const buildCategory = (cat, catTags) => {
+      if (!catTags.length) return;
+      const section = document.createElement("div");
+      section.className = "tag-category";
+
+      const toggle = document.createElement("button");
+      toggle.className = "browse-btn tag-category-toggle";
+      toggle.textContent = cat;
+      toggle.setAttribute(
+        "aria-expanded",
+        String(!collapsedCategories.has(cat))
+      );
+      toggle.onclick = () => {
+        if (collapsedCategories.has(cat)) collapsedCategories.delete(cat);
+        else collapsedCategories.add(cat);
+        renderList();
+      };
+      section.appendChild(toggle);
+
+      const tagWrap = document.createElement("div");
+      tagWrap.className = "tag-category-tags";
+      if (collapsedCategories.has(cat)) tagWrap.style.display = "none";
+
+      catTags.sort((a, b) => {
+        if (sortMode === "count") {
+          return (counts[b] || 0) - (counts[a] || 0);
+        }
+        return a.localeCompare(b);
+      });
+      catTags.forEach((tag) => tagWrap.appendChild(createBtn(tag)));
+      section.appendChild(tagWrap);
+      list.appendChild(section);
+    };
+
+    Object.entries(categorized).forEach(([cat, catTags]) =>
+      buildCategory(cat, catTags)
+    );
+    buildCategory("Other", others);
   }
 
   // Keyboard navigation for tag explorer
