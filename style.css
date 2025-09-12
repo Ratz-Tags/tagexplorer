@@ -648,6 +648,17 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   box-sizing: border-box;
   margin: 0 auto;
 }
+.fullscreen-img {
+  flex: 1 1 80%;
+  max-width: 80vw;
+  max-height: 80vh;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 1.1em;
+  box-shadow: 0 2px 16px rgba(253, 123, 197, 0.13);
+  background: #fff8fc;
+}
 
 #artist-thumb-grid {
   flex: 0 0 100px;
@@ -659,6 +670,9 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   max-height: 80vh;
   align-items: center;
   justify-items: center;
+  margin: 0 auto;
+  justify-self: center;
+  place-items: center;
 }
 
 .zoom-tag-pills {
@@ -712,12 +726,11 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 }
 
 .zoom-back-btn {
-  background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px), url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,5"/></svg>');
-  background-blend-mode: lighten;
+  background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   color: #a0005a;
   border: none;
-  border-radius: 0.7em;
-  box-shadow: 0 0 0 4px #f8e6ff inset;
+  border-radius: 1em;
+  box-shadow: 0 2px 8px #fd7bc540;
   padding: 0.5em 1.3em;
   font-family: 'Playfair Display', 'Georgia', serif;
   font-size: 1.08em;
@@ -729,10 +742,18 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   outline: none;
   position: relative;
   overflow: hidden;
-  z-index: 1;
+  z-index: 2;
   text-shadow: 0 1px 0 #fff, 0 0 6px #f8e6ff;
   min-width: 2.5em;
   min-height: 2.2em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.zoom-back-btn:hover {
+  background: linear-gradient(90deg, #ff63a5 0%, #fd7bc5 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px #fd7bc5cc;
 }
 .zoom-back-btn:hover {
   background: linear-gradient(135deg, #f8e6ff 60%, #fd7bc5 100%);
