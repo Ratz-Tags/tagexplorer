@@ -297,6 +297,32 @@ body > nav,
   overflow: hidden;
 }
 
+.tag-explorer-wrapper {
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.tag-explorer {
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.tag-category {
+  margin-bottom: 1em;
+}
+
+.tag-category-toggle {
+  width: 100%;
+  text-align: left;
+}
+
+.tag-category-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin-top: 0.6em;
+}
+
 /* --- Background tuning --- */
 #background-blur { filter: blur(8px) saturate(1.08); opacity: 0.7; }
 
