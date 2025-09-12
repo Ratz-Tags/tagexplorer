@@ -668,10 +668,10 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   gap: 0.5em;
   padding: 0.5em 3em 0.5em 0.2em;
   overflow-y: auto;
-  max-height: 80vh;
+  max-height: 85 vh;
   width: 140px;
   min-width: fit-content;
-  max-width: 100%;
+  max-width: 95%;
   margin-left: auto;
   margin-right: auto;
   background: none;
