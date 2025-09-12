@@ -660,7 +660,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   background: #fff8fc;
 }
 
-#artist-thumb-grid {
+.artist-thumb-grid {
   flex: 0 0 100px;
   display: grid;
   grid-template-columns: 1fr;
