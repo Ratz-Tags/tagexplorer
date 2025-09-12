@@ -921,6 +921,10 @@ function renderArtistCards(artists, selectedTagsOverride) {
       taglist.style.display = taglist.style.display === "none" ? "block" : "none";
     });
 
+    const actions = document.createElement("div");
+    actions.className = "card-actions";
+    actions.append(copyBtn, reloadBtn, tagToggleBtn);
+
     // Add humiliation overlay on hover
     card.addEventListener("mouseenter", () => {
       let overlay = card.querySelector(".gallery-humiliation-overlay");
@@ -945,7 +949,7 @@ function renderArtistCards(artists, selectedTagsOverride) {
       }
     });
 
-    card.append(img, name, taglist, tagCountDiv, copyBtn, reloadBtn, tagToggleBtn);
+    card.append(img, name, taglist, tagCountDiv, actions);
     frag.appendChild(card);
   });
   artistGallery.appendChild(frag);
