@@ -666,16 +666,23 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   align-items: center;
   justify-content: flex-start;
   gap: 0.5em;
-  padding: 0.5em 0.2em 0.5em 0.2em;
+  padding: 0.5em 3em 0.5em 0.2em;
   overflow-y: auto;
   max-height: 80vh;
-  width: 100px;
-  max-width: 100px;
-  min-width: 80px;
+  width: 140px;
+  min-width: fit-content;
+  max-width: 100%;
   margin-left: auto;
   margin-right: auto;
   background: none;
 }
+
+@supports (-moz-appearance: none) {
+  .artist-thumb-grid {
+    width: -moz-available;
+  }
+}
+
 .artist-thumb-grid img, .artist-thumb-grid .thumb {
   width: 80px;
   height: 80px;
