@@ -398,6 +398,8 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   align-items: stretch;
   justify-content: flex-start;
   background: none;
+  overflow: auto;
+  max-height: 10vh;
   padding: 0.4em 0.7em 0.7em 0.7em;
   font-size: 0.98em;
   font-family: var(--btn-font);

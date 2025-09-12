@@ -181,11 +181,13 @@ function createFullscreenViewer(options = {}) {
   const wrapper = document.createElement("div");
   wrapper.className = "fullscreen-wrapper";
 
-  // Taunt header above zoom content
-  const tauntHeader = document.createElement("div");
-  tauntHeader.className = "taunt-header";
-  tauntHeader.textContent = ""; // Fill as needed
-  wrapper.appendChild(tauntHeader);
+  // Taunt header above zoom content (only if content is provided)
+  if (options.taunt && options.taunt.trim()) {
+    const tauntHeader = document.createElement("div");
+    tauntHeader.className = "taunt-header";
+    tauntHeader.textContent = options.taunt;
+    wrapper.appendChild(tauntHeader);
+  }
 
   // Zoom content container (strict 3-column flex)
   const content = document.createElement("div");
