@@ -19,6 +19,7 @@ let tagSearchInput = null;
 let artistNameFilterInput = null;
 let clearTagsBtn = null;
 let jrpgBubbles = null;
+let selectedTagsBar = null;
 
 // External dependencies that will be injected
 let allArtists = [];
@@ -310,6 +311,22 @@ function renderTagButtons() {
   });
 
   if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+
+  if (selectedTagsBar) {
+    selectedTagsBar.innerHTML = "";
+    if (activeTags.size) {
+      selectedTagsBar.style.display = "flex";
+      activeTags.forEach((tag) => {
+        const pill = document.createElement("button");
+        pill.className = "selected-tag";
+        pill.textContent = tag.replaceAll("_", " ");
+        pill.onclick = () => toggleTag(tag);
+        selectedTagsBar.appendChild(pill);
+      });
+    } else {
+      selectedTagsBar.style.display = "none";
+    }
+  }
 }
 
 /**
@@ -380,6 +397,7 @@ async function initTags() {
   artistNameFilterInput = document.getElementById("artist-name-filter");
   clearTagsBtn = document.getElementById("clear-tags");
   jrpgBubbles = document.getElementById("jrpg-bubbles");
+  selectedTagsBar = document.getElementById("selected-tags");
 
   // Set up debounced search input for tags
   if (tagSearchInput) {
