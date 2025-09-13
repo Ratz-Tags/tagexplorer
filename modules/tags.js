@@ -294,6 +294,8 @@ function renderTagButtons() {
       if (activeTags.has(tag)) {
         activeTags.delete(tag);
       } else {
+        // Limit selection to two tags at a time
+        if (activeTags.size >= 2) return;
         activeTags.add(tag);
         spawnBubble(tag);
       }

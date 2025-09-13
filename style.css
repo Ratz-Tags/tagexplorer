@@ -1,19 +1,19 @@
 /* Tag Explorer - Modern Unified Theme (2025) */
 :root {
-  --accent1: #fd7bc5;
-  --accent2: #a0005a;
-  --border-color: #fd7bc5;
+  --accent1: #8e44ad;
+  --accent2: #2980b9;
+  --border-color: #8e44ad;
   --radius: 14px;
   --btn-font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --padding: 5px;
-  background: #0f0f12;
+  background: #10121f;
   color: #e6e6e6;
 }
 
 body {
   font-family: var(--btn-font);
-  background: #0f0f12;
-  color: #a0005a;
+  background: #10121f;
+  color: var(--accent1);
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -40,22 +40,29 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 
 /* --- Unified Glossy Bar & Sidebar Styles --- */
 .top-bar, .tag-explorer-bar, #tag-explorer-bar, .selected-tags-bar, .sidebar {
-  background: linear-gradient(120deg, rgba(255,255,255,0.82) 60%, rgba(253,214,246,0.92) 100%) !important;
+  background: linear-gradient(120deg, rgba(255,255,255,0.82) 60%, rgba(180,200,255,0.92) 100%) !important;
   backdrop-filter: blur(12px) saturate(1.12) !important;
   border-radius: 0 0 1.1em 1.1em !important;
-  box-shadow: 0 2px 16px rgba(253,123,197,0.13), 0 1.5px 8px rgba(255,99,165,0.10) !important;
-  border: 2.5px solid #fd7bc540 !important;
+  box-shadow: 0 2px 16px rgba(142,68,173,0.15), 0 1.5px 8px rgba(41,128,185,0.10) !important;
+  border: 2.5px solid var(--accent1)40 !important;
   border-top: none !important;
   position: relative;
   overflow: visible;
 }
+
+/* Foldable devices (e.g., Galaxy Fold 4) */
+@media (max-width: 600px) {
+  .top-bar, .tag-explorer-bar, #tag-explorer-bar, .selected-tags-bar {
+    flex-wrap: wrap;
+  }
+}
 @media (max-width: 700px) {
   .top-bar, .tag-explorer-bar, #tag-explorer-bar, .selected-tags-bar, .sidebar {
-    background: linear-gradient(120deg, rgba(255,255,255,0.92) 60%, rgba(253,214,246,0.98) 100%) !important;
+    background: linear-gradient(120deg, rgba(255,255,255,0.92) 60%, rgba(180,200,255,0.98) 100%) !important;
     backdrop-filter: blur(14px) saturate(1.13) !important;
     border-radius: 0 0 0.7em 0.7em !important;
-    box-shadow: 0 2px 16px rgba(253,123,197,0.13), 0 1.5px 8px rgba(255,99,165,0.10) !important;
-    border: 2.5px solid #fd7bc540 !important;
+    box-shadow: 0 2px 16px rgba(142,68,173,0.15), 0 1.5px 8px rgba(41,128,185,0.10) !important;
+    border: 2.5px solid var(--accent1)40 !important;
     border-top: none !important;
     position: relative;
     overflow: visible;
@@ -74,8 +81,8 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   z-index: 10000;
   font-size: 1.04em;
   font-family: var(--btn-font);
-  font-weight: 600;
-  color: #a0005a;
+    font-weight: 600;
+    color: var(--accent1);
   letter-spacing: 0.01em;
   box-sizing: border-box;
   min-height: 2.2em;
@@ -83,7 +90,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   position: sticky;
   top: 0;
   left: 0;
-  background: linear-gradient(120deg, rgba(255,255,255,0.82) 60%, rgba(253,214,246,0.92) 100%) !important;
+    background: linear-gradient(120deg, rgba(255,255,255,0.82) 60%, rgba(180,200,255,0.92) 100%) !important;
   transition: box-shadow 0.18s, background 0.18s, top 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.28s cubic-bezier(0.4,0,0.2,1);
   text-align: center;
 }
@@ -91,7 +98,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .sidebar {
   min-width: 220px;
   max-width: 340px;
-  color: #a0005a;
+  color: var(--accent1);
   font-size: 1em;
   display: flex;
   flex-direction: column;
@@ -189,7 +196,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 #audio-panel .audio-controls button {
   background: none;
   border: none;
-  color: #a0005a;
+  color: var(--accent1);
   font-size: 0.98em;
   margin: 0 0.15em;
   cursor: pointer;
@@ -210,7 +217,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   bottom: 100%;
   transform: translateX(-50%) translateY(-0.7em);
   background: linear-gradient(120deg, #fff8fc 60%, #ffd6f6 100%);
-  color: #a0005a;
+  color: var(--accent1);
   border: 2.5px solid #fd7bc5;
   border-radius: 1.2em;
   box-shadow: 0 2px 16px rgba(253,123,197,0.13);
@@ -306,7 +313,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .copy-button, .browse-btn, .tag-btn, .tag-button, .reload-button, .zoom-tool, #back-to-top, .sidebar-toggle, .audio-toggle, .theme-toggle, #moan-mute, #audio-prev, #audio-next, #audio-play, #audio-toggle, .tag-explorer-bar button, #tag-explorer-bar button, .sidebar-btn, .tts-toggle-btn, .artist-card .copy-btn, .bar-btn {
   background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px), url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,5"/></svg>');
   background-blend-mode: lighten;
-  color: #a0005a;
+  color: var(--accent1);
   border: none;
   border-radius: 0;
   box-shadow: 0 0 0 4px #f8e6ff inset;
@@ -404,12 +411,12 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   font-size: 0.98em;
   font-family: var(--btn-font);
   font-weight: 600;
-  color: #a0005a;
+  color: var(--accent1);
 }
 .artist-name {
   font-size: 1.1em;
   font-weight: 700;
-  color: #a0005a;
+  color: var(--accent1);
   margin-bottom: 0.4em;
 }
 .artist-actions {
@@ -421,7 +428,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .tags-toggle {
   background: none;
   border: none;
-  color: #a0005a;
+  color: var(--accent1);
   font-size: 1.1em;
   cursor: pointer;
   margin-left: 0.3em;
@@ -444,7 +451,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 }
 .gallery-tag, .zoom-tag-pill {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-  color: #a0005a;
+  color: var(--accent1);
   padding: 0.18em 0.7em;
   font-size: 0.6em;
   font-weight: 600;
@@ -516,7 +523,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .tag-explorer-header h3 {
     font-size: 1.4em;
     font-weight: 700;
-    color: #a0005a;
+    color: var(--accent1);
     text-align: center;
     margin: 0 0 0.5em 0;
 }
@@ -527,9 +534,37 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
     border-radius: 8px;
     border: 1px solid #fd7bc5;
     background: white;
-    color: #a0005a;
+    color: var(--accent1);
     font-size: 1em;
     box-sizing: border-box;
+}
+
+/* In-page tag filter panel */
+.filter-controls {
+  margin-bottom: 1.5em;
+}
+
+.filter-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+  margin-bottom: 0.5em;
+}
+
+.filter-controls input {
+  padding: 0.5em;
+  border-radius: 8px;
+  border: 1px solid #fd7bc5;
+  background: white;
+  color: var(--accent1);
+  font-size: 1em;
+}
+
+.tag-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
 }
 
 .tag-explorer-groups {
@@ -547,7 +582,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .tag-button {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%) !important;
   border: 1px solid #fd7bc5 !important;
-  color: #a0005a !important;
+  color: var(--accent1) !important;
   box-shadow: 0 1px 4px #fd7bc540 !important;
   font-family: var(--btn-font);
   display: flex;
@@ -575,7 +610,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 }
 .tag-button:focus {
   background: #fff8fc !important;
-  color: #a0005a !important;
+  color: var(--accent1) !important;
   outline: 2.5px solid #fd7bc5 !important;
   outline-offset: 2px;
 }
@@ -585,7 +620,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .tag-group-header {
   font-size: 1.18em;
   font-weight: 700;
-  color: #a0005a;
+  color: var(--accent1);
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
   padding: 0.7em 1.1em;
   border-radius: 1em;
@@ -712,7 +747,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 .zoom-tag-pill {
   background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px), url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="2" stroke-dasharray="7,7"/><rect x="5" y="5" width="calc(100%25 - 10px)" height="calc(100%25 - 10px)" fill="none" stroke="%23e0c6e6" stroke-width="1.5" stroke-dasharray="2,5"/></svg>');
   background-blend-mode: lighten;
-  color: #a0005a;
+  color: var(--accent1);
   border: none;
   border-radius: 0.7em;
   box-shadow: 0 0 0 2px #f8e6ff inset;
@@ -747,7 +782,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 
 .zoom-back-btn {
   background: linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%);
-  color: #a0005a;
+  color: var(--accent1);
   border: none;
   border-radius: 1em;
   box-shadow: 0 2px 8px #fd7bc540;
@@ -785,7 +820,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   position: fixed;
   background: repeating-linear-gradient(135deg, #fff8fc 0 14px, #f8e6ff 14px 28px), url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><rect x="0" y="0" width="100%25" height="100%25" fill="none" stroke="%23fd7bc5" stroke-width="3" stroke-dasharray="7,7"/><rect x="7" y="7" width="calc(100%25 - 14px)" height="calc(100%25 - 14px)" fill="none" stroke="%23e0c6e6" stroke-width="2" stroke-dasharray="2,5"/></svg>');
   background-blend-mode: lighten;
-  color: #a0005a;
+  color: var(--accent1);
   border: none;
   border-radius: 50%;
   box-shadow: 0 0 0 4px #f8e6ff inset;
@@ -881,7 +916,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   flex-wrap: wrap;
   background: #ffd6f6;
   border: none;
-  color: #a0005a;
+  color: var(--accent1);
   padding: 0.28em 0.9em;
   border-radius: 7px;
   font-family: 'Inter', sans-serif;
