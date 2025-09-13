@@ -49,7 +49,10 @@ async function fetchPosts(tags, options = {}) {
     }
   }
 
-  const tagsParam = Array.isArray(tags) ? tags.join(" ") : tags;
+  // Danbooru limits basic searches to two tags. Ensure we never send more.
+  const tagsParam = Array.isArray(tags)
+    ? tags.slice(0, 2).join(" ")
+    : tags;
   const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
     tagsParam
   )}+order:${order}&limit=${limit}&page=${page}`;
@@ -125,13 +128,18 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  const apiCacheKey = `danbooru-api-${artistName}-${selectedTags.join(",")}`;
-  const posts = await fetchPosts(artistName, {
+  // Only two tags may be queried; slice for safety
+  const effectiveTags = selectedTags.slice(0, 2);
+  const apiCacheKey = `danbooru-api-${artistName}-${effectiveTags.join(",")}`;
+  // Include artist name with up to two selected tags for the API search
+  const queryTags = [artistName, ...effectiveTags];
+  const posts = await fetchPosts(queryTags, {
     cacheKey: apiCacheKey,
     limit: options.limit || 200,
     page: options.page || 1,
+    order: options.order || "approvals",
   });
-  return filterValidImagePosts(posts, selectedTags);
+  return filterValidImagePosts(posts, effectiveTags);
 }
 /**
  * Gets artist image count with caching

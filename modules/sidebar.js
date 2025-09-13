@@ -108,9 +108,10 @@ function showToast(message) {
  */
 function handleArtistCopy(artist, imgSrc) {
   const artistTag = artist.artistName.replace(/_/g, " ");
+  const copyText = `artist:${artist.artistName}`;
   // Always copy to clipboard, even if already in sidebar
   navigator.clipboard
-    .writeText(artistTag)
+    .writeText(copyText)
     .then(() => {
       let added = false;
       if (!copiedArtists.has(artistTag)) {
@@ -119,7 +120,9 @@ function handleArtistCopy(artist, imgSrc) {
         updateCopiedSidebar();
         added = true;
       }
-      showToast(added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`);
+      showToast(
+        added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`
+      );
       // --- INCREASE HUMILIATION METER ---
       if (typeof window.incrementDesperationMeter === "function") {
         window.incrementDesperationMeter(1);
