@@ -34,6 +34,16 @@
 
   <!-- Main content area -->
   <main role="main" class="container">
+    <!-- Tag filtering controls -->
+    <section id="filter-controls" class="filter-controls" aria-label="Tag filters">
+      <div class="filter-inputs">
+        <input id="tag-search" type="text" placeholder="Search tags" aria-label="Search tags">
+        <input id="artist-name-filter" type="text" placeholder="Filter artists by name" aria-label="Filter artists by name">
+        <button id="clear-tags" class="browse-btn">Clear Tags</button>
+      </div>
+      <div id="tag-buttons" class="tag-buttons" role="group" aria-label="Tag filters"></div>
+    </section>
+
     <!-- Filter results summary -->
     <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
 
