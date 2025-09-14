@@ -26,6 +26,8 @@ let allArtists = [];
 let renderArtists = null;
 let setRandomBackground = null;
 
+let kinkTags = [];
+
 // Kink tags list (loaded from kink-tags.json)
 const kinkTagsByCategory = [
   {
@@ -122,6 +124,8 @@ function setKinkTags(tagsByCategory) {
     }
     kinkTagsByCategory.length = 0;
     kinkTagsByCategory.push(...tagsByCategory);
+    // Regenerate the flat list of kinkTags
+    kinkTags = kinkTagsByCategory.flatMap(category => category.tags);
   }
 }
 
@@ -224,59 +228,18 @@ function renderTagButtons() {
 
   // --- Allow user to add a custom/typed tag if not present ---
   const filter = searchFilter.trim().toLowerCase();
-  let tagsToShow = kinkTags
-    .filter((tag) => {
-      const filter = searchFilter.trim().toLowerCase();
-      if (!filter) return possibleTags.has(tag) || activeTags.has(tag);
-      if (tagSearchMode === "starts") {
-        return (
-          tag.toLowerCase().startsWith(filter) &&
-          (possibleTags.has(tag) || activeTags.has(tag))
-        );
-      }
-      if (tagSearchMode === "ends") {
-        return (
-          tag.toLowerCase().endsWith(filter) &&
-          (possibleTags.has(tag) || activeTags.has(tag))
-        );
-      }
-      // default: contains
-      return (
-        tag.toLowerCase().includes(filter) &&
-        (possibleTags.has(tag) || activeTags.has(tag))
-      );
-    })
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" }));
-
-  // If user typed a tag that is not in kinkTags, offer to add/search for it
-  if (
-    filter &&
-    !kinkTags.some((tag) => tag.toLowerCase() === filter) &&
-    !tagsToShow.some((tag) => tag.toLowerCase() === filter)
-  ) {
-    const customBtn = document.createElement("button");
-    customBtn.className = "tag-button";
-    customBtn.type = "button";
-    customBtn.textContent = `Search for "${filter}"`;
-    customBtn.style.background = "#ffd6f6";
-    customBtn.style.color = "#a0005a";
-    customBtn.onclick = () => {
-      activeTags.add(filter);
-      renderTagButtons();
-      if (renderArtists) renderArtists(true);
-      if (setRandomBackground) setRandomBackground();
-      if (navigator.vibrate) navigator.vibrate(50);
-    };
-    tagButtonsContainer.appendChild(customBtn);
+  if (filter && !kinkTags.includes(filter)) {
+    tagsToShow.unshift(filter);
   }
 
+  // Create buttons for each tag
   tagsToShow.forEach((tag) => {
-    const btn = document.createElement("button");
-    btn.className = "tag-button";
-    btn.type = "button";
-    btn.setAttribute("aria-label", `Toggle tag ${tag.replaceAll("_", " ")}`);
-    btn.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
-    btn.setAttribute("role", "switch");
+    const button = document.createElement("button");
+    button.className = "tag-button";
+    button.type = "button";
+    button.setAttribute("aria-label", `Toggle tag ${tag.replaceAll("_", " ")}`);
+    button.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
+    button.setAttribute("role", "switch");
     // Optional: group role for container
     tagButtonsContainer.setAttribute("role", "group");
     tagButtonsContainer.setAttribute("aria-label", "Tag filters");
@@ -285,13 +248,13 @@ function renderTagButtons() {
       icon.src = tagIcons[tag];
       icon.style.height = "16px";
       icon.style.marginRight = "4px";
-      btn.appendChild(icon);
+      button.appendChild(icon);
     }
-    btn.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
-    btn.dataset.tag = tag;
-    if (tagTooltips[tag]) btn.title = tagTooltips[tag];
-    if (activeTags.has(tag)) btn.classList.add("active");
-    btn.onclick = () => {
+    button.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
+    button.dataset.tag = tag;
+    if (tagTooltips[tag]) button.title = tagTooltips[tag];
+    if (activeTags.has(tag)) button.classList.add("active");
+    button.onclick = () => {
       if (activeTags.has(tag)) {
         activeTags.delete(tag);
       } else {
@@ -301,13 +264,13 @@ function renderTagButtons() {
         spawnBubble(tag);
       }
       // Update ARIA state after toggle
-      btn.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
+      button.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
       renderTagButtons();
       if (renderArtists) renderArtists(true); // <-- force full update
       if (setRandomBackground) setRandomBackground();
       if (navigator.vibrate) navigator.vibrate(50);
     };
-    tagButtonsContainer.appendChild(btn);
+    tagButtonsContainer.appendChild(button);
   });
 
   if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
@@ -390,8 +353,19 @@ function handleArtistNameFilter(value) {
 /**
  * Initializes the tags module with DOM elements and event listeners
  */
-async function initTags() {
-  // Get DOM references
+async function initTags(
+  artists,
+  renderArtistsFunc,
+  setRandomBgFunc
+) {
+  allArtists = artists;
+  renderArtists = renderArtistsFunc;
+  setRandomBackground = setRandomBgFunc;
+
+  // Initial population of kinkTags from default categories
+  kinkTags = kinkTagsByCategory.flatMap(category => category.tags);
+
+  // DOM element lookups
   tagButtonsContainer = document.getElementById("tag-buttons");
   tagSearchInput = document.getElementById("tag-search");
   artistNameFilterInput = document.getElementById("artist-name-filter");
