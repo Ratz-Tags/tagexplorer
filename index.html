@@ -16,14 +16,14 @@
   
   <!-- Main application header -->
   <header role="banner">
-    <div class="container">
-      <div class="top-bar">
+    <div class="mx-auto max-w-screen-lg">
+      <div id="top-bar" class="flex items-center justify-center gap-3 w-full px-4 py-2 text-pink-800 text-[1.04em] font-semibold bg-pink-gradient shadow-card border-b-2 border-pink-500/40 rounded-b-card sticky top-0 left-0 z-[10000]">
         <h1 class="brand">Artist Explorer</h1>
         <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
         <span class="tagline" id="tagline">Pathetic..~</span>
       </div>
       <!-- New compact tag explorer bar -->
-      <div class="tag-explorer-bar" id="tag-explorer-bar">
+      <div id="tag-explorer-bar" class="flex items-center justify-center gap-3 w-full px-4 py-2 text-pink-800 text-[1.04em] font-semibold bg-pink-gradient shadow-card border-b-2 border-pink-500/40 rounded-b-card sticky left-0" style="top: var(--tagbar-top);">
         <button class="bar-btn" id="prompts-btn">Prompts</button>
         <button class="bar-btn" id="filters-btn" aria-expanded="false" aria-controls="filter-controls">Filters</button>
       </div>
@@ -31,7 +31,7 @@
   </header>
 
   <!-- Main content area -->
-  <main role="main" class="container">
+  <main role="main" class="mx-auto max-w-screen-lg">
     <!-- Tag filtering controls -->
     <section id="filter-controls" class="filter-controls" aria-label="Tag filters" aria-hidden="true">
       <div class="filter-inputs">
@@ -44,7 +44,7 @@
 
 
     <!-- Selected tags bar -->
-    <section id="selected-tags" class="selected-tags-bar" aria-label="Selected tags"></section>
+    <section id="selected-tags" aria-label="Selected tags" class="flex flex-wrap gap-2 w-full px-4 py-2 text-pink-800 text-[1.04em] font-semibold bg-pink-gradient shadow-card border-b-2 border-pink-500/40 rounded-b-card" style="display:none;"></section>
 
     <!-- Filter results summary -->
     <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
