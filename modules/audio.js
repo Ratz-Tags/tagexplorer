@@ -502,24 +502,6 @@ initAudio = function () {
   updateAudioHumiliationMeter();
 };
 
-// --- JOI MODE GLOBAL EXPOSURE (calls gallery.js implementation) ---
-if (
-  typeof window !== "undefined" &&
-  typeof window.startJOIMode !== "function"
-) {
-  window.startJOIMode = function () {
-    if (
-      typeof window.kexplorer === "object" &&
-      typeof window.kexplorer.startJOIMode === "function"
-    ) {
-      window.kexplorer.startJOIMode();
-    } else if (typeof startJOIMode === "function") {
-      startJOIMode();
-    } else {
-      alert("JOI mode is not available.");
-    }
-  };
-}
 
 // All functions in this file are defined and used as follows:
 

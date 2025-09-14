@@ -567,6 +567,14 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 
 /* In-page tag filter panel */
 .filter-controls {
+  overflow: hidden;
+  max-height: 0;
+  margin-bottom: 0;
+  transition: max-height 0.3s ease;
+}
+
+.filter-controls.open {
+  max-height: 1000px; /* enough to show contents */
   margin-bottom: 1.5em;
 }
 
