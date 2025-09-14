@@ -255,10 +255,12 @@ async function fetchAllArtistImages(
 ) {
   const MAX_PAGES = options.maxPages || 40; // 40 pages x 200 = 8000 max
   const LIMIT = 200;
+  const ORDER = options.order || "approvals";
   // First, fetch the first page to get total count
   const firstPage = await fetchArtistImages(artistName, selectedTags, {
     limit: LIMIT,
     page: 1,
+    order: ORDER,
   });
   if (!firstPage || firstPage.length === 0) return [];
   // Estimate total pages
@@ -276,7 +278,11 @@ async function fetchAllArtistImages(
   const pagePromises = [];
   for (let page = 2; page <= totalPages; page++) {
     pagePromises.push(
-      fetchArtistImages(artistName, selectedTags, { limit: LIMIT, page })
+      fetchArtistImages(artistName, selectedTags, {
+        limit: LIMIT,
+        page,
+        order: ORDER,
+      })
     );
   }
   const restPages = await Promise.all(pagePromises);

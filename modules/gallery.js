@@ -296,8 +296,8 @@ async function openArtistZoom(artist) {
   let grid, zoomContent, backBtn;
   let posts = [];
   let page = 1;
+  let totalPages = Infinity;
   let loading = false;
-  let hasMore = true;
   let currentIndex = 0;
 
   function returnToGrid() {
@@ -311,7 +311,7 @@ async function openArtistZoom(artist) {
   zoomContent = wrapper.querySelector(".zoom-content");
 
   backBtn = document.createElement("button");
-  backBtn.className = "zoom-back";
+  backBtn.className = "zoom-back-btn";
   backBtn.textContent = "Back";
   backBtn.addEventListener("click", returnToGrid);
   zoomContent.appendChild(backBtn);
@@ -326,25 +326,40 @@ async function openArtistZoom(artist) {
   grid.style.overflowY = "auto";
   wrapper.appendChild(grid);
 
+  const sentinel = document.createElement("div");
+  sentinel.id = "grid-sentinel";
+  grid.appendChild(sentinel);
+
   zoomContent.style.display = "none";
 
   document.body.appendChild(wrapper);
   wrapper.focus();
 
   async function loadPage() {
-    if (loading || !hasMore) return;
+    if (loading || page > totalPages) return;
     loading = true;
     try {
       const api = await import("./api.js");
-      const newPosts = await api.fetchArtistImages(artist.artistName, [], { limit: 40, page });
+      if (page === 1) {
+        try {
+          const count = await api.getArtistImageCount(artist.artistName);
+          totalPages = Math.max(1, Math.ceil(count / 40));
+        } catch {
+          totalPages = Infinity;
+        }
+      }
+      const newPosts = await api.fetchArtistImages(artist.artistName, [], {
+        limit: 40,
+        page,
+        order: "approvals",
+      });
       if (!Array.isArray(newPosts) || newPosts.length === 0) {
-        hasMore = false;
+        totalPages = page - 1;
         return;
       }
       const start = posts.length;
       posts = posts.concat(newPosts);
       renderThumbs(newPosts, start);
-      if (newPosts.length < 40) hasMore = false;
       page++;
     } finally {
       loading = false;
@@ -367,21 +382,22 @@ async function openArtistZoom(artist) {
         currentIndex = index;
         showZoom(index);
       });
-      grid.appendChild(thumb);
+      grid.insertBefore(thumb, sentinel);
     });
   }
 
-  let thumbTicking = false;
-  grid.addEventListener("scroll", () => {
-    if (thumbTicking) return;
-    thumbTicking = true;
-    requestAnimationFrame(() => {
-      thumbTicking = false;
-      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
-        loadPage();
-      }
-    });
-  }, { passive: true });
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          loadPage();
+        }
+      });
+    },
+    { root: grid, rootMargin: "0px", threshold: 0.1 }
+  );
+
+  observer.observe(sentinel);
 
   function showZoom(index) {
     grid.style.display = "none";
@@ -427,7 +443,7 @@ async function openArtistZoom(artist) {
   });
 
   nextBtn.addEventListener("click", async () => {
-    if (currentIndex === posts.length - 1 && hasMore) {
+    if (currentIndex === posts.length - 1 && page <= totalPages) {
       await loadPage();
     }
     if (currentIndex < posts.length - 1) {
