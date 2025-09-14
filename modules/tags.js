@@ -204,12 +204,12 @@ function updateFilteredResultsSummary(filteredCount, totalCount) {
  */
 function renderTagButtons() {
   if (!tagButtonsContainer) return;
-
   tagButtonsContainer.innerHTML = "";
-  let tagsToShow = [];
+  tagButtonsContainer.setAttribute("role", "group");
+  tagButtonsContainer.setAttribute("aria-label", "Tag filters");
 
   // Get artists matching current filters
-  let filteredArtists = allArtists.filter((artist) => {
+  const filteredArtists = allArtists.filter((artist) => {
     const tags = artist.kinkTags || [];
     return (
       Array.from(activeTags).every((tag) => tags.includes(tag)) &&
@@ -222,57 +222,112 @@ function renderTagButtons() {
   updateFilteredResultsSummary(filteredArtists.length, allArtists.length);
 
   // Get all tags present in filtered artists
-  let possibleTags = new Set();
+  const possibleTags = new Set();
   filteredArtists.forEach((artist) => {
     (artist.kinkTags || []).forEach((tag) => possibleTags.add(tag));
   });
 
-  // --- Allow user to add a custom/typed tag if not present ---
   const filter = searchFilter.trim().toLowerCase();
-  if (filter && !kinkTags.includes(filter)) {
-    tagsToShow.unshift(filter);
-  }
+  let foundMatch = false;
 
-  // Create buttons for each tag
-  tagsToShow.forEach((tag) => {
+  // Build category sections
+  kinkTagsByCategory.forEach(({ category, tags }) => {
+    let categoryTags = tags.filter(
+      (t) => possibleTags.has(t) || activeTags.has(t)
+    );
+
+    if (filter) {
+      categoryTags = categoryTags.filter((t) => {
+        const tl = t.toLowerCase();
+        if (tagSearchMode === "starts") return tl.startsWith(filter);
+        if (tagSearchMode === "ends") return tl.endsWith(filter);
+        return tl.includes(filter);
+      });
+      if (categoryTags.length > 0) foundMatch = true;
+    }
+
+    if (categoryTags.length === 0) return;
+
+    const details = document.createElement("details");
+    details.className = "tag-group";
+    if (filter || categoryTags.some((t) => activeTags.has(t))) details.open = true;
+
+    const summary = document.createElement("summary");
+    summary.className = "tag-group-header";
+    summary.textContent = category;
+    details.appendChild(summary);
+
+    const tagsDiv = document.createElement("div");
+    tagsDiv.className = "tag-group-tags";
+
+    categoryTags.forEach((tag) => {
+      const button = document.createElement("button");
+      button.className = "tag-button";
+      button.type = "button";
+      button.setAttribute(
+        "aria-label",
+        `Toggle tag ${tag.replaceAll("_", " ")}`
+      );
+      button.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
+      button.setAttribute("role", "switch");
+      if (tagIcons[tag]) {
+        const icon = document.createElement("img");
+        icon.src = tagIcons[tag];
+        icon.style.height = "16px";
+        icon.style.marginRight = "4px";
+        button.appendChild(icon);
+      }
+      button.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
+      button.dataset.tag = tag;
+      if (tagTooltips[tag]) button.title = tagTooltips[tag];
+      if (activeTags.has(tag)) button.classList.add("active");
+      button.onclick = () => {
+        if (activeTags.has(tag)) {
+          activeTags.delete(tag);
+        } else {
+          if (activeTags.size >= 2) return;
+          activeTags.add(tag);
+          spawnBubble(tag);
+        }
+        button.setAttribute(
+          "aria-pressed",
+          activeTags.has(tag) ? "true" : "false"
+        );
+        renderTagButtons();
+        if (renderArtists) renderArtists(true);
+        if (setRandomBackground) setRandomBackground();
+        if (navigator.vibrate) navigator.vibrate(50);
+      };
+      tagsDiv.appendChild(button);
+    });
+
+    details.appendChild(tagsDiv);
+    tagButtonsContainer.appendChild(details);
+  });
+
+  // Custom typed tag not found in known list
+  if (filter && !foundMatch && !kinkTags.includes(filter)) {
     const button = document.createElement("button");
     button.className = "tag-button";
     button.type = "button";
-    button.setAttribute("aria-label", `Toggle tag ${tag.replaceAll("_", " ")}`);
-    button.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
-    button.setAttribute("role", "switch");
-    // Optional: group role for container
-    tagButtonsContainer.setAttribute("role", "group");
-    tagButtonsContainer.setAttribute("aria-label", "Tag filters");
-    if (tagIcons[tag]) {
-      const icon = document.createElement("img");
-      icon.src = tagIcons[tag];
-      icon.style.height = "16px";
-      icon.style.marginRight = "4px";
-      button.appendChild(icon);
-    }
-    button.appendChild(document.createTextNode(tag.replaceAll("_", " ")));
-    button.dataset.tag = tag;
-    if (tagTooltips[tag]) button.title = tagTooltips[tag];
-    if (activeTags.has(tag)) button.classList.add("active");
+    button.textContent = filter.replaceAll("_", " ");
+    button.dataset.tag = filter;
+    if (activeTags.has(filter)) button.classList.add("active");
     button.onclick = () => {
-      if (activeTags.has(tag)) {
-        activeTags.delete(tag);
+      if (activeTags.has(filter)) {
+        activeTags.delete(filter);
       } else {
-        // Limit selection to two tags at a time
         if (activeTags.size >= 2) return;
-        activeTags.add(tag);
-        spawnBubble(tag);
+        activeTags.add(filter);
+        spawnBubble(filter);
       }
-      // Update ARIA state after toggle
-      button.setAttribute("aria-pressed", activeTags.has(tag) ? "true" : "false");
       renderTagButtons();
-      if (renderArtists) renderArtists(true); // <-- force full update
+      if (renderArtists) renderArtists(true);
       if (setRandomBackground) setRandomBackground();
       if (navigator.vibrate) navigator.vibrate(50);
     };
-    tagButtonsContainer.appendChild(button);
-  });
+    tagButtonsContainer.prepend(button);
+  }
 
   if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
 
@@ -331,7 +386,6 @@ function toggleTag(tag) {
 function handleTagSearch(value) {
   searchFilter = value;
   renderTagButtons();
-  if (renderArtists) renderArtists(true);
 }
 
 /**
