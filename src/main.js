@@ -1,5 +1,5 @@
 // Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
-import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "./modules/azure-tts.js";
+import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "../modules/azure-tts.js";
 async function setDefaultAzureVoice() {
   try {
     if (!window._azureTTSVoice && window._azureTTSKey && window._azureTTSRegion) {
@@ -24,8 +24,8 @@ setDefaultAzureVoice();
 import {
   initSidebar,
   setAllArtists as setSidebarArtists,
-} from "./modules/sidebar.js";
-import { initAudio, initAudioUI } from "./modules/audio.js";
+} from "../modules/sidebar.js";
+import { initAudio, initAudioUI } from "../modules/audio.js";
 import {
   initTags,
   setAllArtists as setTagsArtists,
@@ -38,7 +38,7 @@ import {
   getArtistNameFilter,
   renderTagButtons,
   setTagSearchMode,
-} from "./modules/tags.js";
+} from "../modules/tags.js";
 import {
   initGallery,
   filterArtists,
@@ -59,8 +59,8 @@ import { loadAppData } from "./modules/api.js";
 import { startTauntTicker } from "./modules/humiliation.js";
 
 
-import { renderPromptCacheUI } from "./modules/prompt-cache.js";
-import { createTTSToggleButton } from "./modules/tts-toggle.js";
+import { renderPromptCacheUI } from "../modules/prompt-cache.js";
+import { createTTSToggleButton } from "../modules/tts-toggle.js";
 
 /**
  * Initialize the application
@@ -130,7 +130,7 @@ async function initApp() {
 
     // Set up infinite scroll
     setupInfiniteScroll(() => {
-      import("./modules/gallery.js").then((gallery) => {
+      import("../modules/gallery.js").then((gallery) => {
         const galleryInfo = gallery.getPaginationInfo();
         if (galleryInfo.hasMore && typeof gallery.renderArtistsPage === "function") {
           // Use setter to increment currentPage and render next page
@@ -329,7 +329,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Make tag-explorer-bar fixed on scroll with proper offset below top-bar
   const tagBar = document.getElementById("tag-explorer-bar");
-  const topBarEl = document.querySelector(".top-bar");
+  const topBarEl = document.getElementById("top-bar");
 
   function setTagBarTop(useTopBarOffset) {
     const topOffset = topBarEl ? (topBarEl.offsetHeight + 8) : 8;
