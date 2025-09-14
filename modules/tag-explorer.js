@@ -98,12 +98,13 @@ function openTagExplorer() {
 
 
   // Selected tags bar (global, outside modal)
-  let selectedTagsBar = document.querySelector('.selected-tags-bar');
+  let selectedTagsBar = document.getElementById('selected-tags');
   if (!selectedTagsBar) {
     selectedTagsBar = document.createElement('div');
-    selectedTagsBar.className = 'selected-tags-bar';
-    // Insert after .tag-explorer-bar if present
-    const topBar = document.querySelector('.tag-explorer-bar, #tag-explorer-bar');
+    selectedTagsBar.id = 'selected-tags';
+    selectedTagsBar.className = 'flex flex-wrap gap-2 w-full px-4 py-2 text-pink-800 text-[1.04em] font-semibold bg-pink-gradient shadow-card border-b-2 border-pink-500/40 rounded-b-card';
+    // Insert after tag explorer bar if present
+    const topBar = document.getElementById('tag-explorer-bar');
     if (topBar && topBar.parentNode) {
       topBar.parentNode.insertBefore(selectedTagsBar, topBar.nextSibling);
     } else {

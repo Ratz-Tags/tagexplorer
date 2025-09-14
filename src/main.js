@@ -329,7 +329,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Make tag-explorer-bar fixed on scroll with proper offset below top-bar
   const tagBar = document.getElementById("tag-explorer-bar");
-  const topBarEl = document.querySelector(".top-bar");
+  const topBarEl = document.getElementById("top-bar");
 
   function setTagBarTop(useTopBarOffset) {
     const topOffset = topBarEl ? (topBarEl.offsetHeight + 8) : 8;
