@@ -23,14 +23,24 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 ## Getting Started
 
 1. Clone the repository
-2. Run `npm run dev` and open the provided URL
-3. Explore artists, tags, and sidebar features
+2. Install dependencies with `npm install`
+3. Start the development server with `npm run dev` and open the provided URL
+4. Run the test suite with `npm test`
 
 ## Customization
 
 - Add new tags or artists by editing the JSON files
 - Adjust styles in `src/style.css` for further theming
 - Extend sidebar or gallery features in the `modules/` directory
+
+## Build
+
+- Create a production build with `npm run build`
+
+## Theming
+
+- Tailwind is configured in `tailwind.config.cjs`; adjust colors, fonts, or plugins there
+- Global styles reside in `src/style.css` and can be overridden for custom themes
 
 ## License
 
