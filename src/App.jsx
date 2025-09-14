@@ -11,7 +11,7 @@ export default function App() {
       <Sidebar onChange={setSelectedArtists} />
       <main className="flex-1 overflow-y-auto">
         <PromptSuggestions artists={selectedArtists} />
-        <Gallery artist={selectedArtists[0]} />
+        <Gallery artists={selectedArtists} />
         <AudioPlayer />
       </main>
     </div>
