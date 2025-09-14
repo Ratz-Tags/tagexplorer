@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Tag Explorer - Modern Unified Theme (2025) */
 /* Core palette */
 :root {
