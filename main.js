@@ -49,17 +49,12 @@ import {
   setSortMode,
   setSortPreference,
   forceSortAndRender,
-  showTopArtistsByTagCount,
 } from "./modules/gallery.js";
 import {
   initUI,
   setupInfiniteScroll,
   setupBackgroundRotation,
 } from "./modules/ui.js";
-import {
-  openTagExplorer,
-  setAllArtists as setExplorerArtists,
-} from "./modules/tag-explorer.js";
 import { loadAppData } from "./modules/api.js";
 import { startTauntTicker } from "./modules/humiliation.js";
 
@@ -105,7 +100,6 @@ async function initApp() {
     setSidebarArtists(artists);
     setTagsArtists(artists);
     setGalleryArtists(artists);
-    setExplorerArtists(artists);
 
     // Set up callback dependencies
     setRenderArtistsCallback(filterArtists);
@@ -192,21 +186,9 @@ window.kexplorer = {
   setRandomBackground,
   getActiveTags,
   renderTagButtons,
-  openTagExplorer,
-  showTopArtistsByTagCount,
 };
 // Ensure buttons that reference window.* work
-window.openTagExplorer = openTagExplorer;
 window.renderPromptCacheUI = renderPromptCacheUI;
-
-// Fallback: delegate clicks for Browse Tags if individual binding failed
-document.addEventListener('click', (e) => {
-  const t = e.target;
-  if (t && t.id === 'browse-tags-btn' && typeof window.openTagExplorer === 'function') {
-    e.preventDefault();
-    window.openTagExplorer();
-  }
-});
 
 // --- SIDEBAR TOGGLE BUTTON ---
 const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
@@ -253,16 +235,8 @@ if (sortSelect) {
 const sortButtonElem = document.getElementById("sort-button");
 if (sortButtonElem && sortSelect) {
   sortButtonElem.addEventListener("click", () => {
-    if (
-      sortSelect.value === "top" &&
-      typeof window.kexplorer !== "undefined" &&
-      typeof window.kexplorer.showTopArtistsByTagCount === "function"
-    ) {
-      window.kexplorer.showTopArtistsByTagCount();
-    } else {
-      setSortMode(sortSelect.value);
-      forceSortAndRender();
-    }
+    setSortMode(sortSelect.value);
+    forceSortAndRender();
   });
 }
 
@@ -315,50 +289,6 @@ if (tagSearchInput && tagSearchInput.parentNode) {
   });
 }
 
-// Add JOI mode toggle button
-const joiBtn = document.createElement("button");
-joiBtn.textContent = "JOI Mode";
-joiBtn.className = "browse-btn humiliation-glow";
-joiBtn.style.marginLeft = "1em";
-let joiActive = false;
-joiBtn.onclick = () => {
-  if (!joiActive && window.startJOIMode) {
-    window.startJOIMode();
-    joiActive = true;
-    joiBtn.textContent = "Stop JOI Mode";
-    joiBtn.classList.add("active");
-  } else if (joiActive && window.stopJOIMode) {
-    window.stopJOIMode();
-    joiActive = false;
-    joiBtn.textContent = "JOI Mode";
-    joiBtn.classList.remove("active");
-  }
-};
-const controlsBar = document.querySelector(".sort-controls");
-if (controlsBar) controlsBar.appendChild(joiBtn);
-
-// Add Prompt Cache button
-const promptBtn = document.createElement("button");
-promptBtn.textContent = "Prompts";
-promptBtn.className = "browse-btn";
-promptBtn.style.marginLeft = "1em";
-promptBtn.onclick = () => {
-  renderPromptCacheUI();
-};
-if (controlsBar) controlsBar.appendChild(promptBtn);
-
-// --- Wire up static Top Artists button (fixes non-working UI button) ---
-const staticTopArtistsBtn = document.getElementById("show-top-artists");
-if (staticTopArtistsBtn) {
-  staticTopArtistsBtn.addEventListener("click", () => {
-    if (
-      typeof window.kexplorer !== "undefined" &&
-      typeof window.kexplorer.showTopArtistsByTagCount === "function"
-    ) {
-      window.kexplorer.showTopArtistsByTagCount();
-    }
-  });
-}
 
 // --- Add floating chibi mascot image (fixes chibi.png placement) ---
 window.addEventListener("DOMContentLoaded", () => {
@@ -380,31 +310,20 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   // Tag Explorer Bar buttons
-  const topArtistsBtn = document.getElementById("top-artists-btn");
-  const joiModeBtn = document.getElementById("joi-mode-btn");
   const promptsBtn = document.getElementById("prompts-btn");
-  const browseTagsBtn = document.getElementById("browse-tags-btn");
-  if (topArtistsBtn) {
-    topArtistsBtn.addEventListener("click", () => {
-      if (window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === "function") {
-        // Ensure gallery is sorted and displayed by tag count
-        window.kexplorer.showTopArtistsByTagCount();
-      }
-    });
-  }
-  if (joiModeBtn) {
-    joiModeBtn.addEventListener("click", () => {
-      if (window.startJOIMode) window.startJOIMode();
-    });
-  }
+  const filtersBtn = document.getElementById("filters-btn");
+  const filterControls = document.getElementById("filter-controls");
+
   if (promptsBtn) {
     promptsBtn.addEventListener("click", () => {
       if (window.renderPromptCacheUI) window.renderPromptCacheUI();
     });
   }
-  if (browseTagsBtn) {
-    browseTagsBtn.addEventListener("click", () => {
-      if (window.openTagExplorer) window.openTagExplorer();
+  if (filtersBtn && filterControls) {
+    filtersBtn.addEventListener("click", () => {
+      const open = filterControls.classList.toggle("open");
+      filtersBtn.setAttribute("aria-expanded", open);
+      filterControls.setAttribute("aria-hidden", !open);
     });
   }
 
@@ -460,22 +379,21 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // Fallback: delegate clicks for tag-explorer-bar buttons if individual binding failed
 // This ensures all tag-explorer-bar buttons work regardless of render timing
-['top-artists-btn', 'joi-mode-btn', 'prompts-btn', 'browse-tags-btn'].forEach(id => {
+['prompts-btn', 'filters-btn'].forEach(id => {
   document.addEventListener('click', (e) => {
     const t = e.target;
     if (t && t.id === id) {
       e.preventDefault();
-      if (id === 'top-artists-btn' && window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === 'function') {
-        window.kexplorer.showTopArtistsByTagCount();
-      }
-      if (id === 'joi-mode-btn' && window.startJOIMode) {
-        window.startJOIMode();
-      }
       if (id === 'prompts-btn' && window.renderPromptCacheUI) {
         window.renderPromptCacheUI();
       }
-      if (id === 'browse-tags-btn' && window.openTagExplorer) {
-        window.openTagExplorer();
+      if (id === 'filters-btn') {
+        const controls = document.getElementById('filter-controls');
+        if (controls) {
+          const open = controls.classList.toggle('open');
+          t.setAttribute('aria-expanded', open);
+          controls.setAttribute('aria-hidden', !open);
+        }
       }
     }
   });

@@ -253,39 +253,24 @@ async function fetchAllArtistImages(
   selectedTags = [],
   options = {}
 ) {
-  const MAX_PAGES = options.maxPages || 40; // 40 pages x 200 = 8000 max
   const LIMIT = 200;
-  // First, fetch the first page to get total count
-  const firstPage = await fetchArtistImages(artistName, selectedTags, {
-    limit: LIMIT,
-    page: 1,
-  });
-  if (!firstPage || firstPage.length === 0) return [];
-  // Estimate total pages
-  let totalPages = MAX_PAGES;
-  if (firstPage.length === LIMIT) {
-    // Try to get total count from API
-    try {
-      const count = await getArtistImageCount(artistName);
-      totalPages = Math.min(MAX_PAGES, Math.ceil(count / LIMIT));
-    } catch {}
-  } else {
-    totalPages = 1;
+  const ORDER = options.order || "approvals";
+  const MAX_PAGES = options.maxPages || 1000; // safety cap
+  let page = 1;
+  let allPosts = [];
+
+  while (page <= MAX_PAGES) {
+    const posts = await fetchArtistImages(artistName, selectedTags, {
+      limit: LIMIT,
+      page,
+      order: ORDER,
+    });
+    if (!posts.length) break;
+    allPosts = allPosts.concat(posts);
+    if (posts.length < LIMIT) break;
+    page++;
   }
-  // Fetch all pages in parallel
-  const pagePromises = [];
-  for (let page = 2; page <= totalPages; page++) {
-    pagePromises.push(
-      fetchArtistImages(artistName, selectedTags, { limit: LIMIT, page })
-    );
-  }
-  const restPages = await Promise.all(pagePromises);
-  let allPosts = firstPage;
-  restPages.forEach((posts) => {
-    if (Array.isArray(posts) && posts.length > 0) {
-      allPosts = allPosts.concat(posts);
-    }
-  });
+
   return allPosts;
 }
 

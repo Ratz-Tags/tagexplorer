@@ -4,11 +4,22 @@
   "description": "The **Kink Artist Explorer** is a mobile-first, degrading tool for discovering NSFW artists on Danbooru based on humiliating kink tags like femdom, chastity, and sissy training.",
   "main": "main.js",
   "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
     "test": "node --test",
     "update:tags": "node scripts/updateKinkTags.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^5.0.0"
+  }
 }
