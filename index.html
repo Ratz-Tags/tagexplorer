@@ -24,10 +24,8 @@
       </div>
       <!-- New compact tag explorer bar -->
       <div class="tag-explorer-bar" id="tag-explorer-bar">
-        <button class="bar-btn" id="top-artists-btn">Top Artists</button>
-        <button class="bar-btn" id="joi-mode-btn">JOI Mode</button>
         <button class="bar-btn" id="prompts-btn">Prompts</button>
-        <button class="bar-btn" id="browse-tags-btn">Browse Tags</button>
+        <button class="bar-btn" id="filters-btn" aria-expanded="false" aria-controls="filter-controls">Filters</button>
       </div>
     </div>
   </header>
@@ -35,7 +33,7 @@
   <!-- Main content area -->
   <main role="main" class="container">
     <!-- Tag filtering controls -->
-    <section id="filter-controls" class="filter-controls" aria-label="Tag filters">
+    <section id="filter-controls" class="filter-controls" aria-label="Tag filters" aria-hidden="true">
       <div class="filter-inputs">
         <input id="tag-search" type="text" placeholder="Search tags" aria-label="Search tags">
         <input id="artist-name-filter" type="text" placeholder="Filter artists by name" aria-label="Filter artists by name">

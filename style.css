@@ -567,6 +567,14 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
 
 /* In-page tag filter panel */
 .filter-controls {
+  overflow: hidden;
+  max-height: 0;
+  margin-bottom: 0;
+  transition: max-height 0.3s ease;
+}
+
+.filter-controls.open {
+  max-height: 1000px; /* enough to show contents */
   margin-bottom: 1.5em;
 }
 
@@ -734,7 +742,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   max-width: 95%;
   margin-left: auto;
   margin-right: auto;
-  background: none;
+  background: #ffe6f2;
 }
 
 @supports (-moz-appearance: none) {
@@ -750,7 +758,7 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
   border-radius: 0.7em;
   margin-bottom: 0.1em;
   box-shadow: 0 2px 8px #fd7bc540;
-  background: #fff8fc;
+  background: #fff0f8;
   display: block;
   margin-left: auto;
   margin-right: auto;
@@ -804,6 +812,13 @@ body > header, body > main, body > aside, body > nav, #artist-gallery {
     justify-content: center;
     gap: 1em;
     margin-top: 0.5em;
+}
+
+.zoom-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 0.5em;
+  margin-top: 0.5em;
 }
 
 .zoom-back-btn {

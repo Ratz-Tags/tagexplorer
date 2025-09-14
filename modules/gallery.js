@@ -296,8 +296,8 @@ async function openArtistZoom(artist) {
   let grid, zoomContent, backBtn;
   let posts = [];
   let page = 1;
+  let totalPages = Infinity;
   let loading = false;
-  let hasMore = true;
   let currentIndex = 0;
 
   function returnToGrid() {
@@ -311,7 +311,7 @@ async function openArtistZoom(artist) {
   zoomContent = wrapper.querySelector(".zoom-content");
 
   backBtn = document.createElement("button");
-  backBtn.className = "zoom-back";
+  backBtn.className = "zoom-back-btn";
   backBtn.textContent = "Back";
   backBtn.addEventListener("click", returnToGrid);
   zoomContent.appendChild(backBtn);
@@ -326,25 +326,40 @@ async function openArtistZoom(artist) {
   grid.style.overflowY = "auto";
   wrapper.appendChild(grid);
 
+  const sentinel = document.createElement("div");
+  sentinel.id = "grid-sentinel";
+  grid.appendChild(sentinel);
+
   zoomContent.style.display = "none";
 
   document.body.appendChild(wrapper);
   wrapper.focus();
 
   async function loadPage() {
-    if (loading || !hasMore) return;
+    if (loading || page > totalPages) return;
     loading = true;
     try {
       const api = await import("./api.js");
-      const newPosts = await api.fetchArtistImages(artist.artistName, [], { limit: 40, page });
+      if (page === 1) {
+        try {
+          const count = await api.getArtistImageCount(artist.artistName);
+          totalPages = Math.max(1, Math.ceil(count / 40));
+        } catch {
+          totalPages = Infinity;
+        }
+      }
+      const newPosts = await api.fetchArtistImages(artist.artistName, [], {
+        limit: 40,
+        page,
+        order: "approvals",
+      });
       if (!Array.isArray(newPosts) || newPosts.length === 0) {
-        hasMore = false;
+        totalPages = page - 1;
         return;
       }
       const start = posts.length;
       posts = posts.concat(newPosts);
       renderThumbs(newPosts, start);
-      if (newPosts.length < 40) hasMore = false;
       page++;
     } finally {
       loading = false;
@@ -367,21 +382,22 @@ async function openArtistZoom(artist) {
         currentIndex = index;
         showZoom(index);
       });
-      grid.appendChild(thumb);
+      grid.insertBefore(thumb, sentinel);
     });
   }
 
-  let thumbTicking = false;
-  grid.addEventListener("scroll", () => {
-    if (thumbTicking) return;
-    thumbTicking = true;
-    requestAnimationFrame(() => {
-      thumbTicking = false;
-      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 100) {
-        loadPage();
-      }
-    });
-  }, { passive: true });
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          loadPage();
+        }
+      });
+    },
+    { root: grid, rootMargin: "0px", threshold: 0.1 }
+  );
+
+  observer.observe(sentinel);
 
   function showZoom(index) {
     grid.style.display = "none";
@@ -427,7 +443,7 @@ async function openArtistZoom(artist) {
   });
 
   nextBtn.addEventListener("click", async () => {
-    if (currentIndex === posts.length - 1 && hasMore) {
+    if (currentIndex === posts.length - 1 && page <= totalPages) {
       await loadPage();
     }
     if (currentIndex < posts.length - 1) {
@@ -579,13 +595,9 @@ function renderArtistCards(artists, selectedTagsOverride) {
     const name = document.createElement("div");
     name.className = "artist-name";
     let displayName = artist.artistName.replace(/_/g, " ");
-    if (sortMode === "top" && typeof artist._bottleneckCount === "number") {
-      displayName += ` (${artist._bottleneckCount})`;
-    } else {
-      const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
-      if (typeof total === "number") {
-        displayName += ` [${total}]`;
-      }
+    const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
+    if (typeof total === "number") {
+      displayName += ` [${total}]`;
     }
     name.textContent = displayName;
 
@@ -839,26 +851,10 @@ async function filterArtists(reset = true, force = false) {
 
 let lastSortMode = null;
 
-function addTopTagCountButton() {
-  const sortControls = document.querySelector(".sort-controls");
-  if (!sortControls || document.getElementById("top-tag-count-btn")) return;
-  const btn = document.createElement("button");
-  btn.id = "top-tag-count-btn";
-  btn.className = "browse-btn";
-  btn.textContent = "Show Top Artists by Tag Count";
-  btn.title = "See which artists have the most images matching all selected tags";
-  btn.onclick = () => {
-    // Directly call the local showTopArtistsByTagCount function
-    showTopArtistsByTagCount();
-  };
-  sortControls.appendChild(btn);
-}
-
 // Call this on gallery init
 function initGallery() {
   artistGallery = document.getElementById("artist-gallery");
   backgroundBlur = document.getElementById("background-blur");
-  addTopTagCountButton();
   // Patch: remember last sort mode
   const sortSelect = document.querySelector(".sort-controls select, #sort-by");
   if (sortSelect) {
@@ -869,122 +865,30 @@ function initGallery() {
   setupInfiniteScroll();
 }
 
-function setSortMode(mode) {
-  sortMode = mode;
-  lastSortMode = mode;
-  if (filtered.length > 0) {
-    if (sortMode === "count") {
-      filtered.sort(
-        (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-      );
-    } else if (sortMode === "top") {
-      filtered.sort((a, b) => {
-        if ((b._selectedTagMatchCount || 0) !== (a._selectedTagMatchCount || 0)) {
-          return (b._selectedTagMatchCount || 0) - (a._selectedTagMatchCount || 0);
-        }
-        return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
-      });
-    } else {
-      filtered.sort((a, b) =>
-        a.artistName.localeCompare(b.artistName, undefined, {
-          sensitivity: "base",
-        })
-      );
+  function setSortMode(mode) {
+    sortMode = mode;
+    lastSortMode = mode;
+    if (filtered.length > 0) {
+      if (sortMode === "count") {
+        filtered.sort(
+          (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+        );
+      } else {
+        filtered.sort((a, b) =>
+          a.artistName.localeCompare(b.artistName, undefined, {
+            sensitivity: "base",
+          })
+        );
+      }
+      renderArtistsPage();
     }
-    renderArtistsPage();
   }
-}
 
 function forceSortAndRender() {
   if (lastSortMode) sortMode = lastSortMode;
   renderArtistsPage();
 }
 
-async function showTopArtistsByTagCount() {
-  if (!allArtists || allArtists.length === 0) return;
-  sortMode = "top";
-  lastSortMode = "top";
-  if (!getActiveTags) return;
-  const selectedTags = Array.from(getActiveTags());
-  if (selectedTags.length === 0) return;
-
-  // Only include artists that have ALL selected tags (AND logic)
-  let artistsWithCounts = allArtists.filter((artist) => {
-    const tags = artist.kinkTags || [];
-    return selectedTags.every((tag) => tags.includes(tag));
-  });
-
-  // Show spinner while fetching
-  let spinner = document.querySelector(".gallery-spinner");
-  if (!spinner) {
-    spinner = createSpinner();
-    artistGallery.innerHTML = "";
-    artistGallery.appendChild(spinner);
-  }
-  spinner.setTotal(artistsWithCounts.length);
-  spinner.updateProgress(0);
-
-  // For each artist, fetch all images and count those matching all selected tags
-  let done = 0;
-  for (const artist of artistsWithCounts) {
-    let posts = null;
-    const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        posts = JSON.parse(cached);
-      }
-    } catch (e) {}
-    if (!posts) {
-      try {
-        posts = await fetchAllArtistImages(artist.artistName, selectedTags);
-        if (posts) sessionStorage.setItem(cacheKey, JSON.stringify(posts));
-      } catch (e) { posts = []; }
-    }
-    let matchCount = 0;
-    if (Array.isArray(posts)) {
-      matchCount = posts.filter(post => {
-        // tags may be in post.tag_string or post.tags (array)
-        if (Array.isArray(post.tags)) {
-          return selectedTags.every(tag => post.tags.includes(tag));
-        } else if (typeof post.tag_string === "string") {
-          return selectedTags.every(tag => post.tag_string.split(" ").includes(tag));
-        }
-        return false;
-      }).length;
-    }
-    artist._bottleneckCount = matchCount;
-    done++;
-    spinner.updateProgress(done);
-  }
-
-  // Sort by match count (descending), then name
-  artistsWithCounts.sort((a, b) => {
-    if ((b._bottleneckCount || 0) !== (a._bottleneckCount || 0)) {
-      return (b._bottleneckCount || 0) - (a._bottleneckCount || 0);
-    }
-    return a.artistName.localeCompare(b.artistName, undefined, { sensitivity: "base" });
-  });
-
-  // Show a summary of how many artists are displayed
-  const summaryDiv = document.createElement("div");
-  summaryDiv.className = "filtered-results-summary";
-  summaryDiv.style.margin = "1em 0 1em 0";
-  summaryDiv.style.fontFamily = "'Hi Melody', sans-serif";
-  summaryDiv.style.fontSize = "1.1em";
-  summaryDiv.style.color = "#a0005a";
-  summaryDiv.textContent = `Showing ${artistsWithCounts.length} artist${artistsWithCounts.length === 1 ? '' : 's'} matching ALL selected tags (sorted by image count per artist).`;
-  artistGallery.innerHTML = "";
-  artistGallery.appendChild(summaryDiv);
-
-  if (artistsWithCounts.length > 0) {
-    renderArtistCards(artistsWithCounts, selectedTags);
-  } else {
-    artistGallery.innerHTML +=
-      '<div class="no-entries-msg">No artists found with all selected tags.</div>';
-  }
-  if (spinner) spinner.remove();
-}
 
 function setAllArtists(artists) {
   allArtists = artists;
@@ -1005,65 +909,6 @@ function setSortPreference(preference) {
   sortMode = preference === "count" ? "count" : "name";
 }
 
-// --- JOI MODE ---
-let joiModeActive = false;
-let joiInterval = null;
-const joiCommands = [
-  "Edge for 60 seconds. If you fail, start over and call yourself a loser.",
-  "Say out loud: 'I'm a pathetic, needy little toy.'",
-  "Kneel on the floor and beg for permission to continue. Out loud.",
-  "Slap yourself lightly and say, 'That's for being so weak.'",
-  "Look in the mirror and say, 'I'm nothing but a desperate sissy.'",
-  "Send a humiliating compliment to a friend (or imagine doing so).",
-  "Repeat: 'I exist to be used and teased' ten times, slowly.",
-  "Hold your breath and whimper quietly for 15 seconds. No touching.",
-  "Blow a kiss to the screen and thank your superior for the privilege.",
-  "Promise out loud: 'I won't cum until I'm told.'",
-  "Pathetic! Now, do 20 jumping jacks and say 'I'm so desperate!' after each one.",
-  "Type 'I'm a hopeless case' in the search bar, then delete it in shame.",
-  "Lick your lips and say, 'I'm so needy, please humiliate me more.'",
-  "Sit on your hands for 2 minutes. If you move, start over and apologize out loud.",
-  "Send a voice note to yourself saying, 'I'm a worthless little plaything.' (or imagine it).",
-  "Write 'USE ME' on your hand and keep it visible for the rest of your session.",
-  "Stare at the most humiliating image you can find for 1 minute without looking away.",
-  "Say, 'Thank you for reminding me how low I've sunk.' three times, slowly.",
-  "Promise: 'I will obey every command, no matter how embarrassing.' Out loud.",
-  "If you feel embarrassed, say, 'That's exactly what I deserve.' and smile.",
-];
-
-function startJOIMode(intervalMs = 60000) {
-  if (joiModeActive) return;
-  joiModeActive = true;
-  function showJOICommand() {
-    const command = joiCommands[Math.floor(Math.random() * joiCommands.length)];
-    const modal = document.createElement("div");
-    modal.className = "modal humiliation-glow";
-    modal.style.zIndex = "9999";
-    modal.style.textAlign = "center";
-    modal.innerHTML = `<h3 style="color:#fd7bc5;">JOI Command</h3>
-      <div style="font-size:1.3em;margin:1em 0;">${command}</div>
-      <button class="browse-btn" style="margin-top:1em;">Done</button>`;
-    modal.querySelector("button").onclick = () => modal.remove();
-    document.body.appendChild(modal);
-    // Increase meter for every command shown
-    if (typeof window.incrementDesperationMeter === "function") {
-      window.incrementDesperationMeter(3);
-    }
-  }
-  joiInterval = setInterval(showJOICommand, intervalMs);
-  showJOICommand();
-}
-
-function stopJOIMode() {
-  joiModeActive = false;
-  if (joiInterval) clearInterval(joiInterval);
-}
-
-// Expose JOI mode globally
-if (typeof window !== "undefined") {
-  window.startJOIMode = startJOIMode;
-  window.stopJOIMode = stopJOIMode;
-}
 
 function showZoomTauntOverlay() {
   let old = document.getElementById("taunt-overlay");
@@ -1138,6 +983,5 @@ export {
   getFilteredArtists,
   setArtistsPerPage,
   hideZoomTauntOverlay,
-  showTopArtistsByTagCount,
   openArtistOnDanbooru
 };
