@@ -206,6 +206,7 @@ function renderTagButtons() {
   if (!tagButtonsContainer) return;
 
   tagButtonsContainer.innerHTML = "";
+  let tagsToShow = [];
 
   // Get artists matching current filters
   let filteredArtists = allArtists.filter((artist) => {
