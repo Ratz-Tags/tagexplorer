@@ -6,6 +6,7 @@
 const fetchFn = fetch;
 
 import { fetchWithCache } from "./fetch-cache.js";
+import { fetchAllArtistImages } from "../src/services/danbooru.js";
 
 /**
  * Checks if a post has all the specified tags
@@ -248,32 +249,6 @@ async function loadAppData() {
  * Returns an array of all valid image posts for the artist
  * Now supports parallel fetches for faster loading
  */
-async function fetchAllArtistImages(
-  artistName,
-  selectedTags = [],
-  options = {}
-) {
-  const LIMIT = 200;
-  const ORDER = options.order || "approvals";
-  const MAX_PAGES = options.maxPages || 1000; // safety cap
-  let page = 1;
-  let allPosts = [];
-
-  while (page <= MAX_PAGES) {
-    const posts = await fetchArtistImages(artistName, selectedTags, {
-      limit: LIMIT,
-      page,
-      order: ORDER,
-    });
-    if (!posts.length) break;
-    allPosts = allPosts.concat(posts);
-    if (posts.length < LIMIT) break;
-    page++;
-  }
-
-  return allPosts;
-}
-
 /**
  * Fetches post count for a set of tags using Danbooru's /counts/posts endpoint (HTML response)
  */
@@ -298,9 +273,9 @@ export {
   filterValidImagePosts,
   getRandomBackgroundImage,
   fetchArtistImages,
-  fetchAllArtistImages,
   clearArtistCache,
   loadAppData,
+  fetchAllArtistImages,
 };
 
 // All functions in this file are defined and used as follows:
@@ -312,10 +287,9 @@ export {
 // getRandomBackgroundImage: exported, used by gallery.js
 // fetchArtistImages: exported, used by gallery.js, api.js
 // loadArtists: used by getArtistImageCount
-// getArtistImageCount: exported, used by fetchAllArtistImages
+// getArtistImageCount: exported, used by api.js consumers
 // clearArtistCache: exported, used by gallery.js
 // loadAppData: exported, used by main.js
-// fetchAllArtistImages: exported, used by gallery.js
 // fetchPostCountForTags: exported, used by gallery.js
 
 // No unused or undefined functions in this file.
