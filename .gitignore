@@ -4,3 +4,4 @@ azure-tts.local.js
 .github/copilot-instructions.md
 .github/prompts/promptsfile.prompt.md
 .github/chatmodes/chatmodes.chatmode.md
+dist/
