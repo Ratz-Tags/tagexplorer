@@ -8,6 +8,7 @@ export default function Gallery() {
   const [artistIndex, setArtistIndex] = useState(0);
   const [page, setPage] = useState(1);
   const [allLoaded, setAllLoaded] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [zoomSrc, setZoomSrc] = useState(null);
   const loaderRef = useRef(null);
@@ -23,15 +24,22 @@ export default function Gallery() {
       setAllLoaded(true);
       return;
     }
-    const posts = await fetchArtistPage(
+    const { posts, total } = await fetchArtistPage(
       currentArtist.artistName,
       selectedTags,
       page
     );
+    const more = total === 200;
+    setHasMore(more);
     if (posts.length === 0) {
+      if (more) {
+        setPage((p) => p + 1);
+        return;
+      }
       if (artistIndex + 1 < filteredArtists.length) {
         setArtistIndex((i) => i + 1);
         setPage(1);
+        setHasMore(true);
       } else {
         setAllLoaded(true);
       }
@@ -51,6 +59,7 @@ export default function Gallery() {
     setArtistIndex(0);
     setPage(1);
     setAllLoaded(false);
+    setHasMore(true);
   }, [selectedTags, artists]);
 
   useEffect(() => {
