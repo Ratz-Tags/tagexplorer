@@ -149,6 +149,29 @@ const tagIcons = {
 
 let tagSearchMode = "contains"; // "contains", "starts", "ends"
 
+function emitTagUpdate() {
+  if (typeof document === "undefined" || typeof document.dispatchEvent !== "function") {
+    return;
+  }
+  const detail = {
+    activeTags: Array.from(activeTags),
+    artistNameFilter,
+  };
+  try {
+    document.dispatchEvent(new CustomEvent("tags:updated", { detail }));
+  } catch (err) {
+    if (typeof document.createEvent === "function") {
+      try {
+        const evt = document.createEvent("CustomEvent");
+        evt.initCustomEvent("tags:updated", false, false, detail);
+        document.dispatchEvent(evt);
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
 /**
  * Spawns a taunt bubble for a selected tag
  */
@@ -174,6 +197,7 @@ function spawnBubble(tag) {
  * Updates the filtered results summary section
  */
 function updateFilteredResultsSummary(filteredCount, totalCount) {
+  if (typeof document === "undefined") return;
   const filteredResultsEl = document.getElementById("filtered-results");
   if (!filteredResultsEl) return;
 
@@ -203,11 +227,6 @@ function updateFilteredResultsSummary(filteredCount, totalCount) {
  * Renders the tag filter buttons based on current state
  */
 function renderTagButtons() {
-  if (!tagButtonsContainer) return;
-  tagButtonsContainer.innerHTML = "";
-  tagButtonsContainer.setAttribute("role", "group");
-  tagButtonsContainer.setAttribute("aria-label", "Tag filters");
-
   // Get artists matching current filters
   const filteredArtists = allArtists.filter((artist) => {
     const tags = artist.kinkTags || [];
@@ -220,6 +239,14 @@ function renderTagButtons() {
 
   // Update filtered results summary
   updateFilteredResultsSummary(filteredArtists.length, allArtists.length);
+
+  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
+
+  if (!tagButtonsContainer) return;
+
+  tagButtonsContainer.innerHTML = "";
+  tagButtonsContainer.setAttribute("role", "group");
+  tagButtonsContainer.setAttribute("aria-label", "Tag filters");
 
   // Get all tags present in filtered artists
   const possibleTags = new Set();
@@ -328,24 +355,6 @@ function renderTagButtons() {
     };
     tagButtonsContainer.prepend(button);
   }
-
-  if (clearTagsBtn) clearTagsBtn.style.display = activeTags.size ? "" : "none";
-
-  if (selectedTagsBar) {
-    selectedTagsBar.innerHTML = "";
-    if (activeTags.size) {
-      selectedTagsBar.style.display = "flex";
-      activeTags.forEach((tag) => {
-        const pill = document.createElement("button");
-        pill.className = "selected-tag";
-        pill.textContent = tag.replaceAll("_", " ");
-        pill.onclick = () => toggleTag(tag);
-        selectedTagsBar.appendChild(pill);
-      });
-    } else {
-      selectedTagsBar.style.display = "none";
-    }
-  }
 }
 
 /**
@@ -357,6 +366,7 @@ function clearAllTags() {
   if (navigator.vibrate) navigator.vibrate(50);
   if (renderArtists) renderArtists(true); // <-- force full update
   if (setRandomBackground) setRandomBackground();
+  emitTagUpdate();
 }
 
 /**
@@ -378,6 +388,7 @@ function toggleTag(tag) {
   if (renderArtists) renderArtists(true);
   if (setRandomBackground) setRandomBackground();
   if (navigator.vibrate) navigator.vibrate(50);
+  emitTagUpdate();
 }
 
 /**
@@ -386,6 +397,7 @@ function toggleTag(tag) {
 function handleTagSearch(value) {
   searchFilter = value;
   renderTagButtons();
+  emitTagUpdate();
 }
 
 /**
@@ -403,6 +415,7 @@ function handleArtistNameFilter(value) {
   artistNameFilter = value.trim().toLowerCase();
   renderTagButtons(); // Update the summary display
   if (renderArtists) renderArtists(true);
+  emitTagUpdate();
 }
 
 /**
