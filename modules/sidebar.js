@@ -452,14 +452,41 @@ function copySuggestionText() {
   if (!suggestionOutputEl) return;
   const text = suggestionOutputEl.dataset?.value || "";
   if (!text) return;
-  navigator.clipboard
-    .writeText(text)
-    .then(() => {
-      showToast("Suggested prompts copied");
-    })
-    .catch(() => {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showToast("Suggested prompts copied");
+      })
+      .catch(() => {
+        showToast("Couldn't copy prompts");
+      });
+  } else {
+    // Fallback for environments where navigator.clipboard is not available
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      // Prevent scrolling to bottom
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
+      textarea.style.width = "1px";
+      textarea.style.height = "1px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (successful) {
+        showToast("Suggested prompts copied");
+      } else {
+        showToast("Couldn't copy prompts");
+      }
+    } catch (e) {
       showToast("Couldn't copy prompts");
-    });
+    }
+  }
 }
 
 function closeSuggestionsModal() {
