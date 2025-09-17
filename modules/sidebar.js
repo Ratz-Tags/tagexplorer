@@ -222,7 +222,18 @@ function updateCopiedSidebar() {
   closeBtn.title = "Close";
   closeBtn.onclick = () => {
     copiedSidebar.classList.add("sidebar-hidden");
+    copiedSidebar.setAttribute("aria-hidden", "true");
     document.body.classList.remove("sidebar-open");
+    const sidebarWrapper = copiedSidebar.closest(".sidebar-wrapper");
+    if (sidebarWrapper) {
+      sidebarWrapper.classList.remove("visible");
+      sidebarWrapper.setAttribute("aria-hidden", "true");
+    }
+    const overlay = document.getElementById("sidebar-overlay");
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden", "true");
+    }
   };
   copiedSection.appendChild(closeBtn);
 
@@ -552,6 +563,9 @@ function openSuggestionsModal() {
  */
 function initSidebar() {
   copiedSidebar = document.getElementById("copied-sidebar");
+  const sidebarWrapper = copiedSidebar
+    ? copiedSidebar.closest(".sidebar-wrapper")
+    : null;
 
   // Add mobile-friendly slide-in/out and overlay
   if (copiedSidebar) {
@@ -577,6 +591,10 @@ function initSidebar() {
       copiedSidebar.classList.remove("sidebar-hidden");
       copiedSidebar.setAttribute("aria-hidden", "false");
       document.body.classList.add("sidebar-open");
+      if (sidebarWrapper) {
+        sidebarWrapper.classList.add("visible");
+        sidebarWrapper.setAttribute("aria-hidden", "false");
+      }
       overlay.style.display = "block";
       overlay.setAttribute("aria-hidden", "false");
       copiedSidebar.setAttribute("aria-modal", "true");
@@ -587,6 +605,10 @@ function initSidebar() {
       copiedSidebar.classList.add("sidebar-hidden");
       copiedSidebar.setAttribute("aria-hidden", "true");
       document.body.classList.remove("sidebar-open");
+      if (sidebarWrapper) {
+        sidebarWrapper.classList.remove("visible");
+        sidebarWrapper.setAttribute("aria-hidden", "true");
+      }
       overlay.style.display = "none";
       overlay.setAttribute("aria-hidden", "true");
       copiedSidebar.removeAttribute("aria-modal");
@@ -626,6 +648,10 @@ function initSidebar() {
     if (!document.body.classList.contains("sidebar-open")) {
       copiedSidebar.classList.add("sidebar-hidden");
       copiedSidebar.setAttribute("aria-hidden", "true");
+      if (sidebarWrapper) {
+        sidebarWrapper.classList.remove("visible");
+        sidebarWrapper.setAttribute("aria-hidden", "true");
+      }
     }
   }
   // ARIA improvements for sidebar controls
