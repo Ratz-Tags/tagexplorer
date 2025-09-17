@@ -226,8 +226,18 @@ if (sidebarCloseBtn && copiedSidebar) {
   sidebarCloseBtn.addEventListener("click", () => {
     // Hide the sidebar and clear any open state
     copiedSidebar.classList.add("sidebar-hidden");
-    document.body.classList.remove("sidebar-open");
     copiedSidebar.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("sidebar-open");
+    const sidebarWrapper = copiedSidebar.closest(".sidebar-wrapper");
+    if (sidebarWrapper) {
+      sidebarWrapper.classList.remove("visible");
+      sidebarWrapper.setAttribute("aria-hidden", "true");
+    }
+    const overlay = document.getElementById("sidebar-overlay");
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.setAttribute("aria-hidden", "true");
+    }
   });
 }
 
