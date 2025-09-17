@@ -5,12 +5,19 @@
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
 import { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE } from "./azure-tts.js";
+import { getActiveTags } from "./tags.js";
 
 let copiedArtists = new Set();
 
 let copiedSidebar = null;
 let allArtists = [];
 let copiedArtistsCache = null;
+let selectedPromptArtists = new Set();
+let suggestionModal = null;
+let suggestionOutputEl = null;
+let suggestionSummaryEl = null;
+let suggestionCopyBtn = null;
+let suggestionKeyHandler = null;
 
 // TTS toggle state
 window._ttsEnabled = true;
@@ -117,6 +124,7 @@ function handleArtistCopy(artist, imgSrc) {
       if (!copiedArtists.has(artistTag)) {
         copiedArtists.add(artistTag);
         copiedArtistsCache = new Set(copiedArtists);
+        selectedPromptArtists.add(artistTag);
         updateCopiedSidebar();
         added = true;
       }
@@ -145,6 +153,16 @@ function updateCopiedSidebar() {
 
   // --- HUMILIATION: Dynamic taunt banner ---
   const copiedCount = copiedArtists.size;
+  if (copiedCount === 0) {
+    selectedPromptArtists.clear();
+  } else {
+    selectedPromptArtists = new Set(
+      [...selectedPromptArtists].filter((name) => copiedArtists.has(name))
+    );
+    if (selectedPromptArtists.size === 0) {
+      selectedPromptArtists = new Set(copiedArtists);
+    }
+  }
   let tauntMsg = "";
   if (copiedCount === 0) {
     tauntMsg = "No artists copied yet. Too shy to commit? Pathetic.";
@@ -208,58 +226,325 @@ function updateCopiedSidebar() {
   };
   copiedSection.appendChild(closeBtn);
 
-  // Copied artists list
   const copiedList = document.createElement("div");
   copiedList.className = "sidebar-copied-list";
+
+  let selectionNote = null;
+  let suggestionBtn = null;
+
   copiedArtists.forEach((artistTag, idx) => {
-    const artist = allArtists.find((a) => a.artistName.replace(/_/g, " ") === artistTag);
+    const artist = allArtists.find(
+      (a) => a.artistName && a.artistName.replace(/_/g, " ") === artistTag
+    );
     const row = document.createElement("div");
     row.className = "copied-artist-row";
-    // Thumbnail
+
+    const checkboxWrap = document.createElement("div");
+    checkboxWrap.className = "copied-artist-select-wrap";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "copied-artist-select";
+    checkbox.setAttribute(
+      "aria-label",
+      `Use ${artistTag} when suggesting prompts`
+    );
+    const isSelected = selectedPromptArtists.has(artistTag);
+    checkbox.checked = isSelected;
+    if (isSelected) row.classList.add("selected");
+    checkbox.addEventListener("change", (event) => {
+      if (event.target.checked) {
+        selectedPromptArtists.add(artistTag);
+        row.classList.add("selected");
+      } else {
+        selectedPromptArtists.delete(artistTag);
+        row.classList.remove("selected");
+      }
+      if (typeof updateSelectionSummary === "function") {
+        updateSelectionSummary();
+      }
+    });
+    checkboxWrap.appendChild(checkbox);
+    row.appendChild(checkboxWrap);
+
+    const info = document.createElement("div");
+    info.className = "copied-artist-info";
+
     if (artist) {
       let thumbUrl = artist.thumbnailUrl;
-      if (!thumbUrl && typeof getThumbnailUrl === "function") thumbUrl = getThumbnailUrl(artist);
+      if (!thumbUrl && typeof getThumbnailUrl === "function") {
+        thumbUrl = getThumbnailUrl(artist);
+      }
       if (thumbUrl) {
         const img = document.createElement("img");
         img.src = thumbUrl;
         img.className = "sidebar-thumb";
-        row.appendChild(img);
+        img.alt = `${artistTag} preview`;
+        info.appendChild(img);
       }
     }
-    // Icon
-    const icon = document.createElement("span");
-    icon.className = "sidebar-icon lipstick-kiss";
-    icon.title = "Kissed with shame!";
-    icon.innerHTML = Math.random() > 0.5 ? "💋" : "✨";
-    row.appendChild(icon);
-    // Name
+
+    const textWrap = document.createElement("div");
+    textWrap.className = "copied-artist-text";
+
     const nameSpan = document.createElement("span");
     nameSpan.textContent = artistTag;
     nameSpan.title = artist && artist.tooltip ? artist.tooltip : artistTag;
     nameSpan.className = "sidebar-artist-name";
-    row.appendChild(nameSpan);
-    // Heart for latest
+    textWrap.appendChild(nameSpan);
+
     if (idx === copiedArtists.size - 1 && copiedCount > 1) {
-      const heart = document.createElement("span");
-      heart.className = "sidebar-icon sidebar-heart";
-      heart.textContent = "💖";
-      heart.title = "Your latest obsession";
-      row.appendChild(heart);
+      const latest = document.createElement("span");
+      latest.className = "sidebar-latest-tag";
+      latest.textContent = "Latest";
+      textWrap.appendChild(latest);
     }
-    row.onclick = () => {
+
+    info.appendChild(textWrap);
+
+    const flair = document.createElement("span");
+    flair.className = "sidebar-icon lipstick-kiss";
+    flair.title = "Kissed with shame!";
+    flair.innerHTML = Math.random() > 0.5 ? "💋" : "✨";
+    info.appendChild(flair);
+
+    row.appendChild(info);
+
+    row.addEventListener("click", (event) => {
+      if (event.target && event.target.tagName === "INPUT") return;
       if (artist) {
         import("./gallery.js").then((gallery) => {
-          if (typeof gallery.openArtistZoom === "function") gallery.openArtistZoom(artist);
+          if (typeof gallery.openArtistZoom === "function") {
+            gallery.openArtistZoom(artist);
+          }
         });
       }
-    };
+    });
+
     copiedList.appendChild(row);
   });
+
+  if (copiedArtists.size === 0) {
+    const empty = document.createElement("div");
+    empty.className = "sidebar-empty";
+    empty.textContent = "Copy artists to build your queue.";
+    copiedList.appendChild(empty);
+  }
+
   copiedSection.appendChild(copiedList);
+
+  const actions = document.createElement("div");
+  actions.className = "sidebar-actions";
+  selectionNote = document.createElement("div");
+  selectionNote.className = "sidebar-selection-note";
+  actions.appendChild(selectionNote);
+
+  suggestionBtn = document.createElement("button");
+  suggestionBtn.type = "button";
+  suggestionBtn.className = "sidebar-suggest-btn";
+  suggestionBtn.textContent = "Suggest Prompts";
+  suggestionBtn.addEventListener("click", () => {
+    openSuggestionsModal();
+  });
+  actions.appendChild(suggestionBtn);
+  copiedSection.appendChild(actions);
+
+  const updateSelectionSummary = () => {
+    const validSelections = [...selectedPromptArtists].filter((name) =>
+      copiedArtists.has(name)
+    );
+    const count = validSelections.length;
+    if (selectionNote) {
+      selectionNote.textContent = count
+        ? `${count} artist${count > 1 ? "s" : ""} selected for prompts`
+        : "Select artists to tailor your prompts.";
+    }
+    if (suggestionBtn) {
+      suggestionBtn.disabled = count === 0;
+      suggestionBtn.setAttribute("aria-disabled", count === 0 ? "true" : "false");
+    }
+  };
+
+  updateSelectionSummary();
   sections.appendChild(copiedSection);
   copiedSidebar.appendChild(sections);
 
   // All sidebar style is now handled by CSS
+}
+
+function getSelectedArtistsForPrompts() {
+  const names = selectedPromptArtists.size
+    ? [...selectedPromptArtists]
+    : [...copiedArtists];
+  return names
+    .map((name) =>
+      allArtists.find(
+        (artist) =>
+          artist?.artistName && artist.artistName.replace(/_/g, " ") === name
+      )
+    )
+    .filter(Boolean);
+}
+
+function buildPromptSuggestions(selectedArtists) {
+  const active = typeof getActiveTags === "function" ? getActiveTags() : new Set();
+  const exclude = new Set(active);
+  const counts = new Map();
+
+  selectedArtists.forEach((artist) => {
+    const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
+    tags.forEach((tag) => {
+      if (exclude.has(tag)) return;
+      counts.set(tag, (counts.get(tag) || 0) + 1);
+    });
+  });
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 10)
+    .map(([tag]) => tag.replace(/_/g, " "));
+}
+
+function ensureSuggestionModal() {
+  if (suggestionModal && suggestionOutputEl && suggestionCopyBtn) {
+    return suggestionModal;
+  }
+  suggestionModal = document.createElement("div");
+  suggestionModal.className = "prompt-suggestion-overlay";
+  suggestionModal.setAttribute("aria-hidden", "true");
+  suggestionModal.innerHTML = `
+    <div class="prompt-suggestion" role="dialog" aria-modal="true" aria-label="Suggested prompts">
+      <header class="prompt-suggestion__header">
+        <h3>Suggested Prompts</h3>
+        <button type="button" class="prompt-suggestion__close" aria-label="Close">×</button>
+      </header>
+      <p class="prompt-suggestion__summary"></p>
+      <div class="prompt-suggestion__output" aria-live="polite"></div>
+      <div class="prompt-suggestion__actions">
+        <button type="button" class="prompt-suggestion__copy">Copy to clipboard</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(suggestionModal);
+
+  suggestionOutputEl = suggestionModal.querySelector(".prompt-suggestion__output");
+  suggestionSummaryEl = suggestionModal.querySelector(".prompt-suggestion__summary");
+  suggestionCopyBtn = suggestionModal.querySelector(".prompt-suggestion__copy");
+  const closeBtn = suggestionModal.querySelector(".prompt-suggestion__close");
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => closeSuggestionsModal());
+  }
+
+  suggestionModal.addEventListener("click", (event) => {
+    if (event.target === suggestionModal) {
+      closeSuggestionsModal();
+    }
+  });
+
+  if (suggestionCopyBtn) {
+    suggestionCopyBtn.addEventListener("click", () => copySuggestionText());
+  }
+
+  return suggestionModal;
+}
+
+function copySuggestionText() {
+  if (!suggestionOutputEl) return;
+  const text = suggestionOutputEl.dataset?.value || "";
+  if (!text) return;
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        showToast("Suggested prompts copied");
+      })
+      .catch(() => {
+        showToast("Couldn't copy prompts");
+      });
+  } else {
+    // Fallback for environments where navigator.clipboard is not available
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      // Prevent scrolling to bottom
+      textarea.style.position = "fixed";
+      textarea.style.top = "0";
+      textarea.style.left = "0";
+      textarea.style.width = "1px";
+      textarea.style.height = "1px";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const successful = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if (successful) {
+        showToast("Suggested prompts copied");
+      } else {
+        showToast("Couldn't copy prompts");
+      }
+    } catch (e) {
+      showToast("Couldn't copy prompts");
+    }
+  }
+}
+
+function closeSuggestionsModal() {
+  if (!suggestionModal) return;
+  suggestionModal.classList.remove("open");
+  suggestionModal.setAttribute("aria-hidden", "true");
+  if (suggestionKeyHandler) {
+    document.removeEventListener("keydown", suggestionKeyHandler);
+    suggestionKeyHandler = null;
+  }
+}
+
+function openSuggestionsModal() {
+  if (!copiedArtists.size) {
+    showToast("Copy a few artists first!");
+    return;
+  }
+  const overlay = ensureSuggestionModal();
+  const selected = getSelectedArtistsForPrompts();
+  const suggestions = buildPromptSuggestions(selected);
+  const line = suggestions.join(", ");
+
+  if (suggestionSummaryEl) {
+    suggestionSummaryEl.textContent = selected.length
+      ? `Based on ${selected.length} selected artist${selected.length > 1 ? "s" : ""}`
+      : "Select artists with the checkboxes first.";
+  }
+
+  if (suggestionOutputEl) {
+    if (line) {
+      suggestionOutputEl.textContent = line;
+      suggestionOutputEl.dataset.value = line;
+    } else {
+      suggestionOutputEl.textContent = selected.length
+        ? "No overlapping tags left to recommend."
+        : "No artists selected.";
+      suggestionOutputEl.dataset.value = "";
+    }
+  }
+
+  if (suggestionCopyBtn) {
+    const disabled = !line;
+    suggestionCopyBtn.disabled = disabled;
+    suggestionCopyBtn.setAttribute("aria-disabled", disabled ? "true" : "false");
+    if (!disabled) {
+      suggestionCopyBtn.focus({ preventScroll: true });
+    }
+  }
+
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+
+  if (!suggestionKeyHandler) {
+    suggestionKeyHandler = (event) => {
+      if (event.key === "Escape") closeSuggestionsModal();
+    };
+    document.addEventListener("keydown", suggestionKeyHandler);
+  }
 }
 
 /**
@@ -363,6 +648,7 @@ function setAllArtists(artists) {
  */
 function setCopiedArtists(artists) {
   copiedArtists = artists;
+  selectedPromptArtists = new Set(artists);
 }
 
 /**

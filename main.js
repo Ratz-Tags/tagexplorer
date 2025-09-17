@@ -61,6 +61,11 @@ import { startTauntTicker } from "./modules/humiliation.js";
 
 import { renderPromptCacheUI } from "./modules/prompt-cache.js";
 import { createTTSToggleButton } from "./modules/tts-toggle.js";
+import {
+  initTagExplorer,
+  openTagExplorer,
+  setAllArtists as setExplorerArtists,
+} from "./modules/tag-explorer.js";
 
 /**
  * Initialize the application
@@ -100,6 +105,7 @@ async function initApp() {
     setSidebarArtists(artists);
     setTagsArtists(artists);
     setGalleryArtists(artists);
+    setExplorerArtists(artists);
 
     // Set up callback dependencies
     setRenderArtistsCallback(filterArtists);
@@ -124,6 +130,7 @@ async function initApp() {
     // Initial render
     renderTagButtons();
     filterArtists();
+    initTagExplorer();
 
     // Set up background rotation
     setupBackgroundRotation(setRandomBackground, 15000);
@@ -312,18 +319,19 @@ window.addEventListener("DOMContentLoaded", () => {
   // Tag Explorer Bar buttons
   const promptsBtn = document.getElementById("prompts-btn");
   const filtersBtn = document.getElementById("filters-btn");
-  const filterControls = document.getElementById("filter-controls");
 
   if (promptsBtn) {
     promptsBtn.addEventListener("click", () => {
       if (window.renderPromptCacheUI) window.renderPromptCacheUI();
     });
   }
-  if (filtersBtn && filterControls) {
+  if (filtersBtn) {
     filtersBtn.addEventListener("click", () => {
-      const open = filterControls.classList.toggle("open");
-      filtersBtn.setAttribute("aria-expanded", open);
-      filterControls.setAttribute("aria-hidden", !open);
+      openTagExplorer();
+    });
+    document.addEventListener("tagFilters:toggle", (event) => {
+      const isOpen = !!(event?.detail && event.detail.open);
+      filtersBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
   }
 
@@ -366,9 +374,6 @@ window.addEventListener("DOMContentLoaded", () => {
     updateContentPad();
   });
 
-  // Remove old filter toggle logic if present
-  const filterToggle = document.getElementById("toggle-filters");
-  if (filterToggle) filterToggle.style.display = "none";
 });
 
 // Remove inline z-index overrides; CSS now controls stacking order
@@ -388,12 +393,7 @@ window.addEventListener("DOMContentLoaded", () => {
         window.renderPromptCacheUI();
       }
       if (id === 'filters-btn') {
-        const controls = document.getElementById('filter-controls');
-        if (controls) {
-          const open = controls.classList.toggle('open');
-          t.setAttribute('aria-expanded', open);
-          controls.setAttribute('aria-hidden', !open);
-        }
+        openTagExplorer();
       }
     }
   });

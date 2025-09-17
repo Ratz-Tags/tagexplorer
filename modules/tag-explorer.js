@@ -1,215 +1,439 @@
-import { getActiveTags, getKinkTags, toggleTag, getArtistNameFilter, handleArtistNameFilter } from "./tags.js";
+import {
+  getActiveTags,
+  getKinkTags,
+  toggleTag,
+  getArtistNameFilter,
+  handleArtistNameFilter,
+  handleTagSearch,
+  clearAllTags,
+} from "./tags.js";
+
+const MAX_TAG_SELECTION = 2;
 
 let allArtists = [];
-let allArtistsCache = null;
+let overlayEl = null;
+let panelEl = null;
+let searchInputEl = null;
+let nameInputEl = null;
+let groupsContainerEl = null;
+let overlaySelectedEl = null;
+let pinnedSelectedEl = null;
+let limitNoticeEl = null;
+let clearButtonEl = null;
+let isInitialized = false;
+let isOpen = false;
+let escapeListener = null;
+let searchValue = "";
+let searchValueLower = "";
+let limitMessageTimer = null;
 
 function setAllArtists(artists) {
-  if (allArtistsCache && JSON.stringify(allArtistsCache) === JSON.stringify(artists)) return;
-  allArtists = Array.isArray(artists) ? artists : [];
-  allArtistsCache = artists;
+  if (!Array.isArray(artists)) {
+    allArtists = [];
+    return;
+  }
+  allArtists = [...artists];
 }
 
-function getFilteredArtists(active) {
-  const nameFilter = (getArtistNameFilter && getArtistNameFilter() || '').toLowerCase();
-  return allArtists.filter((a) => {
-    const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
-    if (![...active].every((t) => tags.includes(t))) return false;
-    if (nameFilter && !a.artistName.toLowerCase().includes(nameFilter)) return false;
+function getFilteredArtists(active = getActiveTags()) {
+  const activeTags = active instanceof Set ? active : new Set(active || []);
+  const nameFilter = (typeof getArtistNameFilter === "function"
+    ? getArtistNameFilter() || ""
+    : "").toLowerCase();
+
+  return allArtists.filter((artist) => {
+    const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
+    if (![...activeTags].every((tag) => tags.includes(tag))) return false;
+    if (nameFilter && !artist.artistName.toLowerCase().includes(nameFilter)) {
+      return false;
+    }
     return true;
   });
 }
 
-function getFilteredCounts(active) {
+function getFilteredCounts(active = getActiveTags()) {
   const counts = {};
-  const countedArtists = {};
   const filtered = getFilteredArtists(active);
-  filtered.forEach((a) => {
-    const artistName = a.artistName;
-    const tags = Array.isArray(a.kinkTags) ? a.kinkTags : [];
-    tags.forEach((t) => {
-      if (!countedArtists[t]) countedArtists[t] = new Set();
-      if (!countedArtists[t].has(artistName)) {
-        countedArtists[t].add(artistName);
-        counts[t] = (counts[t] || 0) + 1;
-      }
+  filtered.forEach((artist) => {
+    const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
+    tags.forEach((tag) => {
+      counts[tag] = (counts[tag] || 0) + 1;
     });
   });
   return counts;
 }
 
-// No longer needed: groupTags. We'll use kink categories directly.
+function ensurePinnedSelectedContainer() {
+  if (typeof document === "undefined") return null;
+  if (pinnedSelectedEl && document.body.contains(pinnedSelectedEl)) {
+    return pinnedSelectedEl;
+  }
+  let container = document.getElementById("selected-tags");
+  if (!container) {
+    container = document.createElement("section");
+    container.id = "selected-tags";
+    container.className = "selected-tags-bar";
+    container.setAttribute("aria-label", "Active tag filters");
+    const main = document.querySelector("main") || document.body;
+    main.insertBefore(container, main.firstChild || null);
+  } else if (!container.classList.contains("selected-tags-bar")) {
+    container.classList.add("selected-tags-bar");
+  }
+  pinnedSelectedEl = container;
+  return pinnedSelectedEl;
+}
 
-function openTagExplorer() {
-  const existing = document.querySelector('.tag-explorer-wrapper');
-  if (existing) existing.remove();
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'tag-explorer-wrapper';
-  wrapper.addEventListener('click', (e) => {
-    if (e.target === wrapper) wrapper.remove();
+function createTagPill(tag, options = {}) {
+  const pill = document.createElement("button");
+  pill.type = "button";
+  pill.className = "selected-tag-pill";
+  if (options.compact) pill.classList.add("compact");
+  pill.textContent = tag.replace(/_/g, " ");
+  pill.setAttribute("data-tag", tag);
+  pill.setAttribute("aria-label", `Remove tag ${tag.replace(/_/g, " ")}`);
+  pill.addEventListener("click", () => {
+    toggleTag(tag);
   });
+  return pill;
+}
 
-  const sidebar = document.createElement('div');
-  sidebar.className = 'tag-explorer';
-  wrapper.appendChild(sidebar);
-  document.body.appendChild(wrapper);
+function clearSelectionLimitMessage() {
+  if (!limitNoticeEl) return;
+  limitNoticeEl.textContent = "";
+  limitNoticeEl.classList.remove("visible");
+  if (limitMessageTimer) {
+    clearTimeout(limitMessageTimer);
+    limitMessageTimer = null;
+  }
+}
 
-  const header = document.createElement('div');
-  header.className = 'tag-explorer-header';
-  const title = document.createElement('h3');
-  title.textContent = 'Tags';
-  header.appendChild(title);
-  const closeBtn = document.createElement('button');
-  closeBtn.className = 'zoom-close';
-  closeBtn.textContent = '×';
-  closeBtn.onclick = () => wrapper.remove();
-  closeBtn.title = 'Close';
-  header.appendChild(closeBtn);
-  const clearBtn = document.createElement('button');
-  clearBtn.className = 'tag-explorer-clear';
-  clearBtn.textContent = 'Clear';
-  clearBtn.onclick = () => {
-    // Clear all tags using toggleTag until none left
-    const active = getActiveTags();
-    if (active && active.size) {
-      [...active].forEach(tag => toggleTag(tag));
-    }
-    searchInput.value = '';
-    nameInput.value = '';
-    handleArtistNameFilter('');
-    renderList();
-  };
-  header.appendChild(clearBtn);
-  const searchInput = document.createElement('input');
-  searchInput.type = 'text';
-  searchInput.placeholder = 'Search tags';
-  searchInput.oninput = renderList;
-  header.appendChild(searchInput);
-  const nameInput = document.createElement('input');
-  nameInput.type = 'text';
-  nameInput.placeholder = 'Filter artists';
-  nameInput.value = getArtistNameFilter ? getArtistNameFilter() : '';
-  nameInput.oninput = () => {
-    handleArtistNameFilter(nameInput.value);
-    renderList();
-  };
-  header.appendChild(nameInput);
-  sidebar.appendChild(header);
+function showSelectionLimitMessage() {
+  if (!limitNoticeEl) return;
+  limitNoticeEl.textContent = `You can only select up to ${MAX_TAG_SELECTION} tags at a time.`;
+  limitNoticeEl.classList.add("visible");
+  if (limitMessageTimer) clearTimeout(limitMessageTimer);
+  limitMessageTimer = setTimeout(() => {
+    clearSelectionLimitMessage();
+  }, 2200);
+}
 
-
-  // Selected tags bar (global, outside modal)
-  let selectedTagsBar = document.querySelector('.selected-tags-bar');
-  if (!selectedTagsBar) {
-    selectedTagsBar = document.createElement('div');
-    selectedTagsBar.className = 'selected-tags-bar';
-    // Insert after .tag-explorer-bar if present
-    const topBar = document.querySelector('.tag-explorer-bar, #tag-explorer-bar');
-    if (topBar && topBar.parentNode) {
-      topBar.parentNode.insertBefore(selectedTagsBar, topBar.nextSibling);
-    } else {
-      document.body.insertBefore(selectedTagsBar, document.body.firstChild);
+function emitOverlayToggle(open) {
+  if (typeof document === "undefined" || typeof document.dispatchEvent !== "function") {
+    return;
+  }
+  const detail = { open: Boolean(open) };
+  try {
+    document.dispatchEvent(new CustomEvent("tagFilters:toggle", { detail }));
+  } catch (err) {
+    if (typeof document.createEvent === "function") {
+      try {
+        const evt = document.createEvent("CustomEvent");
+        evt.initCustomEvent("tagFilters:toggle", false, false, detail);
+        document.dispatchEvent(evt);
+      } catch {
+        // ignore
+      }
     }
   }
-  // Style for sticky and layout is handled in CSS
+}
 
-  const groupsContainer = document.createElement('div');
-  groupsContainer.className = 'tag-explorer-groups';
-  sidebar.appendChild(groupsContainer);
-  const kinkCategories = getKinkTags(); // [{category, tags:[]}, ...]
-  const openGroups = new Set();
-
-  function renderList() {
-    const active = getActiveTags();
-    const counts = getFilteredCounts(active);
-    const searchText = searchInput.value.toLowerCase();
-    // Render selected tags bar (global)
-    selectedTagsBar.innerHTML = '';
-    if (active.size > 0) {
-      const label = document.createElement('span');
-      label.textContent = 'Selected:';
-      label.style.fontWeight = 'bold';
-      label.style.marginRight = '0.5em';
-      label.style.color = '#a0005a';
-      label.style.background = '#fff0fa';
-      label.style.padding = '0.2em 0.7em';
-      label.style.borderRadius = '1em';
-      label.style.fontSize = '1.05em';
-      selectedTagsBar.appendChild(label);
-      active.forEach((tag) => {
-        const pill = document.createElement('span');
-        pill.className = 'selected-tag-pill';
-        pill.textContent = tag.replace(/_/g, ' ');
-        pill.title = 'Remove tag';
-        pill.style.cursor = 'pointer';
-        pill.style.background = 'linear-gradient(90deg, #ffd6f6 0%, #fd7bc5 100%)';
-        pill.style.color = '#a0005a';
-        pill.style.border = '1.5px solid #fd7bc5';
-        pill.style.padding = '0.4em 1em';
-        pill.style.borderRadius = '2em';
-        pill.style.fontWeight = '500';
-        pill.style.boxShadow = '0 1px 4px #fd7bc540';
-        pill.onclick = () => {
-          toggleTag(tag);
-          renderList();
-        };
-        selectedTagsBar.appendChild(pill);
-      });
+function fillSelectedContainer(container, tags, options = {}) {
+  if (!container) return;
+  container.innerHTML = "";
+  if (!tags.length) {
+    container.classList.add("is-empty");
+    if (options.placeholder) {
+      const message = document.createElement("p");
+      message.className = "selected-tags-empty";
+      message.textContent = options.placeholder;
+      container.appendChild(message);
     }
-    groupsContainer.innerHTML = '';
-    // Flatten all tags for verification
-    let allTagsFlat = [];
-    kinkCategories.forEach(cat => allTagsFlat.push(...cat.tags));
-    // --- Verification: check for lost tags ---
-    // If you want to check for lost tags, you can compare allTagsFlat to the original list.
-    // ---
-    kinkCategories.forEach(({ category, tags }) => {
-      // Filter tags by search and by presence in filtered artists
-      const filteredTags = tags
-        .filter((t) => t.toLowerCase().includes(searchText))
-        .filter((t) => counts[t] || active.has(t));
-      if (filteredTags.length === 0) return;
-      const section = document.createElement('div');
-      section.className = 'tag-group';
-      if (openGroups.has(category) || searchText || filteredTags.some((t) => active.has(t))) {
-        section.classList.add('open');
+    return;
+  }
+  container.classList.remove("is-empty");
+  if (options.showLabel) {
+    const label = document.createElement("span");
+    label.className = "selected-tags-label";
+    label.textContent = "Active filters";
+    container.appendChild(label);
+  }
+  const list = document.createElement("div");
+  list.className = "selected-tags-list";
+  tags.forEach((tag) => {
+    list.appendChild(createTagPill(tag, { compact: options.compact }));
+  });
+  container.appendChild(list);
+}
+
+function renderSelectedTags() {
+  const active = Array.from(getActiveTags());
+  const overlayPlaceholder = active.length
+    ? null
+    : "No filters applied. Choose tags to narrow results.";
+  fillSelectedContainer(overlaySelectedEl, active, {
+    placeholder: overlayPlaceholder,
+    compact: false,
+  });
+  const pinned = ensurePinnedSelectedContainer();
+  fillSelectedContainer(pinned, active, {
+    showLabel: true,
+    compact: true,
+    placeholder: "No filters active",
+  });
+  if (active.length < MAX_TAG_SELECTION) {
+    clearSelectionLimitMessage();
+  }
+}
+
+function handleTagToggle(tag) {
+  const active = getActiveTags();
+  if (!active.has(tag) && active.size >= MAX_TAG_SELECTION) {
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate(50);
+      } catch {
+        // ignore vibration errors
       }
-      const head = document.createElement('div');
-      head.className = 'tag-group-header';
-      head.textContent = category;
-      head.onclick = () => {
-        if (openGroups.has(category)) openGroups.delete(category);
-        else openGroups.add(category);
-        renderList();
-      };
-      section.appendChild(head);
-      const tagsDiv = document.createElement('div');
-      tagsDiv.className = 'tag-group-tags';
-      filteredTags.forEach((tag) => {
-        const btn = document.createElement('button');
-        btn.className = 'tag-button';
-        btn.textContent = `${tag.replace(/_/g,' ')} (${counts[tag] || 0})`;
-        // Only highlight if tag is in active set
-        if (active.has(tag)) btn.classList.add('active');
-        btn.onclick = () => {
-          toggleTag(tag);
-          renderList();
-        };
-        tagsDiv.appendChild(btn);
-      });
-      section.appendChild(tagsDiv);
-      groupsContainer.appendChild(section);
+    }
+    showSelectionLimitMessage();
+    return;
+  }
+  toggleTag(tag);
+  renderExplorer();
+}
+
+function formatTagLabel(tag) {
+  return tag.replace(/_/g, " ");
+}
+
+function renderCategories() {
+  if (!groupsContainerEl) return;
+  groupsContainerEl.innerHTML = "";
+  const active = getActiveTags();
+  const counts = getFilteredCounts(active);
+  const categories = getKinkTags();
+  let renderedAny = false;
+
+  categories.forEach(({ category, tags }) => {
+    const matchingTags = tags.filter((tag) => {
+      if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
+        return false;
+      }
+      const count = counts[tag] || 0;
+      return count > 0 || active.has(tag);
+    });
+
+    if (matchingTags.length === 0) return;
+
+    renderedAny = true;
+    const section = document.createElement("section");
+    section.className = "filter-category";
+    const shouldOpen =
+      searchValueLower !== "" || matchingTags.some((tag) => active.has(tag));
+    if (shouldOpen) section.classList.add("open");
+
+    const header = document.createElement("button");
+    header.type = "button";
+    header.className = "filter-category__header";
+    header.textContent = category;
+    header.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+    header.addEventListener("click", () => {
+      const nowOpen = !section.classList.contains("open");
+      section.classList.toggle("open", nowOpen);
+      header.setAttribute("aria-expanded", nowOpen ? "true" : "false");
+    });
+    section.appendChild(header);
+
+    const tagList = document.createElement("div");
+    tagList.className = "filter-category__tags";
+
+    matchingTags.forEach((tag) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-tag-button";
+      btn.setAttribute("data-tag", tag);
+      const count = counts[tag] || 0;
+      btn.innerHTML = `
+        <span class="filter-tag-button__label">${formatTagLabel(tag)}</span>
+        <span class="filter-tag-button__count">${count}</span>
+      `;
+      const isActive = active.has(tag);
+      btn.classList.toggle("is-active", isActive);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      btn.addEventListener("click", () => handleTagToggle(tag));
+      tagList.appendChild(btn);
+    });
+
+    section.appendChild(tagList);
+    groupsContainerEl.appendChild(section);
+  });
+
+  if (!renderedAny) {
+    const emptyState = document.createElement("p");
+    emptyState.className = "filter-empty-state";
+    emptyState.textContent = searchValueLower
+      ? "No tags match your search."
+      : "No tags available for the current filters.";
+    groupsContainerEl.appendChild(emptyState);
+  }
+}
+
+function renderExplorer() {
+  renderSelectedTags();
+  renderCategories();
+}
+
+function bindEscapeListener() {
+  if (typeof document === "undefined") return;
+  if (escapeListener) return;
+  escapeListener = (event) => {
+    if (event.key === "Escape") {
+      closeTagExplorer();
+    }
+  };
+  document.addEventListener("keydown", escapeListener);
+}
+
+function unbindEscapeListener() {
+  if (typeof document === "undefined") return;
+  if (!escapeListener) return;
+  document.removeEventListener("keydown", escapeListener);
+  escapeListener = null;
+}
+
+function openTagExplorer() {
+  if (!isInitialized) initTagExplorer();
+  if (!overlayEl || isOpen) return;
+  isOpen = true;
+  overlayEl.classList.add("open");
+  overlayEl.setAttribute("aria-hidden", "false");
+  document.body.classList.add("tag-filter-open");
+  if (panelEl) {
+    panelEl.setAttribute("tabindex", "-1");
+    panelEl.focus({ preventScroll: true });
+  }
+  if (searchInputEl) {
+    searchInputEl.value = searchValue;
+  }
+  if (nameInputEl) {
+    const currentName =
+      typeof getArtistNameFilter === "function" ? getArtistNameFilter() : "";
+    nameInputEl.value = currentName || "";
+  }
+  renderExplorer();
+  bindEscapeListener();
+  emitOverlayToggle(true);
+}
+
+function closeTagExplorer() {
+  if (!overlayEl || !isOpen) return;
+  isOpen = false;
+  overlayEl.classList.remove("open");
+  overlayEl.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("tag-filter-open");
+  unbindEscapeListener();
+  emitOverlayToggle(false);
+}
+
+function handleSearchInput(value) {
+  searchValue = value;
+  searchValueLower = value.trim().toLowerCase();
+  handleTagSearch(value);
+  renderCategories();
+}
+
+function initTagExplorer() {
+  if (isInitialized || typeof document === "undefined") return;
+  ensurePinnedSelectedContainer();
+
+  overlayEl = document.createElement("div");
+  overlayEl.className = "filter-overlay";
+  overlayEl.setAttribute("aria-hidden", "true");
+  overlayEl.innerHTML = `
+    <div class="filter-panel" id="tag-filter-panel" role="dialog" aria-modal="true" aria-label="Tag filters">
+      <div class="filter-panel__handle" aria-hidden="true"></div>
+      <header class="filter-panel__header">
+        <h2>Filters</h2>
+        <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
+      </header>
+      <div class="filter-panel__controls">
+        <div class="filter-panel__inputs">
+          <label class="visually-hidden" for="tag-filter-search">Search tags</label>
+          <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
+          <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
+          <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
+        </div>
+        <div class="filter-panel__actions">
+          <button type="button" class="filter-panel__clear">Clear all</button>
+        </div>
+        <p class="filter-panel__notice" aria-live="assertive"></p>
+      </div>
+      <div class="filter-panel__selected" aria-live="polite"></div>
+      <div class="filter-panel__groups"></div>
+    </div>
+  `;
+
+  document.body.appendChild(overlayEl);
+
+  panelEl = overlayEl.querySelector("#tag-filter-panel");
+  searchInputEl = overlayEl.querySelector("#tag-filter-search");
+  nameInputEl = overlayEl.querySelector("#tag-filter-name");
+  groupsContainerEl = overlayEl.querySelector(".filter-panel__groups");
+  overlaySelectedEl = overlayEl.querySelector(".filter-panel__selected");
+  limitNoticeEl = overlayEl.querySelector(".filter-panel__notice");
+  clearButtonEl = overlayEl.querySelector(".filter-panel__clear");
+
+  overlayEl.addEventListener("click", (event) => {
+    if (event.target === overlayEl) {
+      closeTagExplorer();
+    }
+  });
+
+  const closeBtn = overlayEl.querySelector(".filter-panel__close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => closeTagExplorer());
+  }
+
+  if (searchInputEl) {
+    searchInputEl.addEventListener("input", (event) => {
+      handleSearchInput(event.target.value || "");
     });
   }
 
-  renderList();
-  requestAnimationFrame(() => sidebar.classList.add('open'));
+  if (nameInputEl) {
+    nameInputEl.addEventListener("input", (event) => {
+      handleArtistNameFilter(event.target.value || "");
+    });
+  }
 
-  document.addEventListener('keydown', function esc(e) {
-    if (e.key === 'Escape') {
-      wrapper.remove();
-      document.removeEventListener('keydown', esc);
+  if (clearButtonEl) {
+    clearButtonEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      searchInputEl && (searchInputEl.value = "");
+      handleSearchInput("");
+      nameInputEl && (nameInputEl.value = "");
+      handleArtistNameFilter("");
+      clearAllTags();
+      renderExplorer();
+    });
+  }
+
+  document.addEventListener("tags:updated", () => {
+    renderSelectedTags();
+    if (isOpen) {
+      renderCategories();
+      if (nameInputEl) {
+        const currentName =
+          typeof getArtistNameFilter === "function"
+            ? getArtistNameFilter()
+            : "";
+        nameInputEl.value = currentName || "";
+      }
     }
   });
+
+  renderExplorer();
+  isInitialized = true;
 }
 
-export { openTagExplorer, setAllArtists, getFilteredCounts };
+export { openTagExplorer, initTagExplorer, setAllArtists, getFilteredCounts };
