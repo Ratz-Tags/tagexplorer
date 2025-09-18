@@ -13,6 +13,11 @@ let copiedSidebar = null;
 let allArtists = [];
 let copiedArtistsCache = null;
 let selectedPromptArtists = new Set();
+
+function sanitizeArtistName(name) {
+  return (name || "").replace(/_/g, " ").toLowerCase();
+}
+
 let suggestionModal = null;
 let suggestionOutputEl = null;
 let suggestionSummaryEl = null;
@@ -114,8 +119,12 @@ function showToast(message) {
  * Uses cache to avoid duplicate sidebar updates
  */
 function handleArtistCopy(artist, imgSrc) {
-  const artistTag = artist.artistName.replace(/_/g, " ");
-  const copyText = `artist:${artist.artistName}`;
+  const artistTag = sanitizeArtistName(artist?.artistName);
+  if (!artistTag) {
+    showToast("Failed to copy artist name");
+    return;
+  }
+  const copyText = `artist:${artistTag}`;
   // Always copy to clipboard, even if already in sidebar
   navigator.clipboard
     .writeText(copyText)
@@ -245,7 +254,7 @@ function updateCopiedSidebar() {
 
   copiedArtists.forEach((artistTag, idx) => {
     const artist = allArtists.find(
-      (a) => a.artistName && a.artistName.replace(/_/g, " ") === artistTag
+      (a) => a?.artistName && sanitizeArtistName(a.artistName) === artistTag
     );
     const row = document.createElement("div");
     row.className = "copied-artist-row";
@@ -390,7 +399,7 @@ function getSelectedArtistsForPrompts() {
     .map((name) =>
       allArtists.find(
         (artist) =>
-          artist?.artistName && artist.artistName.replace(/_/g, " ") === name
+          artist?.artistName && sanitizeArtistName(artist.artistName) === name
       )
     )
     .filter(Boolean);
@@ -673,8 +682,16 @@ function setAllArtists(artists) {
  * Sets the copied artists collection
  */
 function setCopiedArtists(artists) {
-  copiedArtists = artists;
-  selectedPromptArtists = new Set(artists);
+  const sanitized = new Set();
+  if (artists && typeof artists[Symbol.iterator] === "function") {
+    for (const name of artists) {
+      const clean = sanitizeArtistName(name);
+      if (clean) sanitized.add(clean);
+    }
+  }
+  copiedArtists = sanitized;
+  copiedArtistsCache = new Set(copiedArtists);
+  selectedPromptArtists = new Set(copiedArtists);
 }
 
 /**
