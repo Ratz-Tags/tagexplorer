@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="The TagExplorer rework roadmap — IA foundations, foldable UX, humiliation polish." />
+    <title>About · TagExplorer</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;600&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <script type="module" src="../../src/js/pages/about.js" defer></script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <div class="relative isolate flex-1 overflow-hidden">
+      <div class="absolute inset-0 -z-20 grid-outline opacity-40"></div>
+      <header class="sticky top-0 z-30 border-b border-white/5 bg-base/90 backdrop-blur-xl">
+        <div class="mx-auto flex w-full max-w-4xl items-center justify-between px-6 py-4">
+          <a class="font-display text-lg uppercase tracking-[0.6em] text-slate-200" href="../">TagExplorer</a>
+          <nav class="hidden items-center gap-8 text-xs uppercase tracking-[0.45em] text-slate-300 md:flex">
+            <a class="hover:text-white" href="../gallery/">Gallery</a>
+            <a class="hover:text-white" href="./">About</a>
+          </nav>
+          <span class="text-xs uppercase tracking-[0.4em] text-slate-400" data-version-pill>Stage 1 · Foundations</span>
+        </div>
+      </header>
+
+      <main class="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-10 px-6 py-16">
+        <section class="glass-panel px-6 py-10 sm:px-10">
+          <header class="space-y-3">
+            <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-cyan/70">Stage 1 / Information Architecture</p>
+            <h1 class="font-display text-3xl text-white sm:text-4xl">We just rebuilt the spine.</h1>
+            <p class="text-sm text-slate-300 sm:text-base">
+              The project now lives inside a `/public`, `/data`, `/src` hierarchy with Tailwind tokens, Motion One scaffolding, and
+              JSON contracts that preload into every page before you scroll.
+            </p>
+          </header>
+          <dl class="mt-8 grid gap-6 text-sm text-slate-200 sm:grid-cols-2">
+            <div class="rounded-2xl border border-white/10 bg-panel/40 p-4">
+              <dt class="font-display text-xs uppercase tracking-[0.45em] text-accent-pink/70">Artists cached</dt>
+              <dd class="font-display text-2xl text-white" data-about-artists>—</dd>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-panel/40 p-4">
+              <dt class="font-display text-xs uppercase tracking-[0.45em] text-accent-cyan/70">Tags defined</dt>
+              <dd class="font-display text-2xl text-white" data-about-tags>—</dd>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-panel/40 p-4 sm:col-span-2">
+              <dt class="font-display text-xs uppercase tracking-[0.45em] text-slate-400">Whisper events</dt>
+              <dd class="font-display text-2xl text-white" data-about-tts>—</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="glass-panel px-6 py-10 sm:px-10" data-roadmap>
+          <h2 class="font-display text-2xl text-white">Three stage rollout</h2>
+          <ol class="mt-6 space-y-6 text-sm text-slate-200">
+            <li class="rounded-2xl border border-accent-pink/30 bg-accent-pink/10 p-4 shadow-neon">
+              <h3 class="font-display text-xs uppercase tracking-[0.45em] text-accent-pink">Stage 1 — Now</h3>
+              <p>Information architecture, data hydration, Tailwind + Motion scaffolding, persisted humiliation + TTS preferences.</p>
+            </li>
+            <li class="rounded-2xl border border-white/10 bg-panel/30 p-4">
+              <h3 class="font-display text-xs uppercase tracking-[0.45em] text-slate-300">Stage 2 — Foldable UX</h3>
+              <p>Responsive cover/inner layouts, filter virtualization, Azure whisper integration, animated heatmaps.</p>
+            </li>
+            <li class="rounded-2xl border border-white/10 bg-panel/30 p-4">
+              <h3 class="font-display text-xs uppercase tracking-[0.45em] text-slate-300">Stage 3 — Humiliation polish</h3>
+              <p>“Caught.” overlay, tooltip teases, performance budgets, deployment checklist.</p>
+            </li>
+          </ol>
+        </section>
+
+        <section class="glass-panel px-6 py-10 sm:px-10" data-acknowledgements>
+          <h2 class="font-display text-2xl text-white">What to expect next</h2>
+          <p class="mt-4 text-sm text-slate-300">
+            Motion One hooks are live but restrained until Stage 2. Azure whisper TTS keys load from `/public/assets/config` and will
+            power dynamic SSML templates once we wire up the integration layer.
+          </p>
+          <p class="mt-4 text-sm text-slate-300">
+            All settings persist in `localStorage` under a versioned key so we can evolve without nuking preferences.
+          </p>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

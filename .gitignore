@@ -1,5 +1,7 @@
 # Ignore local Azure TTS secrets
 azure-tts.local.js
+.npmrc
+node_modules/
 .github/instructions/*
 .github/copilot-instructions.md
 .github/prompts/promptsfile.prompt.md

@@ -1,51 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-const allTags = ['t1', 't2', 't3'];
+const storageStore = new Map();
+const localStorageStub = {
+  getItem(key) {
+    return storageStore.has(key) ? storageStore.get(key) : null;
+  },
+  setItem(key, value) {
+    storageStore.set(key, String(value));
+  },
+  removeItem(key) {
+    storageStore.delete(key);
+  },
+  clear() {
+    storageStore.clear();
+  }
+};
 
-const artists = [
-  { artistName: 'A1', kinkTags: ['t1', 't2'] },
-  { artistName: 'A2', kinkTags: ['t1'] },
-  { artistName: 'A3', kinkTags: ['t2'] },
-  { artistName: 'A4', kinkTags: ['t3'] },
-];
+global.window = { localStorage: localStorageStub };
+global.localStorage = localStorageStub;
 
-test('tag toggling updates counts and visibility', async () => {
-  global.navigator = { vibrate: () => {} };
-  global.localStorage = { getItem: () => null, setItem: () => {} };
-  const dummyEl = { style: {}, appendChild: () => {}, setAttribute: () => {}, addEventListener: () => {}, querySelector: () => null };
-  global.document = {
-    getElementById: () => ({ ...dummyEl }),
-    createElement: () => ({ ...dummyEl }),
-    querySelector: () => ({ ...dummyEl }),
-    body: { appendChild: () => {} },
-  };
-  global.window = { addEventListener: () => {}, removeEventListener: () => {} };
+const moduleUrl = new URL('../src/js/core/preferences.js', import.meta.url);
 
-  const { setAllArtists, getFilteredCounts } = await import('../modules/tag-explorer.js');
-  const { toggleTag, getActiveTags } = await import('../modules/tags.js');
+test('preference subscribers receive updates and respect rememberFilters', async () => {
+  storageStore.clear();
+  const { subscribeToPreferences, updatePreferences, getPreferences, resetPreferences } = await import(moduleUrl);
+  resetPreferences();
 
-  setAllArtists(artists);
+  const notifications = [];
+  const unsubscribe = subscribeToPreferences((prefs) => {
+    notifications.push(prefs);
+  });
 
-  let counts = getFilteredCounts(getActiveTags());
-  assert.equal(counts.t2, 2);
-  assert.equal(counts.t3, 1);
+  updatePreferences({ filters: ['femdom'] });
+  updatePreferences({ rememberFilters: false });
+  unsubscribe();
+  updatePreferences({ filters: ['pet_play'] });
 
-  toggleTag('t1');
-  counts = getFilteredCounts(getActiveTags());
-  assert.equal(counts.t2, 1);
-  assert.ok(!('t3' in counts));
-
-  toggleTag('t1');
-  counts = getFilteredCounts(getActiveTags());
-  assert.equal(counts.t2, 2);
-  assert.equal(counts.t3, 1);
-
-  toggleTag('t1');
-  toggleTag('t3');
-  counts = getFilteredCounts(getActiveTags());
-  const active = getActiveTags();
-  const visibleTags = allTags.filter(t => counts[t] || active.has(t));
-  assert.ok(visibleTags.includes('t3'));
-  assert.ok(!visibleTags.includes('t2'));
+  assert.ok(notifications.length >= 3, 'subscriber received initial + update notifications');
+  const latest = getPreferences();
+  assert.deepEqual(latest.filters, [], 'filters cleared when rememberFilters is disabled');
+  const notificationFilters = notifications.at(-2)?.filters ?? [];
+  assert.deepEqual(notificationFilters, ['femdom'], 'subscriber saw intermediate filter state');
 });

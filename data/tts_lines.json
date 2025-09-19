@@ -1,0 +1,25 @@
+{
+  "tag_add": [
+    "You really need that tag?",
+    "Getting specific, aren't you?"
+  ],
+  "too_many_tags": [
+    "Obvious. Desperate.",
+    "Stacking them up, hm?"
+  ],
+  "artist_open": [
+    "This is what you came for.",
+    "Finally found them?"
+  ],
+  "idle": [
+    "Still here.",
+    "Lingering..."
+  ],
+  "clear": [
+    "Clean slate? Guilty conscience."
+  ],
+  "back": [
+    "You'll be back."
+  ]
+}
+

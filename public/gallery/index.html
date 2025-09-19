@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Filter artists by humiliating tags with persistent settings tuned for the Galaxy Z Fold4." />
+    <title>Gallery · TagExplorer</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;600&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <script type="module" src="../../src/js/pages/gallery.js" defer></script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <div class="relative isolate flex-1 overflow-hidden">
+      <div class="absolute inset-0 -z-20 grid-outline opacity-50"></div>
+      <header class="sticky top-0 z-30 border-b border-white/5 bg-base/90 backdrop-blur-xl">
+        <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+          <a class="font-display text-lg uppercase tracking-[0.6em] text-slate-200" href="../">TagExplorer</a>
+          <nav class="hidden items-center gap-8 text-xs uppercase tracking-[0.45em] text-slate-300 md:flex">
+            <a class="hover:text-white" href="./">Gallery</a>
+            <a class="hover:text-white" href="../about/">About</a>
+          </nav>
+          <div class="flex items-center gap-3 text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">
+            <span data-filter-count>0 filters armed</span>
+            <button class="rounded-full border border-white/10 px-3 py-1 hover:border-accent-cyan/50 hover:text-white" data-clear-filters>
+              Reset
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pb-24 pt-6 fold-inner:flex-row fold-inner:gap-10 fold-inner:px-8">
+        <aside class="glass-panel order-last flex flex-col gap-4 px-5 py-6 fold-inner:order-first fold-inner:max-w-xs" data-filter-panel>
+          <header class="space-y-1">
+            <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-cyan/70">Tag stack</p>
+            <h1 class="font-display text-xl text-white">Select what exposes you</h1>
+          </header>
+          <p class="text-xs leading-5 text-slate-300">
+            Your selections persist in localStorage. We preload them so the gallery hydrates instantly with your favorite shames.
+          </p>
+          <div class="flex flex-wrap gap-2" data-active-filters></div>
+          <div class="neon-divider"></div>
+          <div class="grid grid-cols-2 gap-2 text-xs" data-tag-options></div>
+        </aside>
+
+        <section class="glass-panel flex-1 overflow-hidden px-5 py-6" data-gallery>
+          <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-pink/70">Gallery</p>
+              <h2 class="font-display text-2xl text-white">Curated humiliation roster</h2>
+            </div>
+            <p class="text-xs uppercase tracking-[0.35em] text-slate-400" data-gallery-summary></p>
+          </header>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-gallery-grid></div>
+          <div class="mt-10 hidden flex-col items-center gap-4 text-center text-xs text-slate-400" data-gallery-empty>
+            <p>No matches — too picky already?</p>
+            <button class="cta-button" data-clear-filters-secondary>Clear your shame stack</button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="bottom-safe-area fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-base/95 py-4 text-[0.6rem] uppercase tracking-[0.4em] text-slate-300 fold-inner:hidden">
+        <a class="flex flex-col items-center gap-1" href="../">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          Home
+        </a>
+        <button class="flex flex-col items-center gap-1" data-bottom-open>
+          <span class="h-10 w-10 rounded-full border border-accent-pink/40 bg-accent-pink/10" aria-hidden="true"></span>
+          Filters
+        </button>
+        <button class="flex flex-col items-center gap-1" data-bottom-tts>
+          <span class="h-10 w-10 rounded-full border border-accent-cyan/40 bg-accent-cyan/10" aria-hidden="true"></span>
+          Whispers
+        </button>
+        <a class="flex flex-col items-center gap-1" href="../about/">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          About
+        </a>
+      </nav>
+    </div>
+  </body>
+</html>
