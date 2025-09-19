@@ -1,5 +1,6 @@
 import { initializeApp } from '../core/app.js';
 import { safeAnimate, stagger } from '../core/motion.js';
+import { watchFoldState } from '../core/fold.js';
 
 const HUMILIATION_LABELS = ['Muted', 'Teasing', 'Default', 'Cruel'];
 const TTS_LABELS = ['Muted', 'Soft', 'Steady', 'Persistent'];
@@ -18,8 +19,11 @@ const ttsLabel = document.querySelector('[data-tts-label]');
 const humiliationPill = document.querySelector('[data-humiliation-pill]');
 const humiliationLevelText = document.querySelector('[data-humiliation-level]');
 
+let unwatchFold = null;
+
 initializeApp('landing', {
   onReady({ dataset, preferences, updatePreferences }) {
+    unwatchFold = watchFoldState(() => {});
     revealHero();
     renderStats(dataset);
     syncForm(preferences);
@@ -144,4 +148,6 @@ function setupScrollButtons() {
     });
   });
 }
-
+window.addEventListener('beforeunload', () => {
+  unwatchFold?.();
+});

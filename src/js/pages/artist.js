@@ -1,6 +1,8 @@
 import { initializeApp } from '../core/app.js';
 import { safeAnimate } from '../core/motion.js';
 import { parseSearchParams } from '../core/utils.js';
+import { createWhisperController } from '../core/tts.js';
+import { watchFoldState } from '../core/fold.js';
 
 const params = parseSearchParams();
 const artistId = params.get('id');
@@ -12,6 +14,7 @@ const summaryEl = document.querySelector('[data-artist-summary]');
 const tagsEl = document.querySelector('[data-artist-tags]');
 const linksEl = document.querySelector('[data-artist-links]');
 const whisperEl = document.querySelector('[data-artist-whisper]');
+const backLink = document.querySelector('[data-artist-back]');
 
 const WHISPER_COPY = [
   'Whispers are silenced. For now.',
@@ -20,8 +23,13 @@ const WHISPER_COPY = [
   'Relentless whispers will interrupt the moment you linger.'
 ];
 
+let whisperController = null;
+let unwatchFold = null;
+
 initializeApp('artist', {
   onReady({ dataset, preferences }) {
+    unwatchFold = watchFoldState(() => {});
+    whisperController = createWhisperController({ dataset, preferences });
     const artist = findArtist(dataset.artists, artistId);
     if (!artist) {
       renderMissing();
@@ -30,9 +38,12 @@ initializeApp('artist', {
     renderArtist(artist, dataset.tags);
     updateWhisper(preferences);
     animateCard();
+    whisperController?.speak('artist_open');
+    bindBackLink();
   },
   onPreferencesChange({ preferences }) {
     updateWhisper(preferences);
+    whisperController?.updatePreferences(preferences);
   }
 });
 
@@ -108,6 +119,15 @@ function updateWhisper(preferences) {
   whisperEl.textContent = WHISPER_COPY[intensity] ?? WHISPER_COPY[2];
 }
 
+function bindBackLink() {
+  if (!backLink) {
+    return;
+  }
+  backLink.addEventListener('click', () => {
+    whisperController?.speak('back');
+  });
+}
+
 function renderMissing() {
   if (!card) {
     return;
@@ -133,3 +153,6 @@ function animateCard() {
   safeAnimate(card, { opacity: [0, 1], y: [24, 0] }, { duration: 0.8 });
 }
 
+window.addEventListener('beforeunload', () => {
+  unwatchFold?.();
+});

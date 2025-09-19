@@ -35,8 +35,18 @@
       </header>
 
       <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pb-24 pt-6 fold-inner:flex-row fold-inner:gap-10 fold-inner:px-8">
-        <aside class="glass-panel order-last flex flex-col gap-4 px-5 py-6 fold-inner:order-first fold-inner:max-w-xs" data-filter-panel>
-          <header class="space-y-1">
+        <aside
+          class="glass-panel order-last flex flex-col gap-4 px-5 py-6 fold-inner:order-first fold-inner:max-w-xs"
+          data-filter-panel
+        >
+          <button
+            type="button"
+            class="absolute right-4 top-4 hidden text-[0.6rem] uppercase tracking-[0.35em] text-slate-400 transition hover:text-white fold-cover:flex"
+            data-sheet-dismiss="filters"
+          >
+            Close
+          </button>
+          <header class="space-y-1 pr-10">
             <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-cyan/70">Tag stack</p>
             <h1 class="font-display text-xl text-white">Select what exposes you</h1>
           </header>
@@ -64,6 +74,54 @@
         </section>
       </main>
 
+      <div class="sheet-backdrop" data-sheet-backdrop hidden></div>
+
+      <div class="bottom-sheet" data-settings-sheet>
+        <div class="bottom-sheet__handle" aria-hidden="true"></div>
+        <header class="flex items-start justify-between">
+          <div>
+            <p class="font-display text-[0.55rem] uppercase tracking-[0.5em] text-accent-cyan/70">Fold4 tuning</p>
+            <h2 class="font-display text-xl text-white">Whispers &amp; motion</h2>
+          </div>
+          <button
+            type="button"
+            class="text-[0.6rem] uppercase tracking-[0.35em] text-slate-400 hover:text-white"
+            data-sheet-dismiss="settings"
+          >
+            Close
+          </button>
+        </header>
+        <p class="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400" data-tts-status>Initializing Azure whisper voices…</p>
+        <label class="flex flex-col gap-3 text-xs uppercase tracking-[0.35em] text-slate-200">
+          Whisper intensity
+          <input type="range" min="0" max="3" step="1" data-sheet-tts class="accent-accent-cyan" />
+          <span class="text-[0.55rem] text-slate-400" data-sheet-tts-label>Balanced</span>
+        </label>
+        <div class="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.35em] text-slate-200">
+          <span>Mute whispers</span>
+          <button
+            type="button"
+            class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
+            data-sheet-mute
+            aria-pressed="false"
+          >
+            Off
+          </button>
+        </div>
+        <div class="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.35em] text-slate-200">
+          <span>Reduce motion</span>
+          <button
+            type="button"
+            class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
+            data-sheet-motion
+            aria-pressed="false"
+          >
+            Off
+          </button>
+        </div>
+        <a class="text-[0.6rem] uppercase tracking-[0.35em] text-accent-cyan hover:text-white" href="../about/">Read the roadmap →</a>
+      </div>
+
       <nav class="bottom-safe-area fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-base/95 py-4 text-[0.6rem] uppercase tracking-[0.4em] text-slate-300 fold-inner:hidden">
         <a class="flex flex-col items-center gap-1" href="../">
           <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
@@ -73,14 +131,18 @@
           <span class="h-10 w-10 rounded-full border border-accent-pink/40 bg-accent-pink/10" aria-hidden="true"></span>
           Filters
         </button>
-        <button class="flex flex-col items-center gap-1" data-bottom-tts>
+        <button class="flex flex-col items-center gap-1" data-bottom-settings>
           <span class="h-10 w-10 rounded-full border border-accent-cyan/40 bg-accent-cyan/10" aria-hidden="true"></span>
-          Whispers
+          Settings
         </button>
-        <a class="flex flex-col items-center gap-1" href="../about/">
+        <button class="flex flex-col items-center gap-1" data-bottom-mute aria-pressed="false">
           <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
-          About
-        </a>
+          Mute
+        </button>
+        <button class="flex flex-col items-center gap-1" data-bottom-motion aria-pressed="false">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          Motion
+        </button>
       </nav>
     </div>
   </body>
