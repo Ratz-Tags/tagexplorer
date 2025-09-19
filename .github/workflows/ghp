@@ -1,7 +1,7 @@
 name: Deploy static site
 on:
   push:
-    branches: [main]
+    branches: [Working-Branch]
 
 jobs:
   deploy:
