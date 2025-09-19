@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Filter artists by humiliating tags with persistent settings tuned for the Galaxy Z Fold4." />
+    <title>Gallery · TagExplorer</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;600&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <script type="module" src="../../src/js/pages/gallery.js" defer></script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <div class="relative isolate flex-1 overflow-hidden">
+      <div class="absolute inset-0 -z-20 grid-outline opacity-50"></div>
+      <header class="sticky top-0 z-30 border-b border-white/5 bg-base/90 backdrop-blur-xl">
+        <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+          <a class="font-display text-lg uppercase tracking-[0.6em] text-slate-200" href="../">TagExplorer</a>
+          <nav class="hidden items-center gap-8 text-xs uppercase tracking-[0.45em] text-slate-300 md:flex">
+            <a class="hover:text-white" href="./">Gallery</a>
+            <a class="hover:text-white" href="../about/">About</a>
+          </nav>
+          <div class="flex items-center gap-3 text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">
+            <span data-filter-count>0 filters armed</span>
+            <button
+              class="rounded-full border border-white/10 px-3 py-1 hover:border-accent-cyan/50 hover:text-white"
+              data-clear-filters
+              data-tooltip="reset"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 pb-24 pt-6 fold-inner:flex-row fold-inner:gap-10 fold-inner:px-8">
+        <aside
+          class="glass-panel order-last flex flex-col gap-4 px-5 py-6 fold-inner:order-first fold-inner:max-w-xs"
+          data-filter-panel
+        >
+          <button
+            type="button"
+            class="absolute right-4 top-4 hidden text-[0.6rem] uppercase tracking-[0.35em] text-slate-400 transition hover:text-white fold-cover:flex"
+            data-sheet-dismiss="filters"
+          >
+            Close
+          </button>
+          <header class="space-y-1 pr-10">
+            <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-cyan/70">Tag stack</p>
+            <h1 class="font-display text-xl text-white">Select what exposes you</h1>
+          </header>
+          <p class="text-xs leading-5 text-slate-300">
+            Your selections persist in localStorage. We preload them so the gallery hydrates instantly with your favorite shames.
+          </p>
+          <div class="flex flex-wrap gap-2" data-active-filters></div>
+          <div class="neon-divider"></div>
+          <div class="grid grid-cols-2 gap-2 text-xs" data-tag-options></div>
+        </aside>
+
+        <section class="glass-panel flex-1 overflow-hidden px-5 py-6" data-gallery>
+          <header class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-pink/70">Gallery</p>
+              <h2 class="font-display text-2xl text-white">Curated humiliation roster</h2>
+            </div>
+            <p class="text-xs uppercase tracking-[0.35em] text-slate-400" data-gallery-summary></p>
+          </header>
+          <div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-gallery-grid></div>
+          <div class="mt-10 hidden flex-col items-center gap-4 text-center text-xs text-slate-400" data-gallery-empty>
+            <p>No matches — too picky already?</p>
+            <button class="cta-button" data-clear-filters-secondary>Clear your shame stack</button>
+          </div>
+        </section>
+      </main>
+
+      <div class="sheet-backdrop" data-sheet-backdrop hidden></div>
+
+      <div class="caught-overlay" data-caught-overlay hidden aria-hidden="true">
+        <div
+          class="caught-overlay__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="caught-title"
+          aria-describedby="caught-copy"
+        >
+          <p id="caught-title" class="caught-overlay__label">Caught.</p>
+          <p id="caught-copy" class="caught-overlay__copy" data-caught-copy>
+            Already casing the filters? We log every indulgence.
+          </p>
+          <button type="button" class="caught-overlay__dismiss" data-caught-dismiss>I'll behave</button>
+        </div>
+      </div>
+
+      <div class="bottom-sheet" data-settings-sheet>
+        <div class="bottom-sheet__handle" aria-hidden="true"></div>
+        <header class="flex items-start justify-between">
+          <div>
+            <p class="font-display text-[0.55rem] uppercase tracking-[0.5em] text-accent-cyan/70">Fold4 tuning</p>
+            <h2 class="font-display text-xl text-white">Whispers &amp; motion</h2>
+          </div>
+          <button
+            type="button"
+            class="text-[0.6rem] uppercase tracking-[0.35em] text-slate-400 hover:text-white"
+            data-sheet-dismiss="settings"
+          >
+            Close
+          </button>
+        </header>
+        <p class="text-[0.65rem] uppercase tracking-[0.35em] text-slate-400" data-tts-status>Initializing Azure whisper voices…</p>
+        <label class="flex flex-col gap-3 text-xs uppercase tracking-[0.35em] text-slate-200">
+          Whisper intensity
+          <input type="range" min="0" max="3" step="1" data-sheet-tts class="accent-accent-cyan" />
+          <span class="text-[0.55rem] text-slate-400" data-sheet-tts-label>Balanced</span>
+        </label>
+        <div class="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.35em] text-slate-200">
+          <span>Mute whispers</span>
+          <button
+            type="button"
+            class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
+            data-sheet-mute
+            aria-pressed="false"
+            data-tooltip="mute"
+          >
+            Off
+          </button>
+        </div>
+        <div class="flex items-center justify-between text-[0.65rem] uppercase tracking-[0.35em] text-slate-200">
+          <span>Reduce motion</span>
+          <button
+            type="button"
+            class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
+            data-sheet-motion
+            aria-pressed="false"
+            data-tooltip="motion"
+          >
+            Off
+          </button>
+        </div>
+        <a class="text-[0.6rem] uppercase tracking-[0.35em] text-accent-cyan hover:text-white" href="../about/">Read the roadmap →</a>
+      </div>
+
+      <nav class="bottom-safe-area fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-base/95 py-4 text-[0.6rem] uppercase tracking-[0.4em] text-slate-300 fold-inner:hidden">
+        <a class="flex flex-col items-center gap-1" href="../" data-tooltip="navHome">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          Home
+        </a>
+        <button class="flex flex-col items-center gap-1" data-bottom-open data-tooltip="filters">
+          <span class="h-10 w-10 rounded-full border border-accent-pink/40 bg-accent-pink/10" aria-hidden="true"></span>
+          Filters
+        </button>
+        <button class="flex flex-col items-center gap-1" data-bottom-settings data-tooltip="settings">
+          <span class="h-10 w-10 rounded-full border border-accent-cyan/40 bg-accent-cyan/10" aria-hidden="true"></span>
+          Settings
+        </button>
+        <button class="flex flex-col items-center gap-1" data-bottom-mute aria-pressed="false" data-tooltip="navMute">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          Mute
+        </button>
+        <button class="flex flex-col items-center gap-1" data-bottom-motion aria-pressed="false" data-tooltip="motion">
+          <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
+          Motion
+        </button>
+      </nav>
+    </div>
+  </body>
+</html>
