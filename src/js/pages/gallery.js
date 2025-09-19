@@ -169,6 +169,7 @@ let idleTimer = null;
 let activeSheet = null;
 let unsubscribeFold = null;
 
+
 initializeApp('gallery', {
   onReady({ dataset, preferences, updatePreferences }) {
     datasetRef = dataset;
@@ -437,7 +438,6 @@ function renderGallery(filters) {
   const filteredArtists = normalizedFilters.length
     ? artists.filter((artist) => normalizedFilters.every((tag) => artist.tags.includes(tag)))
     : artists;
-
   if (!filteredArtists.length) {
     galleryEmpty?.classList.remove('hidden');
     galleryVirtualizer?.clear();

@@ -29,7 +29,6 @@
   body.sheet-open {
     @apply overflow-hidden;
   }
-
   a {
     @apply text-accent-cyan transition-colors duration-300 hover:text-accent-pink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-pink;
   }

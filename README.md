@@ -9,6 +9,7 @@ TagExplorer is now a Galaxy Z Fold4–first, humiliation-layered artist gallery 
 - **Azure whisper integration**: runtime voice discovery (whisper-only), SSML synthesis, caption overlays, and intensity-aware cooldowns with mute/motion toggles persisted in `localStorage`.
 - **Artist card motion polish**: pointer-driven tilt/glow, content-visibility hints for off-screen cards, and bottom navigation controls tuned for one-handed Fold4 reach.
 
+
 ## Directory layout
 
 ```
@@ -39,8 +40,8 @@ npm install          # install tailwind, motion, and tooling
 npm run dev:css      # watch & rebuild Tailwind output to public/assets/styles.css
 npm run build:css    # on-demand production build of the Tailwind bundle
 ```
-
 Serve the `public/` directory (or the repository root) with any static HTTP server to preview the pages. Each HTML file loads its ES module entry point directly (`type="module"`), so no bundler is required during Stage 2.
+
 
 ## Data contracts
 

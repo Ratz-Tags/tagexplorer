@@ -7,7 +7,6 @@ const artistsCountEl = document.querySelector('[data-about-artists]');
 const tagsCountEl = document.querySelector('[data-about-tags]');
 const ttsCountEl = document.querySelector('[data-about-tts]');
 const roadmap = document.querySelector('[data-roadmap]');
-
 let unwatchFold = null;
 
 initializeApp('about', {
@@ -52,8 +51,6 @@ function animateSections() {
     safeAnimate(items, { opacity: [0, 1], x: [-12, 0] }, { delay: stagger(0.05), duration: 0.5 });
   }
 }
-
 window.addEventListener('beforeunload', () => {
   unwatchFold?.();
 });
-
