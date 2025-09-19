@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Artist detail view with humiliating tag context and Azure whisper cadence notes." />
+    <title>Artist Detail · TagExplorer</title>
+    <link rel="icon" type="image/png" href="../assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Orbitron:wght@500;600&family=Rajdhani:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../assets/styles.css" />
+    <script type="module" src="../../src/js/pages/artist.js" defer></script>
+  </head>
+  <body class="flex min-h-screen flex-col">
+    <div class="relative isolate flex-1 overflow-hidden">
+      <div class="absolute inset-0 -z-20 grid-outline opacity-50"></div>
+      <header class="sticky top-0 z-30 border-b border-white/5 bg-base/90 backdrop-blur-xl">
+        <div class="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
+          <a class="font-display text-lg uppercase tracking-[0.6em] text-slate-200" href="../">TagExplorer</a>
+          <nav class="hidden items-center gap-8 text-xs uppercase tracking-[0.45em] text-slate-300 md:flex">
+            <a class="hover:text-white" href="../gallery/">Gallery</a>
+            <a class="hover:text-white" href="../about/">About</a>
+          </nav>
+          <a class="text-xs uppercase tracking-[0.4em] text-accent-cyan hover:text-white" href="../gallery/" data-artist-back>Back to filters</a>
+        </div>
+      </header>
+
+      <main class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12 sm:py-16">
+        <article class="glass-panel grid gap-10 px-6 py-10 sm:px-10 fold-inner:grid-cols-[2fr,3fr]" data-artist-card>
+          <figure class="relative overflow-hidden rounded-3xl border border-white/10 bg-panel/40">
+            <img class="h-full w-full object-cover" src="../assets/fallback.jpg" alt="Artist preview" data-artist-preview />
+            <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-xs uppercase tracking-[0.4em] text-slate-200">
+              Azure whispers cue harsher lines the longer you linger.
+            </figcaption>
+          </figure>
+          <div class="flex flex-col gap-6">
+            <header class="space-y-2">
+              <p class="font-display text-xs uppercase tracking-[0.7em] text-accent-cyan/70">Artist dossier</p>
+              <h1 class="font-display text-4xl text-white" data-artist-name>Loading…</h1>
+              <p class="text-sm text-slate-300" data-artist-summary>
+                Pulling their humiliating highlights straight from the persisted gallery dataset.
+              </p>
+            </header>
+            <section class="space-y-3">
+              <h2 class="font-display text-sm uppercase tracking-[0.45em] text-slate-200">Core tags</h2>
+              <ul class="flex flex-wrap gap-2 text-xs" data-artist-tags></ul>
+            </section>
+            <section class="space-y-3">
+              <h2 class="font-display text-sm uppercase tracking-[0.45em] text-slate-200">External links</h2>
+              <ul class="flex flex-col gap-2 text-xs" data-artist-links></ul>
+            </section>
+            <section class="space-y-3">
+              <h2 class="font-display text-sm uppercase tracking-[0.45em] text-slate-200">Whisper cadence</h2>
+              <p class="text-xs text-slate-400" data-artist-whisper>
+                Azure whisper events calibrate to this artist when you view them inside the gallery — persisted preferences control the sting.
+              </p>
+            </section>
+          </div>
+        </article>
+        <footer class="text-center text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">
+          LocalStorage keeps your shameful visit logged for the session. Try folding and unfolding; we remember.
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>
