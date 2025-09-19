@@ -1,103 +1,587 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <title>Artist Explorer</title>
-  <meta name="description" content="Discover NSFW artists on Danbooru with kink tag filtering">
-  <link rel="stylesheet" href="style.css">
+  <title>TagExplorer · Artist Gallery</title>
+  <meta name="description" content="Discover NSFW artists on Danbooru with whispered humiliation-driven tag filters.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link rel="icon" type="image/png" href="favicon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <script>
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            night: '#0c0b16',
+            panel: '#161525',
+            glow: '#66f3ff',
+            blush: '#ff64d4',
+            ember: '#ff8257',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            display: ['Rajdhani', 'system-ui', 'sans-serif'],
+          },
+          boxShadow: {
+            neon: '0 25px 60px -15px rgba(102, 243, 255, 0.35)',
+            pulse: '0 0 0 2px rgba(255, 100, 212, 0.25)',
+          },
+          screens: {
+            'fold-cover': {'raw': '(max-width: 520px) and (orientation: portrait)'},
+            'fold-inner': {'raw': '(min-width: 980px) and (min-height: 980px)'},
+          },
+          backdropBlur: {
+            glass: '18px',
+          },
+          transitionTimingFunction: {
+            kink: 'cubic-bezier(.4,-0.2,.2,1.2)',
+          },
+        },
+      },
+    };
+  </script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <style type="text/tailwindcss">
+    @layer base {
+      :root {
+        color-scheme: dark;
+      }
+      html {
+        @apply bg-night text-slate-100 min-h-screen;
+      }
+      body {
+        @apply min-h-screen bg-night text-slate-100 font-sans antialiased;
+      }
+      body.fem-theme {
+        @apply bg-night text-slate-100;
+      }
+      body.incognito-theme {
+        @apply bg-black text-slate-200;
+      }
+      body.incognito-theme .background-lattice {
+        @apply opacity-60 filter grayscale;
+      }
+      ::selection {
+        @apply bg-blush/60 text-white;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(12, 11, 22, 0.6);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(102, 243, 255, 0.45);
+        border-radius: 9999px;
+      }
+    }
+
+    @layer components {
+      .background-lattice {
+        @apply fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,100,212,0.22),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(102,243,255,0.18),transparent_60%),radial-gradient(circle_at_20%_80%,rgba(255,130,87,0.16),transparent_55%)] bg-night opacity-95 transition-opacity duration-700;
+      }
+      .background-lattice::after {
+        content: '';
+        @apply absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_32%,rgba(255,255,255,0.04)_64%,rgba(255,255,255,0)_100%)] opacity-60 mix-blend-screen pointer-events-none;
+      }
+      .top-surface {
+        @apply relative overflow-hidden border-b border-white/5 bg-panel/80 backdrop-blur-glass;
+      }
+      .surface-divider {
+        @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+      }
+      .brand-chip {
+        @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-300;
+      }
+      .control-btn {
+        @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-200 transition-all duration-300 ease-kink hover:-translate-y-0.5 hover:border-glow hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
+      }
+      .bar-btn {
+        @apply control-btn px-5 py-2 text-[0.58rem] tracking-[0.5em] text-slate-300 hover:text-white hover:border-blush;
+      }
+      .glass-panel {
+        @apply relative rounded-[2rem] border border-white/10 bg-panel/70 p-6 backdrop-blur-glass shadow-neon;
+      }
+      .field-block {
+        @apply flex w-full flex-col gap-2 text-xs uppercase tracking-[0.35em] text-slate-400;
+      }
+      .field-label {
+        @apply text-[0.6rem] font-semibold;
+      }
+      .field-input {
+        @apply w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-slate-100 placeholder:text-slate-500 focus:border-glow focus:outline-none focus:ring-2 focus:ring-glow/40;
+      }
+      .selected-tags-bar {
+        @apply flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 backdrop-blur-sm transition-all duration-300;
+      }
+      .selected-tags-bar.is-empty {
+        @apply border-dashed border-white/5 text-slate-500;
+      }
+      .selected-tags-label {
+        @apply text-[0.55rem] font-semibold uppercase tracking-[0.5em] text-slate-400;
+      }
+      .selected-tags-list {
+        @apply flex flex-wrap gap-2;
+      }
+      .selected-tags-empty {
+        @apply text-xs uppercase tracking-[0.3em] text-slate-500;
+      }
+      .selected-tag-pill {
+        @apply inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[0.65rem] font-medium uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush;
+      }
+      .selected-tag-pill.compact {
+        @apply px-2 py-1 text-[0.55rem];
+      }
+      .tag-button-grid {
+        @apply grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+      }
+      .tag-group {
+        @apply rounded-2xl border border-white/5 bg-white/5 p-3 transition-colors duration-200 hover:border-glow;
+      }
+      .tag-group-header {
+        @apply cursor-pointer text-[0.62rem] font-semibold uppercase tracking-[0.4em] text-slate-300;
+      }
+      .tag-group-tags {
+        @apply mt-3 flex flex-wrap gap-2;
+      }
+      .tag-button {
+        @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 text-[0.65rem] font-medium uppercase tracking-[0.3em] text-slate-200 transition-all duration-200 hover:border-glow hover:bg-glow/20 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
+      }
+      .tag-button.active {
+        @apply border-blush bg-blush/30 text-white;
+      }
+      .results-banner {
+        @apply flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-slate-200;
+      }
+      .gallery-grid {
+        @apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+      }
+      .artist-card {
+        @apply group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-panel/75 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-1 hover:border-glow/80 hover:shadow-[0_25px_60px_-25px_rgba(102,243,255,0.6)];
+      }
+      .artist-card[data-page] {
+        @apply will-change-transform;
+      }
+      .artist-media {
+        @apply relative aspect-[3/4] overflow-hidden;
+      }
+      .artist-image {
+        @apply h-full w-full object-cover transition-all duration-700 ease-kink group-hover:scale-105;
+      }
+      .artist-footer {
+        @apply flex flex-1 flex-col justify-between gap-3 px-5 py-4;
+      }
+      .artist-name {
+        @apply text-base font-semibold uppercase tracking-[0.25em] text-white;
+      }
+      .artist-tags {
+        @apply hidden flex-wrap gap-2 text-xs uppercase tracking-[0.2em] text-slate-300 transition-all duration-200;
+      }
+      .artist-card.show-tags .artist-tags {
+        @apply flex;
+      }
+      .gallery-tag {
+        @apply inline-flex items-center rounded-full border border-white/10 bg-black/40 px-2 py-1 text-[0.55rem] font-medium uppercase tracking-[0.3em] text-slate-200;
+      }
+      .artist-actions {
+        @apply flex items-center justify-between gap-2;
+      }
+      .gallery-sentinel {
+        @apply block h-2 w-full opacity-0 pointer-events-none;
+      }
+      .copy-button,
+      .reload-button,
+      .tags-toggle,
+      .browse-btn,
+      .sidebar-toggle,
+      .audio-toggle,
+      .theme-toggle,
+      .zoom-tool,
+      #back-to-top,
+      #audio-prev,
+      #audio-next,
+      #audio-toggle,
+      #moan-mute,
+      #moan-toggle,
+      #audio-panel button,
+      .bar-btn,
+      .tts-toggle-btn {
+        @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blush;
+      }
+      .tags-toggle {
+        @apply px-2 py-2;
+      }
+      .browse-btn {
+        @apply px-4 py-2;
+      }
+      #back-to-top {
+        @apply fixed bottom-10 right-10 hidden shadow-pulse;
+      }
+      .gallery-spinner {
+        @apply col-span-full flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-black/40 p-6 text-sm text-slate-300;
+      }
+      .gallery-spinner img {
+        @apply h-10 w-10 animate-spin;
+      }
+      .loading-bar {
+        @apply h-1 w-40 overflow-hidden rounded-full bg-white/10;
+      }
+      .loading-bar::-webkit-progress-bar {
+        background: rgba(255,255,255,0.1);
+      }
+      .loading-bar::-webkit-progress-value {
+        background: linear-gradient(90deg, rgba(102,243,255,0.9), rgba(255,100,212,0.9));
+      }
+      .toast-popup {
+        @apply fixed left-1/2 top-8 z-[12000] -translate-x-1/2 rounded-full border border-white/10 bg-black/80 px-6 py-3 text-sm font-medium text-white shadow-neon;
+      }
+      .fullscreen-wrapper {
+        @apply fixed inset-0 z-[12000] flex items-center justify-center bg-black/80 backdrop-blur-glass p-6;
+      }
+      .zoom-content {
+        @apply relative flex w-full max-w-6xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-panel/90 p-6 shadow-neon backdrop-blur-glass;
+      }
+      .zoom-main {
+        @apply flex w-full max-w-3xl flex-col items-center gap-4;
+      }
+      .fullscreen-img {
+        @apply max-h-[72vh] w-full rounded-2xl object-contain shadow-neon;
+      }
+      .zoom-tags,
+      .zoom-top-tags {
+        @apply flex flex-wrap justify-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-slate-200;
+      }
+      .zoom-tag-pill {
+        @apply rounded-full border border-white/15 bg-white/10 px-2.5 py-1;
+      }
+      .zoom-toolbar {
+        @apply flex w-full justify-center gap-3;
+      }
+      .zoom-prev,
+      .zoom-next {
+        @apply absolute top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-4 text-lg text-white transition-all duration-200 hover:border-glow hover:bg-glow/40;
+      }
+      .zoom-prev {
+        @apply left-6;
+      }
+      .zoom-next {
+        @apply right-6;
+      }
+      .zoom-close {
+        @apply absolute right-6 top-6 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-blush hover:bg-blush/40;
+      }
+      .zoom-back-btn {
+        @apply absolute left-6 top-6 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-glow hover:bg-glow/30;
+      }
+      .zoom-focus-mode .zoom-content {
+        @apply max-w-4xl;
+      }
+      .hide-tags .zoom-tags {
+        @apply hidden;
+      }
+      .artist-thumb-grid {
+        @apply grid h-full w-full max-w-5xl grid-cols-4 gap-2 overflow-y-auto rounded-3xl border border-white/10 bg-black/60 p-4;
+      }
+      .artist-thumb {
+        @apply h-32 w-full rounded-xl object-cover transition-transform duration-300 hover:-translate-y-1;
+      }
+      .no-entries-msg {
+        @apply text-sm text-slate-400;
+      }
+      .taunt-header {
+        @apply text-sm uppercase tracking-[0.4em] text-blush;
+      }
+      .modal {
+        @apply fixed inset-0 z-[13000] flex items-center justify-center bg-black/70 backdrop-blur-glass p-6;
+      }
+      .modal-content,
+      .confirmation-modal-content {
+        @apply w-full max-w-md rounded-3xl border border-white/10 bg-panel/90 p-6 text-sm text-slate-200 shadow-neon;
+      }
+      .filter-overlay {
+        @apply fixed inset-0 z-[11000] hidden bg-black/70 backdrop-blur-glass;
+      }
+      .filter-overlay.open {
+        @apply flex;
+      }
+      .filter-panel {
+        @apply relative m-auto flex w-full max-w-5xl flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/90 p-8 shadow-neon;
+      }
+      .filter-panel__header {
+        @apply flex items-start justify-between gap-4;
+      }
+      .filter-category {
+        @apply rounded-2xl border border-white/10 bg-black/30 p-5 transition-colors hover:border-glow;
+      }
+      .filter-category.open .filter-category__tags {
+        @apply max-h-[420px] opacity-100;
+      }
+      .filter-category__header {
+        @apply flex w-full cursor-pointer items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-200;
+      }
+      .filter-category__tags {
+        @apply grid max-h-0 grid-cols-2 gap-2 overflow-hidden pt-4 text-[0.65rem] opacity-0 transition-all duration-500 ease-kink sm:grid-cols-3;
+      }
+      .filter-tag-button {
+        @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white;
+      }
+      .filter-empty-state {
+        @apply text-sm text-slate-400;
+      }
+      .sidebar-wrapper {
+        @apply pointer-events-none fixed inset-y-0 right-0 z-[10000] flex max-w-full justify-end p-4;
+      }
+      body.sidebar-open .sidebar-wrapper,
+      .sidebar-wrapper.visible {
+        @apply pointer-events-auto;
+      }
+      .sidebar-panel {
+        @apply pointer-events-auto flex h-full w-[360px] flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/95 p-6 shadow-neon transition-transform duration-500 ease-kink;
+      }
+      .sidebar-animated {
+        @apply transition-transform duration-500 ease-kink;
+      }
+      .sidebar-hidden {
+        @apply translate-x-[120%] opacity-0;
+      }
+      .sidebar-panel:not(.sidebar-hidden) {
+        @apply translate-x-0 opacity-100;
+      }
+      .sidebar-header {
+        @apply flex items-start justify-between gap-4;
+      }
+      .copied-sidebar-close {
+        @apply browse-btn px-3 py-1 text-[0.6rem];
+      }
+      .sidebar-content {
+        @apply flex-1 overflow-y-auto pr-2;
+      }
+      .sidebar-taunt-banner {
+        @apply mb-4 rounded-2xl border border-blush/40 bg-blush/20 px-4 py-3 text-xs uppercase tracking-[0.3em] text-white shadow-pulse;
+      }
+      .sidebar-sections {
+        @apply flex flex-col gap-4;
+      }
+      .sidebar-section {
+        @apply rounded-2xl border border-white/10 bg-black/30 p-4;
+      }
+      .sidebar-section-header {
+        @apply flex w-full items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-200;
+      }
+      .sidebar-copied-list {
+        @apply mt-3 flex flex-col gap-3;
+      }
+      .copied-artist-row {
+        @apply flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-3 py-2 transition-all duration-200 hover:border-glow;
+      }
+      .copied-artist-row.selected {
+        @apply border-blush bg-blush/20;
+      }
+      .copied-artist-select-wrap {
+        @apply flex items-center justify-center;
+      }
+      .copied-artist-select {
+        @apply h-4 w-4 rounded border-white/20 bg-transparent text-glow focus:ring-glow;
+      }
+      .sidebar-thumb {
+        @apply h-12 w-12 rounded-xl object-cover;
+      }
+      .copied-artist-text {
+        @apply flex flex-col text-[0.7rem] uppercase tracking-[0.3em] text-slate-200;
+      }
+      .sidebar-artist-name {
+        @apply font-semibold text-white;
+      }
+      .sidebar-latest-tag {
+        @apply text-[0.55rem] text-slate-400;
+      }
+      .sidebar-icon {
+        @apply text-lg;
+      }
+      .sidebar-empty {
+        @apply text-center text-xs uppercase tracking-[0.3em] text-slate-500;
+      }
+      .sidebar-actions {
+        @apply mt-4 flex flex-wrap gap-2;
+      }
+      .sidebar-selection-note {
+        @apply text-[0.6rem] uppercase tracking-[0.4em] text-slate-400;
+      }
+      .sidebar-suggest-btn {
+        @apply browse-btn w-full justify-center;
+      }
+      .prompt-suggestion-overlay {
+        @apply fixed inset-0 z-[13000] flex items-center justify-center bg-black/70 backdrop-blur-glass p-6;
+      }
+      .prompt-suggestion-overlay .modal-card {
+        @apply w-full max-w-3xl rounded-[2rem] border border-white/10 bg-panel/95 p-8 text-sm text-slate-200 shadow-neon;
+      }
+      .retry-btn {
+        @apply browse-btn w-full;
+      }
+      .gallery-shame-badge {
+        @apply absolute left-5 top-5 rounded-full border border-blush/60 bg-blush/30 px-3 py-1 text-[0.6rem] font-semibold uppercase tracking-[0.3em] text-white shadow-pulse;
+      }
+      .gallery-hover-overlay {
+        @apply absolute inset-x-0 bottom-4 flex justify-center text-2xl text-blush;
+      }
+      .gallery-empty-humiliation {
+        @apply col-span-full flex flex-col items-center gap-3 rounded-3xl border border-white/10 bg-black/50 px-6 py-10 text-center text-xs uppercase tracking-[0.35em] text-slate-300;
+      }
+      .gallery-empty-emoji {
+        @apply text-4xl;
+      }
+      .gallery-empty-msg {
+        @apply text-[0.65rem] text-slate-400;
+      }
+      .jrpg-bubble {
+        @apply pointer-events-none fixed bottom-20 left-1/2 z-[9000] flex -translate-x-1/2 items-center gap-2 rounded-2xl border border-white/10 bg-black/80 px-5 py-3 text-xs uppercase tracking-[0.35em] text-slate-200 shadow-neon;
+      }
+      .jrpg-bubble .chibi {
+        @apply h-10 w-10;
+      }
+      .audio-panel {
+        @apply fixed bottom-6 left-1/2 z-[9000] flex min-w-[320px] -translate-x-1/2 flex-col gap-3 rounded-3xl border border-white/10 bg-panel/95 p-4 shadow-neon;
+      }
+      .audio-panel.hidden {
+        @apply hidden;
+      }
+      .audio-header {
+        @apply flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-slate-200;
+      }
+      .audio-controls {
+        @apply flex flex-wrap items-center justify-center gap-2;
+      }
+      .lipstick-kiss {
+        @apply pointer-events-none fixed bottom-16 right-12 h-20 w-20 opacity-60;
+      }
+      .screen-pulse {
+        @apply animate-[screenPulse_0.9s_ease-in-out_1];
+      }
+      #desperation-meter {
+        @apply fixed bottom-6 right-6 z-[9500] w-52 rounded-3xl border border-white/10 bg-black/70 p-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon;
+      }
+      #desperation-meter .desperation-bar {
+        @apply h-1 w-full rounded-full bg-glow/30 transition-all duration-300;
+      }
+      #desperation-meter .desperation-taunt {
+        @apply mt-3 block text-[0.55rem] text-slate-400;
+      }
+    }
+  </style>
+  <style>
+    @keyframes screenPulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+    .pulse {
+      animation: pulseGlow 1.8s ease-in-out infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,100,212,0.35); }
+      50% { box-shadow: 0 0 0 8px rgba(255,100,212,0); }
+    }
+  </style>
 </head>
-
-<body class="fem-theme">
-  <!-- Background decoration -->
-  <div id="background-blur" aria-hidden="true"></div>
-  
-  <!-- Main application header -->
-  <header role="banner">
-    <div class="container">
-      <div class="top-bar">
-        <h1 class="brand">Artist Explorer</h1>
-        <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
-        <span class="tagline" id="tagline">Pathetic..~</span>
+<body class="relative min-h-screen overflow-x-hidden">
+  <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
+  <div class="relative z-10 flex min-h-screen flex-col">
+    <header class="top-surface">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 pb-10 pt-12 lg:flex-row lg:items-end lg:justify-between">
+        <div class="space-y-5">
+          <span class="brand-chip">TagExplorer</span>
+          <h1 class="text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
+          <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="control-btn sidebar-toggle" type="button">Pinned</button>
+          <button class="control-btn audio-toggle" type="button">Audio</button>
+          <button class="control-btn theme-toggle" type="button">Glow</button>
+          <button id="back-to-top" class="control-btn" type="button" aria-label="Back to top">Top</button>
+        </div>
       </div>
-      <!-- New compact tag explorer bar -->
-      <div class="tag-explorer-bar" id="tag-explorer-bar">
-        <button class="bar-btn" id="prompts-btn">Prompts</button>
-        <button class="bar-btn" id="filters-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">Filters</button>
+      <div class="surface-divider"></div>
+      <nav id="tag-explorer-bar" class="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 pb-8">
+        <button id="prompts-btn" class="bar-btn" type="button">Prompts</button>
+        <button id="filters-btn" class="bar-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">Filters</button>
+        <div class="ml-auto flex items-center gap-3 text-[0.55rem] uppercase tracking-[0.4em] text-slate-500">
+          <span class="hidden fold-cover:inline">Cover Mode</span>
+          <span class="hidden fold-inner:inline">Inner Mode</span>
+        </div>
+      </nav>
+    </header>
+
+    <main class="relative z-10 flex-1">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-12 px-6 pb-24 pt-12">
+        <section class="glass-panel flex flex-col gap-6" aria-labelledby="filters-heading">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-2">
+              <h2 id="filters-heading" class="text-lg font-display uppercase tracking-[0.45em] text-white">Filters</h2>
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Pick up to two tags. We'll remember your place while you wander.</p>
+            </div>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <label class="field-block">
+                <span class="field-label">Tag search</span>
+                <input id="tag-search" type="search" class="field-input" placeholder="search tags" autocomplete="off">
+              </label>
+              <label class="field-block">
+                <span class="field-label">Artist</span>
+                <input id="artist-name-filter" type="search" class="field-input" placeholder="artist filter" autocomplete="off">
+              </label>
+              <button id="clear-tags" class="browse-btn" type="button">Clear</button>
+            </div>
+          </div>
+          <div id="selected-tags" class="selected-tags-bar is-empty" aria-label="Selected tags"></div>
+          <div id="tag-buttons" class="tag-button-grid" aria-label="Kink tags"></div>
+          <p class="text-[0.6rem] uppercase tracking-[0.3em] text-slate-500">Need deeper cuts? Tap Filters above for the full control room.</p>
+        </section>
+
+        <section class="space-y-4">
+          <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
+          <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
+        </section>
       </div>
-    </div>
-  </header>
+    </main>
+  </div>
 
-  <!-- Main content area -->
-  <main role="main" class="container">
-    <!-- Selected tags bar -->
-    <section id="selected-tags" class="selected-tags-bar" aria-label="Selected tags"></section>
-
-    <!-- Filter results summary -->
-    <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
-
-    <!-- Artist gallery -->
-    <section id="artist-gallery" aria-label="Artist gallery" role="region">
-      <h2 class="visually-hidden">Artists</h2>
-    </section>
-  </main>
-
-  <!-- Sidebar for copied artists -->
   <aside class="sidebar-wrapper" aria-label="Copied artists">
-    <div id="copied-sidebar" class="sidebar-hidden" role="complementary" aria-label="Artists you've copied">
-      <button class="copied-sidebar-close" aria-label="Close sidebar">X</button>
-      <h2 class="visually-hidden">Copied Artists</h2>
-      <!-- Copied artists will be injected here -->
+    <div id="copied-sidebar" class="sidebar-panel sidebar-hidden" role="complementary" aria-label="Pinned artists">
+      <div class="sidebar-header">
+        <h2 class="text-sm font-display uppercase tracking-[0.4em] text-white">Pinned Artists</h2>
+        <button class="copied-sidebar-close" aria-label="Close sidebar">Close</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="sidebar-taunt-banner">No artists copied yet. Too shy to commit?</div>
+        <div class="sidebar-sections"></div>
+      </div>
     </div>
   </aside>
 
-  <!-- Interactive elements overlay -->
   <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
 
-  <!-- Audio controls -->
   <section id="audio-section" aria-label="Audio controls">
     <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
       <div class="audio-header">
-        <span aria-label="Audio indicator">🎧</span>
+        <span aria-hidden="true">🎧</span>
         <span id="audio-track-name">No track playing</span>
       </div>
       <div class="audio-controls" role="group" aria-label="Audio playback controls">
-        <button id="audio-prev" aria-label="Previous track">⏮️</button>
-        <button id="audio-toggle" aria-label="Play/pause">⏯️</button>
-        <button id="audio-next" aria-label="Next track">⏭️</button>
-        <button id="moan-mute" aria-label="Toggle moan sound">🔇 Moan</button>
+        <button id="audio-prev" type="button" aria-label="Previous track">⏮</button>
+        <button id="audio-toggle" type="button" aria-label="Play or pause">▶</button>
+        <button id="audio-next" type="button" aria-label="Next track">⏭</button>
+        <button id="moan-mute" type="button" aria-label="Toggle moan sound">🔇 Moan</button>
       </div>
     </div>
-
-    <!-- Audio elements -->
     <audio id="moan-audio" preload="auto" aria-label="Moan sound effects">
       <source src="moan.mp3" type="audio/mpeg">
-      Your browser does not support the audio element.
     </audio>
-    
-    <audio id="hypnoAudio" preload="auto" aria-label="Hypnosis audio tracks">
-      Your browser does not support the audio element.
-    </audio>
+    <audio id="hypnoAudio" preload="auto" aria-label="Hypnosis audio tracks"></audio>
   </section>
 
-  <!-- Floating controls -->
-  <nav class="floating-controls" aria-label="Quick access controls">
-    <div class="toggle-buttons-container">
-      <button class="sidebar-toggle" aria-label="Show copied artists sidebar">🎀</button>
-      <button class="audio-toggle" aria-label="Show audio panel">🎶</button>
-      <button class="theme-toggle" aria-label="Toggle theme">🌓</button>
-    </div>
-    
-    <button id="back-to-top" title="Back to top" aria-label="Scroll to top">
-      <span aria-hidden="true">↑</span>
-      <span class="control-label">Top</span>
-    </button>
-  </nav>
-
-  <!-- Load the modular JavaScript -->
   <script type="module" src="main.js"></script>
 </body>
-
 </html>

@@ -1,36 +1,3 @@
-// --- Infinite Scroll for Main Gallery ---
-function setupInfiniteScroll() {
-  let ticking = false;
-  const grid = document.getElementById("artist-gallery");
-  if (!grid) return;
-  function onGridScroll() {
-    if (ticking) return;
-    ticking = true;
-    window.requestAnimationFrame(() => {
-      ticking = false;
-      if (isFetching) return;
-      // Check if near bottom of grid
-      if (grid.scrollTop + grid.clientHeight >= grid.scrollHeight - 200) {
-        const { shown, total } = getPaginationInfo();
-        if (shown < total) {
-          const btn = document.getElementById("show-more-artists-btn");
-          if (btn) btn.remove();
-          setCurrentPage(getCurrentPage() + 1);
-          renderArtistsPage();
-        }
-      }
-    });
-  }
-  grid.removeEventListener("scroll", onGridScroll);
-  setTimeout(() => {
-    grid.addEventListener("scroll", onGridScroll, { passive: true });
-  }, 0);
-  // Also trigger on load in case content is short
-  setTimeout(() => {
-    onGridScroll();
-  }, 100);
-}
-// ...existing code...
 import { createFullscreenViewer, createSpinner } from "./ui.js";
 import {
   fetchArtistImages,
@@ -52,36 +19,51 @@ function getThumbnailUrl(artist) {
  */
 
 // Gallery state
+const DEFAULT_ARTISTS_PER_PAGE = 36;
+const MAX_PAGES_IN_DOM = 6;
+
 let filtered = [];
 let isFetching = false;
 let sortMode = "name";
 let filterGeneration = 0;
-let artistsPerPage = 100;
-if (typeof window !== "undefined") {
-  if (typeof window._galleryCurrentPage !== "number") window._galleryCurrentPage = 1;
-}
+let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
+let currentPage = 1;
 
 function getCurrentPage() {
-  if (typeof window !== "undefined" && typeof window._galleryCurrentPage === "number") {
-    return window._galleryCurrentPage;
-  }
-  return 1;
+  return currentPage;
 }
 
 function setCurrentPage(val) {
-  if (typeof window !== "undefined") {
-    window._galleryCurrentPage = val;
-  }
+  currentPage = Math.max(1, val);
 }
 
 // DOM references
 let artistGallery = null;
 let backgroundBlur = null;
+let gallerySentinel = null;
 
 // External dependencies
 let allArtists = [];
 let getActiveTags = null;
 let getArtistNameFilter = null;
+
+function resetGallerySentinel() {
+  gallerySentinel = null;
+}
+
+function ensureGallerySentinel() {
+  if (!artistGallery) return null;
+  if (!gallerySentinel || !artistGallery.contains(gallerySentinel)) {
+    gallerySentinel = document.createElement("div");
+    gallerySentinel.id = "gallery-end-sentinel";
+    gallerySentinel.className = "gallery-sentinel";
+    gallerySentinel.setAttribute("aria-hidden", "true");
+    artistGallery.appendChild(gallerySentinel);
+  } else if (artistGallery.lastElementChild !== gallerySentinel) {
+    artistGallery.appendChild(gallerySentinel);
+  }
+  return gallerySentinel;
+}
 
 /**
  * Sets the background image with a random image
@@ -299,6 +281,7 @@ async function openArtistZoom(artist) {
   let totalPages = Infinity;
   let loading = false;
   let currentIndex = 0;
+  const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
   function returnToGrid() {
     if (zoomContent) zoomContent.style.display = "none";
@@ -348,7 +331,7 @@ async function openArtistZoom(artist) {
           totalPages = Infinity;
         }
       }
-      const newPosts = await api.fetchArtistImages(artist.artistName, [], {
+      const newPosts = await api.fetchArtistImages(artist.artistName, selectedTags, {
         limit: 40,
         page,
         order: "approvals",
@@ -528,32 +511,21 @@ function renderArtistsPage() {
   // Only clear gallery if this is the first page (reset)
   if (page === 1) {
     artistGallery.innerHTML = "";
+    resetGallerySentinel();
   }
-  // Always append new artist cards for each page
-  renderArtistCards(artistsToShow, undefined, false);
 
-  // Remove any old button
-  const btn = document.getElementById("show-more-artists-btn");
-  if (btn) btn.remove();
-
-  // Append a fallback "Show More" button if there are more artists
-  const { shown, total } = getPaginationInfo();
-  if (shown < total) {
-    const moreBtn = document.createElement("button");
-    moreBtn.id = "show-more-artists-btn";
-    moreBtn.className = "browse-btn";
-    moreBtn.textContent = "Show More";
-    moreBtn.addEventListener("click", () => {
-      moreBtn.remove();
-      setCurrentPage(getCurrentPage() + 1);
-      renderArtistsPage();
-    });
-    artistGallery.appendChild(moreBtn);
+  if (artistsToShow.length > 0) {
+    // Always append new artist cards for each page
+    renderArtistCards(artistsToShow, undefined, page);
+  } else {
+    ensureGallerySentinel();
   }
+
+  pruneRenderedPages(page);
 }
 
 // Helper to render a list of artists using the normal card structure
-function renderArtistCards(artists, selectedTagsOverride) {
+function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
@@ -561,11 +533,14 @@ function renderArtistCards(artists, selectedTagsOverride) {
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card";
+    card.dataset.page = String(pageNumber);
     // Store the raw artist tag for patches/overlays
     card.setAttribute("data-artist", artist.artistName);
 
     const img = document.createElement("img");
     img.className = "artist-image";
+    img.loading = "lazy";
+    img.alt = `${artist.artistName.replace(/_/g, " ")} preview`;
     const cacheKey = `danbooru-image-${artist.artistName}`;
     const cachedUrl = localStorage.getItem(cacheKey);
     if (cachedUrl) {
@@ -683,32 +658,26 @@ function renderArtistCards(artists, selectedTagsOverride) {
     card.appendChild(footer);
 
     // Add humiliation overlay on hover
-    card.addEventListener("mouseenter", () => {
-      let overlay = card.querySelector(".gallery-humiliation-overlay");
-      if (!overlay) {
-        overlay = document.createElement("div");
-        overlay.className = "gallery-humiliation-overlay";
-        overlay.style.position = "absolute";
-        overlay.style.top = "0";
-        overlay.style.left = "0";
-        overlay.style.width = "100%";
-        overlay.style.height = "100%";
-        overlay.style.pointerEvents = "none";
-        overlay.style.zIndex = "10";
-        overlay.style.opacity = "0.18";
-        overlay.style.backgroundImage =
-          Math.random() > 0.5
-            ? "url('icons/heart.png')"
-            : "url('icons/lipstick.png')";
-        overlay.style.backgroundRepeat = "repeat";
-        card.appendChild(overlay);
-        setTimeout(() => overlay.remove(), 1200);
-      }
-    });
-
     frag.appendChild(card);
   });
-  artistGallery.appendChild(frag);
+  const sentinel = ensureGallerySentinel();
+  if (sentinel) {
+    artistGallery.insertBefore(frag, sentinel);
+  } else {
+    artistGallery.appendChild(frag);
+  }
+}
+
+function pruneRenderedPages(currentPage) {
+  if (!artistGallery) return;
+  const minimumPage = Math.max(1, currentPage - (MAX_PAGES_IN_DOM - 1));
+  const cards = artistGallery.querySelectorAll(".artist-card[data-page]");
+  cards.forEach((card) => {
+    const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
+    if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
+      card.remove();
+    }
+  });
 }
 
 function getPaginationInfo() {
@@ -743,6 +712,7 @@ async function filterArtists(reset = true, force = false) {
     if (reset) {
       setCurrentPage(1);
       artistGallery.innerHTML = "";
+      resetGallerySentinel();
     }
 
     spinner = artistGallery.querySelector(".gallery-spinner");
@@ -862,7 +832,6 @@ function initGallery() {
       lastSortMode = e.target.value;
     });
   }
-  setupInfiniteScroll();
 }
 
   function setSortMode(mode) {
