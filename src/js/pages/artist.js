@@ -71,6 +71,9 @@ function renderArtist(artist, tags) {
   }
 
   if (previewImage) {
+    previewImage.loading = 'lazy';
+    previewImage.decoding = 'async';
+    previewImage.referrerPolicy = 'no-referrer';
     previewImage.src = artist.preview;
     previewImage.alt = `${artist.name} preview`;
   }

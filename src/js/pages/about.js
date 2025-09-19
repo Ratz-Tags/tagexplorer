@@ -39,7 +39,7 @@ function updateVersion(preferences) {
     return;
   }
   const humiliationLevel = preferences?.humiliation?.intensity ?? 2;
-  versionPill.textContent = `Stage 2 · Foldable UX · Humiliation ${humiliationLevel}`;
+  versionPill.textContent = `Stage 3 · Humiliation Polish · Level ${humiliationLevel}`;
 }
 
 function animateSections() {
@@ -51,6 +51,8 @@ function animateSections() {
     safeAnimate(items, { opacity: [0, 1], x: [-12, 0] }, { delay: stagger(0.05), duration: 0.5 });
   }
 }
+
 window.addEventListener('beforeunload', () => {
   unwatchFold?.();
 });
+

@@ -5,6 +5,8 @@
   "main": "main.js",
   "scripts": {
     "build:css": "tailwindcss -c tailwind.config.js -i ./src/styles/tailwind.css -o ./public/assets/styles.css --minify",
+    "build": "npm run build:css",
+
     "dev:css": "tailwindcss -c tailwind.config.js -i ./src/styles/tailwind.css -o ./public/assets/styles.css --watch",
     "test": "node --test",
     "update:tags": "node scripts/updateKinkTags.js"

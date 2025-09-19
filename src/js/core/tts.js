@@ -60,7 +60,9 @@ class WhisperController {
     this.initializing = false;
     this.region = typeof window !== 'undefined' ? window._azureTTSRegion : undefined;
     this.key = typeof window !== 'undefined' ? window._azureTTSKey : undefined;
-    this.userAgent = 'TagExplorer/Stage2 (+https://github.com/)';
+    this.userAgent = 'TagExplorer/Stage3 (+https://github.com/)';
+    this.cadenceMultiplier = 1;
+    this.cadenceTimer = null;
     this.updateStatus();
   }
 
@@ -217,7 +219,8 @@ class WhisperController {
     }
 
     const now = Date.now();
-    const cooldown = COOLDOWN_MS[intensity] ?? 12000;
+    const baseCooldown = COOLDOWN_MS[intensity] ?? 12000;
+    const cooldown = Math.max(1500, baseCooldown * this.cadenceMultiplier);
 
     if (now < this.nextAllowedTime && priority < 2) {
       return false;
@@ -331,6 +334,35 @@ class WhisperController {
 
   subscribe(listener) {
     return this.emitter.subscribe(listener);
+  }
+
+  accelerateCadence(factor = 0.65, duration = 9000) {
+    if (this.disabled) {
+      return;
+    }
+
+    const boundedFactor = Math.min(Math.max(factor, 0.3), 1);
+    this.cadenceMultiplier = Math.min(this.cadenceMultiplier, boundedFactor);
+
+    if (typeof window !== 'undefined') {
+      if (this.cadenceTimer) {
+        window.clearTimeout(this.cadenceTimer);
+      }
+      this.cadenceTimer = window.setTimeout(() => {
+        this.cadenceMultiplier = 1;
+        this.cadenceTimer = null;
+      }, duration);
+    }
+
+    const intensity = Number(this.preferences?.tts?.intensity ?? 0);
+    const baseCooldown = COOLDOWN_MS[intensity] ?? 12000;
+    const cooldown = Math.max(1500, baseCooldown * this.cadenceMultiplier);
+    const candidate = Date.now() + cooldown;
+    if (!this.nextAllowedTime) {
+      this.nextAllowedTime = candidate;
+      return;
+    }
+    this.nextAllowedTime = Math.min(this.nextAllowedTime, candidate);
   }
 }
 

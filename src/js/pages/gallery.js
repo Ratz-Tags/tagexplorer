@@ -10,6 +10,44 @@ const IDLE_DELAYS = {
   2: 28000,
   3: 16000
 };
+const CAUGHT_SESSION_KEY = 'tagexplorer.caught.v1';
+const TOOLTIP_COPY = {
+  filters: () => {
+    const count = currentPreferences?.filters?.length ?? 0;
+    if (count >= 6) return 'Still stacking? We can smell the desperation.';
+    if (count >= 3) return `Already ${count} deep. Keep going.`;
+    if (count > 0) return `Only ${count}? We know you want more.`;
+    return 'Go on. Open the stack. We dare you.';
+  },
+  settings: 'Tweaking controls won\'t hide your habits.',
+  mute: () => (currentPreferences?.tts?.muted ? 'Thinking of listening again?' : 'Muting won\'t stop the whispers.'),
+  motion: () =>
+    currentPreferences?.motion?.reduced
+      ? 'Motion off. Feeling less dizzy now?'
+      : 'Afraid the glow gives you away?',
+  reset: 'Wiping the evidence? Cute.',
+  chip: (value) => (value ? `Drop “${value}”? You\'ll add it back.` : 'Drop it. We dare you.'),
+  tagOption: (value) => (value ? `Stack “${value}”. You know you want to.` : 'Stack it already.'),
+  navHome: 'Retreating home? The gallery remembers.',
+  navMute: () => (currentPreferences?.tts?.muted ? 'Silence never lasts.' : 'You can mute, but we still watch.')
+};
+const CAUGHT_MESSAGES = {
+  entry: (intensity) =>
+    intensity >= 3
+      ? 'Caught lingering again. We log every fold and twitch.'
+      : 'We see you slipping back in. Keep pretending it\'s research.',
+  filters: (intensity) =>
+    intensity >= 3
+      ? 'Opening filters yet again? That obsession is documented.'
+      : 'Adjusting filters won\'t make this private.',
+  stack: ({ count }) => {
+    if (count >= 6) return 'Six tags deep. Shameless. Documented.';
+    if (count >= 4) return `Already ${count} filters. Hungry much?`;
+    if (count >= 3) return `${count} tags stacked. Subtle.`;
+    return '';
+  },
+  reset: () => 'Clearing the stack doesn\'t clear the log.'
+};
 
 class GalleryVirtualizer {
   constructor(root, renderItem) {
@@ -158,6 +196,10 @@ const bottomSettings = document.querySelector('[data-bottom-settings]');
 const bottomMute = document.querySelector('[data-bottom-mute]');
 const bottomMotion = document.querySelector('[data-bottom-motion]');
 const sheetDismissButtons = document.querySelectorAll('[data-sheet-dismiss]');
+const caughtOverlay = document.querySelector('[data-caught-overlay]');
+const caughtCopy = document.querySelector('[data-caught-copy]');
+const caughtDismiss = document.querySelector('[data-caught-dismiss]');
+
 
 let datasetRef = null;
 let updatePreferencesRef = null;
@@ -168,18 +210,26 @@ let foldState = getFoldState();
 let idleTimer = null;
 let activeSheet = null;
 let unsubscribeFold = null;
-
+let tooltipRoot = null;
+let tooltipHideTimer = null;
+let caughtTimer = null;
+let caughtSeen = false;
+let tagDictionary = new Map();
 
 initializeApp('gallery', {
   onReady({ dataset, preferences, updatePreferences }) {
     datasetRef = dataset;
+    tagDictionary = new Map((dataset?.tags ?? []).map((tag) => [tag.id, tag]));
     updatePreferencesRef = updatePreferences;
     currentPreferences = preferences;
+    caughtSeen = hasSeenCaught();
     whisperController = createWhisperController({ dataset, preferences });
     whisperController?.subscribe(handleTtsStatus);
     handleTtsStatus({ status: 'initializing' });
     galleryVirtualizer = new GalleryVirtualizer(galleryGrid, createArtistCard);
     unsubscribeFold = watchFoldState(handleFoldChange);
+    setupTooltips();
+    primeCaught(preferences);
 
     renderTagOptions(dataset.tags, preferences.filters);
     renderGallery(preferences.filters);
@@ -194,6 +244,7 @@ initializeApp('gallery', {
     syncBottomControls(preferences);
     whisperController?.updatePreferences(preferences);
     scheduleIdle(preferences);
+    primeCaught(preferences);
   }
 });
 
@@ -269,11 +320,19 @@ function bindEvents() {
     motionToggle.addEventListener('click', () => toggleMotion());
   }
 
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      closeSheet();
-    }
-  });
+  if (caughtDismiss) {
+    caughtDismiss.addEventListener('click', () => hideCaught());
+  }
+
+  if (caughtOverlay) {
+    caughtOverlay.addEventListener('click', (event) => {
+      if (event.target === caughtOverlay) {
+        hideCaught();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', handleGlobalKeydown);
 
   const idleEvents = ['scroll', 'pointermove', 'keydown', 'touchstart'];
   idleEvents.forEach((eventName) => {
@@ -284,9 +343,11 @@ function bindEvents() {
 function handleFiltersTap() {
   if (foldState === 'cover') {
     openSheet('filters');
+    maybeTriggerCaught('filters');
     return;
   }
   filterPanel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  maybeTriggerCaught('filters');
 }
 
 function openSheet(type) {
@@ -381,6 +442,8 @@ function renderTagOptions(tags, selectedFilters) {
       button.setAttribute('data-tag-option', tag.id);
       button.setAttribute('aria-pressed', 'false');
       button.setAttribute('title', tag.summary ?? tag.label);
+      button.dataset.tooltip = 'tagOption';
+      button.dataset.tooltipValue = tag.summary ?? tag.label;
       fragment.appendChild(button);
     });
     tagOptionsRoot.appendChild(fragment);
@@ -390,11 +453,17 @@ function renderTagOptions(tags, selectedFilters) {
   buttons.forEach((button) => {
     const tagId = button.getAttribute('data-tag-option');
     const isActive = selectedFilters.includes(tagId);
+    const tagMeta = tagDictionary.get(tagId);
+    if (tagMeta) {
+      button.dataset.tooltipValue = tagMeta.summary ?? tagMeta.label ?? tagId;
+    }
     button.classList.toggle('border-accent-pink/60', isActive);
     button.classList.toggle('text-white', isActive);
     button.classList.toggle('shadow-neon', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+
+  registerTooltipTargets(tagOptionsRoot);
 
   renderActiveFilters(selectedFilters);
 }
@@ -421,10 +490,16 @@ function renderActiveFilters(filters) {
     chip.type = 'button';
     chip.className = 'tag-chip bg-accent-pink/10 text-[0.65rem] text-white hover:bg-accent-pink/20';
     chip.setAttribute('data-remove-filter', tagId);
-    chip.innerHTML = `<span>${tagId.replace(/_/g, ' ')}</span><span aria-hidden="true">×</span>`;
+    const tagMeta = tagDictionary.get(tagId);
+    const label = tagMeta?.label ?? tagId.replace(/_/g, ' ');
+    const tease = tagMeta?.summary ?? label;
+    chip.innerHTML = `<span>${label}</span><span aria-hidden="true">×</span>`;
+    chip.dataset.tooltip = 'chip';
+    chip.dataset.tooltipValue = tease;
     fragment.appendChild(chip);
   });
   activeFiltersRoot.appendChild(fragment);
+  registerTooltipTargets(activeFiltersRoot);
   updateFilterHeatmap(filters.length);
 }
 
@@ -518,13 +593,20 @@ function toggleFilter(tagId, { forceRemove = false } = {}) {
   });
 
   if (added) {
-    if ((next.filters?.length ?? 0) >= 5) {
+    const count = next.filters?.length ?? 0;
+    if (count >= 5) {
       whisperController?.speak('too_many_tags');
     } else {
       whisperController?.speak('tag_add');
     }
+    if (count >= 3) {
+      maybeTriggerCaught('stack', { count });
+    }
+    const cadenceFactor = count >= 5 ? 0.4 : count >= 3 ? 0.5 : 0.65;
+    whisperController?.accelerateCadence?.(cadenceFactor, 12000);
   } else if (removed && (next.filters?.length ?? 0) === 0) {
     whisperController?.speak('clear');
+    whisperController?.accelerateCadence?.(0.75, 8000);
   }
 
   resetIdleTimer();
@@ -537,6 +619,8 @@ function clearFilters() {
   const next = updatePreferencesRef({ filters: [] });
   if ((next.filters ?? []).length === 0) {
     whisperController?.speak('clear');
+    whisperController?.accelerateCadence?.(0.7, 9000);
+    maybeTriggerCaught('reset');
   }
   resetIdleTimer();
 }
@@ -641,6 +725,265 @@ function handleTtsStatus({ status, reason }) {
   ttsStatus.textContent = 'Initializing Azure whisper voices…';
 }
 
+function setupTooltips() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (!tooltipRoot) {
+    tooltipRoot = document.createElement('div');
+    tooltipRoot.className = 'tease-tooltip';
+    tooltipRoot.setAttribute('role', 'status');
+    tooltipRoot.hidden = true;
+    document.body.appendChild(tooltipRoot);
+    window.addEventListener('scroll', () => hideTooltip({ immediate: true }), { passive: true });
+    window.addEventListener('resize', () => hideTooltip({ immediate: true }));
+  }
+
+  registerTooltipTargets(document);
+}
+
+function registerTooltipTargets(root) {
+  if (!root) {
+    return;
+  }
+  const elements = root.querySelectorAll('[data-tooltip]');
+  elements.forEach(bindTooltipTarget);
+}
+
+function bindTooltipTarget(element) {
+  if (!element || element.dataset.tooltipBound === 'true') {
+    return;
+  }
+  element.dataset.tooltipBound = 'true';
+  element.addEventListener('pointerenter', handleTooltipEnter);
+  element.addEventListener('focus', handleTooltipEnter);
+  element.addEventListener('pointerleave', handleTooltipLeave);
+  element.addEventListener('blur', handleTooltipLeave);
+  element.addEventListener('touchstart', handleTooltipEnter, { passive: true });
+}
+
+function handleTooltipEnter(event) {
+  const target = event.currentTarget;
+  showTooltip(target);
+}
+
+function handleTooltipLeave() {
+  hideTooltip();
+}
+
+function showTooltip(target) {
+  if (!tooltipRoot || !target) {
+    return;
+  }
+
+  const text = resolveTooltipText(target);
+  if (!text) {
+    return;
+  }
+
+  tooltipRoot.textContent = text;
+  tooltipRoot.hidden = false;
+  tooltipRoot.dataset.visible = 'true';
+
+  const rect = target.getBoundingClientRect();
+  const tooltipRect = tooltipRoot.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  let left = centerX - tooltipRect.width / 2;
+  left = Math.max(12, Math.min(left, window.innerWidth - tooltipRect.width - 12));
+  let top = rect.top - tooltipRect.height - 12;
+  if (top < 12) {
+    top = rect.bottom + 12;
+  }
+  tooltipRoot.style.left = `${Math.round(left)}px`;
+  tooltipRoot.style.top = `${Math.round(top)}px`;
+
+  if (tooltipHideTimer) {
+    window.clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = null;
+  }
+}
+
+function hideTooltip({ immediate = false } = {}) {
+  if (!tooltipRoot) {
+    return;
+  }
+
+  if (tooltipHideTimer) {
+    window.clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = null;
+  }
+
+  const conceal = () => {
+    delete tooltipRoot.dataset.visible;
+    tooltipRoot.hidden = true;
+  };
+
+  if (immediate || typeof window === 'undefined') {
+    conceal();
+    return;
+  }
+
+  tooltipHideTimer = window.setTimeout(conceal, 160);
+}
+
+function resolveTooltipText(element) {
+  const key = element.getAttribute('data-tooltip');
+  const value = element.getAttribute('data-tooltip-value');
+  const resolver = key ? TOOLTIP_COPY[key] : null;
+  if (typeof resolver === 'function') {
+    return resolver(value, element) ?? '';
+  }
+  if (resolver) {
+    return resolver;
+  }
+  if (value) {
+    return value;
+  }
+  return element.getAttribute('title') ?? '';
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key !== 'Escape') {
+    return;
+  }
+
+  if (isCaughtVisible()) {
+    hideCaught();
+    event.preventDefault();
+    return;
+  }
+
+  closeSheet();
+}
+
+function hasSeenCaught() {
+  if (caughtSeen) {
+    return true;
+  }
+  try {
+    const value = window.sessionStorage?.getItem(CAUGHT_SESSION_KEY);
+    caughtSeen = value === '1';
+  } catch (error) {
+    // ignore storage errors
+  }
+  return caughtSeen;
+}
+
+function markCaughtSeen() {
+  caughtSeen = true;
+  try {
+    window.sessionStorage?.setItem(CAUGHT_SESSION_KEY, '1');
+  } catch (error) {
+    // ignore storage errors
+  }
+}
+
+function primeCaught(preferences) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  if (caughtTimer) {
+    window.clearTimeout(caughtTimer);
+    caughtTimer = null;
+  }
+  if (hasSeenCaught()) {
+    return;
+  }
+  const enabled = preferences?.humiliation?.enabled ?? true;
+  const intensity = Number(preferences?.humiliation?.intensity ?? 0);
+  if (!enabled || intensity <= 0) {
+    return;
+  }
+  const delay = intensity >= 3 ? 2400 : intensity === 2 ? 3600 : 4600;
+  caughtTimer = window.setTimeout(() => {
+    maybeTriggerCaught('entry');
+  }, delay);
+}
+
+function maybeTriggerCaught(reason, context = {}) {
+  if (hasSeenCaught() || isCaughtVisible()) {
+    return;
+  }
+
+  const enabled = currentPreferences?.humiliation?.enabled ?? true;
+  const intensity = Number(currentPreferences?.humiliation?.intensity ?? 0);
+  if (!enabled || intensity <= 0) {
+    return;
+  }
+
+  if (reason === 'entry' && intensity <= 1) {
+    return;
+  }
+
+  let message = '';
+  if (reason === 'stack') {
+    message = CAUGHT_MESSAGES.stack(context) ?? '';
+  } else if (reason === 'filters') {
+    message = CAUGHT_MESSAGES.filters(intensity) ?? '';
+  } else if (reason === 'entry') {
+    message = CAUGHT_MESSAGES.entry(intensity) ?? '';
+  } else if (reason === 'reset') {
+    message = CAUGHT_MESSAGES.reset(intensity) ?? CAUGHT_MESSAGES.reset();
+  }
+
+  if (!message) {
+    return;
+  }
+
+  markCaughtSeen();
+  showCaught(message);
+  whisperController?.accelerateCadence?.(0.45, 14000);
+}
+
+function isCaughtVisible() {
+  return Boolean(caughtOverlay && caughtOverlay.dataset.visible === 'true');
+}
+
+function showCaught(message) {
+  if (!caughtOverlay) {
+    return;
+  }
+
+  if (caughtTimer) {
+    window.clearTimeout(caughtTimer);
+    caughtTimer = null;
+  }
+
+  if (caughtCopy) {
+    caughtCopy.textContent = message;
+  }
+
+  caughtOverlay.hidden = false;
+  caughtOverlay.dataset.visible = 'true';
+  caughtOverlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('caught-active');
+  hideTooltip({ immediate: true });
+
+  const focusTarget = caughtDismiss ?? caughtOverlay;
+  focusTarget?.focus?.({ preventScroll: true });
+}
+
+function hideCaught() {
+  if (!caughtOverlay || !isCaughtVisible()) {
+    return;
+  }
+
+  delete caughtOverlay.dataset.visible;
+  caughtOverlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('caught-active');
+
+  if (typeof window === 'undefined') {
+    caughtOverlay.hidden = true;
+    return;
+  }
+
+  window.setTimeout(() => {
+    if (!isCaughtVisible()) {
+      caughtOverlay.hidden = true;
+    }
+  }, 220);
+}
 window.addEventListener('beforeunload', () => {
   unsubscribeFold?.();
   galleryVirtualizer?.destroy();

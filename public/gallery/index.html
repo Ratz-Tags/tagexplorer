@@ -27,7 +27,11 @@
           </nav>
           <div class="flex items-center gap-3 text-[0.65rem] uppercase tracking-[0.4em] text-slate-400">
             <span data-filter-count>0 filters armed</span>
-            <button class="rounded-full border border-white/10 px-3 py-1 hover:border-accent-cyan/50 hover:text-white" data-clear-filters>
+            <button
+              class="rounded-full border border-white/10 px-3 py-1 hover:border-accent-cyan/50 hover:text-white"
+              data-clear-filters
+              data-tooltip="reset"
+            >
               Reset
             </button>
           </div>
@@ -76,6 +80,22 @@
 
       <div class="sheet-backdrop" data-sheet-backdrop hidden></div>
 
+      <div class="caught-overlay" data-caught-overlay hidden aria-hidden="true">
+        <div
+          class="caught-overlay__panel"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="caught-title"
+          aria-describedby="caught-copy"
+        >
+          <p id="caught-title" class="caught-overlay__label">Caught.</p>
+          <p id="caught-copy" class="caught-overlay__copy" data-caught-copy>
+            Already casing the filters? We log every indulgence.
+          </p>
+          <button type="button" class="caught-overlay__dismiss" data-caught-dismiss>I'll behave</button>
+        </div>
+      </div>
+
       <div class="bottom-sheet" data-settings-sheet>
         <div class="bottom-sheet__handle" aria-hidden="true"></div>
         <header class="flex items-start justify-between">
@@ -104,6 +124,7 @@
             class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
             data-sheet-mute
             aria-pressed="false"
+            data-tooltip="mute"
           >
             Off
           </button>
@@ -115,6 +136,7 @@
             class="rounded-full border border-white/10 px-4 py-2 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 transition hover:border-accent-pink/60 hover:text-white"
             data-sheet-motion
             aria-pressed="false"
+            data-tooltip="motion"
           >
             Off
           </button>
@@ -123,23 +145,23 @@
       </div>
 
       <nav class="bottom-safe-area fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-base/95 py-4 text-[0.6rem] uppercase tracking-[0.4em] text-slate-300 fold-inner:hidden">
-        <a class="flex flex-col items-center gap-1" href="../">
+        <a class="flex flex-col items-center gap-1" href="../" data-tooltip="navHome">
           <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
           Home
         </a>
-        <button class="flex flex-col items-center gap-1" data-bottom-open>
+        <button class="flex flex-col items-center gap-1" data-bottom-open data-tooltip="filters">
           <span class="h-10 w-10 rounded-full border border-accent-pink/40 bg-accent-pink/10" aria-hidden="true"></span>
           Filters
         </button>
-        <button class="flex flex-col items-center gap-1" data-bottom-settings>
+        <button class="flex flex-col items-center gap-1" data-bottom-settings data-tooltip="settings">
           <span class="h-10 w-10 rounded-full border border-accent-cyan/40 bg-accent-cyan/10" aria-hidden="true"></span>
           Settings
         </button>
-        <button class="flex flex-col items-center gap-1" data-bottom-mute aria-pressed="false">
+        <button class="flex flex-col items-center gap-1" data-bottom-mute aria-pressed="false" data-tooltip="navMute">
           <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
           Mute
         </button>
-        <button class="flex flex-col items-center gap-1" data-bottom-motion aria-pressed="false">
+        <button class="flex flex-col items-center gap-1" data-bottom-motion aria-pressed="false" data-tooltip="motion">
           <span class="h-10 w-10 rounded-full border border-white/10 bg-white/5" aria-hidden="true"></span>
           Motion
         </button>

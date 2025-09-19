@@ -29,6 +29,10 @@
   body.sheet-open {
     @apply overflow-hidden;
   }
+
+  body.caught-active {
+    @apply overflow-hidden;
+  }
   a {
     @apply text-accent-cyan transition-colors duration-300 hover:text-accent-pink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-pink;
   }
@@ -152,6 +156,17 @@
     @apply mx-auto h-1.5 w-16 rounded-full bg-white/20;
   }
 
+  .tease-tooltip {
+    @apply pointer-events-none fixed z-[65] rounded-2xl border border-accent-pink/40 bg-base/95 px-4 py-2 text-[0.55rem] uppercase tracking-[0.35em] text-accent-pink shadow-neon backdrop-blur transition-all duration-200;
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  .tease-tooltip[data-visible='true'] {
+    @apply opacity-100;
+    transform: translateY(0);
+  }
+
   [data-filter-panel]::after {
     content: '';
     position: absolute;
@@ -160,6 +175,29 @@
     background: radial-gradient(circle at 50% 0%, rgba(236, 72, 153, 0.55), transparent 65%);
     opacity: min(calc((var(--filter-heat, 0) / 5)), 0.85);
     transition: opacity 0.45s var(--transition-uncanny);
+  }
+  .caught-overlay {
+    @apply fixed inset-0 z-[70] hidden items-center justify-center bg-black/80 backdrop-blur;
+  }
+
+  .caught-overlay[data-visible='true'] {
+    @apply flex;
+  }
+
+  .caught-overlay__panel {
+    @apply relative flex max-w-md flex-col gap-4 rounded-3xl border border-accent-pink/60 bg-base/95 px-8 py-8 text-center shadow-neon backdrop-blur-xl;
+  }
+
+  .caught-overlay__label {
+    @apply font-display text-3xl uppercase tracking-[0.6em] text-accent-pink;
+  }
+
+  .caught-overlay__copy {
+    @apply text-xs uppercase tracking-[0.35em] text-slate-200;
+  }
+
+  .caught-overlay__dismiss {
+    @apply inline-flex items-center justify-center rounded-full border border-white/20 bg-white/5 px-5 py-2 text-[0.65rem] uppercase tracking-[0.35em] text-slate-100 transition hover:border-accent-cyan/50 hover:text-white;
   }
 
   .virtual-card {

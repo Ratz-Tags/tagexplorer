@@ -26,13 +26,20 @@
             <a class="hover:text-white" href="../about/">About</a>
           </nav>
           <a class="text-xs uppercase tracking-[0.4em] text-accent-cyan hover:text-white" href="../gallery/" data-artist-back>Back to filters</a>
-        </div>Can we roll in a scx_lavd usage 
+        </div>
       </header>
 
       <main class="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-6 py-12 sm:py-16">
         <article class="glass-panel grid gap-10 px-6 py-10 sm:px-10 fold-inner:grid-cols-[2fr,3fr]" data-artist-card>
           <figure class="relative overflow-hidden rounded-3xl border border-white/10 bg-panel/40">
-            <img class="h-full w-full object-cover" src="../assets/fallback.jpg" alt="Artist preview" data-artist-preview />
+            <img
+              class="h-full w-full object-cover"
+              src="../assets/fallback.jpg"
+              alt="Artist preview"
+              loading="lazy"
+              decoding="async"
+              data-artist-preview
+            />
             <figcaption class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent p-4 text-xs uppercase tracking-[0.4em] text-slate-200">
               Azure whispers cue harsher lines the longer you linger.
             </figcaption>
