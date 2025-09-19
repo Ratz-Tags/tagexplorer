@@ -63,10 +63,14 @@ data/
   tts_lines.json    # Whisper line map keyed by event
 ```
 
+
 ## Data contracts
 
 - `data/artists.json`: list of artists with `artist_id`, human name, preview asset, canonical tag ids, and outbound links.
 - `data/tags.json`: tag catalog describing tone, intensity, and copy used for tooltips and summaries.
+Usage: scxctl switch <--sched <SCHED>|--mode <MODE>|--args <ARGS>>
+
+For more information, try '--help'.```
 - `data/tts_lines.json`: event-to-line map that feeds the Azure whisper SSML template.
 
 All three datasets are fetched in parallel by `src/js/core/data-loader.js` and cached for reuse across routes.

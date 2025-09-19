@@ -200,6 +200,7 @@ const caughtOverlay = document.querySelector('[data-caught-overlay]');
 const caughtCopy = document.querySelector('[data-caught-copy]');
 const caughtDismiss = document.querySelector('[data-caught-dismiss]');
 
+
 let datasetRef = null;
 let updatePreferencesRef = null;
 let currentPreferences = null;
@@ -512,7 +513,6 @@ function renderGallery(filters) {
   const filteredArtists = normalizedFilters.length
     ? artists.filter((artist) => normalizedFilters.every((tag) => artist.tags.includes(tag)))
     : artists;
-
   if (!filteredArtists.length) {
     galleryEmpty?.classList.remove('hidden');
     galleryVirtualizer?.clear();
@@ -984,7 +984,6 @@ function hideCaught() {
     }
   }, 220);
 }
-
 window.addEventListener('beforeunload', () => {
   unsubscribeFold?.();
   galleryVirtualizer?.destroy();

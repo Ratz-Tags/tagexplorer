@@ -152,4 +152,3 @@ function setupScrollButtons() {
 window.addEventListener('beforeunload', () => {
   unwatchFold?.();
 });
-

@@ -33,7 +33,6 @@
   body.caught-active {
     @apply overflow-hidden;
   }
-
   a {
     @apply text-accent-cyan transition-colors duration-300 hover:text-accent-pink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-pink;
   }
@@ -177,7 +176,6 @@
     opacity: min(calc((var(--filter-heat, 0) / 5)), 0.85);
     transition: opacity 0.45s var(--transition-uncanny);
   }
-
   .caught-overlay {
     @apply fixed inset-0 z-[70] hidden items-center justify-center bg-black/80 backdrop-blur;
   }

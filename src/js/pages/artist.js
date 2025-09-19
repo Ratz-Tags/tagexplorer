@@ -159,4 +159,3 @@ function animateCard() {
 window.addEventListener('beforeunload', () => {
   unwatchFold?.();
 });
-

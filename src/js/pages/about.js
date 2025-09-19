@@ -7,7 +7,6 @@ const artistsCountEl = document.querySelector('[data-about-artists]');
 const tagsCountEl = document.querySelector('[data-about-tags]');
 const ttsCountEl = document.querySelector('[data-about-tts]');
 const roadmap = document.querySelector('[data-roadmap]');
-
 let unwatchFold = null;
 
 initializeApp('about', {
