@@ -680,6 +680,18 @@ function pruneRenderedPages(currentPage) {
   });
 }
 
+function pruneRenderedPages(currentPage) {
+  if (!artistGallery) return;
+  const minimumPage = Math.max(1, currentPage - (MAX_PAGES_IN_DOM - 1));
+  const cards = artistGallery.querySelectorAll(".artist-card[data-page]");
+  cards.forEach((card) => {
+    const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
+    if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
+      card.remove();
+    }
+  });
+}
+
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
