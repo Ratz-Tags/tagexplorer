@@ -22,14 +22,14 @@ function showNoEntriesMsg(element, msg = "No valid entries") {
 /**
  * Sets up infinite scroll functionality
  */
-function setupInfiniteScroll(callback) {
+function setupInfiniteScroll(callback, infoProvider) {
   let scrollTimeout = null;
   // Lower threshold for mobile, and support touchmove for better responsiveness
   const SCROLL_THRESHOLD = window.innerWidth <= 700 ? 120 : 300;
   function checkInfiniteScroll() {
     if (scrollTimeout) clearTimeout(scrollTimeout);
     scrollTimeout = setTimeout(() => {
-      const info = typeof getPaginationInfo === "function" ? getPaginationInfo() : null;
+      const info = typeof infoProvider === "function" ? infoProvider() : null;
       const isNearBottom =
         window.innerHeight + window.scrollY >= document.body.offsetHeight - SCROLL_THRESHOLD;
       if (isNearBottom && callback && info && info.hasMore) {
