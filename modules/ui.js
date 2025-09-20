@@ -30,6 +30,7 @@ function setupInfiniteScroll(callback, infoProvider) {
 
   let loading = false;
   let currentSentinel = null;
+  let pendingPage = null;
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -37,6 +38,10 @@ function setupInfiniteScroll(callback, infoProvider) {
       if (!entry || !entry.isIntersecting) return;
       const info = typeof infoProvider === "function" ? infoProvider() : null;
       if (!info || !info.hasMore || loading) return;
+      if (pendingPage !== null && info.lastRenderedPage < pendingPage) {
+        return;
+      }
+      pendingPage = info.currentPage + 1;
       loading = true;
       Promise.resolve(callback())
         .catch((error) => {
@@ -44,6 +49,18 @@ function setupInfiniteScroll(callback, infoProvider) {
         })
         .finally(() => {
           loading = false;
+          const latestInfo = typeof infoProvider === "function" ? infoProvider() : null;
+          if (
+            pendingPage !== null &&
+            (
+              !latestInfo ||
+              latestInfo.lastRenderedPage >= pendingPage ||
+              !latestInfo.hasMore ||
+              latestInfo.currentPage < pendingPage
+            )
+          ) {
+            pendingPage = null;
+          }
         });
     },
     {

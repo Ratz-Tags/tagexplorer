@@ -28,13 +28,32 @@ let sortMode = "name";
 let filterGeneration = 0;
 let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
 let currentPage = 1;
+const renderedPages = new Set();
 
 function getCurrentPage() {
+  if (
+    typeof window !== "undefined" &&
+    typeof window._galleryCurrentPage === "number"
+  ) {
+    currentPage = window._galleryCurrentPage;
+  }
   return currentPage;
 }
 
-function setCurrentPage(val) {
-  currentPage = Math.max(1, val);
+function setCurrentPage(val, { persist = true } = {}) {
+  const nextPage = Math.max(1, val);
+  currentPage = nextPage;
+  if (persist && typeof window !== "undefined") {
+    window._galleryCurrentPage = nextPage;
+  }
+}
+
+function resetPaginationState() {
+  renderedPages.clear();
+  setCurrentPage(1, { persist: false });
+  if (typeof window !== "undefined") {
+    delete window._galleryCurrentPage;
+  }
 }
 
 // DOM references
@@ -63,6 +82,34 @@ function ensureGallerySentinel() {
     artistGallery.appendChild(gallerySentinel);
   }
   return gallerySentinel;
+}
+
+function removePageFromDom(pageNumber) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${pageNumber}"]`
+  );
+  cards.forEach((card) => card.remove());
+  renderedPages.delete(pageNumber);
+}
+
+function removeGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = artistGallery.querySelector(".gallery-empty-state");
+  if (empty) empty.remove();
+}
+
+function showGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = document.createElement("div");
+  empty.className = "gallery-empty-state gallery-empty-humiliation";
+  empty.innerHTML = `
+    <span class="gallery-empty-emoji">😭</span>
+    <div class="gallery-empty-msg">Nobody wants to play with you.<br>Try less picky tags!</div>
+  `;
+  artistGallery.appendChild(empty);
+  renderedPages.clear();
+  resetGallerySentinel();
 }
 
 /**
@@ -512,21 +559,32 @@ function renderArtistsPage() {
   if (page === 1) {
     artistGallery.innerHTML = "";
     resetGallerySentinel();
+    renderedPages.clear();
+    removeGalleryEmptyState();
   }
 
   if (artistsToShow.length > 0) {
+    removeGalleryEmptyState();
     // Always append new artist cards for each page
     renderArtistCards(artistsToShow, undefined, page);
+  } else if (page === 1) {
+    showGalleryEmptyState();
   } else {
+    // No artists for this page; roll back the page counter and sentinel
+    setCurrentPage(page - 1, { persist: true });
     ensureGallerySentinel();
+    return;
   }
 
-  pruneGalleryPages(page);
+  pruneGalleryPages(getCurrentPage());
 }
 
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
+  if (pageNumber > 0 && renderedPages.has(pageNumber)) {
+    removePageFromDom(pageNumber);
+  }
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
   const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
@@ -666,30 +724,40 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   } else {
     artistGallery.appendChild(frag);
   }
+  renderedPages.add(pageNumber);
 }
 
 function pruneGalleryPages(currentPage) {
   if (!artistGallery) return;
   const minimumPage = Math.max(1, currentPage - (MAX_PAGES_IN_DOM - 1));
   const cards = artistGallery.querySelectorAll(".artist-card[data-page]");
+  const removedPages = new Set();
   cards.forEach((card) => {
     const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
     if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
+      removedPages.add(pageValue);
       card.remove();
     }
   });
+  removedPages.forEach((pageValue) => renderedPages.delete(pageValue));
 }
 
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
   const shown = Math.min(page * artistsPerPage, total);
+  const renderedArray = Array.from(renderedPages);
+  const lastRenderedPage = renderedArray.length
+    ? Math.max(...renderedArray)
+    : 0;
   return {
     total: total,
     shown: shown,
     hasMore: shown < total,
     currentPage: page,
-    artistsPerPage: artistsPerPage
+    artistsPerPage: artistsPerPage,
+    renderedPages: renderedPages.size,
+    lastRenderedPage,
   };
 }
 
@@ -710,9 +778,10 @@ async function filterArtists(reset = true, force = false) {
   try {
     // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
-      setCurrentPage(1);
+      resetPaginationState();
       artistGallery.innerHTML = "";
       resetGallerySentinel();
+      removeGalleryEmptyState();
     }
 
     spinner = artistGallery.querySelector(".gallery-spinner");
