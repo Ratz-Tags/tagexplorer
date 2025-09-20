@@ -130,14 +130,20 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   // Only two tags may be queried; slice for safety
   const effectiveTags = selectedTags.slice(0, 2);
-  const apiCacheKey = `danbooru-api-${artistName}-${effectiveTags.join(",")}`;
+  const page = Math.max(1, options.page || 1);
+  const limit = options.limit || 200;
+  const order = options.order || "approvals";
+  const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
+  const apiCacheKey = `danbooru-api-${artistName}-${effectiveTags.join(",")}-${cacheSignature}`;
+  const useCache = options.useCache !== false;
   // Include artist name with up to two selected tags for the API search
   const queryTags = [artistName, ...effectiveTags];
   const posts = await fetchPosts(queryTags, {
-    cacheKey: apiCacheKey,
-    limit: options.limit || 200,
-    page: options.page || 1,
-    order: options.order || "approvals",
+    cacheKey: useCache ? apiCacheKey : null,
+    useCache,
+    limit,
+    page,
+    order,
   });
   return filterValidImagePosts(posts, effectiveTags);
 }

@@ -13,10 +13,9 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 
 ## Project Structure
 
-- `index.html` – Main HTML entry point
+- `index.html` – Main entry point with inline Tailwind Play config and component layers (no build step required)
 - `main.js` – App bootstrap and logic
 - `modules/` – Modular JavaScript (gallery, tag explorer, sidebar, etc.)
-- `style.css` – Unified, modern styles for all UI elements
 - `audio/`, `icons/` – Media assets
 - `test/` – Test files
 
@@ -29,7 +28,7 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 ## Customization
 
 - Add new tags or artists by editing the JSON files
-- Adjust styles in `style.css` for further theming
+- Tweak colors, shadows, or component layers inside `index.html`'s `<style type="text/tailwindcss">` block or the adjacent `tailwind.config` script
 - Extend sidebar or gallery features in the `modules/` directory
 
 ## License
