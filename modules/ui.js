@@ -23,25 +23,59 @@ function showNoEntriesMsg(element, msg = "No valid entries") {
  * Sets up infinite scroll functionality
  */
 function setupInfiniteScroll(callback, infoProvider) {
-  let scrollTimeout = null;
-  // Lower threshold for mobile, and support touchmove for better responsiveness
-  const SCROLL_THRESHOLD = window.innerWidth <= 700 ? 120 : 300;
-  function checkInfiniteScroll() {
-    if (scrollTimeout) clearTimeout(scrollTimeout);
-    scrollTimeout = setTimeout(() => {
-      const info = typeof infoProvider === "function" ? infoProvider() : null;
-      const isNearBottom =
-        window.innerHeight + window.scrollY >= document.body.offsetHeight - SCROLL_THRESHOLD;
-      if (isNearBottom && callback && info && info.hasMore) {
-        callback();
-      }
-    }, 80);
+  const gallery = document.getElementById("artist-gallery");
+  if (!gallery || typeof callback !== "function") {
+    return;
   }
-  window.addEventListener("scroll", checkInfiniteScroll, { passive: true });
-  window.addEventListener("touchmove", checkInfiniteScroll, { passive: true });
-  window.addEventListener("resize", () => {
-    // Recalculate threshold on orientation change
-    checkInfiniteScroll();
+
+  let loading = false;
+  let currentSentinel = null;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      const entry = entries[0];
+      if (!entry || !entry.isIntersecting) return;
+      const info = typeof infoProvider === "function" ? infoProvider() : null;
+      if (!info || !info.hasMore || loading) return;
+      loading = true;
+      Promise.resolve(callback())
+        .catch((error) => {
+          console.warn("Infinite scroll callback failed", error);
+        })
+        .finally(() => {
+          loading = false;
+        });
+    },
+    {
+      root: null,
+      rootMargin: "35% 0px",
+      threshold: 0.01,
+    }
+  );
+
+  const connectSentinel = () => {
+    const sentinel = document.getElementById("gallery-end-sentinel");
+    if (currentSentinel && (!sentinel || sentinel !== currentSentinel)) {
+      observer.unobserve(currentSentinel);
+      currentSentinel = null;
+    }
+    if (sentinel && sentinel !== currentSentinel) {
+      currentSentinel = sentinel;
+      observer.observe(currentSentinel);
+    }
+  };
+
+  connectSentinel();
+
+  const mutationObserver = new MutationObserver(() => {
+    connectSentinel();
+  });
+
+  mutationObserver.observe(gallery, { childList: true });
+
+  window.addEventListener("beforeunload", () => {
+    observer.disconnect();
+    mutationObserver.disconnect();
   });
 }
 

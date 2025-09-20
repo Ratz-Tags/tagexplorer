@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
   <script>
-    tailwind.config = {
+    window.tailwind = window.tailwind || {};
+    window.tailwind.config = {
       theme: {
         extend: {
           colors: {
@@ -43,6 +43,7 @@
       },
     };
   </script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
   <style type="text/tailwindcss">
     @layer base {
       :root {
@@ -187,6 +188,9 @@
       }
       .artist-actions {
         @apply flex items-center justify-between gap-2;
+      }
+      .gallery-sentinel {
+        @apply block h-2 w-full opacity-0 pointer-events-none;
       }
       .copy-button,
       .reload-button,
