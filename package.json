@@ -5,10 +5,14 @@
   "main": "main.js",
   "scripts": {
     "test": "node --test",
-    "update:tags": "node scripts/updateKinkTags.js"
+    "update:tags": "node scripts/updateKinkTags.js",
+    "build:css": "tailwindcss -i styles/tailwind.css -o style.css --minify"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "tailwindcss": "^3.4.13"
+  }
 }
