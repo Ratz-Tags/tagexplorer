@@ -1,103 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
-  <title>Artist Explorer</title>
-  <meta name="description" content="Discover NSFW artists on Danbooru with kink tag filtering">
-  <link rel="stylesheet" href="style.css">
+  <title>TagExplorer · Artist Gallery</title>
+  <meta name="description" content="Discover NSFW artists on Danbooru with whispered humiliation-driven tag filters.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <link rel="icon" type="image/png" href="favicon.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
-<body class="fem-theme">
-  <!-- Background decoration -->
-  <div id="background-blur" aria-hidden="true"></div>
-  
-  <!-- Main application header -->
-  <header role="banner">
-    <div class="container">
-      <div class="top-bar">
-        <h1 class="brand">Artist Explorer</h1>
-        <div class="brand-sissy">✧ Welcome cutie. ✧<br>Obey, drool, and discover your next obsession~</div>
-        <span class="tagline" id="tagline">Pathetic..~</span>
+<body class="relative min-h-screen overflow-x-hidden">
+  <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
+  <div class="relative z-10 flex min-h-screen flex-col">
+    <header class="top-surface">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 pb-10 pt-12 lg:flex-row lg:items-end lg:justify-between">
+        <div class="space-y-5">
+          <span class="brand-chip">TagExplorer</span>
+          <h1 class="text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
+          <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <button class="control-btn sidebar-toggle" type="button">Pinned</button>
+          <button class="control-btn audio-toggle" type="button">Audio</button>
+          <button class="control-btn theme-toggle" type="button">Glow</button>
+          <button id="back-to-top" class="control-btn" type="button" aria-label="Back to top">Top</button>
+        </div>
       </div>
-      <!-- New compact tag explorer bar -->
-      <div class="tag-explorer-bar" id="tag-explorer-bar">
-        <button class="bar-btn" id="prompts-btn">Prompts</button>
-        <button class="bar-btn" id="filters-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">Filters</button>
+      <div class="surface-divider"></div>
+      <nav id="tag-explorer-bar" class="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 pb-8">
+        <button id="prompts-btn" class="bar-btn" type="button">Prompts</button>
+        <button id="filters-btn" class="bar-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">Filters</button>
+        <div class="ml-auto flex items-center gap-3 text-[0.55rem] uppercase tracking-[0.4em] text-slate-500">
+          <span class="hidden fold-cover:inline">Cover Mode</span>
+          <span class="hidden fold-inner:inline">Inner Mode</span>
+        </div>
+      </nav>
+    </header>
+
+    <main class="relative z-10 flex-1">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-12 px-6 pb-24 pt-12">
+        <section class="glass-panel flex flex-col gap-6" aria-labelledby="filters-heading">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-2">
+              <h2 id="filters-heading" class="text-lg font-display uppercase tracking-[0.45em] text-white">Filters</h2>
+              <p class="text-xs uppercase tracking-[0.35em] text-slate-400">Pick up to two tags. We'll remember your place while you wander.</p>
+            </div>
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
+              <label class="field-block">
+                <span class="field-label">Tag search</span>
+                <input id="tag-search" type="search" class="field-input" placeholder="search tags" autocomplete="off">
+              </label>
+              <label class="field-block">
+                <span class="field-label">Artist</span>
+                <input id="artist-name-filter" type="search" class="field-input" placeholder="artist filter" autocomplete="off">
+              </label>
+              <button id="clear-tags" class="browse-btn" type="button">Clear</button>
+            </div>
+          </div>
+          <div id="selected-tags" class="selected-tags-bar is-empty" aria-label="Selected tags"></div>
+          <div id="tag-buttons" class="tag-button-grid" aria-label="Kink tags"></div>
+          <p class="text-[0.6rem] uppercase tracking-[0.3em] text-slate-500">Need deeper cuts? Tap Filters above for the full control room.</p>
+        </section>
+
+        <section class="space-y-4">
+          <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
+          <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
+        </section>
       </div>
-    </div>
-  </header>
+    </main>
+  </div>
 
-  <!-- Main content area -->
-  <main role="main" class="container">
-    <!-- Selected tags bar -->
-    <section id="selected-tags" class="selected-tags-bar" aria-label="Selected tags"></section>
-
-    <!-- Filter results summary -->
-    <section id="filtered-results" aria-live="polite" aria-label="Search results summary"></section>
-
-    <!-- Artist gallery -->
-    <section id="artist-gallery" aria-label="Artist gallery" role="region">
-      <h2 class="visually-hidden">Artists</h2>
-    </section>
-  </main>
-
-  <!-- Sidebar for copied artists -->
   <aside class="sidebar-wrapper" aria-label="Copied artists">
-    <div id="copied-sidebar" class="sidebar-hidden" role="complementary" aria-label="Artists you've copied">
-      <button class="copied-sidebar-close" aria-label="Close sidebar">X</button>
-      <h2 class="visually-hidden">Copied Artists</h2>
-      <!-- Copied artists will be injected here -->
+    <div id="copied-sidebar" class="sidebar-panel sidebar-hidden" role="complementary" aria-label="Pinned artists">
+      <div class="sidebar-header">
+        <h2 class="text-sm font-display uppercase tracking-[0.4em] text-white">Pinned Artists</h2>
+        <button class="copied-sidebar-close" aria-label="Close sidebar">Close</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="sidebar-taunt-banner">No artists copied yet. Too shy to commit?</div>
+        <div class="sidebar-sections"></div>
+      </div>
     </div>
   </aside>
 
-  <!-- Interactive elements overlay -->
   <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
 
-  <!-- Audio controls -->
   <section id="audio-section" aria-label="Audio controls">
     <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
       <div class="audio-header">
-        <span aria-label="Audio indicator">🎧</span>
+        <span aria-hidden="true">🎧</span>
         <span id="audio-track-name">No track playing</span>
       </div>
       <div class="audio-controls" role="group" aria-label="Audio playback controls">
-        <button id="audio-prev" aria-label="Previous track">⏮️</button>
-        <button id="audio-toggle" aria-label="Play/pause">⏯️</button>
-        <button id="audio-next" aria-label="Next track">⏭️</button>
-        <button id="moan-mute" aria-label="Toggle moan sound">🔇 Moan</button>
+        <button id="audio-prev" type="button" aria-label="Previous track">⏮</button>
+        <button id="audio-toggle" type="button" aria-label="Play or pause">▶</button>
+        <button id="audio-next" type="button" aria-label="Next track">⏭</button>
+        <button id="moan-mute" type="button" aria-label="Toggle moan sound">🔇 Moan</button>
       </div>
     </div>
-
-    <!-- Audio elements -->
     <audio id="moan-audio" preload="auto" aria-label="Moan sound effects">
       <source src="moan.mp3" type="audio/mpeg">
-      Your browser does not support the audio element.
     </audio>
-    
-    <audio id="hypnoAudio" preload="auto" aria-label="Hypnosis audio tracks">
-      Your browser does not support the audio element.
-    </audio>
+    <audio id="hypnoAudio" preload="auto" aria-label="Hypnosis audio tracks"></audio>
   </section>
 
-  <!-- Floating controls -->
-  <nav class="floating-controls" aria-label="Quick access controls">
-    <div class="toggle-buttons-container">
-      <button class="sidebar-toggle" aria-label="Show copied artists sidebar">🎀</button>
-      <button class="audio-toggle" aria-label="Show audio panel">🎶</button>
-      <button class="theme-toggle" aria-label="Toggle theme">🌓</button>
-    </div>
-    
-    <button id="back-to-top" title="Back to top" aria-label="Scroll to top">
-      <span aria-hidden="true">↑</span>
-      <span class="control-label">Top</span>
-    </button>
-  </nav>
-
-  <!-- Load the modular JavaScript -->
   <script type="module" src="main.js"></script>
 </body>
-
 </html>

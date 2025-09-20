@@ -49,6 +49,10 @@ import {
   setSortMode,
   setSortPreference,
   forceSortAndRender,
+  getPaginationInfo,
+  getCurrentPage,
+  setCurrentPage,
+  renderArtistsPage,
 } from "./modules/gallery.js";
 import {
   initUI,
@@ -137,17 +141,12 @@ async function initApp() {
 
     // Set up infinite scroll
     setupInfiniteScroll(() => {
-      import("./modules/gallery.js").then((gallery) => {
-        const galleryInfo = gallery.getPaginationInfo();
-        if (galleryInfo.hasMore && typeof gallery.renderArtistsPage === "function") {
-          // Use setter to increment currentPage and render next page
-          if (typeof gallery.setCurrentPage === "function" && typeof gallery.getCurrentPage === "function") {
-            gallery.setCurrentPage(gallery.getCurrentPage() + 1);
-            gallery.renderArtistsPage();
-          }
-        }
-      });
-    });
+      const info = getPaginationInfo();
+      if (info && info.hasMore) {
+        setCurrentPage(getCurrentPage() + 1);
+        renderArtistsPage();
+      }
+    }, getPaginationInfo);
 
     console.log("Application initialized successfully");
   } catch (error) {
@@ -294,7 +293,7 @@ tagSearchModeSelect.innerHTML = `
   <option value="starts">Starts with</option>
   <option value="ends">Ends with</option>
 `;
-tagSearchModeSelect.style.marginLeft = "0.5em";
+tagSearchModeSelect.className = "field-input mt-2 sm:mt-0 sm:w-36 text-[0.6rem] uppercase tracking-[0.3em]";
 const tagSearchInput = document.getElementById("tag-search");
 if (tagSearchInput && tagSearchInput.parentNode) {
   tagSearchInput.parentNode.insertBefore(
@@ -307,26 +306,7 @@ if (tagSearchInput && tagSearchInput.parentNode) {
 }
 
 
-// --- Add floating chibi mascot image (fixes chibi.png placement) ---
 window.addEventListener("DOMContentLoaded", () => {
-  if (!document.getElementById("floating-chibi-mascot")) {
-    const chibi = document.createElement("img");
-    chibi.id = "floating-chibi-mascot";
-    chibi.src = "icons/chibi.png";
-    chibi.alt = "Chibi Mascot";
-    chibi.style.position = "fixed";
-    chibi.style.bottom = "2.5em";
-    chibi.style.right = "2.5em";
-    chibi.style.width = "90px";
-    chibi.style.height = "auto";
-    chibi.style.zIndex = "13000";
-    chibi.style.pointerEvents = "none";
-    chibi.style.userSelect = "none";
-    chibi.style.filter = "drop-shadow(0 2px 12px #fd7bc5cc)";
-    document.body.appendChild(chibi);
-  }
-
-  // Tag Explorer Bar buttons
   const promptsBtn = document.getElementById("prompts-btn");
   const filtersBtn = document.getElementById("filters-btn");
 
@@ -335,6 +315,7 @@ window.addEventListener("DOMContentLoaded", () => {
       if (window.renderPromptCacheUI) window.renderPromptCacheUI();
     });
   }
+
   if (filtersBtn) {
     filtersBtn.addEventListener("click", () => {
       openTagExplorer();
@@ -344,46 +325,6 @@ window.addEventListener("DOMContentLoaded", () => {
       filtersBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
   }
-
-  // Make tag-explorer-bar fixed on scroll with proper offset below top-bar
-  const tagBar = document.getElementById("tag-explorer-bar");
-  const topBarEl = document.querySelector(".top-bar");
-
-  function setTagBarTop(useTopBarOffset) {
-    const topOffset = topBarEl ? (topBarEl.offsetHeight + 8) : 8;
-    const value = useTopBarOffset ? `${topOffset}px` : `0.25rem`;
-    document.documentElement.style.setProperty("--tagbar-top", value);
-  }
-
-  function updateContentPad() {
-    const pad = tagBar ? (tagBar.offsetHeight + 8) : 0;
-    document.documentElement.style.setProperty('--content-top-pad', `${pad}px`);
-  }
-
-  function updateTagBarFixed() {
-    if (!tagBar) return;
-    const threshold = topBarEl ? (topBarEl.offsetHeight + 8) : 60;
-    if (window.scrollY > threshold) {
-      tagBar.classList.add("fixed");
-      document.body.classList.add('tagbar-fixed');
-      setTagBarTop(false); // stick to very top when top-bar is out of view
-    } else {
-      tagBar.classList.remove("fixed");
-      document.body.classList.remove('tagbar-fixed');
-      setTagBarTop(true); // sit just beneath top-bar when on top
-    }
-    updateContentPad();
-  }
-
-  // Initialize position and bind events
-  setTagBarTop(true);
-  updateTagBarFixed();
-  window.addEventListener("scroll", updateTagBarFixed, { passive: true });
-  window.addEventListener("resize", () => {
-    setTagBarTop(window.scrollY <= (topBarEl ? topBarEl.offsetHeight + 8 : 60));
-    updateContentPad();
-  });
-
 });
 
 // Remove inline z-index overrides; CSS now controls stacking order
