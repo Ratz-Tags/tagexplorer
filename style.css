@@ -501,7 +501,9 @@ body.incognito-theme .background-lattice {
 }
 
 .top-surface {
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 60;
     overflow: hidden;
     border-bottom-width: 1px;
     border-color: hsla(0, 0%, 100%, .05);
@@ -2516,5 +2518,132 @@ body.sidebar-open .sidebar-wrapper {
 @media (min-width:980px) and (min-height:980px) {
     .fold-inner\:inline {
         display: inline
+    }
+}
+
+/* --- Sticky humiliation top bar enhancements --- */
+.top-surface {
+    transition: background-color .35s cubic-bezier(.4,-.2,.2,1.2),
+        box-shadow .35s cubic-bezier(.4,-.2,.2,1.2),
+        border-color .35s cubic-bezier(.4,-.2,.2,1.2);
+}
+
+.top-surface.is-sticky {
+    background-color: rgba(22, 21, 37, .95);
+    border-color: rgba(255, 118, 214, .3);
+    box-shadow: 0 24px 60px -28px rgba(255, 118, 214, .55);
+}
+
+.tag-explorer-wordmark {
+    display: inline-block;
+    font-family: "Parisienne", cursive;
+    font-size: clamp(2.25rem, 5vw, 3.25rem);
+    letter-spacing: .12em;
+    color: #ff7ddc;
+    text-shadow: 0 12px 45px rgba(255, 118, 214, .4);
+}
+
+.gallery-title {
+    text-transform: uppercase;
+}
+
+.top-bar-tease {
+    letter-spacing: .4em;
+    color: rgba(255, 200, 225, .75);
+}
+
+.command-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+}
+
+.command-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+}
+
+.command-status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .75rem;
+    margin-left: auto;
+    text-transform: uppercase;
+    font-size: .5rem;
+    letter-spacing: .45em;
+    color: rgba(226, 232, 240, .7);
+}
+
+.command-status span {
+    white-space: nowrap;
+}
+
+.command-btn {
+    position: relative;
+    padding: .55rem 1.35rem;
+    font-size: .6rem;
+    letter-spacing: .5em;
+    background: linear-gradient(135deg, rgba(255, 118, 214, .18), rgba(102, 243, 255, .14));
+    border-color: rgba(255, 118, 214, .45);
+    color: rgba(255, 240, 250, .92);
+    box-shadow: 0 20px 50px -28px rgba(255, 118, 214, .7);
+    text-shadow: 0 0 12px rgba(255, 118, 214, .45);
+}
+
+.command-btn::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: 9999px;
+    box-shadow: 0 0 25px rgba(255, 118, 214, .55);
+    opacity: 0;
+    transition: opacity .3s ease;
+    z-index: -1;
+}
+
+.command-btn:hover {
+    box-shadow: 0 25px 60px -25px rgba(255, 118, 214, .85);
+    background: linear-gradient(135deg, rgba(255, 118, 214, .28), rgba(102, 243, 255, .24));
+}
+
+.command-btn:hover::after,
+.command-btn:focus-visible::after {
+    opacity: 1;
+}
+
+.command-btn:focus-visible {
+    outline-color: #ff7ddc;
+}
+
+.command-btn--ghost {
+    background: rgba(255, 255, 255, .05);
+    border-color: rgba(255, 118, 214, .25);
+    color: rgba(236, 230, 255, .85);
+    box-shadow: none;
+}
+
+.command-btn--ghost:hover {
+    background: rgba(255, 118, 214, .16);
+    color: rgba(255, 250, 255, .95);
+}
+
+@media (max-width: 768px) {
+    .command-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: .9rem;
+    }
+
+    .command-status {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .top-bar-tease {
+        text-align: left;
     }
 }

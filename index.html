@@ -8,33 +8,38 @@
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="relative min-h-screen overflow-x-hidden">
   <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
   <div class="relative z-10 flex min-h-screen flex-col">
     <header class="top-surface">
-      <div class="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 pb-10 pt-12 lg:flex-row lg:items-end lg:justify-between">
-        <div class="space-y-5">
-          <span class="brand-chip">TagExplorer</span>
-          <h1 class="text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
-          <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
-        </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <button class="control-btn sidebar-toggle" type="button">Pinned</button>
-          <button class="control-btn audio-toggle" type="button">Audio</button>
-          <button class="control-btn theme-toggle" type="button">Glow</button>
-          <button id="back-to-top" class="control-btn" type="button" aria-label="Back to top">Top</button>
+      <div class="mx-auto w-full max-w-7xl px-6 pb-8 pt-12">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="space-y-4">
+            <span class="tag-explorer-wordmark">TagExplorer</span>
+            <h1 class="gallery-title text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
+            <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
+          </div>
+          <p class="top-bar-tease max-w-sm text-xs uppercase tracking-[0.35em] text-rose-200/80 lg:text-right">
+            I'll keep the glow pinned above every scroll so you can't pretend you're not begging for more.
+          </p>
         </div>
       </div>
       <div class="surface-divider"></div>
-      <nav id="tag-explorer-bar" class="mx-auto flex w-full max-w-7xl items-center gap-3 px-6 pb-8">
-        <button id="prompts-btn" class="bar-btn" type="button">Prompts</button>
-        <button id="filters-btn" class="bar-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">Filters</button>
-        <div class="ml-auto flex items-center gap-3 text-[0.55rem] uppercase tracking-[0.4em] text-slate-500">
-          <span class="hidden fold-cover:inline">Cover Mode</span>
-          <span class="hidden fold-inner:inline">Inner Mode</span>
+      <nav id="tag-explorer-bar" class="command-bar mx-auto w-full max-w-7xl px-6 pb-6 pt-4" role="toolbar" aria-label="Pinned humiliation controls">
+        <div class="command-group" role="group" aria-label="Primary gallery controls">
+          <button class="control-btn command-btn sidebar-toggle" type="button">PINNED</button>
+          <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
+          <button class="control-btn command-btn theme-toggle" type="button">GLOW</button>
+          <button id="prompts-btn" class="control-btn command-btn" type="button">PROMPT</button>
+          <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
+        </div>
+        <div class="command-status">
+          <span class="hidden fold-cover:inline">COVER MODE</span>
+          <span class="hidden fold-inner:inline">INNER MODE</span>
+          <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
         </div>
       </nav>
     </header>
