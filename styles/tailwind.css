@@ -56,6 +56,15 @@ content: '';
 .control-btn {
 @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-200 transition-all duration-300 ease-kink hover:-translate-y-0.5 hover:border-glow hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
 }
+.command-btn {
+@apply control-btn px-6 py-2 tracking-[0.5em] bg-blush/20 border-blush/40 text-white shadow-pulse;
+}
+.command-btn--ghost {
+@apply control-btn bg-white/10 border-white/20 text-slate-200;
+}
+.tag-explorer-wordmark {
+@apply font-script text-[clamp(2.5rem,6vw,3.75rem)] text-blush drop-shadow-[0_0_25px_rgba(255,118,214,0.45)];
+}
 .bar-btn {
 @apply control-btn px-5 py-2 text-[0.58rem] tracking-[0.5em] text-slate-300 hover:text-white hover:border-blush;
 }
