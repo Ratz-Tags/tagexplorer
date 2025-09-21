@@ -252,7 +252,6 @@ const sortButtonElem = document.getElementById("sort-button");
 if (sortButtonElem && sortSelect) {
   sortButtonElem.addEventListener("click", () => {
     setSortMode(sortSelect.value);
-    forceSortAndRender();
   });
 }
 

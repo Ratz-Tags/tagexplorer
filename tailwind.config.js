@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Rajdhani', 'system-ui', 'sans-serif'],
+        script: ['Parisienne', 'cursive'],
       },
       boxShadow: {
         neon: '0 25px 60px -15px rgba(102, 243, 255, 0.35)',
