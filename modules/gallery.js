@@ -31,18 +31,29 @@ let currentPage = 1;
 const renderedPages = new Set();
 
 function getCurrentPage() {
+  if (
+    typeof window !== "undefined" &&
+    typeof window._galleryCurrentPage === "number"
+  ) {
+    currentPage = window._galleryCurrentPage;
+  }
   return currentPage;
 }
 
-function getTotalPages() {
-  if (!artistsPerPage) return 0;
-  return Math.ceil(filtered.length / artistsPerPage);
+function setCurrentPage(val, { persist = true } = {}) {
+  const nextPage = Math.max(1, val);
+  currentPage = nextPage;
+  if (persist && typeof window !== "undefined") {
+    window._galleryCurrentPage = nextPage;
+  }
 }
 
-function setCurrentPage(val) {
-  const totalPages = getTotalPages();
-  const maxPage = totalPages > 0 ? totalPages : 1;
-  currentPage = Math.min(Math.max(1, val), maxPage);
+function resetPaginationState() {
+  renderedPages.clear();
+  setCurrentPage(1, { persist: false });
+  if (typeof window !== "undefined") {
+    delete window._galleryCurrentPage;
+  }
 }
 
 // DOM references
@@ -72,28 +83,32 @@ function ensureGallerySentinel() {
   }
   return gallerySentinel;
 }
-
-function removeCardsForPage(page) {
+function removePageFromDom(pageNumber) {
   if (!artistGallery) return;
   const cards = artistGallery.querySelectorAll(
-    `.artist-card[data-page="${page}"]`
+    `.artist-card[data-page="${pageNumber}"]`
   );
   cards.forEach((card) => card.remove());
+  renderedPages.delete(pageNumber);
 }
 
-function sortFilteredArtists() {
-  if (!filtered.length) return;
-  if (sortMode === "count") {
-    filtered.sort(
-      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-    );
-  } else {
-    filtered.sort((a, b) =>
-      a.artistName.localeCompare(b.artistName, undefined, {
-        sensitivity: "base",
-      })
-    );
-  }
+function removeGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = artistGallery.querySelector(".gallery-empty-state");
+  if (empty) empty.remove();
+}
+
+function showGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = document.createElement("div");
+  empty.className = "gallery-empty-state gallery-empty-humiliation";
+  empty.innerHTML = `
+    <span class="gallery-empty-emoji">😭</span>
+    <div class="gallery-empty-msg">Nobody wants to play with you.<br>Try less picky tags!</div>
+  `;
+  artistGallery.appendChild(empty);
+  renderedPages.clear();
+  resetGallerySentinel();
 }
 
 /**
@@ -543,36 +558,34 @@ function renderArtistsPage(options = {}) {
     artistGallery.innerHTML = "";
     resetGallerySentinel();
     renderedPages.clear();
-  } else if (force) {
-    removeCardsForPage(page);
-    renderedPages.delete(page);
-  } else if (renderedPages.has(page)) {
-    pruneGalleryPages(page);
-    return;
-  }
-
-  if (start >= filtered.length) {
-    ensureGallerySentinel();
-    pruneGalleryPages(page);
-    return;
+    removeGalleryEmptyState();
   }
 
   const end = Math.min(start + artistsPerPage, filtered.length);
   const artistsToShow = filtered.slice(start, end);
 
   if (artistsToShow.length > 0) {
+    removeGalleryEmptyState();
+    // Always append new artist cards for each page
     renderArtistCards(artistsToShow, undefined, page);
-    renderedPages.add(page);
+  } else if (page === 1) {
+    showGalleryEmptyState();
   } else {
+    // No artists for this page; roll back the page counter and sentinel
+    setCurrentPage(page - 1, { persist: true });
     ensureGallerySentinel();
+    return;
   }
 
-  pruneGalleryPages(page);
+  pruneGalleryPages(getCurrentPage());
 }
 
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
+  if (pageNumber > 0 && renderedPages.has(pageNumber)) {
+    removePageFromDom(pageNumber);
+  }
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
   const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
@@ -712,21 +725,23 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   } else {
     artistGallery.appendChild(frag);
   }
+  renderedPages.add(pageNumber);
 }
 
 function pruneGalleryPages(currentPage) {
   if (!artistGallery) return;
   const minimumPage = Math.max(1, currentPage - (MAX_PAGES_IN_DOM - 1));
   const cards = artistGallery.querySelectorAll(".artist-card[data-page]");
-  const pagesRemoved = new Set();
+  const removedPages = new Set();
   cards.forEach((card) => {
     const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
     if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
+      removedPages.add(pageValue);
       card.remove();
       pagesRemoved.add(pageValue);
     }
   });
-  pagesRemoved.forEach((page) => renderedPages.delete(page));
+  removedPages.forEach((pageValue) => renderedPages.delete(pageValue));
 }
 
 function getPaginationInfo() {
@@ -734,13 +749,18 @@ function getPaginationInfo() {
   const total = filtered.length;
   const totalPages = getTotalPages();
   const shown = Math.min(page * artistsPerPage, total);
+  const renderedArray = Array.from(renderedPages);
+  const lastRenderedPage = renderedArray.length
+    ? Math.max(...renderedArray)
+    : 0;
   return {
     total: total,
     shown: shown,
     hasMore: page < totalPages,
     currentPage: page,
     artistsPerPage: artistsPerPage,
-    totalPages,
+    renderedPages: renderedPages.size,
+    lastRenderedPage,
   };
 }
 
@@ -761,10 +781,10 @@ async function filterArtists(reset = true, force = false) {
   try {
     // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
-      setCurrentPage(1);
+      resetPaginationState();
       artistGallery.innerHTML = "";
       resetGallerySentinel();
-      renderedPages.clear();
+      removeGalleryEmptyState();
     }
 
     spinner = artistGallery.querySelector(".gallery-spinner");

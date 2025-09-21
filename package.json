@@ -12,7 +12,5 @@
   "author": "",
   "license": "ISC",
   "type": "module",
-  "devDependencies": {
-    "tailwindcss": "^3.4.13"
-  }
+  "devDependencies": {}
 }
