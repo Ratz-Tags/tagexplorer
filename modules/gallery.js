@@ -54,8 +54,13 @@ function getTotalPages() {
   return Math.ceil(filtered.length / artistsPerPage);
 }
 
+function calculateTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
 function setCurrentPage(val) {
-  const totalPages = getTotalPages();
+  const totalPages = calculateTotalPages();
   const maxPage = totalPages > 0 ? totalPages : 1;
   currentPage = Math.min(Math.max(1, val), maxPage);
 }
@@ -113,6 +118,31 @@ function showGalleryEmptyState() {
   artistGallery.appendChild(empty);
   renderedPages.clear();
   resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
 }
 
 function removeCardsForPage(page) {
@@ -853,7 +883,7 @@ function pruneGalleryPages(currentPage) {
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
-  const totalPages = getTotalPages();
+  const totalPages = calculateTotalPages();
   const shown = Math.min(page * artistsPerPage, total);
   const renderedArray = Array.from(renderedPages);
   const lastRenderedPage = renderedArray.length
@@ -1019,7 +1049,7 @@ function setSortMode(mode, options = {}) {
   const { preservePage = false, deferRender = false } = options;
   sortMode = mode;
   lastSortMode = mode;
-  sortCurrentArtists();
+  sortCurrentArtists();proceed with the clean reconstruction patch
   if (!preservePage) {
     setCurrentPage(1);
   }
@@ -1038,7 +1068,7 @@ function forceSortAndRender() {
 
 function setAllArtists(artists) {
   if (Array.isArray(artists)) {
-    allArtists = artists;
+    allArtists = artists;proceed with the clean reconstruction patch
   } else {
     allArtists = [];
   }
