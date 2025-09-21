@@ -45,7 +45,46 @@ content: '';
 @apply absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_32%,rgba(255,255,255,0.04)_64%,rgba(255,255,255,0)_100%)] opacity-60 mix-blend-screen pointer-events-none;
 }
 .top-surface {
-@apply relative overflow-hidden border-b border-white/5 bg-panel/80 backdrop-blur-glass;
+@apply sticky top-0 z-[70] w-full overflow-hidden border-b border-white/10 bg-panel/80 backdrop-blur-glass;
+box-shadow: inset 0 -1px 0 0 rgba(255, 118, 214, 0.18);
+transition: background-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
+  border-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
+  box-shadow 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+}
+.top-surface::after {
+content: '';
+@apply pointer-events-none absolute inset-x-0 bottom-0 h-6 bg-gradient-to-b from-transparent via-white/10 to-white/0;
+opacity: 0;
+transition: opacity 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+}
+.top-surface.is-sticky {
+@apply border-white/20 bg-panel/90;
+box-shadow: 0 22px 55px -28px rgba(255, 118, 214, 0.55);
+}
+.top-surface.is-sticky::after {
+opacity: 1;
+}
+.top-band {
+@apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 pb-8 pt-12;
+transition: padding 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+}
+.top-surface.is-sticky .top-band {
+padding-bottom: 1.75rem;
+padding-top: 2.5rem;
+}
+.command-bar {
+@apply mx-auto flex w-full max-w-7xl flex-wrap items-center justify-between gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink;
+backdrop-filter: blur(18px);
+}
+.top-surface.is-sticky .command-bar {
+@apply border-white/20 bg-black/60;
+box-shadow: 0 18px 45px -25px rgba(255, 118, 214, 0.5);
+}
+.command-group {
+@apply flex flex-wrap items-center gap-3;
+}
+.command-status {
+@apply flex items-center gap-4 text-[0.55rem] tracking-[0.4em] text-slate-300;
 }
 .surface-divider {
 @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
@@ -79,6 +118,29 @@ content: '';
 }
 .field-input {
 @apply w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-slate-100 placeholder:text-slate-500 focus:border-glow focus:outline-none focus:ring-2 focus:ring-glow/40;
+}
+.gallery-intro {
+@apply relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/35 p-6 text-[0.65rem] uppercase tracking-[0.3em] text-slate-300 shadow-neon backdrop-blur-sm transition-all duration-500 ease-kink;
+}
+.gallery-intro::before {
+content: '';
+@apply pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,100,212,0.22),transparent_65%)] opacity-70;
+mix-blend-mode: screen;
+}
+.gallery-intro__header {
+@apply relative z-10 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between;
+}
+.gallery-intro__title {
+@apply text-lg font-display uppercase tracking-[0.45em] text-white drop-shadow-[0_0_25px_rgba(255,118,214,0.35)];
+}
+.gallery-intro__subtitle {
+@apply max-w-2xl text-[0.6rem] uppercase tracking-[0.35em] text-rose-200/80;
+}
+.gallery-intro__copy {
+@apply relative z-10 mt-4 max-w-3xl text-[0.6rem] uppercase tracking-[0.3em] text-slate-400;
+}
+.gallery-intro__reset {
+@apply relative z-10 mt-5 self-start px-5 py-2 text-[0.58rem];
 }
 .selected-tags-bar {
 @apply flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-black/30 px-4 py-3 backdrop-blur-sm transition-all duration-300;
@@ -124,6 +186,18 @@ content: '';
 }
 .gallery-grid {
 @apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+}
+.gallery-empty-state {
+@apply col-span-full flex flex-col items-center gap-4 rounded-[2rem] border border-rose-300/25 bg-rose-950/30 p-8 text-center text-[0.6rem] uppercase tracking-[0.35em] text-rose-100/80 shadow-neon;
+}
+.gallery-empty-state__title {
+@apply text-sm font-display uppercase tracking-[0.4em] text-white;
+}
+.gallery-empty-state__body {
+@apply max-w-xl text-[0.58rem] uppercase tracking-[0.35em] text-rose-100/70;
+}
+.gallery-empty-state__action {
+@apply mt-1 px-6 py-2 text-[0.58rem];
 }
 .artist-card {
 @apply relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-panel/75 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-1 hover:border-glow/80 hover:shadow-[0_25px_60px_-25px_rgba(102,243,255,0.6)];

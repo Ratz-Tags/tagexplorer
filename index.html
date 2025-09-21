@@ -15,7 +15,7 @@
   <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
   <div class="relative z-10 flex min-h-screen flex-col">
     <header class="top-surface">
-      <div class="mx-auto w-full max-w-7xl px-6 pb-8 pt-12">
+      <div class="top-band">
         <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div class="space-y-4">
             <span class="tag-explorer-wordmark">TagExplorer</span>
@@ -28,7 +28,7 @@
         </div>
       </div>
       <div class="surface-divider"></div>
-      <nav id="tag-explorer-bar" class="command-bar mx-auto w-full max-w-7xl px-6 pb-6 pt-4" role="toolbar" aria-label="Pinned humiliation controls">
+      <nav id="tag-explorer-bar" class="command-bar" role="toolbar" aria-label="Pinned humiliation controls">
         <div class="command-group" role="group" aria-label="Primary gallery controls">
           <button class="control-btn command-btn sidebar-toggle" type="button">PINNED</button>
           <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
@@ -41,32 +41,23 @@
           <span class="hidden fold-inner:inline">INNER MODE</span>
           <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
         </div>
+        <div class="command-status">
+          <span class="hidden fold-cover:inline">COVER MODE</span>
+          <span class="hidden fold-inner:inline">INNER MODE</span>
+          <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
+        </div>
       </div>
     </header>
 
     <main class="relative z-10 flex-1">
-      <div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-24 pt-12 sm:px-6 lg:px-8">
-        <section class="glass-panel space-y-6" aria-labelledby="filters-heading">
-          <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div class="space-y-2">
-              <h2 id="filters-heading" class="text-lg font-display uppercase tracking-[0.45em] text-white">Filters</h2>
-              <p class="text-xs uppercase tracking-[0.35em] text-slate-300">Pick up to two tags. We remember your shame for you.</p>
-            </div>
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-end">
-              <label class="field-block">
-                <span class="field-label">Tag search</span>
-                <input id="tag-search" type="search" class="field-input" placeholder="search tags" autocomplete="off">
-              </label>
-              <label class="field-block">
-                <span class="field-label">Artist</span>
-                <input id="artist-name-filter" type="search" class="field-input" placeholder="artist filter" autocomplete="off">
-              </label>
-              <button id="clear-tags" class="browse-btn" type="button">Clear</button>
-            </div>
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-10 px-6 pb-20 pt-10">
+        <section class="gallery-intro" aria-label="Pinned humiliation briefing">
+          <div class="gallery-intro__header">
+            <h2 class="gallery-intro__title">Pinned filter leash engaged</h2>
+            <p class="gallery-intro__subtitle">The FILTER button above is your only mercy. Tap it when you're ready to admit what you crave.</p>
           </div>
-          <div id="selected-tags" class="selected-tags-bar is-empty" aria-label="Selected tags">Empty. Brave of you.</div>
-          <div id="tag-buttons" class="tag-button-grid" aria-label="Kink tags"></div>
-          <p class="text-[0.6rem] uppercase tracking-[0.3em] text-slate-500">Need deeper cuts? Tap Filters above for the full control room.</p>
+          <p class="gallery-intro__copy">Your feed refreshes in cruel 100-artist waves. Scroll to the bottom to beg for the next batch, or clear your shame when you finally give up.</p>
+          <button id="clear-tags" class="browse-btn gallery-intro__reset" type="button" style="display: none;">Clear tags</button>
         </section>
 
         <section class="space-y-4">

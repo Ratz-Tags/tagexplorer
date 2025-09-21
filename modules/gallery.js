@@ -44,6 +44,11 @@ function getTotalPages() {
   return Math.ceil(filtered.length / artistsPerPage);
 }
 
+function getTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
 function setCurrentPage(val) {
   const totalPages = getTotalPages();
   const maxPage = totalPages > 0 ? totalPages : 1;
@@ -103,6 +108,31 @@ function showGalleryEmptyState() {
   artistGallery.appendChild(empty);
   renderedPages.clear();
   resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
 }
 
 function removeCardsForPage(page) {
@@ -582,6 +612,25 @@ function renderArtistsPage(options = {}) {
     renderedPages.delete(page);
   } else if (renderedPages.has(page)) {
     pruneGalleryPages(page);
+    return;
+  }
+
+  if (filtered.length === 0) {
+    const emptyState = document.createElement("div");
+    emptyState.className = "gallery-empty-state";
+
+    const title = document.createElement("p");
+    title.className = "gallery-empty-state__title";
+    title.textContent = "No artists for that combination";
+    emptyState.appendChild(title);
+
+    const body = document.createElement("p");
+    body.className = "gallery-empty-state__body";
+    body.textContent =
+      "Use the FILTER command above or clear your tags to coax new prey back into view.";
+    emptyState.appendChild(body);
+
+    artistGallery.appendChild(emptyState);
     return;
   }
 
