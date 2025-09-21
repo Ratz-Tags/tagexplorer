@@ -28,6 +28,7 @@ let sortMode = "name";
 let filterGeneration = 0;
 let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
 let currentPage = 1;
+let totalPages = 0;
 const renderedPages = new Set();
 
 function getCurrentPage() {
@@ -59,10 +60,25 @@ function calculateTotalPages() {
   return Math.ceil(filtered.length / artistsPerPage);
 }
 
+function recalculateTotalPages() {
+  if (!artistsPerPage || artistsPerPage <= 0) {
+    totalPages = 0;
+  } else if (!Array.isArray(filtered) || filtered.length === 0) {
+    totalPages = 0;
+  } else {
+    totalPages = Math.ceil(filtered.length / artistsPerPage);
+  }
+  return totalPages;
+}
+
+function getTotalPageCount() {
+  return totalPages || recalculateTotalPages();
+}
+
 function setCurrentPage(val) {
-  const totalPages = calculateTotalPages();
-  const maxPage = totalPages > 0 ? totalPages : 1;
+  const maxPage = Math.max(1, getTotalPageCount());
   currentPage = Math.min(Math.max(1, val), maxPage);
+  return currentPage;
 }
 
 // DOM references
@@ -118,6 +134,31 @@ function showGalleryEmptyState() {
   artistGallery.appendChild(empty);
   renderedPages.clear();
   resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
 }
 
 function removeCardsForPage(page) {
@@ -433,7 +474,7 @@ async function openArtistZoom(artist) {
   let grid, zoomContent, backBtn;
   let posts = [];
   let page = 1;
-  let totalPages = Infinity;
+  let zoomTotalPages = Infinity;
   let loading = false;
   let currentIndex = 0;
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
@@ -474,16 +515,16 @@ async function openArtistZoom(artist) {
   wrapper.focus();
 
   async function loadPage() {
-    if (loading || page > totalPages) return;
+    if (loading || page > zoomTotalPages) return;
     loading = true;
     try {
       const api = await import("./api.js");
       if (page === 1) {
         try {
           const count = await api.getArtistImageCount(artist.artistName);
-          totalPages = Math.max(1, Math.ceil(count / 40));
+          zoomTotalPages = Math.max(1, Math.ceil(count / 40));
         } catch {
-          totalPages = Infinity;
+          zoomTotalPages = Infinity;
         }
       }
       const newPosts = await api.fetchArtistImages(artist.artistName, selectedTags, {
@@ -492,7 +533,7 @@ async function openArtistZoom(artist) {
         order: "approvals",
       });
       if (!Array.isArray(newPosts) || newPosts.length === 0) {
-        totalPages = page - 1;
+        zoomTotalPages = page - 1;
         return;
       }
       const start = posts.length;
@@ -581,7 +622,7 @@ async function openArtistZoom(artist) {
   });
 
   nextBtn.addEventListener("click", async () => {
-    if (currentIndex === posts.length - 1 && page <= totalPages) {
+    if (currentIndex === posts.length - 1 && page <= zoomTotalPages) {
       await loadPage();
     }
     if (currentIndex < posts.length - 1) {
@@ -650,6 +691,7 @@ function getFilteredArtists() {
  */
 function setArtistsPerPage(count) {
   artistsPerPage = Math.max(10, count);
+  recalculateTotalPages();
   setCurrentPage(1);
   renderArtistsPage({ force: true });
 }
@@ -660,7 +702,12 @@ function setArtistsPerPage(count) {
 function renderArtistsPage(options = {}) {
   if (!artistGallery) return;
   const { force = false } = options;
-  const page = getCurrentPage();
+  const maxPage = Math.max(1, recalculateTotalPages() || 0);
+  const current = getCurrentPage();
+  const page = Math.min(current, maxPage);
+  if (page !== current) {
+    setCurrentPage(page);
+  }
   const start = (page - 1) * artistsPerPage;
 
   if (page === 1) {
@@ -883,7 +930,7 @@ function pruneGalleryPages(currentPage) {
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
-  const totalPages = calculateTotalPages();
+  const totalPages = recalculateTotalPages();
   const shown = Math.min(page * artistsPerPage, total);
   const renderedArray = Array.from(renderedPages);
   const lastRenderedPage = renderedArray.length
@@ -892,7 +939,7 @@ function getPaginationInfo() {
   return {
     total: total,
     shown: shown,
-    hasMore: page < totalPages,
+    hasMore: totalPages > 0 && page < totalPages,
     currentPage: page,
     artistsPerPage: artistsPerPage,
     totalPages,
@@ -957,6 +1004,12 @@ async function filterArtists(reset = true, force = false) {
             artistNameFilter === "")
         );
       });
+    }
+
+    const recalculatedTotal = recalculateTotalPages();
+    const maxPage = Math.max(1, recalculatedTotal || 0);
+    if (getCurrentPage() > maxPage) {
+      setCurrentPage(maxPage);
     }
 
     if (spinner.setTotal) spinner.setTotal(filtered.length);
@@ -1049,7 +1102,7 @@ function setSortMode(mode, options = {}) {
   const { preservePage = false, deferRender = false } = options;
   sortMode = mode;
   lastSortMode = mode;
-  sortCurrentArtists();proceed with the clean reconstruction patch
+  sortCurrentArtists();
   if (!preservePage) {
     setCurrentPage(1);
   }
@@ -1068,7 +1121,7 @@ function forceSortAndRender() {
 
 function setAllArtists(artists) {
   if (Array.isArray(artists)) {
-    allArtists = artists;proceed with the clean reconstruction patch
+    allArtists = artists;
   } else {
     allArtists = [];
   }
