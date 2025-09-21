@@ -116,6 +116,31 @@ function setupBackToTop() {
   });
 }
 
+function setupStickyTopBar() {
+  const header = document.querySelector(".top-surface");
+  if (!header) return;
+
+  let ticking = false;
+  const update = () => {
+    const shouldStick = window.scrollY > 32;
+    header.classList.toggle("is-sticky", shouldStick);
+    ticking = false;
+  };
+
+  const onScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(update);
+      ticking = true;
+    }
+  };
+
+  update();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("beforeunload", () => {
+    window.removeEventListener("scroll", onScroll);
+  });
+}
+
 /**
  * Sets up random background changes at intervals
  */
@@ -387,6 +412,7 @@ function initUI() {
   }
   addLipstickKiss();
   setupBackToTop();
+  setupStickyTopBar();
 }
 
 /**
