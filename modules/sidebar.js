@@ -675,7 +675,7 @@ function initSidebar() {
  * Sets the reference to all artists data
  */
 function setAllArtists(artists) {
-  allArtists = artists;
+  allArtists = Array.isArray(artists) ? artists : [];
 }
 
 /**

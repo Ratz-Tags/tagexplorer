@@ -426,7 +426,7 @@ async function initTags(
   renderArtistsFunc,
   setRandomBgFunc
 ) {
-  allArtists = artists;
+  allArtists = Array.isArray(artists) ? [...artists] : [];
   renderArtists = renderArtistsFunc;
   setRandomBackground = setRandomBgFunc;
 
@@ -478,7 +478,7 @@ async function initTags(
  * Sets the reference to all artists data
  */
 function setAllArtists(artists) {
-  allArtists = artists;
+  allArtists = Array.isArray(artists) ? [...artists] : [];
 }
 
 /**
