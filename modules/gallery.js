@@ -32,7 +32,32 @@ let totalPages = 0;
 const renderedPages = new Set();
 
 function getCurrentPage() {
+  if (
+    typeof window !== "undefined" &&
+    typeof window._galleryCurrentPage === "number"
+  ) {
+    currentPage = window._galleryCurrentPage;
+  }
   return currentPage;
+}
+function getTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
+function getTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
+function getTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
+function calculateTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
 }
 
 function recalculateTotalPages() {
@@ -82,6 +107,133 @@ function ensureGallerySentinel() {
     artistGallery.appendChild(gallerySentinel);
   }
   return gallerySentinel;
+}
+function removePageFromDom(pageNumber) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${pageNumber}"]`
+  );
+  cards.forEach((card) => card.remove());
+  renderedPages.delete(pageNumber);
+}
+
+function removeGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = artistGallery.querySelector(".gallery-empty-state");
+  if (empty) empty.remove();
+}
+
+function showGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = document.createElement("div");
+  empty.className = "gallery-empty-state gallery-empty-humiliation";
+  empty.innerHTML = `
+    <span class="gallery-empty-emoji">😭</span>
+    <div class="gallery-empty-msg">Nobody wants to play with you.<br>Try less picky tags!</div>
+  `;
+  artistGallery.appendChild(empty);
+  renderedPages.clear();
+  resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
 }
 
 function removeCardsForPage(page) {
@@ -602,15 +754,21 @@ function renderArtistsPage(options = {}) {
     renderArtistCards(artistsToShow, undefined, page);
     renderedPages.add(page);
   } else {
+    // No artists for this page; roll back the page counter and sentinel
+    setCurrentPage(page - 1, { persist: true });
     ensureGallerySentinel();
+    return;
   }
 
-  pruneGalleryPages(page);
+  pruneGalleryPages(getCurrentPage());
 }
 
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
+  if (pageNumber > 0 && renderedPages.has(pageNumber)) {
+    removePageFromDom(pageNumber);
+  }
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
   const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
@@ -750,6 +908,7 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   } else {
     artistGallery.appendChild(frag);
   }
+  renderedPages.add(pageNumber);
 }
 
 function pruneGalleryPages(currentPage) {
@@ -760,6 +919,7 @@ function pruneGalleryPages(currentPage) {
   cards.forEach((card) => {
     const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
     if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
+      removedPages.add(pageValue);
       card.remove();
       pagesRemoved.add(pageValue);
     }
@@ -772,6 +932,10 @@ function getPaginationInfo() {
   const total = filtered.length;
   const totalPages = recalculateTotalPages();
   const shown = Math.min(page * artistsPerPage, total);
+  const renderedArray = Array.from(renderedPages);
+  const lastRenderedPage = renderedArray.length
+    ? Math.max(...renderedArray)
+    : 0;
   return {
     total: total,
     shown: shown,
@@ -799,7 +963,7 @@ async function filterArtists(reset = true, force = false) {
   try {
     // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
-      setCurrentPage(1);
+      resetPaginationState();
       artistGallery.innerHTML = "";
       resetGallerySentinel();
       renderedPages.clear();
