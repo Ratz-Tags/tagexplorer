@@ -44,19 +44,31 @@ export async function fetchWithCache(url, options = {}) {
 
     if (useCache) {
       if (isBrowser && storage && type === 'json') {
-        storage.setItem(cacheKey, JSON.stringify(data));
+        try {
+          storage.setItem(cacheKey, JSON.stringify(data));
+        } catch (err) {
+          // Ignore quota errors and fall back to in-memory caching so the
+          // fetched payload is still returned to the caller.
+          if (err?.name === 'QuotaExceededError') {
+            try {
+              storage.removeItem(cacheKey);
+            } catch (_) {
+              // ignore secondary errors from cleanup
+            }
+          }
+          memoryCache[cacheKey] = data;
+          console.warn(`Unable to persist ${cacheKey} in localStorage:`, err);
+        }
       } else {
         memoryCache[cacheKey] = data;
       }
     }
+
     return data;
   } catch (err) {
     console.warn(`fetchWithCache failed for ${url}:`, err);
     if (type === 'image') {
       return placeholder;
-    }
-    if (isBrowser) {
-      alert(`Failed to fetch ${url}`);
     }
     return null;
   }

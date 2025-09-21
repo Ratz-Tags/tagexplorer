@@ -49,6 +49,11 @@ function getTotalPages() {
   return Math.ceil(filtered.length / artistsPerPage);
 }
 
+function getTotalPages() {
+  if (!artistsPerPage) return 0;
+  return Math.ceil(filtered.length / artistsPerPage);
+}
+
 function setCurrentPage(val) {
   const totalPages = getTotalPages();
   const maxPage = totalPages > 0 ? totalPages : 1;
@@ -108,6 +113,31 @@ function showGalleryEmptyState() {
   artistGallery.appendChild(empty);
   renderedPages.clear();
   resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
 }
 
 function removeCardsForPage(page) {
@@ -879,13 +909,15 @@ async function filterArtists(reset = true, force = false) {
     const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
     // Filter artists
+    const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
+
     if (activeTags.size === 0) {
-      filtered = allArtists.filter((artist) =>
+      filtered = sourceArtists.filter((artist) =>
         artist.artistName.toLowerCase().includes(artistNameFilter) ||
         artistNameFilter === ""
       );
     } else {
-      filtered = allArtists.filter((artist) => {
+      filtered = sourceArtists.filter((artist) => {
         const tags = artist.kinkTags || [];
         // Use AND logic (all tags must match) for main gallery filtering
         const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
@@ -1005,7 +1037,11 @@ function forceSortAndRender() {
 
 
 function setAllArtists(artists) {
-  allArtists = artists;
+  if (Array.isArray(artists)) {
+    allArtists = artists;
+  } else {
+    allArtists = [];
+  }
 }
 
 function setGetActiveTagsCallback(callback) {
