@@ -188,16 +188,23 @@ async function setRandomBackground() {
  * Sets the best image for an artist with caching and lazy loading
  */
 function setBestImage(artist, img) {
-  const cacheKey = `danbooru-image-${artist.artistName}`;
+  if (!img || img._loadingImage) {
+    return;
+  }
+
+  const artistData = artist || img.__artistData;
+  if (!artistData || !artistData.artistName) {
+    return;
+  }
+
+  img._loadingImage = true;
+
+  const cacheKey = `danbooru-image-${artistData.artistName}`;
   const cachedUrl = localStorage.getItem(cacheKey);
 
-  // Get selected tags for filtering
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
-  // Session storage cache for API results
-  const apiCacheKey = `danbooru-api-${artist.artistName}-${selectedTags.join(
-    ","
-  )}`;
+  const apiCacheKey = `danbooru-api-${artistData.artistName}-${selectedTags.join(",")}`;
 
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
@@ -234,8 +241,7 @@ function setBestImage(artist, img) {
 
     if (validPosts.length === 0) {
       if (!isFallback && selectedTags.length > 0) {
-        // Retry using only the artist name ordered by score
-        fetchArtistImages(artist.artistName)
+        fetchArtistImages(artistData.artistName)
           .then((fallbackData) => {
             processApiData(fallbackData, true);
           })
@@ -261,7 +267,7 @@ function setBestImage(artist, img) {
         if (index === 0) {
           localStorage.setItem(cacheKey, url);
         }
-        artist._thumbnailPostId = validPosts[index]?.id;
+        artistData._thumbnailPostId = validPosts[index]?.id;
       };
       img.src = url;
     }
@@ -281,7 +287,6 @@ function setBestImage(artist, img) {
     }
   }
 
-  // Try cached image first
   if (cachedUrl) {
     img.onerror = fetchAndTry;
     img.onload = () => {
@@ -300,7 +305,7 @@ function setBestImage(artist, img) {
       return;
     }
 
-    fetchArtistImages(artist.artistName, selectedTags)
+    fetchArtistImages(artistData.artistName, selectedTags)
       .then((data) => {
         setApiCache(data);
         processApiData(data);
@@ -311,22 +316,51 @@ function setBestImage(artist, img) {
   }
 }
 
-/**
- * Lazy loads the best image for an artist
- */
 function lazyLoadBestImage(artist, img) {
+  if (typeof IntersectionObserver !== "function") {
+    setBestImage(artist, img);
+    return;
+  }
+
   const observer = new IntersectionObserver(
     (entries, obs) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          setBestImage(artist, img);
-          obs.unobserve(entry.target);
+        if (!entry.isIntersecting) return;
+        obs.unobserve(entry.target);
+        if (entry.target && entry.target._lazyObserver === obs) {
+          entry.target._lazyObserver = null;
         }
+        setBestImage(artist, img);
       });
     },
-    { rootMargin: "50px" }
+    { rootMargin: "120px 0px" }
   );
+
   observer.observe(img);
+  img._lazyObserver = observer;
+}
+
+function primeVisibleArtistImages(buffer = 180) {
+  if (!artistGallery || typeof window === "undefined") return;
+  const viewportHeight =
+    window.innerHeight || document.documentElement?.clientHeight || 0;
+  const minVisible = -buffer;
+  const maxVisible = viewportHeight + buffer;
+  const images = artistGallery.querySelectorAll(".artist-card img");
+  images.forEach((img) => {
+    if (!img || img.getAttribute("src")) return;
+    const rect = img.getBoundingClientRect();
+    if (rect.bottom < minVisible || rect.top > maxVisible) return;
+    const artistData = img.__artistData;
+    if (!artistData) return;
+    if (img._lazyObserver) {
+      try {
+        img._lazyObserver.unobserve(img);
+      } catch {}
+      img._lazyObserver = null;
+    }
+    setBestImage(artistData, img);
+  });
 }
 
 /**
@@ -654,19 +688,20 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     removePageFromDom(pageNumber);
   }
   const frag = document.createDocumentFragment();
-  // Determine the selected tags to use for cache keys / reload
-  const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
+  let eagerBudget = pageNumber === 1 ? 12 : 0;
+  const selectedTags =
+    selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card group";
     card.dataset.page = String(pageNumber);
-    // Store the raw artist tag for patches/overlays
     card.setAttribute("data-artist", artist.artistName);
 
     const img = document.createElement("img");
     img.className = "artist-image";
     img.loading = "lazy";
     img.alt = `${artist.artistName.replace(/_/g, " ")} preview`;
+    img.__artistData = artist;
     const cacheKey = `danbooru-image-${artist.artistName}`;
     const cachedUrl = localStorage.getItem(cacheKey);
     if (cachedUrl) {
@@ -677,10 +712,14 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
         img.style.display = "block";
       };
     } else {
-      lazyLoadBestImage(artist, img);
+      if (eagerBudget > 0) {
+        eagerBudget -= 1;
+        setBestImage(artist, img);
+      } else {
+        lazyLoadBestImage(artist, img);
+      }
       img.style.display = "block";
     }
-    // Preload image for zoom
     img.addEventListener("click", () => {
       const preload = new Image();
       preload.src = img.src;
@@ -688,7 +727,6 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       preload.onerror = () => openArtistZoom(artist);
     });
 
-    // Media wrapper so card background transparency doesn't affect the image
     const media = document.createElement("div");
     media.className = "artist-media";
     media.appendChild(img);
@@ -696,16 +734,18 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     const name = document.createElement("div");
     name.className = "artist-name";
     let displayName = artist.artistName.replace(/_/g, " ");
-    const total = typeof artist.postCount === "number" ? artist.postCount : undefined;
+    const total =
+      typeof artist.postCount === "number" ? artist.postCount : undefined;
     if (typeof total === "number") {
       displayName += ` [${total}]`;
     }
     name.textContent = displayName;
 
-    // Render tags as .gallery-tag (collapsed by default)
     const taglist = document.createElement("div");
     taglist.className = "artist-tags";
-    const tagsId = `tags-${artist.artistName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
+    const tagsId = `tags-${artist.artistName
+      .replace(/[^a-z0-9]+/gi, "-")
+      .toLowerCase()}`;
     taglist.id = tagsId;
     taglist.hidden = true;
     if (artist.kinkTags && artist.kinkTags.length > 0) {
@@ -723,7 +763,10 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     copyBtn.setAttribute("aria-label", "Copy artist name");
     copyBtn.textContent = "📋";
     copyBtn.title = "Copy name";
-    copyBtn.onclick = (e) => { e.stopPropagation(); handleArtistCopy(artist, img.src); };
+    copyBtn.onclick = (e) => {
+      e.stopPropagation();
+      handleArtistCopy(artist, img.src);
+    };
 
     const reloadBtn = document.createElement("button");
     reloadBtn.type = "button";
@@ -733,8 +776,9 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (typeof clearArtistCache === "function")
+      if (typeof clearArtistCache === "function") {
         clearArtistCache(artist.artistName);
+      }
       const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
       sessionStorage.removeItem(cacheKey);
       localStorage.removeItem(`danbooru-image-${artist.artistName}`);
@@ -749,7 +793,6 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       }, 100);
     });
 
-    // Toggle to reveal/hide tags
     const tagsToggle = document.createElement("button");
     tagsToggle.type = "button";
     tagsToggle.className = "tags-toggle";
@@ -765,27 +808,23 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       tagsToggle.title = willShow ? "Hide tags" : "Show tags";
     });
 
-    // Action bar (side-by-side small buttons)
     const actions = document.createElement("div");
     actions.className = "artist-actions";
     actions.appendChild(copyBtn);
     actions.appendChild(reloadBtn);
     actions.appendChild(tagsToggle);
 
-    // Footer at the bottom with name, tags, and actions
     const footer = document.createElement("div");
     footer.className = "artist-footer";
     footer.appendChild(name);
     footer.appendChild(taglist);
     footer.appendChild(actions);
 
-    // Assemble card
     card.appendChild(media);
     card.appendChild(footer);
-
-    // Add humiliation overlay on hover
     frag.appendChild(card);
   });
+
   const sentinel = ensureGallerySentinel();
   if (sentinel) {
     artistGallery.insertBefore(frag, sentinel);
@@ -793,6 +832,11 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     artistGallery.appendChild(frag);
   }
   renderedPages.add(pageNumber);
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => primeVisibleArtistImages());
+  } else {
+    primeVisibleArtistImages();
+  }
 }
 
 function pruneGalleryPages(currentPage) {
