@@ -26,12 +26,9 @@ let filtered = [];
 let isFetching = false;
 let sortMode = "name";
 let filterGeneration = 0;
-
-const pagination = {
-  perPage: DEFAULT_ARTISTS_PER_PAGE,
-  current: 1,
-  total: 0,
-};
+let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
+let currentPage = 1;
+let totalPages = 0;
 const renderedPages = new Set();
 
 const resolvePerPage = (value) => {
@@ -596,7 +593,7 @@ function renderArtistsPage(options = {}) {
   if (page !== current) {
     setCurrentPage(page);
   }
-  const start = (page - 1) * pagination.perPage;
+  const start = (page - 1) * artistsPerPage;
 
   if (page === 1) {
     artistGallery.innerHTML = "";
@@ -634,8 +631,7 @@ function renderArtistsPage(options = {}) {
     return;
   }
 
-  const end = Math.min(start + pagination.perPage, filtered.length);
-
+  const end = Math.min(start + artistsPerPage, filtered.length);
   const artistsToShow = filtered.slice(start, end);
 
   if (artistsToShow.length > 0) {
@@ -828,7 +824,7 @@ function getPaginationInfo() {
     shown: shown,
     hasMore: totalPages > 0 && page < totalPages,
     currentPage: page,
-    artistsPerPage: pagination.perPage,
+    artistsPerPage: artistsPerPage,
     totalPages,
     lastRenderedPage,
   };

@@ -32,6 +32,7 @@ const observedTagLists =
   typeof WeakSet === "function" ? new WeakSet() : null;
 let heightSyncListenersBound = false;
 let heightSyncResizeHandler = null;
+
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -395,6 +396,8 @@ function renderCategories() {
       ? "No tags match your search."
       : "No tags available for the current filters.";
     groupsContainerEl.appendChild(emptyState);
+  } else {
+    scheduleOpenCategoryHeightSync();
   }
 
   scheduleOpenCategoryHeightSync();
