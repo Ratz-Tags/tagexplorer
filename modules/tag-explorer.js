@@ -298,6 +298,8 @@ function renderCategories() {
       ? "No tags match your search."
       : "No tags available for the current filters.";
     groupsContainerEl.appendChild(emptyState);
+  } else {
+    scheduleOpenCategoryHeightSync();
   }
 }
 
