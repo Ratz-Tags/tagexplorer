@@ -26,7 +26,6 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
-
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -214,7 +213,7 @@ function renderCategories() {
   const categories = getKinkTags();
   let renderedAny = false;
 
-  categories.forEach(({ category, tags }) => {
+  categories.forEach(({ category, tags }, index) => {
     const matchingTags = tags.filter((tag) => {
       if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
         return false;
@@ -232,20 +231,39 @@ function renderCategories() {
       searchValueLower !== "" || matchingTags.some((tag) => active.has(tag));
     if (shouldOpen) section.classList.add("open");
 
+    const slug = category
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48);
+    const groupId = `filter-category-${index}-${slug || "group"}`;
+
     const header = document.createElement("button");
     header.type = "button";
     header.className = "filter-category__header";
     header.textContent = category;
     header.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-    header.addEventListener("click", () => {
-      const nowOpen = !section.classList.contains("open");
-      section.classList.toggle("open", nowOpen);
-      header.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-    });
-    section.appendChild(header);
+    header.setAttribute("aria-controls", groupId);
 
     const tagList = document.createElement("div");
     tagList.className = "filter-category__tags";
+    tagList.id = groupId;
+    tagList.setAttribute("role", "group");
+    tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+    tagList.hidden = !shouldOpen;
+
+    const setExpandedState = (open) => {
+      const isOpen = Boolean(open);
+      section.classList.toggle("open", isOpen);
+      header.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      tagList.setAttribute("aria-hidden", isOpen ? "false" : "true");
+      tagList.hidden = !isOpen;
+    };
+
+    header.addEventListener("click", () => {
+      setExpandedState(!section.classList.contains("open"));
+    });
+    section.appendChild(header);
 
     matchingTags.forEach((tag) => {
       const btn = document.createElement("button");
@@ -253,10 +271,14 @@ function renderCategories() {
       btn.className = "filter-tag-button";
       btn.setAttribute("data-tag", tag);
       const count = counts[tag] || 0;
-      btn.innerHTML = `
-        <span class="filter-tag-button__label">${formatTagLabel(tag)}</span>
-        <span class="filter-tag-button__count">${count}</span>
-      `;
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "filter-tag-button__label";
+      labelSpan.textContent = formatTagLabel(tag);
+      const countSpan = document.createElement("span");
+      countSpan.className = "filter-tag-button__count";
+      countSpan.textContent = `(${count})`;
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
       const isActive = active.has(tag);
       btn.classList.toggle("is-active", isActive);
       btn.setAttribute("aria-pressed", isActive ? "true" : "false");
@@ -266,6 +288,7 @@ function renderCategories() {
 
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
+    setExpandedState(shouldOpen);
   });
 
   if (!renderedAny) {
