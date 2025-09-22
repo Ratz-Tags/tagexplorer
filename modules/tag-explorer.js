@@ -26,26 +26,6 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
-let isResizeListenerBound = false;
-let resizeSyncFrame = null;
-
-function scheduleOpenCategoryHeightSync() {
-  if (typeof document === "undefined") return;
-  if (resizeSyncFrame !== null) return;
-  const raf =
-    typeof requestAnimationFrame === "function"
-      ? requestAnimationFrame
-      : (cb) => setTimeout(cb, 16);
-  resizeSyncFrame = raf(() => {
-    resizeSyncFrame = null;
-    const openLists = document.querySelectorAll(
-      ".filter-category.open .filter-category__tags"
-    );
-    openLists.forEach((list) => {
-      list.style.maxHeight = `${list.scrollHeight}px`;
-    });
-  });
-}
 
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
@@ -239,8 +219,6 @@ function renderCategories() {
       passive: true,
     });
     isResizeListenerBound = true;
-  }
-
   categories.forEach(({ category, tags }, index) => {
     const matchingTags = tags.filter((tag) => {
       if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
@@ -278,35 +256,18 @@ function renderCategories() {
     tagList.id = groupId;
     tagList.setAttribute("role", "group");
     tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+    tagList.hidden = !shouldOpen;
 
-    const applyExpandedState = (open, { immediate = false } = {}) => {
+    const setExpandedState = (open) => {
       const isOpen = Boolean(open);
-      if (immediate) {
-        tagList.style.transition = "none";
-      }
       section.classList.toggle("open", isOpen);
       header.setAttribute("aria-expanded", isOpen ? "true" : "false");
       tagList.setAttribute("aria-hidden", isOpen ? "false" : "true");
-      const target = isOpen ? `${tagList.scrollHeight}px` : "0px";
-      tagList.style.maxHeight = target;
-      if (isOpen) {
-        scheduleOpenCategoryHeightSync();
-      }
-      if (immediate) {
-        const restore = () => {
-          tagList.style.transition = "";
-        };
-        if (typeof requestAnimationFrame === "function") {
-          requestAnimationFrame(restore);
-        } else {
-          setTimeout(restore, 16);
-        }
-      }
+      tagList.hidden = !isOpen;
     };
 
     header.addEventListener("click", () => {
-      const nowOpen = !section.classList.contains("open");
-      applyExpandedState(nowOpen);
+      setExpandedState(!section.classList.contains("open"));
     });
     section.appendChild(header);
 
@@ -316,10 +277,14 @@ function renderCategories() {
       btn.className = "filter-tag-button";
       btn.setAttribute("data-tag", tag);
       const count = counts[tag] || 0;
-      btn.innerHTML = `
-        <span class="filter-tag-button__label">${formatTagLabel(tag)}</span>
-        <span class="filter-tag-button__count">${count}</span>
-      `;
+      const labelSpan = document.createElement("span");
+      labelSpan.className = "filter-tag-button__label";
+      labelSpan.textContent = formatTagLabel(tag);
+      const countSpan = document.createElement("span");
+      countSpan.className = "filter-tag-button__count";
+      countSpan.textContent = `(${count})`;
+      btn.appendChild(labelSpan);
+      btn.appendChild(countSpan);
       const isActive = active.has(tag);
       btn.classList.toggle("is-active", isActive);
       btn.setAttribute("aria-pressed", isActive ? "true" : "false");
@@ -329,6 +294,7 @@ function renderCategories() {
 
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
+    setExpandedState(shouldOpen);
 
     const init = () => applyExpandedState(shouldOpen, { immediate: true });
     if (typeof requestAnimationFrame === "function") {

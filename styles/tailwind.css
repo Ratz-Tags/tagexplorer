@@ -409,21 +409,28 @@ overflow: hidden;
 .filter-category {
 @apply rounded-2xl border border-white/10 bg-black/30 p-5 transition-colors hover:border-glow;
 }
-.filter-category.open .filter-category__tags {
-@apply opacity-100;
-padding-top: 1rem;
-}
+
 .filter-category__header {
 @apply flex w-full cursor-pointer items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-200;
 }
 .filter-category__tags {
-@apply grid grid-cols-2 gap-2 overflow-hidden text-[0.65rem] opacity-0 transition-all duration-500 ease-kink sm:grid-cols-3;
-max-height: 0;
-padding-top: 0;
-will-change: max-height;
+@apply grid grid-cols-2 gap-2 pt-4 text-[0.6rem] uppercase tracking-[0.3em] text-slate-300 opacity-0 transition-opacity duration-200 ease-out sm:grid-cols-3;
+}
+.filter-category__tags[hidden] {
+display: none;
+}
+.filter-category.open .filter-category__tags {
+@apply opacity-100;
 }
 .filter-tag-button {
-@apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white;
+@apply inline-flex items-center justify-between gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white;
+}
+.filter-tag-button__label {
+letter-spacing: 0.35em;
+}
+.filter-tag-button__count {
+@apply text-[0.55rem] font-medium tracking-[0.15em] text-slate-400;
+letter-spacing: normal;
 }
 .filter-empty-state {
 @apply text-sm text-slate-400;
