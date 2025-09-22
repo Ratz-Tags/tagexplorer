@@ -1,20 +1,50 @@
 // Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
-import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "./modules/azure-tts.js";
+import {
+  setAzureTTSConfig,
+  fetchAzureVoices,
+  showAzureVoiceSelector,
+  DEFAULT_VOICE,
+  WHISPER_STYLE_CANONICAL,
+} from "./modules/azure-tts.js";
 async function setDefaultAzureVoice() {
   try {
-    if (!window._azureTTSVoice && window._azureTTSKey && window._azureTTSRegion) {
-      const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
-      const ava = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural");
-      if (ava) {
-        const wantsWhisper = Array.isArray(ava.StyleList) && ava.StyleList.includes("Whispering");
-        setAzureTTSConfig({ voice: ava.ShortName, style: wantsWhisper ? "Whispering" : undefined });
+    if (window._azureTTSKey && window._azureTTSRegion) {
+      const voices = await fetchAzureVoices(
+        window._azureTTSKey,
+        window._azureTTSRegion
+      );
+      const whisperVoices = Array.isArray(voices)
+        ? voices.filter((voice) =>
+            Array.isArray(voice?.StyleList) &&
+            voice.StyleList.some(
+              (style) => String(style).toLowerCase() === "whispering"
+            )
+          )
+        : [];
+      if (whisperVoices.length) {
+        const currentVoice = window._azureTTSVoice;
+        const preferred = whisperVoices.find(
+          (voice) => voice.ShortName === currentVoice
+        );
+        const fallback =
+          whisperVoices.find(
+            (voice) => voice.ShortName === DEFAULT_VOICE
+          ) || whisperVoices[0];
+        const voiceToUse = (preferred || fallback).ShortName;
+        setAzureTTSConfig({
+          voice: voiceToUse,
+          style: WHISPER_STYLE_CANONICAL,
+        });
+        return;
       }
     }
-    // Always ensure a default voice is set
-    if (!window._azureTTSVoice) setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
-  } catch (e) {
-    setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+  } catch (error) {
+    // Swallow errors so we can fall back to the built-in defaults below.
   }
+  setAzureTTSConfig({
+    voice: DEFAULT_VOICE,
+    style: WHISPER_STYLE_CANONICAL,
+  });
 }
 setDefaultAzureVoice();
 /**
