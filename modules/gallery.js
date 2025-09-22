@@ -546,6 +546,21 @@ async function openArtistZoom(artist) {
   showZoomTauntOverlay();
 
   await loadPage();
+
+  async function ensureInitialDepth(maxExtraLoads = 2) {
+    if (!grid) return;
+    let attempts = 0;
+    while (
+      attempts < maxExtraLoads &&
+      page <= zoomTotalPages &&
+      grid.scrollHeight <= grid.clientHeight + 48
+    ) {
+      await loadPage();
+      attempts += 1;
+    }
+  }
+
+  await ensureInitialDepth();
 } // end openArtistZoom
 
 /**
@@ -805,6 +820,10 @@ function getPaginationInfo() {
   const total = filtered.length;
   const totalPages = recalculateTotalPages();
   const shown = Math.min(page * pagination.perPage, total);
+  const lastRenderedPage =
+    renderedPages.size > 0
+      ? Math.max(...renderedPages)
+      : Math.max(0, pagination.current);
   return {
     total: total,
     shown: shown,
@@ -812,6 +831,7 @@ function getPaginationInfo() {
     currentPage: page,
     artistsPerPage: pagination.perPage,
     totalPages,
+    lastRenderedPage,
   };
 }
 
