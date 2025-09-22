@@ -85,9 +85,18 @@ box-shadow: 0 18px 45px -25px rgba(255, 118, 214, 0.5);
 }
 .command-status {
 @apply flex items-center gap-4 text-[0.55rem] tracking-[0.4em] text-slate-300;
+
 }
 .surface-divider {
 @apply h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent;
+transition: opacity 0.5s cubic-bezier(.4,-0.2,.2,1.2), height 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+}
+.top-surface.is-sticky .surface-divider {
+@apply h-0;
+opacity: 0;
+}
+.top-surface.is-sticky #tag-explorer-bar {
+@apply mt-0;
 }
 .brand-chip {
 @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-300;
@@ -346,10 +355,36 @@ display: none;
 @apply fixed inset-0 z-[11000] hidden bg-black/70 backdrop-blur-glass;
 }
 .filter-overlay.open {
-@apply flex;
+@apply flex items-start justify-center;
+padding: clamp(1rem, 4vw, 2.5rem) clamp(0.75rem, 3vw, 2rem);
+overflow-y: auto;
 }
 .filter-panel {
 @apply relative m-auto flex w-full max-w-5xl flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/90 p-8 shadow-neon;
+max-height: min(92vh, 960px);
+overflow: hidden;
+}
+.filter-panel__controls,
+.filter-panel__selected {
+@apply flex-none;
+}
+.filter-panel__groups {
+@apply flex-1 overflow-y-auto;
+min-height: 0;
+overscroll-behavior: contain;
+padding-right: 0.5rem;
+margin-right: -0.5rem;
+scrollbar-width: thin;
+}
+.filter-panel__groups::-webkit-scrollbar {
+width: 0.5rem;
+}
+.filter-panel__groups::-webkit-scrollbar-thumb {
+background: rgba(255, 118, 214, 0.45);
+border-radius: 9999px;
+}
+body.tag-filter-open {
+overflow: hidden;
 }
 .filter-panel__header {
 @apply flex items-start justify-between gap-4;
@@ -357,17 +392,28 @@ display: none;
 .filter-category {
 @apply rounded-2xl border border-white/10 bg-black/30 p-5 transition-colors hover:border-glow;
 }
-.filter-category.open .filter-category__tags {
-@apply max-h-[420px] opacity-100;
-}
+
 .filter-category__header {
 @apply flex w-full cursor-pointer items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-200;
 }
 .filter-category__tags {
-@apply grid max-h-0 grid-cols-2 gap-2 overflow-hidden pt-4 text-[0.65rem] opacity-0 transition-all duration-500 ease-kink sm:grid-cols-3;
+@apply grid grid-cols-2 gap-2 pt-4 text-[0.6rem] uppercase tracking-[0.3em] text-slate-300 opacity-0 transition-opacity duration-200 ease-out sm:grid-cols-3;
+}
+.filter-category__tags[hidden] {
+display: none;
+}
+.filter-category.open .filter-category__tags {
+@apply opacity-100;
 }
 .filter-tag-button {
-@apply inline-flex items-center justify-center rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white;
+@apply inline-flex items-center justify-between gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-2 text-[0.6rem] font-semibold uppercase text-slate-200 transition-all duration-200 hover:border-blush hover:bg-blush/30 hover:text-white;
+}
+.filter-tag-button__label {
+letter-spacing: 0.35em;
+}
+.filter-tag-button__count {
+@apply text-[0.55rem] font-medium tracking-[0.15em] text-slate-400;
+letter-spacing: normal;
 }
 .filter-empty-state {
 @apply text-sm text-slate-400;

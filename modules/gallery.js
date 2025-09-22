@@ -32,7 +32,21 @@ let totalPages = 0;
 const renderedPages = new Set();
 
 function getCurrentPage() {
-  return currentPage;
+  return pagination.current;
+}
+
+function recalculateTotalPages(list = filtered) {
+  pagination.total = computeTotalPages(list);
+  return pagination.total;
+}
+
+function getTotalPageCount() {
+  return pagination.total || recalculateTotalPages();
+}
+
+function resetPaginationState() {
+  pagination.current = 1;
+  pagination.total = computeTotalPages();
 }
 
 function recalculateTotalPages() {
@@ -83,6 +97,58 @@ function ensureGallerySentinel() {
   }
   return gallerySentinel;
 }
+function removePageFromDom(pageNumber) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${pageNumber}"]`
+  );
+  cards.forEach((card) => card.remove());
+  renderedPages.delete(pageNumber);
+}
+
+function removeGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = artistGallery.querySelector(".gallery-empty-state");
+  if (empty) empty.remove();
+}
+
+function showGalleryEmptyState() {
+  if (!artistGallery) return;
+  const empty = document.createElement("div");
+  empty.className = "gallery-empty-state gallery-empty-humiliation";
+  empty.innerHTML = `
+    <span class="gallery-empty-emoji">😭</span>
+    <div class="gallery-empty-msg">Nobody wants to play with you.<br>Try less picky tags!</div>
+  `;
+  artistGallery.appendChild(empty);
+  renderedPages.clear();
+  resetGallerySentinel();
+}
+
+function removeCardsForPage(page) {
+  if (!artistGallery) return;
+  const cards = artistGallery.querySelectorAll(
+    `.artist-card[data-page="${page}"]`
+  );
+  cards.forEach((card) => card.remove());
+}
+
+function sortCurrentArtists(list = filtered, mode = sortMode) {
+  if (!Array.isArray(list) || !list.length) return list;
+  const activeMode = mode === "count" ? "count" : "name";
+  if (activeMode === "count") {
+    list.sort(
+      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
+    );
+  } else {
+    list.sort((a, b) =>
+      a.artistName.localeCompare(b.artistName, undefined, {
+        sensitivity: "base",
+      })
+    );
+  }
+  return list;
+}
 
 function removeCardsForPage(page) {
   if (!artistGallery) return;
@@ -123,48 +189,27 @@ async function setRandomBackground() {
       if (document.body.classList.contains("incognito-theme")) {
         blur.style.backgroundImage = "none";
         blur.style.backgroundColor = "#111";
-        blur.style.opacity = "0.7";
-        return;
-      }
-      // Restore randomized backgrounds
-      const { getRandomBackgroundImage } = await import("./api.js");
-      const imageUrl = await getRandomBackgroundImage();
-      if (imageUrl) {
-        blur.style.backgroundImage = `url(${imageUrl})`;
-        blur.style.backgroundColor = "";
       } else {
-        blur.style.backgroundColor = "#111";
+        const { getRandomBackgroundImage } = await import("./api.js");
+        const imageUrl = await getRandomBackgroundImage();
+        if (imageUrl) {
+          blur.style.backgroundImage = `url(${imageUrl})`;
+          blur.style.backgroundColor = "";
+        } else {
+          blur.style.backgroundImage = "none";
+          blur.style.backgroundColor = "#111";
+        }
       }
-      // Fade in new background
+    } catch (error) {
+      console.warn("Failed to set random background:", error);
+      blur.style.backgroundImage = "none";
+      blur.style.backgroundColor = "#111";
+    } finally {
       setTimeout(() => {
         blur.style.opacity = "0.7";
       }, 100);
-    } catch (error) {
-      console.warn("Failed to set random background:", error);
-      blur.style.backgroundColor = "#111";
-      blur.style.opacity = "0.7";
     }
   }, 400);
-  try {
-    if (document.body.classList.contains("incognito-theme")) {
-      blur.style.backgroundImage = "none";
-      blur.style.backgroundColor = "#111";
-      return; // don't fetch image in incognito
-    }
-    // Restore randomized backgrounds
-    const { getRandomBackgroundImage } = await import("./api.js");
-    const imageUrl = await getRandomBackgroundImage();
-    if (imageUrl) {
-      blur.style.backgroundImage = `url(${imageUrl})`;
-      blur.style.backgroundColor = "";
-    } else {
-      blur.style.backgroundColor = "#111";
-    }
-  } catch (error) {
-    console.warn("Failed to set random background:", error);
-    blur.style.backgroundColor = "#111";
-  }
-  setTimeout(() => { blur.style.opacity = "0.7"; }, 700);
 }
 
 /**
@@ -525,6 +570,21 @@ async function openArtistZoom(artist) {
   showZoomTauntOverlay();
 
   await loadPage();
+
+  async function ensureInitialDepth(maxExtraLoads = 2) {
+    if (!grid) return;
+    let attempts = 0;
+    while (
+      attempts < maxExtraLoads &&
+      page <= zoomTotalPages &&
+      grid.scrollHeight <= grid.clientHeight + 48
+    ) {
+      await loadPage();
+      attempts += 1;
+    }
+  }
+
+  await ensureInitialDepth();
 } // end openArtistZoom
 
 /**
@@ -602,15 +662,21 @@ function renderArtistsPage(options = {}) {
     renderArtistCards(artistsToShow, undefined, page);
     renderedPages.add(page);
   } else {
+    // No artists for this page; roll back the page counter and sentinel
+    setCurrentPage(page - 1, { persist: true });
     ensureGallerySentinel();
+    return;
   }
 
-  pruneGalleryPages(page);
+  pruneGalleryPages(getCurrentPage());
 }
 
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
+  if (pageNumber > 0 && renderedPages.has(pageNumber)) {
+    removePageFromDom(pageNumber);
+  }
   const frag = document.createDocumentFragment();
   // Determine the selected tags to use for cache keys / reload
   const selectedTags = selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
@@ -750,6 +816,7 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   } else {
     artistGallery.appendChild(frag);
   }
+  renderedPages.add(pageNumber);
 }
 
 function pruneGalleryPages(currentPage) {
@@ -799,7 +866,7 @@ async function filterArtists(reset = true, force = false) {
   try {
     // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
-      setCurrentPage(1);
+      resetPaginationState();
       artistGallery.innerHTML = "";
       resetGallerySentinel();
       renderedPages.clear();
