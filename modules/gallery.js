@@ -31,43 +31,49 @@ let currentPage = 1;
 let totalPages = 0;
 const renderedPages = new Set();
 
+const resolvePerPage = (value) => {
+  const floored = Math.floor(Number(value));
+  if (Number.isFinite(floored) && floored > 0) {
+    return floored;
+  }
+  return DEFAULT_ARTISTS_PER_PAGE;
+};
+
+function updatePaginationTotals(list = filtered) {
+  const safeList = Array.isArray(list) ? list : [];
+  const safePerPage = resolvePerPage(pagination.perPage);
+  if (pagination.perPage !== safePerPage) {
+    pagination.perPage = safePerPage;
+  }
+  const total = safeList.length ? Math.ceil(safeList.length / safePerPage) : 0;
+  pagination.total = total;
+  return total;
+}
+
+function getTotalPages() {
+  if (!pagination.total && filtered.length) {
+    return updatePaginationTotals();
+  }
+  return pagination.total;
+
+}
+
 function getCurrentPage() {
   return pagination.current;
 }
 
-function recalculateTotalPages(list = filtered) {
-  pagination.total = computeTotalPages(list);
-  return pagination.total;
-}
-
-function getTotalPageCount() {
-  return pagination.total || recalculateTotalPages();
-}
-
 function resetPaginationState() {
   pagination.current = 1;
-  pagination.total = computeTotalPages();
-}
-
-function recalculateTotalPages() {
-  if (!artistsPerPage || artistsPerPage <= 0) {
-    totalPages = 0;
-  } else if (!Array.isArray(filtered) || filtered.length === 0) {
-    totalPages = 0;
-  } else {
-    totalPages = Math.ceil(filtered.length / artistsPerPage);
-  }
-  return totalPages;
-}
-
-function getTotalPageCount() {
-  return totalPages || recalculateTotalPages();
+  updatePaginationTotals();
 }
 
 function setCurrentPage(val) {
-  const maxPage = Math.max(1, getTotalPageCount());
-  currentPage = Math.min(Math.max(1, val), maxPage);
-  return currentPage;
+  const numeric = Number(val);
+  const target = Number.isFinite(numeric) ? Math.floor(numeric) : 1;
+  const totalPages = getTotalPages();
+  const maxPage = Math.max(1, totalPages || 0);
+  pagination.current = Math.min(Math.max(1, target), maxPage);
+  return pagination.current;
 }
 
 // DOM references
@@ -125,38 +131,6 @@ function showGalleryEmptyState() {
   resetGallerySentinel();
 }
 
-function removeCardsForPage(page) {
-  if (!artistGallery) return;
-  const cards = artistGallery.querySelectorAll(
-    `.artist-card[data-page="${page}"]`
-  );
-  cards.forEach((card) => card.remove());
-}
-
-function sortCurrentArtists(list = filtered, mode = sortMode) {
-  if (!Array.isArray(list) || !list.length) return list;
-  const activeMode = mode === "count" ? "count" : "name";
-  if (activeMode === "count") {
-    list.sort(
-      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-    );
-  } else {
-    list.sort((a, b) =>
-      a.artistName.localeCompare(b.artistName, undefined, {
-        sensitivity: "base",
-      })
-    );
-  }
-  return list;
-}
-
-function removeCardsForPage(page) {
-  if (!artistGallery) return;
-  const cards = artistGallery.querySelectorAll(
-    `.artist-card[data-page="${page}"]`
-  );
-  cards.forEach((card) => card.remove());
-}
 
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
@@ -598,8 +572,12 @@ function getFilteredArtists() {
  * Sets the number of artists to show per page.
  */
 function setArtistsPerPage(count) {
-  artistsPerPage = Math.max(10, count);
-  recalculateTotalPages();
+  const numeric = Number(count);
+  const safeCount = Number.isFinite(numeric)
+    ? Math.max(1, Math.floor(numeric))
+    : DEFAULT_ARTISTS_PER_PAGE;
+  pagination.perPage = Math.max(10, safeCount);
+  updatePaginationTotals();
   setCurrentPage(1);
   renderArtistsPage({ force: true });
 }
@@ -610,7 +588,8 @@ function setArtistsPerPage(count) {
 function renderArtistsPage(options = {}) {
   if (!artistGallery) return;
   const { force = false } = options;
-  const maxPage = Math.max(1, recalculateTotalPages() || 0);
+  const totalPages = updatePaginationTotals();
+  const maxPage = Math.max(1, totalPages || 0);
   const current = getCurrentPage();
   const page = Math.min(current, maxPage);
   if (page !== current) {
@@ -623,8 +602,7 @@ function renderArtistsPage(options = {}) {
     resetGallerySentinel();
     renderedPages.clear();
   } else if (force) {
-    removeCardsForPage(page);
-    renderedPages.delete(page);
+    removePageFromDom(page);
   } else if (renderedPages.has(page)) {
     pruneGalleryPages(page);
     return;
@@ -837,8 +815,12 @@ function pruneGalleryPages(currentPage) {
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
-  const totalPages = recalculateTotalPages();
-  const shown = Math.min(page * artistsPerPage, total);
+  const totalPages = getTotalPages();
+  const shown = Math.min(page * pagination.perPage, total);
+  const lastRenderedPage =
+    renderedPages.size > 0
+      ? Math.max(...renderedPages)
+      : Math.max(0, pagination.current);
   return {
     total: total,
     shown: shown,
@@ -846,6 +828,7 @@ function getPaginationInfo() {
     currentPage: page,
     artistsPerPage: artistsPerPage,
     totalPages,
+    lastRenderedPage,
   };
 }
 
@@ -909,7 +892,7 @@ async function filterArtists(reset = true, force = false) {
       });
     }
 
-    const recalculatedTotal = recalculateTotalPages();
+    const recalculatedTotal = updatePaginationTotals();
     const maxPage = Math.max(1, recalculatedTotal || 0);
     if (getCurrentPage() > maxPage) {
       setCurrentPage(maxPage);

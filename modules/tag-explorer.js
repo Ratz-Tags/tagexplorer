@@ -26,7 +26,6 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
-
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -214,11 +213,6 @@ function renderCategories() {
   const categories = getKinkTags();
   let renderedAny = false;
 
-  if (!isResizeListenerBound && typeof window !== "undefined") {
-    window.addEventListener("resize", scheduleOpenCategoryHeightSync, {
-      passive: true,
-    });
-    isResizeListenerBound = true;
   categories.forEach(({ category, tags }, index) => {
     const matchingTags = tags.filter((tag) => {
       if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
@@ -295,13 +289,6 @@ function renderCategories() {
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
     setExpandedState(shouldOpen);
-
-    const init = () => applyExpandedState(shouldOpen, { immediate: true });
-    if (typeof requestAnimationFrame === "function") {
-      requestAnimationFrame(init);
-    } else {
-      init();
-    }
   });
 
   if (!renderedAny) {
