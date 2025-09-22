@@ -26,6 +26,26 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
+let isResizeListenerBound = false;
+let resizeSyncFrame = null;
+
+function scheduleOpenCategoryHeightSync() {
+  if (typeof document === "undefined") return;
+  if (resizeSyncFrame !== null) return;
+  const raf =
+    typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame
+      : (cb) => setTimeout(cb, 16);
+  resizeSyncFrame = raf(() => {
+    resizeSyncFrame = null;
+    const openLists = document.querySelectorAll(
+      ".filter-category.open .filter-category__tags"
+    );
+    openLists.forEach((list) => {
+      list.style.maxHeight = `${list.scrollHeight}px`;
+    });
+  });
+}
 
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
@@ -214,7 +234,14 @@ function renderCategories() {
   const categories = getKinkTags();
   let renderedAny = false;
 
-  categories.forEach(({ category, tags }) => {
+  if (!isResizeListenerBound && typeof window !== "undefined") {
+    window.addEventListener("resize", scheduleOpenCategoryHeightSync, {
+      passive: true,
+    });
+    isResizeListenerBound = true;
+  }
+
+  categories.forEach(({ category, tags }, index) => {
     const matchingTags = tags.filter((tag) => {
       if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
         return false;
@@ -232,20 +259,56 @@ function renderCategories() {
       searchValueLower !== "" || matchingTags.some((tag) => active.has(tag));
     if (shouldOpen) section.classList.add("open");
 
+    const slug = category
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48);
+    const groupId = `filter-category-${index}-${slug || "group"}`;
+
     const header = document.createElement("button");
     header.type = "button";
     header.className = "filter-category__header";
     header.textContent = category;
     header.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-    header.addEventListener("click", () => {
-      const nowOpen = !section.classList.contains("open");
-      section.classList.toggle("open", nowOpen);
-      header.setAttribute("aria-expanded", nowOpen ? "true" : "false");
-    });
-    section.appendChild(header);
+    header.setAttribute("aria-controls", groupId);
 
     const tagList = document.createElement("div");
     tagList.className = "filter-category__tags";
+    tagList.id = groupId;
+    tagList.setAttribute("role", "group");
+    tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+
+    const applyExpandedState = (open, { immediate = false } = {}) => {
+      const isOpen = Boolean(open);
+      if (immediate) {
+        tagList.style.transition = "none";
+      }
+      section.classList.toggle("open", isOpen);
+      header.setAttribute("aria-expanded", isOpen ? "true" : "false");
+      tagList.setAttribute("aria-hidden", isOpen ? "false" : "true");
+      const target = isOpen ? `${tagList.scrollHeight}px` : "0px";
+      tagList.style.maxHeight = target;
+      if (isOpen) {
+        scheduleOpenCategoryHeightSync();
+      }
+      if (immediate) {
+        const restore = () => {
+          tagList.style.transition = "";
+        };
+        if (typeof requestAnimationFrame === "function") {
+          requestAnimationFrame(restore);
+        } else {
+          setTimeout(restore, 16);
+        }
+      }
+    };
+
+    header.addEventListener("click", () => {
+      const nowOpen = !section.classList.contains("open");
+      applyExpandedState(nowOpen);
+    });
+    section.appendChild(header);
 
     matchingTags.forEach((tag) => {
       const btn = document.createElement("button");
@@ -266,6 +329,13 @@ function renderCategories() {
 
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
+
+    const init = () => applyExpandedState(shouldOpen, { immediate: true });
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(init);
+    } else {
+      init();
+    }
   });
 
   if (!renderedAny) {
@@ -275,6 +345,8 @@ function renderCategories() {
       ? "No tags match your search."
       : "No tags available for the current filters.";
     groupsContainerEl.appendChild(emptyState);
+  } else {
+    scheduleOpenCategoryHeightSync();
   }
 }
 
