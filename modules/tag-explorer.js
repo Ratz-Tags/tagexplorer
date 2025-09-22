@@ -26,6 +26,13 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
+let heightSyncFrame = null;
+let tagListResizeObserver = null;
+const observedTagLists =
+  typeof WeakSet === "function" ? new WeakSet() : null;
+let heightSyncListenersBound = false;
+let heightSyncResizeHandler = null;
+
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -114,6 +121,95 @@ function showSelectionLimitMessage() {
   limitMessageTimer = setTimeout(() => {
     clearSelectionLimitMessage();
   }, 2200);
+}
+
+function syncOpenCategoryHeights() {
+  heightSyncFrame = null;
+  if (!groupsContainerEl) return;
+  const sections = groupsContainerEl.querySelectorAll(".filter-category");
+  sections.forEach((section) => {
+    const tagList = section.querySelector(".filter-category__tags");
+    if (!tagList) return;
+    const height = tagList.scrollHeight;
+    const value = Number.isFinite(height) && height > 0 ? `${height}px` : "0px";
+    try {
+      section.style.setProperty("--filter-category-open-height", value);
+    } catch {
+      // ignore style assignment issues
+    }
+  });
+}
+
+function scheduleOpenCategoryHeightSync() {
+  if (heightSyncFrame !== null && typeof cancelAnimationFrame === "function") {
+    cancelAnimationFrame(heightSyncFrame);
+  }
+  if (typeof requestAnimationFrame === "function") {
+    heightSyncFrame = requestAnimationFrame(() => {
+      syncOpenCategoryHeights();
+    });
+  } else {
+    syncOpenCategoryHeights();
+  }
+}
+
+function observeTagListHeight(tagList) {
+  if (!tagList || typeof ResizeObserver !== "function") return;
+  if (!tagListResizeObserver) {
+    try {
+      tagListResizeObserver = new ResizeObserver(() => {
+        scheduleOpenCategoryHeightSync();
+      });
+    } catch {
+      tagListResizeObserver = null;
+    }
+  }
+  if (!tagListResizeObserver) return;
+  if (observedTagLists && observedTagLists.has(tagList)) return;
+  try {
+    tagListResizeObserver.observe(tagList);
+    if (observedTagLists) observedTagLists.add(tagList);
+  } catch {
+    // ignore observer errors
+  }
+}
+
+function ensureHeightSyncListeners() {
+  if (heightSyncListenersBound || typeof window === "undefined") return;
+  heightSyncResizeHandler = () => {
+    scheduleOpenCategoryHeightSync();
+  };
+  try {
+    window.addEventListener("resize", heightSyncResizeHandler, { passive: true });
+    window.addEventListener("orientationchange", heightSyncResizeHandler);
+  } catch {
+    // ignore listener binding failures
+  }
+  try {
+    window.addEventListener("beforeunload", () => {
+      if (heightSyncResizeHandler) {
+        window.removeEventListener("resize", heightSyncResizeHandler);
+        window.removeEventListener("orientationchange", heightSyncResizeHandler);
+        heightSyncResizeHandler = null;
+      }
+      if (tagListResizeObserver) {
+        try {
+          tagListResizeObserver.disconnect();
+        } catch {
+          // ignore disconnect issues
+        }
+        tagListResizeObserver = null;
+      }
+    });
+  } catch {
+    // ignore beforeunload issues
+  }
+  try {
+    window.scheduleOpenCategoryHeightSync = scheduleOpenCategoryHeightSync;
+  } catch {
+    // ignore global assignment issues
+  }
+  heightSyncListenersBound = true;
 }
 
 function emitOverlayToggle(open) {
@@ -250,14 +346,15 @@ function renderCategories() {
     tagList.id = groupId;
     tagList.setAttribute("role", "group");
     tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
-    tagList.hidden = !shouldOpen;
 
-    const setExpandedState = (open) => {
+    const setExpandedState = (open, options = {}) => {
       const isOpen = Boolean(open);
       section.classList.toggle("open", isOpen);
       header.setAttribute("aria-expanded", isOpen ? "true" : "false");
       tagList.setAttribute("aria-hidden", isOpen ? "false" : "true");
-      tagList.hidden = !isOpen;
+      if (!options.skipSchedule) {
+        scheduleOpenCategoryHeightSync();
+      }
     };
 
     header.addEventListener("click", () => {
@@ -288,7 +385,8 @@ function renderCategories() {
 
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
-    setExpandedState(shouldOpen);
+    observeTagListHeight(tagList);
+    setExpandedState(shouldOpen, { skipSchedule: true });
   });
 
   if (!renderedAny) {
@@ -301,6 +399,8 @@ function renderCategories() {
   } else {
     scheduleOpenCategoryHeightSync();
   }
+
+  scheduleOpenCategoryHeightSync();
 }
 
 function renderExplorer() {
@@ -457,6 +557,7 @@ function initTagExplorer() {
     }
   });
 
+  ensureHeightSyncListeners();
   renderExplorer();
   isInitialized = true;
 }

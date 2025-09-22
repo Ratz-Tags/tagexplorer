@@ -55,7 +55,6 @@ function getTotalPages() {
     return updatePaginationTotals();
   }
   return pagination.total;
-
 }
 
 function getCurrentPage() {
@@ -130,7 +129,6 @@ function showGalleryEmptyState() {
   renderedPages.clear();
   resetGallerySentinel();
 }
-
 
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
