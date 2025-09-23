@@ -1,340 +1,402 @@
-try {
-  await import("../azure-tts.local.js");
-} catch (e) {}
-
-// Set Ava Dragon HD as the default if available
-const DEFAULT_VOICE = "en-US-AvaMultilingualNeural"; // Ava Dragon HD (latest)
-const WHISPER_STYLE_CANONICAL = "Whispering";
-const WHISPER_STYLE_ATTR = WHISPER_STYLE_CANONICAL.toLowerCase();
-const azureState = typeof window !== "undefined" ? window : globalThis;
-
-import { isTTSEnabled } from "./tts-toggle.js";
-
-function sanitizeForSSML(text) {
-  return String(text ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function resolveWhisperStyle(style) {
-  if (typeof style === "string" && style.trim()) {
-    const normalized = style.trim().toLowerCase();
-    if (normalized === WHISPER_STYLE_ATTR) {
-      return WHISPER_STYLE_CANONICAL;
-    }
-  }
-  return WHISPER_STYLE_CANONICAL;
-}
-
-function ensureVoiceState() {
-  if (!azureState._azureVoiceStyles || !(azureState._azureVoiceStyles instanceof Map)) {
-    azureState._azureVoiceStyles = new Map();
-  }
-  if (!azureState._azureWhisperVoices || !(azureState._azureWhisperVoices instanceof Set)) {
-    azureState._azureWhisperVoices = new Set();
-  }
-  if (!azureState._azureVoiceStyles.has(DEFAULT_VOICE)) {
-    azureState._azureVoiceStyles.set(
-      DEFAULT_VOICE,
-      new Set([WHISPER_STYLE_ATTR])
-    );
-  } else {
-    const styles = azureState._azureVoiceStyles.get(DEFAULT_VOICE);
-    if (styles instanceof Set) {
-      styles.add(WHISPER_STYLE_ATTR);
-    } else {
-      azureState._azureVoiceStyles.set(
-        DEFAULT_VOICE,
-        new Set([WHISPER_STYLE_ATTR])
-      );
-    }
-  }
-  azureState._azureWhisperVoices.add(DEFAULT_VOICE);
-  azureState._azureTTSStyle = resolveWhisperStyle(azureState._azureTTSStyle);
-}
-
-function registerVoiceStyles(voices) {
-  if (!Array.isArray(voices)) return;
-  ensureVoiceState();
-  const styleMap = azureState._azureVoiceStyles;
-  const whisperSet = azureState._azureWhisperVoices;
-  voices.forEach((voice) => {
-    const shortName = voice?.ShortName;
-    if (!shortName) return;
-    const styles = Array.isArray(voice.StyleList)
-      ? voice.StyleList.map((style) => String(style).toLowerCase())
-      : [];
-    styleMap.set(shortName, new Set(styles));
-    if (styles.includes(WHISPER_STYLE_ATTR)) {
-      whisperSet.add(shortName);
-    } else {
-      whisperSet.delete(shortName);
-    }
-  });
-  whisperSet.add(DEFAULT_VOICE);
-  if (!styleMap.has(DEFAULT_VOICE)) {
-    styleMap.set(DEFAULT_VOICE, new Set([WHISPER_STYLE_ATTR]));
-  }
-}
-
-function voiceSupportsWhisper(voiceName) {
-  ensureVoiceState();
-  const styles = azureState._azureVoiceStyles.get(voiceName);
-  return styles instanceof Set ? styles.has(WHISPER_STYLE_ATTR) : false;
-}
-
-function chooseWhisperVoice(preferredVoice) {
-  ensureVoiceState();
-  const candidate = preferredVoice || azureState._azureTTSVoice || DEFAULT_VOICE;
-  if (candidate && voiceSupportsWhisper(candidate)) {
-    return candidate;
-  }
-  const whisperSet = azureState._azureWhisperVoices;
-  if (whisperSet && whisperSet.size) {
-    if (whisperSet.has(DEFAULT_VOICE)) {
-      return DEFAULT_VOICE;
-    }
-    for (const voiceName of whisperSet.values()) {
-      if (voiceSupportsWhisper(voiceName)) {
-        return voiceName;
-      }
-    }
-  }
-  return DEFAULT_VOICE;
-}
-
-function buildWhisperSSML(text, voice, style = WHISPER_STYLE_CANONICAL) {
-  const resolvedVoice = voice || DEFAULT_VOICE;
-  const resolvedStyle = resolveWhisperStyle(style);
-  const styleAttr = resolvedStyle.toLowerCase();
-  const payload = sanitizeForSSML(text);
-  return `<?xml version='1.0'?>\n` +
-    `<speak version='1.0' xml:lang='en-US' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts'>\n` +
-    `  <voice name='${resolvedVoice}'>\n` +
-    `    <mstts:express-as style='${styleAttr}'>\n` +
-    `      <prosody rate='-10%' volume='-25%'>${payload}</prosody>\n` +
-    `    </mstts:express-as>\n` +
-    `  </voice>\n` +
-    `</speak>`;
-}
-
-ensureVoiceState();
-
-async function azureSpeak(text, opts = {}) {
-  if (!isTTSEnabled()) return null;
-  ensureVoiceState();
-  const key = opts.key || azureState._azureTTSKey;
-  const region = opts.region || azureState._azureTTSRegion;
-  if (!key || !region) throw new Error("Azure TTS key/region not set");
-  const voice = chooseWhisperVoice(opts.voice);
-  const style = resolveWhisperStyle(opts.style || azureState._azureTTSStyle);
-  azureState._azureTTSVoice = voice;
-  azureState._azureTTSStyle = style;
-  const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
-  const ssml = buildWhisperSSML(text, voice, style);
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Ocp-Apim-Subscription-Key": key,
-      "Content-Type": "application/ssml+xml",
-      "X-Microsoft-OutputFormat": "audio-24khz-48kbitrate-mono-mp3",
-      "User-Agent": "kexplorer-tts-client",
-    },
-    body: ssml,
-  });
-  if (!res.ok) throw new Error("Azure TTS failed: " + res.status);
-  const blob = await res.blob();
-  return URL.createObjectURL(blob);
-}
-
-async function fetchAzureVoices(key, region) {
-  const endpoint = `https://${region}.tts.speech.microsoft.com/cognitiveservices/voices/list`;
-  const res = await fetch(endpoint, {
-    method: "GET",
-    headers: {
-      "Ocp-Apim-Subscription-Key": key,
-    },
-  });
-  if (!res.ok) throw new Error("Failed to fetch voices: " + res.status);
-  const voices = await res.json();
-  registerVoiceStyles(voices);
-  return voices;
-}
-
-// Optionally: expose a UI to set key/region and voice globally
-function setAzureTTSConfig({ key, region, voice, style }) {
-  ensureVoiceState();
-  if (key) azureState._azureTTSKey = key;
-  if (region) azureState._azureTTSRegion = region;
-  if (voice) {
-    azureState._azureTTSVoice = chooseWhisperVoice(voice);
-  }
-  if (style !== undefined) {
-    azureState._azureTTSStyle = resolveWhisperStyle(style);
-  } else if (voice) {
-    azureState._azureTTSStyle = resolveWhisperStyle(azureState._azureTTSStyle);
-  }
-}
-
-// UI: Show Azure voice selector (fetches voices from Azure)
-async function showAzureVoiceSelector() {
-  if (!azureState._azureTTSKey || !azureState._azureTTSRegion) {
-    alert("Set your Azure TTS key and region first!");
-    return;
-  }
-  if (typeof document === "undefined") return;
-  let container = document.getElementById("azure-voice-selector");
-  if (!container) {
-    container = document.createElement("div");
-    container.id = "azure-voice-selector";
-    container.style = [
-      "position:fixed",
-      "left:50%",
-      "transform:translateX(-50%)",
-      "bottom:3em",
-      "z-index:3000",
-      "background:#fff0fa",
-      "border:2px solid #fd7bc5",
-      "border-radius:1.2em",
-      "padding:1em",
-      "box-shadow:0 2px 16px #fd7bc540",
-      "max-width:90vw",
-      "width:360px",
-    ].join(";");
-    document.body.appendChild(container);
-  }
-  container.innerHTML = `<b>Azure Whisper Voices</b><br>
-    <label style='font-size:0.98em;'><input type='checkbox' id='azure-voice-female' checked> Show only feminine voices</label><br>
-    <label style='font-size:0.98em;'><input type='checkbox' id='azure-voice-english' checked> Show only English voices</label>
-    <div id='azure-voices-loading' style='color:#a0005a;margin-top:0.5em;'>Loading whisper voices...</div>`;
-  let saveBtn;
+// Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
+import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "./modules/azure-tts.js";
+async function setDefaultAzureVoice() {
   try {
-    const voices = await fetchAzureVoices(
-      azureState._azureTTSKey,
-      azureState._azureTTSRegion
-    );
-    const whisperVoices = Array.isArray(voices)
-      ? voices.filter((voice) => voiceSupportsWhisper(voice.ShortName))
-      : [];
-    if (!whisperVoices.length) {
-      container.innerHTML = `<b>Azure Whisper Voices</b><br><span style='color:#a0005a;'>No whisper-capable voices returned.</span>`;
-      return;
+    if (!window._azureTTSVoice && window._azureTTSKey && window._azureTTSRegion) {
+      const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
+      const ava = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural");
+      if (ava) {
+        const wantsWhisper = Array.isArray(ava.StyleList) && ava.StyleList.includes("Whispering");
+        setAzureTTSConfig({ voice: ava.ShortName, style: wantsWhisper ? "Whispering" : undefined });
+      }
+    }
+    // Always ensure a default voice is set
+    if (!window._azureTTSVoice) setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+  } catch (e) {
+    setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
+  }
+}
+setDefaultAzureVoice();
+/**
+ * Main entry point - Coordinates all modules and initializes the application
+ */
+
+import {
+  initSidebar,
+  setAllArtists as setSidebarArtists,
+} from "./modules/sidebar.js";
+import { initAudio, initAudioUI } from "./modules/audio.js";
+import {
+  initTags,
+  setAllArtists as setTagsArtists,
+  setRenderArtistsCallback,
+  setRandomBackgroundCallback,
+  setTagTooltips,
+  setTagTaunts,
+  setTaunts,
+  getActiveTags,
+  getArtistNameFilter,
+  renderTagButtons,
+  setTagSearchMode,
+} from "./modules/tags.js";
+import {
+  initGallery,
+  filterArtists,
+  setRandomBackground,
+  setAllArtists as setGalleryArtists,
+  setGetActiveTagsCallback,
+  setGetArtistNameFilterCallback,
+  setSortMode,
+  setSortPreference,
+  forceSortAndRender,
+} from "./modules/gallery.js";
+import {
+  initUI,
+  setupInfiniteScroll,
+  setupBackgroundRotation,
+} from "./modules/ui.js";
+import {
+  openTagExplorer,
+  setAllArtists as setExplorerArtists,
+} from "./modules/tag-explorer.js";
+import { loadAppData } from "./modules/api.js";
+import { startTauntTicker } from "./modules/humiliation.js";
+
+
+import { renderPromptCacheUI } from "./modules/prompt-cache.js";
+import { createTTSToggleButton } from "./modules/tts-toggle.js";
+
+/**
+ * Initialize the application
+ */
+async function initApp() {
+  try {
+    // Load data files
+    const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
+
+    // Initialize modules
+    initUI();
+    initSidebar();
+    initAudio();
+    initAudioUI();
+
+    // Set initial background now that bg layer exists
+    setRandomBackground();
+
+    // Add TTS toggle button to audio controls
+    createTTSToggleButton();
+    await initTags();
+    initGallery();
+
+    // Set up data sharing between modules
+    setSidebarArtists(artists);
+    setTagsArtists(artists);
+    setGalleryArtists(artists);
+    setExplorerArtists(artists);
+
+    // Set up callback dependencies
+    setRenderArtistsCallback(filterArtists);
+    setRandomBackgroundCallback(setRandomBackground);
+    setGetActiveTagsCallback(getActiveTags);
+    setGetArtistNameFilterCallback(getArtistNameFilter);
+
+    // Configure data
+    setTagTooltips(tooltips);
+    setTagTaunts(tagTaunts);
+    setTaunts(generalTaunts);
+    startTauntTicker(generalTaunts, 30000);
+
+    // Use loaded tooltips to set a random tagline
+    const quotes = Object.values(tooltips).filter(Boolean);
+    if (quotes.length > 0) {
+      const random = quotes[Math.floor(Math.random() * quotes.length)];
+      const taglineElem = document.getElementById("tagline");
+      if (taglineElem) taglineElem.textContent = random;
     }
 
-    const renderVoiceSelect = () => {
-      const onlyFemaleEl = document.getElementById("azure-voice-female");
-      const onlyEnglishEl = document.getElementById("azure-voice-english");
-      let filtered = whisperVoices;
-      if (onlyFemaleEl && onlyFemaleEl.checked) {
-        filtered = filtered.filter((voice) => voice.Gender === "Female");
-      }
-      if (onlyEnglishEl && onlyEnglishEl.checked) {
-        filtered = filtered.filter((voice) =>
-          (voice.Locale || "").toLowerCase().startsWith("en")
-        );
-      }
+    // Initial render
+    renderTagButtons();
+    filterArtists();
 
-      let select = document.getElementById("azure-voice-select");
-      if (select) select.remove();
-      select = document.createElement("select");
-      select.id = "azure-voice-select";
-      select.style = "width:100%;margin-top:0.7em;margin-bottom:0.4em;";
+    // Set up background rotation
+    setupBackgroundRotation(setRandomBackground, 15000);
 
-      if (!filtered.length) {
-        select.disabled = true;
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "No voices match the current filters";
-        select.appendChild(opt);
-      } else {
-        const preferred = chooseWhisperVoice(azureState._azureTTSVoice);
-        const usableVoice = filtered.some(
-          (voice) => voice.ShortName === preferred
-        )
-          ? preferred
-          : filtered[0].ShortName;
-        azureState._azureTTSVoice = usableVoice;
-        filtered.forEach((voice) => {
-          const opt = document.createElement("option");
-          opt.value = voice.ShortName;
-          opt.textContent = `${voice.ShortName} — ${voice.FriendlyName} (${voice.Locale}, ${voice.Gender})`;
-          if (voice.ShortName === azureState._azureTTSVoice) {
-            opt.selected = true;
-          }
-          select.appendChild(opt);
-        });
-        select.disabled = false;
-      }
+    // Set up infinite scroll
+    setupInfiniteScroll(() => {
+      import("./modules/gallery.js").then((gallery) => {
+        const galleryInfo = gallery.getPaginationInfo();
+        if (galleryInfo.hasMore) {
+          filterArtists(false);
+        }
+      });
+    });
 
-      select.onchange = () => {
-        azureState._azureTTSVoice = chooseWhisperVoice(select.value);
-      };
-
-      const anchor = document.getElementById("azure-voices-loading");
-      if (anchor) {
-        container.insertBefore(select, anchor);
-        anchor.textContent = select.disabled
-          ? "No whisper voices match the current filters."
-          : "Style locked to Whispering (-10% rate, -25% volume).";
-      } else {
-        container.appendChild(select);
-      }
-
-      if (saveBtn) {
-        saveBtn.disabled = select.disabled;
-      }
-
-      return select.disabled;
-    };
-
-    const initialDisabled = renderVoiceSelect();
-    const femaleToggle = document.getElementById("azure-voice-female");
-    const englishToggle = document.getElementById("azure-voice-english");
-    const handleFilterChange = () => {
-      renderVoiceSelect();
-    };
-    if (femaleToggle) femaleToggle.onchange = handleFilterChange;
-    if (englishToggle) englishToggle.onchange = handleFilterChange;
-
-    saveBtn = document.createElement("button");
-    saveBtn.textContent = "Set Whisper Voice";
-    saveBtn.className = "browse-btn";
-    saveBtn.style = "margin-left:0.7em;";
-    saveBtn.disabled = initialDisabled;
-    saveBtn.onclick = () => {
-      const select = document.getElementById("azure-voice-select");
-      const voiceValue = select && !select.disabled ? select.value : undefined;
-      const chosen = chooseWhisperVoice(voiceValue);
-      setAzureTTSConfig({ voice: chosen, style: WHISPER_STYLE_CANONICAL });
-      alert(`Azure TTS set to: ${chosen} (Whispering)`);
-    };
-    container.appendChild(saveBtn);
-
-    const closeBtn = document.createElement("button");
-    closeBtn.textContent = "×";
-    closeBtn.className = "zoom-close";
-    closeBtn.onclick = () => container.remove();
-    container.appendChild(closeBtn);
-  } catch (e) {
-    container.innerHTML = `<b>Azure Whisper Voices</b><br><span style='color:#a0005a;'>Failed to load voices: ${e.message}</span>`;
+    console.log("Application initialized successfully");
+  } catch (error) {
+    console.error("Failed to initialize application:", error);
+    // Show user-friendly error message
+    document.body.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: #d63384;">
+        <h2>Failed to load the application</h2>
+        <p>Please refresh the page to try again.</p>
+        <p><small>Error: ${error.message}</small></p>
+      </div>
+    `;
   }
 }
 
-export {
-  azureSpeak,
-  setAzureTTSConfig,
-  DEFAULT_VOICE,
-  WHISPER_STYLE_CANONICAL,
-  fetchAzureVoices,
-  showAzureVoiceSelector,
+// Initialize when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
+} else {
+  initApp();
+}
+
+// tag-tooltips are loaded in initApp and used for tagline
+
+// Global error handling
+window.addEventListener("error", (event) => {
+  // Suppress media/network spam
+  if (event.error && event.error.name === 'DOMException') return;
+  if (event.error && event.error.message && event.error.message.includes('NetworkError')) return;
+  console.error("Unhandled error:", event.error);
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  // Suppress media/network spam
+  if (event.reason && event.reason.name === 'DOMException') return;
+  if (event.reason && event.reason.message && event.reason.message.includes('NetworkError')) return;
+  console.error("Unhandled promise rejection:", event.reason);
+});
+
+// Expose some functions globally for debugging
+window.kexplorer = {
+  filterArtists,
+  setRandomBackground,
+  getActiveTags,
+  renderTagButtons,
+  openTagExplorer,
 };
 
-// Expose for debugging/UI
-if (typeof window !== "undefined") {
-  window.azureSpeak = azureSpeak;
-  window.fetchAzureVoices = fetchAzureVoices;
-  window.showAzureVoiceSelector = showAzureVoiceSelector;
+// --- SIDEBAR TOGGLE BUTTON ---
+const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
+const copiedSidebarEl = document.getElementById("copied-sidebar");
+if (sidebarToggleBtn && copiedSidebarEl) {
+    sidebarToggleBtn.addEventListener("click", () => {
+        // Toggle visibility via class so CSS can manage layout
+        copiedSidebarEl.classList.toggle("sidebar-hidden");
+        const isHidden = copiedSidebarEl.classList.contains("sidebar-hidden");
+        copiedSidebarEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
+    });
 }
+
+const audioToggleBtn = document.querySelector(".audio-toggle");
+const audioPanelEl = document.getElementById("audio-panel");
+if (audioToggleBtn && audioPanelEl) {
+    audioToggleBtn.addEventListener("click", () => {
+        // Toggle visibility for fixed audio panel container
+        audioPanelEl.classList.toggle("hidden");
+        const isHidden = audioPanelEl.classList.contains("hidden");
+        audioPanelEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
+    });
+}
+
+const sidebarCloseBtn = document.querySelector(".copied-sidebar-close");
+const copiedSidebar = document.getElementById("copied-sidebar");
+if (sidebarCloseBtn && copiedSidebar) {
+  sidebarCloseBtn.addEventListener("click", () => {
+    // Hide the sidebar and clear any open state
+    copiedSidebar.classList.add("sidebar-hidden");
+    document.body.classList.remove("sidebar-open");
+    copiedSidebar.setAttribute("aria-hidden", "true");
+  });
+}
+
+const sortSelect = document.getElementById("sort-by");
+if (sortSelect) {
+  sortSelect.addEventListener("change", (e) => {
+    // No immediate sort, just set mode for button
+    // Optionally, update UI to reflect selection
+  });
+}
+
+const sortButtonElem = document.getElementById("sort-button");
+if (sortButtonElem && sortSelect) {
+  sortButtonElem.addEventListener("click", () => {
+    if (
+      sortSelect.value === "top" &&
+      typeof window.kexplorer !== "undefined" &&
+      typeof window.kexplorer.showTopArtistsByTagCount === "function"
+    ) {
+      window.kexplorer.showTopArtistsByTagCount();
+    } else {
+      setSortMode(sortSelect.value);
+      forceSortAndRender();
+    }
+  });
+}
+
+// Theme toggling
+const themeToggle = document.querySelector(".theme-toggle");
+const bodyEl = document.body;
+const savedTheme = localStorage.getItem("theme");
+if (savedTheme === "incognito") {
+  bodyEl.classList.add("incognito-theme");
+  bodyEl.classList.remove("fem-theme");
+  setRandomBackground();
+} else {
+  bodyEl.classList.add("fem-theme");
+  bodyEl.classList.remove("incognito-theme");
+}
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    bodyEl.classList.toggle("incognito-theme");
+    bodyEl.classList.toggle("fem-theme");
+    const current = bodyEl.classList.contains("incognito-theme") ? "incognito" : "fem";
+    localStorage.setItem("theme", current);
+    setRandomBackground();
+  });
+}
+
+const sortPreferenceElem = document.getElementById("sort-preference");
+if (sortPreferenceElem) {
+  sortPreferenceElem.addEventListener("change", (e) => {
+    setSortPreference(e.target.value);
+  });
+}
+
+// Add tag search mode selector
+const tagSearchModeSelect = document.createElement("select");
+tagSearchModeSelect.id = "tag-search-mode";
+tagSearchModeSelect.innerHTML = `
+  <option value="contains">Contains</option>
+  <option value="starts">Starts with</option>
+  <option value="ends">Ends with</option>
+`;
+tagSearchModeSelect.style.marginLeft = "0.5em";
+const tagSearchInput = document.getElementById("tag-search");
+if (tagSearchInput && tagSearchInput.parentNode) {
+  tagSearchInput.parentNode.insertBefore(
+    tagSearchModeSelect,
+    tagSearchInput.nextSibling
+  );
+  tagSearchModeSelect.addEventListener("change", (e) => {
+    setTagSearchMode(e.target.value);
+  });
+}
+
+// Add JOI mode toggle button
+const joiBtn = document.createElement("button");
+joiBtn.textContent = "JOI Mode";
+joiBtn.className = "browse-btn humiliation-glow";
+joiBtn.style.marginLeft = "1em";
+let joiActive = false;
+joiBtn.onclick = () => {
+  if (!joiActive && window.startJOIMode) {
+    window.startJOIMode();
+    joiActive = true;
+    joiBtn.textContent = "Stop JOI Mode";
+    joiBtn.classList.add("active");
+  } else if (joiActive && window.stopJOIMode) {
+    window.stopJOIMode();
+    joiActive = false;
+    joiBtn.textContent = "JOI Mode";
+    joiBtn.classList.remove("active");
+  }
+};
+const controlsBar = document.querySelector(".sort-controls");
+if (controlsBar) controlsBar.appendChild(joiBtn);
+
+// Add Prompt Cache button
+const promptBtn = document.createElement("button");
+promptBtn.textContent = "Prompts";
+promptBtn.className = "browse-btn";
+promptBtn.style.marginLeft = "1em";
+promptBtn.onclick = () => {
+  renderPromptCacheUI();
+};
+if (controlsBar) controlsBar.appendChild(promptBtn);
+
+// --- Wire up static Top Artists button (fixes non-working UI button) ---
+const staticTopArtistsBtn = document.getElementById("show-top-artists");
+if (staticTopArtistsBtn) {
+  staticTopArtistsBtn.addEventListener("click", () => {
+    if (
+      typeof window.kexplorer !== "undefined" &&
+      typeof window.kexplorer.showTopArtistsByTagCount === "function"
+    ) {
+      window.kexplorer.showTopArtistsByTagCount();
+    }
+  });
+}
+
+// --- Add floating chibi mascot image (fixes chibi.png placement) ---
+window.addEventListener("DOMContentLoaded", () => {
+  if (!document.getElementById("floating-chibi-mascot")) {
+    const chibi = document.createElement("img");
+    chibi.id = "floating-chibi-mascot";
+    chibi.src = "icons/chibi.png";
+    chibi.alt = "Chibi Mascot";
+    chibi.style.position = "fixed";
+    chibi.style.bottom = "2.5em";
+    chibi.style.right = "2.5em";
+    chibi.style.width = "90px";
+    chibi.style.height = "auto";
+    chibi.style.zIndex = "13000";
+    chibi.style.pointerEvents = "none";
+    chibi.style.userSelect = "none";
+    chibi.style.filter = "drop-shadow(0 2px 12px #fd7bc5cc)";
+    document.body.appendChild(chibi);
+  }
+
+  // Tag Explorer Bar buttons
+  const topArtistsBtn = document.getElementById("top-artists-btn");
+  const joiModeBtn = document.getElementById("joi-mode-btn");
+  const promptsBtn = document.getElementById("prompts-btn");
+  const browseTagsBtn = document.getElementById("browse-tags-btn");
+  if (topArtistsBtn) {
+    topArtistsBtn.addEventListener("click", () => {
+      if (window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === "function") {
+        window.kexplorer.showTopArtistsByTagCount();
+      }
+    });
+  }
+  if (joiModeBtn) {
+    joiModeBtn.addEventListener("click", () => {
+      if (window.startJOIMode) window.startJOIMode();
+    });
+  }
+  if (promptsBtn) {
+    promptsBtn.addEventListener("click", () => {
+      if (window.renderPromptCacheUI) window.renderPromptCacheUI();
+    });
+  }
+  if (browseTagsBtn) {
+    browseTagsBtn.addEventListener("click", () => {
+      if (window.openTagExplorer) window.openTagExplorer();
+    });
+  }
+
+  // Make tag-explorer-bar fixed on scroll
+  const tagBar = document.getElementById("tag-explorer-bar");
+  let lastScrollY = 0;
+  window.addEventListener("scroll", () => {
+    if (!tagBar) return;
+    if (window.scrollY > 60) {
+      tagBar.classList.add("fixed");
+    } else {
+      tagBar.classList.remove("fixed");
+    }
+    lastScrollY = window.scrollY;
+  });
+
+  // Remove old filter toggle logic if present
+  const filterToggle = document.getElementById("toggle-filters");
+  if (filterToggle) filterToggle.style.display = "none";
+});
+
+// Ensure top bar and tag bar are layered above gallery
+const topBar = document.querySelector('.top-bar');
+if (topBar) topBar.style.zIndex = '5000';
+const tagBar = document.getElementById('tag-explorer-bar');
+if (tagBar) tagBar.style.zIndex = '4500';
