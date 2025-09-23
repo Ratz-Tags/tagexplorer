@@ -30,6 +30,11 @@ let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
 let currentPage = 1;
 let totalPages = 0;
 const renderedPages = new Set();
+const pagination = {
+  current: 1,
+  perPage: DEFAULT_ARTISTS_PER_PAGE,
+  total: 0,
+};
 
 const resolvePerPage = (value) => {
   const floored = Math.floor(Number(value));
