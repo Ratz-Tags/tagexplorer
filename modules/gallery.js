@@ -874,6 +874,47 @@ function getPaginationInfo() {
   };
 }
 
+function attachPaginationDebugInterface() {
+  if (typeof window === "undefined") return;
+  const debugAPI = {
+    get info() {
+      return getPaginationInfo();
+    },
+    get state() {
+      return {
+        perPage: pagination.perPage,
+        current: pagination.current,
+        total: pagination.total,
+        totalPages: getTotalPages(),
+      };
+    },
+    get current() {
+      return getCurrentPage();
+    },
+    set current(value) {
+      setCurrentPage(value);
+      renderArtistsPage();
+    },
+    get perPage() {
+      return pagination.perPage;
+    },
+    set perPage(value) {
+      setArtistsPerPage(value);
+    },
+    reset() {
+      resetPaginationState();
+      renderArtistsPage({ force: true });
+    },
+    render(options = {}) {
+      renderArtistsPage(options);
+    },
+  };
+  window.Pagination = debugAPI;
+  window.pagination = pagination;
+}
+
+attachPaginationDebugInterface();
+
 /**
  * Filters and displays artists based on current criteria
  */

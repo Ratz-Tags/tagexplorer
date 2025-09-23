@@ -32,7 +32,6 @@ const observedTagLists =
   typeof WeakSet === "function" ? new WeakSet() : null;
 let heightSyncListenersBound = false;
 let heightSyncResizeHandler = null;
-
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
