@@ -97,7 +97,8 @@ if (typeof window !== "undefined") {
 async function speakToast(text) {
   if (!window._ttsEnabled) return;
   try {
-    const url = await azureSpeak(text, {});
+    // Don't pass empty overrides - let azureSpeak use the current whisper configuration
+    const url = await azureSpeak(text);
     if (url) {
       const audio = new Audio(url);
       audio.play().catch(() => {});

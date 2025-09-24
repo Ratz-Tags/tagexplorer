@@ -129,13 +129,26 @@ function syncOpenCategoryHeights() {
   sections.forEach((section) => {
     const tagList = section.querySelector(".filter-category__tags");
     if (!tagList) return;
+    
+    // Force layout to get accurate measurements
+    tagList.style.transition = 'none';
     const height = tagList.scrollHeight;
-    const value = Number.isFinite(height) && height > 0 ? `${height}px` : "0px";
-    try {
-      section.style.setProperty("--filter-category-open-height", value);
-    } catch {
-      // ignore style assignment issues
+    const value = Number.isFinite(height) && height > 0 ? `${Math.ceil(height)}px` : "0px";
+    
+    // Only update if the value has actually changed to prevent flickering
+    const currentValue = section.style.getPropertyValue("--filter-category-open-height");
+    if (currentValue !== value) {
+      try {
+        section.style.setProperty("--filter-category-open-height", value);
+      } catch {
+        // ignore style assignment issues
+      }
     }
+    
+    // Re-enable transitions after a frame
+    requestAnimationFrame(() => {
+      tagList.style.transition = '';
+    });
   });
 }
 

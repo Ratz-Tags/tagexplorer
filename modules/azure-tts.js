@@ -172,7 +172,10 @@ function buildSSML(text, config) {
 async function azureSpeak(text, overrides = {}) {
   if (!text) return null;
   const { key, region } = await ensureCredentials();
-  const config = normalizeVoiceConfig(overrides);
+  // When no overrides provided, use the current stored configuration
+  const config = Object.keys(overrides).length === 0 
+    ? { ...azureConfig }  // Use current config directly
+    : normalizeVoiceConfig(overrides);  // Merge with overrides
   const ssml = buildSSML(text, config);
 
   const response = await fetch(synthesisEndpoint(region), {

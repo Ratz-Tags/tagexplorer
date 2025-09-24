@@ -86,6 +86,8 @@ backdrop-filter: blur(18px);
 position: sticky;
 top: calc(env(safe-area-inset-top, 0px) + 0.85rem);
 z-index: 75;
+/* Ensure the command bar stays visible when parent collapses */
+flex-shrink: 0;
 }
 .top-surface.is-sticky .command-bar {
 @apply border-white/20 bg-black/60;
@@ -108,6 +110,10 @@ opacity: 0;
 }
 .top-surface.is-sticky #tag-explorer-bar {
 @apply mt-0;
+/* Ensure command bar stays at the top when parent header is sticky */
+position: sticky;
+top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
+z-index: 76;
 }
 .brand-chip {
 @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-300;
