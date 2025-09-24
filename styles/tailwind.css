@@ -284,6 +284,9 @@ display: none;
 .browse-btn {
 @apply px-4 py-2;
 }
+.audio-pill {
+@apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-[0.58rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-glow hover:bg-glow/15 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
+}
 #back-to-top {
 @apply fixed bottom-10 right-10 hidden shadow-pulse;
 }
@@ -556,10 +559,59 @@ body.sidebar-open .sidebar-wrapper,
 @apply h-10 w-10;
 }
 .audio-panel {
-@apply fixed bottom-6 left-1/2 z-[9000] flex min-w-[320px] -translate-x-1/2 flex-col gap-3 rounded-3xl border border-white/10 bg-panel/95 p-4 shadow-neon;
+@apply fixed left-1/2 z-[9000] flex min-w-[320px] -translate-x-1/2 translate-y-0 flex-col gap-3 rounded-3xl border border-white/10 bg-panel/95 p-4 shadow-neon transition-all duration-300 ease-kink;
+bottom: calc(env(safe-area-inset-bottom) + 1.5rem);
 }
 .audio-panel.hidden {
 display: none;
+}
+.voice-selector-overlay {
+@apply fixed inset-0 z-[15000] flex items-center justify-center bg-black/80 backdrop-blur-glass p-6;
+}
+.voice-selector-overlay.hidden {
+display: none;
+}
+.voice-selector-card {
+@apply w-full max-w-3xl rounded-[2rem] border border-white/10 bg-panel/95 p-6 text-xs uppercase tracking-[0.3em] text-slate-200 shadow-neon;
+}
+.voice-selector-header {
+@apply mb-6 flex flex-col gap-2 text-left;
+}
+.voice-selector-header h2 {
+@apply text-lg font-display uppercase tracking-[0.45em] text-white;
+}
+.voice-selector-header p {
+@apply text-[0.6rem] text-slate-400;
+}
+.voice-selector-grid {
+@apply grid max-h-[50vh] w-full gap-3 overflow-y-auto pr-1 sm:grid-cols-2;
+}
+.voice-option {
+@apply flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-4 text-left transition hover:border-glow/70 hover:bg-glow/10;
+}
+.voice-option.active {
+@apply border-glow bg-glow/15 shadow-neon;
+}
+.voice-option-title {
+@apply text-[0.7rem] font-semibold tracking-[0.35em] text-slate-100;
+}
+.voice-option-meta {
+@apply text-[0.55rem] text-slate-400;
+}
+.voice-selector-actions {
+@apply mt-6 flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+}
+.voice-style-field {
+@apply flex flex-1 flex-col gap-2;
+}
+.voice-style-select {
+@apply field-input text-[0.6rem] uppercase tracking-[0.3em];
+}
+.voice-selector-buttons {
+@apply flex flex-wrap items-center justify-end gap-3;
+}
+.voice-selector-footnote {
+@apply mt-4 text-[0.55rem] text-slate-400;
 }
 .audio-header {
 @apply flex items-center gap-3 text-sm uppercase tracking-[0.3em] text-slate-200;
@@ -581,6 +633,20 @@ display: none;
 }
 #desperation-meter .desperation-taunt {
 @apply mt-3 block text-[0.55rem] text-slate-400;
+}
+body.audio-panel-open .gallery-shell {
+padding-bottom: clamp(12rem, 28vw, 16rem);
+}
+body.audio-panel-open #jrpg-bubbles {
+bottom: calc(env(safe-area-inset-bottom) + 12rem);
+}
+body.audio-panel-open #desperation-meter {
+bottom: calc(env(safe-area-inset-bottom) + 12rem);
+}
+body.voice-selector-open #audio-panel {
+opacity: 0;
+pointer-events: none;
+transform: translate(-50%, 2.5rem);
 }
 }
 
