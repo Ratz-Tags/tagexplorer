@@ -4,13 +4,15 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
-import {
-  azureSpeak,
-  setAzureTTSConfig,
-  DEFAULT_VOICE,
-  showAzureVoiceSelector,
-} from "./azure-tts.js";
+import { azureSpeak } from "./azure-tts.js";
 import { getActiveTags } from "./tags.js";
+import { isTTSEnabled, createTTSToggleButton } from "./tts-toggle.js";
+
+if (typeof window !== "undefined") {
+  window.addEventListener("DOMContentLoaded", () => {
+    createTTSToggleButton();
+  });
+}
 
 let copiedArtists = new Set();
 
@@ -29,9 +31,6 @@ let suggestionSummaryEl = null;
 let suggestionCopyBtn = null;
 let suggestionKeyHandler = null;
 
-// TTS toggle state
-window._ttsEnabled = true;
-
 /**
  * Returns the count of copied artists
  */
@@ -39,63 +38,12 @@ function getCopiedCount() {
   return copiedArtists.size;
 }
 
-// Ensures the TTS toggle button is present in the audio-controls
-function ensureTTSToggleButton() {
-  const audioPanel = document.getElementById("audio-panel");
-  if (audioPanel) {
-    const controls = audioPanel.querySelector(".audio-controls");
-    if (controls) {
-      let ttsBtn = document.getElementById("tts-toggle-btn");
-      if (!ttsBtn) {
-        ttsBtn = document.createElement("button");
-        ttsBtn.type = "button";
-        ttsBtn.id = "tts-toggle-btn";
-        ttsBtn.className = "audio-pill";
-        ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
-        ttsBtn.onclick = () => {
-          window._ttsEnabled = !window._ttsEnabled;
-          ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
-        };
-        controls.appendChild(ttsBtn);
-      }
-
-      // Azure Voice/Style selector button
-      let voiceBtn = document.getElementById("azure-voice-style-btn");
-      if (!voiceBtn) {
-        voiceBtn = document.createElement("button");
-        voiceBtn.type = "button";
-        voiceBtn.id = "azure-voice-style-btn";
-        voiceBtn.className = "audio-pill";
-        voiceBtn.textContent = "Voice & Style";
-        voiceBtn.setAttribute("aria-haspopup", "dialog");
-        voiceBtn.setAttribute("aria-expanded", "false");
-        voiceBtn.addEventListener("click", () => {
-          showAzureVoiceSelector();
-        });
-        if (!voiceBtn.dataset.selectorBound) {
-          const updateExpandedState = (event) => {
-            const isOpen = Boolean(event?.detail?.open);
-            voiceBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-          };
-          document.addEventListener("azureTTS:selector", updateExpandedState);
-          voiceBtn.dataset.selectorBound = "true";
-        }
-        controls.appendChild(voiceBtn);
-      }
-    }
-  }
-}
-
-if (typeof window !== "undefined") {
-  window.addEventListener("DOMContentLoaded", ensureTTSToggleButton);
-}
-
 /**
  * Shows a toast notification message
  */
 
 async function speakToast(text) {
-  if (!window._ttsEnabled) return;
+  if (!isTTSEnabled()) return;
   try {
     // Don't pass empty overrides - let azureSpeak use the current whisper configuration
     const url = await azureSpeak(text);
@@ -114,7 +62,7 @@ function showToast(message) {
   toast.textContent = message;
   document.body.appendChild(toast);
   speakToast(message);
-  ensureTTSToggleButton();
+  createTTSToggleButton();
   // Suppress audio play errors
   const audioEl = document.getElementById('moan-audio');
   if (audioEl && audioEl.src && audioEl.src !== '' && audioEl.src !== 'null') {
