@@ -85,7 +85,7 @@ margin-bottom: 0;
 backdrop-filter: blur(18px);
 position: sticky;
 top: calc(env(safe-area-inset-top, 0px) + 0.85rem);
-z-index: 60;
+z-index: 75;
 }
 .top-surface.is-sticky .command-bar {
 @apply border-white/20 bg-black/60;
@@ -143,7 +143,7 @@ opacity: 0;
 @apply mx-auto flex w-full max-w-7xl flex-col gap-9 px-6 pb-20 pt-8 transition-all duration-500 ease-kink;
 }
 .top-surface.is-sticky + main .gallery-shell {
-@apply gap-8 pt-5;
+@apply gap-8 pt-2;
 }
 .gallery-intro {
 @apply relative overflow-hidden rounded-[2rem] border border-white/10 bg-black/35 p-6 text-[0.65rem] uppercase tracking-[0.3em] text-slate-300 shadow-neon backdrop-blur-sm transition-all duration-500 ease-kink;
