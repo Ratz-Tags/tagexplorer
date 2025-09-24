@@ -315,7 +315,6 @@ function initAudio() {
 
   hydrateAudioFilesFromDom();
   renderPlaylist();
-
   syncAudioPanelLayout();
 
   // ARIA and feedback improvements for audio controls
