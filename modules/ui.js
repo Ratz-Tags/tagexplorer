@@ -103,15 +103,34 @@ function setupBackToTop() {
   const backToTopBtn = document.getElementById("back-to-top");
   if (!backToTopBtn) return;
 
-  window.addEventListener("scroll", () => {
+  const show = () => {
+    backToTopBtn.classList.add("is-visible");
+    backToTopBtn.setAttribute("aria-hidden", "false");
+  };
+
+  const hide = () => {
+    backToTopBtn.classList.remove("is-visible");
+    backToTopBtn.setAttribute("aria-hidden", "true");
+  };
+
+  const onScroll = () => {
     if (window.scrollY > 200) {
-      backToTopBtn.style.display = "block";
+      show();
     } else {
-      backToTopBtn.style.display = "none";
+      hide();
     }
+  };
+
+  hide();
+  onScroll();
+
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("beforeunload", () => {
+    window.removeEventListener("scroll", onScroll);
   });
 
-  backToTopBtn.addEventListener("click", () => {
+  backToTopBtn.addEventListener("click", (event) => {
+    event.preventDefault();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 }
