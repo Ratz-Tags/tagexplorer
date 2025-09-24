@@ -20,9 +20,9 @@ function createTTSToggleButton() {
   let btn = document.getElementById("tts-toggle-btn");
   if (!btn) {
     btn = document.createElement("button");
+    btn.type = "button";
     btn.id = "tts-toggle-btn";
-    btn.className = "browse-btn";
-    btn.style.marginLeft = "1em";
+    btn.className = "audio-pill";
     btn.onclick = () => setTTSEnabled(!ttsEnabled);
     const controls = document.querySelector(".audio-controls");
     if (controls) controls.appendChild(btn);
