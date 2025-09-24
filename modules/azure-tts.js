@@ -196,11 +196,7 @@ function highlightSelectedVoice(shortName) {
       btn.classList.remove("active");
       btn.setAttribute("aria-pressed", "false");
     }
-    return response.json();
   });
-
-  const voices = await voiceListPromise;
-  return Array.isArray(voices) ? voices : [];
 }
 
 function formatVoiceLabel(voice) {
