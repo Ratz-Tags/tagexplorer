@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug Test - TagExplorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { 
+      padding: 20px; 
+      background: #0c0b16; 
+      color: white; 
+      font-family: Arial, sans-serif;
+    }
+    .debug-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 8px;
+    }
+    .test-button {
+      background: #ff64d4;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    .test-button:hover {
+      background: #e553bd;
+    }
+  </style>
+</head>
+<body>
+  <h1>TagExplorer Debug Test</h1>
+  
+  <div class="debug-section">
+    <h2>Sticky Header Test</h2>
+    <div class="top-surface" id="test-header" style="position: sticky; top: 0; background: rgba(0,0,0,0.8); padding: 10px; z-index: 75;">
+      <div class="command-bar">
+        <button class="test-button" onclick="testStickyHeader()">Toggle Sticky Class</button>
+        <span id="sticky-status">Not Sticky</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="debug-section">
+    <h2>Filter Panel Test</h2>
+    <button class="test-button" onclick="testFilterPanel()">Open Filter Panel</button>
+    <button class="test-button" onclick="testAccordion()">Test Accordion</button>
+    <div id="filter-status"></div>
+  </div>
+
+  <div class="debug-section">
+    <h2>Data Status</h2>
+    <button class="test-button" onclick="checkData()">Check Kink Tags Data</button>
+    <div id="data-status"></div>
+  </div>
+
+  <!-- Dummy content to test scrolling -->
+  <div style="height: 2000px; background: linear-gradient(to bottom, #0c0b16, #1a1632);">
+    <p style="padding-top: 500px;">Scroll up and down to test sticky header...</p>
+    <p style="padding-top: 500px;">More content to scroll through...</p>
+    <p style="padding-top: 500px;">Even more content...</p>
+  </div>
+
+  <script type="module">
+    // Import the main functions
+    import { 
+      openTagExplorer, 
+      initTagExplorer 
+    } from "./modules/tag-explorer.js";
+    import { 
+      getKinkTags, 
+      initTags 
+    } from "./modules/tags.js";
+    import { initUI } from "./modules/ui.js";
+
+    // Make functions available globally for testing
+    window.openTagExplorer = openTagExplorer;
+    window.initTagExplorer = initTagExplorer;
+    window.getKinkTags = getKinkTags;
+    window.initTags = initTags;
+    window.initUI = initUI;
+
+    // Initialize
+    async function init() {
+      try {
+        console.log("Initializing UI...");
+        initUI();
+        
+        console.log("Initializing tags...");
+        await initTags();
+        
+        console.log("Initializing tag explorer...");
+        initTagExplorer();
+        
+        console.log("Initialization complete!");
+      } catch (error) {
+        console.error("Initialization error:", error);
+      }
+    }
+
+    init();
+
+    // Test functions
+    window.testStickyHeader = function() {
+      const header = document.getElementById('test-header');
+      header.classList.toggle('is-sticky');
+      const status = document.getElementById('sticky-status');
+      status.textContent = header.classList.contains('is-sticky') ? 'Sticky!' : 'Not Sticky';
+    };
+
+    window.testFilterPanel = function() {
+      console.log("Testing filter panel...");
+      try {
+        openTagExplorer();
+        document.getElementById('filter-status').innerHTML = '✅ Filter panel opened successfully!';
+      } catch (error) {
+        document.getElementById('filter-status').innerHTML = '❌ Error: ' + error.message;
+        console.error(error);
+      }
+    };
+
+    window.testAccordion = function() {
+      const categories = document.querySelectorAll('.filter-category__header');
+      document.getElementById('filter-status').innerHTML = `Found ${categories.length} accordion categories. Click on them to test.`;
+    };
+
+    window.checkData = function() {
+      try {
+        const tags = getKinkTags();
+        const status = document.getElementById('data-status');
+        status.innerHTML = `✅ Found ${tags.length} tag categories<br>`;
+        tags.forEach((cat, i) => {
+          if (i < 3) { // Show first 3 categories
+            status.innerHTML += `- ${cat.category}: ${cat.tags.length} tags<br>`;
+          }
+        });
+        if (tags.length > 3) {
+          status.innerHTML += `... and ${tags.length - 3} more categories`;
+        }
+      } catch (error) {
+        document.getElementById('data-status').innerHTML = '❌ Error: ' + error.message;
+        console.error(error);
+      }
+    };
+  </script>
+</body>
+</html>
