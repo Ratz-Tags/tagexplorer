@@ -9,15 +9,139 @@ let moansMuted = false;
 let moanPlaying = false;
 
 // Audio file list
-const audioFiles = [
+const FALLBACK_AUDIO_FILES = [
   "Blank.mp3",
   "Filthy Habits.mp3",
   "Girl Factory.mp3",
   "Layer Zero.mp3",
   "Nipples.mp3",
   "Yes.mp3",
-  // Add more audio files as needed
 ];
+
+let audioFiles = [...FALLBACK_AUDIO_FILES];
+
+let playlistContainer = null;
+
+function normalizeTrackList(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  const normalized = [];
+  list.forEach((item) => {
+    if (typeof item !== "string") return;
+    const trimmed = item.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    normalized.push(trimmed);
+  });
+  return normalized;
+}
+
+function parsePlaylistAttribute(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return normalizeTrackList(raw);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return normalizeTrackList(parsed);
+      }
+    } catch (error) {
+      // Not JSON; fall through to comma-separated parsing.
+    }
+    return normalizeTrackList(
+      raw
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    );
+  }
+  return [];
+}
+
+function hydrateAudioFilesFromDom() {
+  if (typeof document === "undefined") {
+    audioFiles = [...FALLBACK_AUDIO_FILES];
+    return;
+  }
+  const playlistAttr = hypnoAudio?.dataset?.playlist;
+  const parsed = parsePlaylistAttribute(playlistAttr);
+  audioFiles = parsed.length ? parsed : [...FALLBACK_AUDIO_FILES];
+}
+
+function isRemoteTrack(name) {
+  return /^https?:\/\//i.test(name);
+}
+
+function getTrackLabel(name) {
+  if (!name) return "Untitled";
+  const afterSlash = name.split("/").pop();
+  const withoutExt = afterSlash ? afterSlash.replace(/\.[^/.]+$/, "") : name;
+  return withoutExt
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function ensurePlaylistContainer() {
+  if (!panel) return null;
+  if (!playlistContainer) {
+    playlistContainer = document.createElement("div");
+    playlistContainer.className = "audio-playlist";
+    playlistContainer.setAttribute("role", "list");
+    const controls = panel.querySelector(".audio-controls");
+    panel.insertBefore(playlistContainer, controls || null);
+  }
+  return playlistContainer;
+}
+
+function highlightActiveTrack() {
+  if (!playlistContainer) return;
+  const buttons = playlistContainer.querySelectorAll("[data-track-index]");
+  buttons.forEach((button) => {
+    const index = Number(button.dataset.trackIndex);
+    if (index === currentTrack) {
+      button.classList.add("active");
+      button.setAttribute("aria-pressed", "true");
+    } else {
+      button.classList.remove("active");
+      button.setAttribute("aria-pressed", "false");
+    }
+  });
+}
+
+function renderPlaylist() {
+  const container = ensurePlaylistContainer();
+  if (!container) return;
+  container.innerHTML = "";
+  audioFiles.forEach((file, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "audio-pill audio-track-pill";
+    button.dataset.trackIndex = String(index);
+    button.textContent = getTrackLabel(file);
+    button.addEventListener("click", () => {
+      if (currentTrack === index) {
+        safePlay(hypnoAudio);
+        return;
+      }
+      loadTrack(index);
+    });
+    container.appendChild(button);
+  });
+  highlightActiveTrack();
+}
+
+function safePlay(audioEl) {
+  if (!audioEl || !audioEl.src || audioEl.src === "" || audioEl.src === "null") return;
+  try {
+    const playPromise = audioEl.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {});
+    }
+  } catch (error) {
+    // Ignore playback errors caused by browser autoplay policies.
+  }
+}
 
 // DOM element references
 let panelToggle = null;
@@ -48,6 +172,16 @@ function syncAudioPanelLayout() {
  */
 function getAudioSrc(index) {
   const name = audioFiles[index];
+  if (!name) return "";
+  if (isRemoteTrack(name)) {
+    return name;
+  }
+  if (name.startsWith("audio/")) {
+    return name;
+  }
+  if (name.startsWith("./audio/")) {
+    return name.slice(2);
+  }
   if (window._customAudioUrls && window._customAudioUrls[name]) {
     return window._customAudioUrls[name];
   }
@@ -58,23 +192,18 @@ function getAudioSrc(index) {
  * Loads and plays a specific track
  */
 function loadTrack(index) {
-  if (!hypnoAudio || !trackName) return;
-  currentTrack = index;
+  if (!hypnoAudio || !trackName || !audioFiles.length) return;
+  const trackCount = audioFiles.length;
+  const normalizedIndex = ((index % trackCount) + trackCount) % trackCount;
+  currentTrack = normalizedIndex;
   saveLastTrack();
-  hypnoAudio.src = getAudioSrc(index);
-  trackName.textContent = audioFiles[index].replace(/\.mp3$/, "");
+  const src = getAudioSrc(currentTrack);
+  if (src) {
+    hypnoAudio.src = src;
+  }
+  trackName.textContent = getTrackLabel(audioFiles[currentTrack]);
+  highlightActiveTrack();
   safePlay(hypnoAudio);
-// Utility: Only play audio after user gesture and valid src
-function safePlay(audioEl) {
-  if (!audioEl || !audioEl.src || audioEl.src === '' || audioEl.src === 'null') return;
-  // Only play if triggered by user gesture
-  try {
-    const playPromise = audioEl.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch(() => {}); // Suppress DOMException
-    }
-  } catch (e) {}
-}
 }
 
 /**
@@ -96,18 +225,16 @@ function togglePlayback() {
  * Plays the next track in the playlist
  */
 function nextTrack() {
-  currentTrack = (currentTrack + 1) % audioFiles.length;
-  saveLastTrack();
-  loadTrack(currentTrack);
+  if (!audioFiles.length) return;
+  loadTrack(currentTrack + 1);
 }
 
 /**
  * Plays the previous track in the playlist
  */
 function previousTrack() {
-  currentTrack = (currentTrack - 1 + audioFiles.length) % audioFiles.length;
-  saveLastTrack();
-  loadTrack(currentTrack);
+  if (!audioFiles.length) return;
+  loadTrack(currentTrack - 1);
 }
 
 /**
@@ -138,6 +265,21 @@ function toggleMoanPlayback() {
   moanPlaying = !moanPlaying;
 }
 
+function shuffleTracks() {
+  if (audioFiles.length < 2) return;
+  const currentTrackName = audioFiles[currentTrack];
+  const shuffled = audioFiles.slice();
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  audioFiles = shuffled;
+  currentTrack = Math.max(shuffled.indexOf(currentTrackName), 0);
+  renderPlaylist();
+  loadTrack(currentTrack);
+  showAudioToast("Playlist shuffled", "info");
+}
+
 /**
  * Toggles the audio panel visibility
  */
@@ -151,8 +293,8 @@ function togglePanel() {
  * Handles track end event by auto-playing next track
  */
 function onTrackEnded() {
-  currentTrack = (currentTrack + 1) % audioFiles.length;
-  loadTrack(currentTrack);
+  if (!audioFiles.length) return;
+  loadTrack(currentTrack + 1);
 }
 
 /**
@@ -171,6 +313,8 @@ function initAudio() {
   hypnoAudio = document.getElementById("hypnoAudio");
   moanAudio = document.getElementById("moan-audio");
 
+  hydrateAudioFilesFromDom();
+  renderPlaylist();
   syncAudioPanelLayout();
 
   // ARIA and feedback improvements for audio controls
@@ -343,25 +487,12 @@ function addTrackByUrl(url) {
   }
 
   // Add to audioFiles array and update current track
-  audioFiles.push(url);
+  const normalizedUrl = url.trim();
+  audioFiles.push(normalizedUrl);
   currentTrack = audioFiles.length - 1;
-  saveLastTrack();
-
-  // Update UI and load the new track
-  const trackName = url
-    .split("/")
-    .pop()
-    .replace(/\.mp3$/, "");
-  const option = document.createElement("option");
-  option.value = url;
-  option.textContent = trackName;
-  const trackSelect = document.getElementById("track-select");
-  if (trackSelect) {
-    trackSelect.appendChild(option);
-  }
-
+  renderPlaylist();
   loadTrack(currentTrack);
-  showAudioToast(`Track added: ${trackName}`, "success");
+  showAudioToast(`Track added: ${getTrackLabel(normalizedUrl)}`, "success");
 }
 
 /**
@@ -389,9 +520,10 @@ function showAudioToast(message, type = "info") {
  * Loads the last played track index from localStorage
  */
 function loadLastTrack() {
-  const saved = localStorage.getItem("lastAudioTrack");
-  if (saved !== null && !isNaN(Number(saved))) {
-    currentTrack = Number(saved);
+  const saved = Number(localStorage.getItem("lastAudioTrack"));
+  if (!Number.isNaN(saved) && saved >= 0) {
+    const maxIndex = Math.max(audioFiles.length - 1, 0);
+    currentTrack = Math.min(saved, maxIndex);
   } else {
     currentTrack = 0;
   }

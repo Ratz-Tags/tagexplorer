@@ -196,7 +196,11 @@ function highlightSelectedVoice(shortName) {
       btn.classList.remove("active");
       btn.setAttribute("aria-pressed", "false");
     }
+    return response.json();
   });
+
+  const voices = await voiceListPromise;
+  return Array.isArray(voices) ? voices : [];
 }
 
 function formatVoiceLabel(voice) {
@@ -229,8 +233,12 @@ function filterWhisperStyles(styleList = []) {
   );
 }
 
-function updateStatusLine() {
+function updateStatusLine(message) {
   if (!statusEl) return;
+  if (message) {
+    statusEl.textContent = message;
+    return;
+  }
   const { voice, style } = azureConfig;
   const fallbackLabel = toReadableStyle(WHISPER_STYLE_CANONICAL) || "Whispering";
   const readableStyle = toReadableStyle(style) || fallbackLabel;
@@ -410,20 +418,75 @@ function renderVoiceOptions(voices) {
   highlightSelectedVoice(azureConfig.voice);
 }
 
+function renderVoiceSelectorMessage(message) {
+  if (!voiceSelectorList) return;
+  voiceSelectorList.innerHTML = "";
+  const notice = document.createElement("div");
+  notice.className = "voice-selector-empty";
+  notice.setAttribute("role", "status");
+  notice.textContent = message;
+  voiceSelectorList.appendChild(notice);
+}
+
 async function showAzureVoiceSelector() {
   if (typeof document === "undefined") return;
   ensureVoiceSelectorElements();
-  const { key, region } = ensureCredentials();
-  const voices = await fetchAzureVoices(key, region);
-  const whisperVoices = voices.filter((voice) =>
-    Array.isArray(voice?.StyleList) && filterWhisperStyles(voice.StyleList).length > 0
-  );
 
-  renderVoiceOptions(whisperVoices);
+  let whisperVoices = [];
+  let statusMessage = "";
+  let credentials = null;
 
-  const activeVoice = whisperVoices.find((voice) => voice.ShortName === azureConfig.voice);
-  updateStyleOptions(activeVoice || whisperVoices[0]);
-  updateStatusLine();
+  try {
+    credentials = ensureCredentials();
+  } catch (error) {
+    console.warn("Azure TTS credentials missing", error);
+    statusMessage = "Add your Azure Speech key and region to choose a whisper voice.";
+  }
+
+  if (credentials) {
+    try {
+      const voices = await fetchAzureVoices(credentials.key, credentials.region);
+      whisperVoices = voices.filter(
+        (voice) =>
+          Array.isArray(voice?.StyleList) &&
+          filterWhisperStyles(voice.StyleList).length > 0
+      );
+      if (!whisperVoices.length) {
+        statusMessage = "No whisper-capable voices were returned for this Azure resource.";
+      }
+    } catch (error) {
+      console.error("Failed to fetch Azure voices", error);
+      statusMessage = "Azure voice list unavailable. Try again in a moment.";
+    }
+  }
+
+  if (whisperVoices.length > 0) {
+    renderVoiceOptions(whisperVoices);
+    const activeVoice = whisperVoices.find(
+      (voice) => voice.ShortName === azureConfig.voice
+    );
+    updateStyleOptions(activeVoice || whisperVoices[0]);
+    updateStatusLine();
+    if (previewBtn) {
+      previewBtn.disabled = false;
+      previewBtn.removeAttribute("aria-disabled");
+      previewBtn.title = "";
+    }
+  } else {
+    const message =
+      statusMessage ||
+      "No whisper styles are available. Keep the default whisper until Azure voices load.";
+    renderVoiceSelectorMessage(message);
+    updateStyleOptions();
+    const readableStyle =
+      toReadableStyle(azureConfig.style) || toReadableStyle(WHISPER_STYLE_CANONICAL);
+    updateStatusLine(`${message} Current voice: ${azureConfig.voice} · Style: ${readableStyle}`);
+    if (previewBtn) {
+      previewBtn.disabled = true;
+      previewBtn.setAttribute("aria-disabled", "true");
+      previewBtn.title = message;
+    }
+  }
 
   voiceSelectorOverlay.classList.remove("hidden");
   voiceSelectorOverlay.setAttribute("aria-hidden", "false");

@@ -586,6 +586,9 @@ display: none;
 .voice-selector-grid {
 @apply grid max-h-[50vh] w-full gap-3 overflow-y-auto pr-1 sm:grid-cols-2;
 }
+.voice-selector-empty {
+@apply col-span-full rounded-2xl border border-white/10 bg-black/40 p-6 text-center text-[0.6rem] uppercase tracking-[0.35em] text-slate-300;
+}
 .voice-option {
 @apply flex flex-col gap-2 rounded-2xl border border-white/10 bg-black/40 p-4 text-left transition hover:border-glow/70 hover:bg-glow/10;
 }
@@ -618,6 +621,15 @@ display: none;
 }
 .audio-controls {
 @apply flex flex-wrap items-center justify-center gap-2;
+}
+.audio-playlist {
+@apply mt-4 flex flex-wrap items-center justify-center gap-2;
+}
+.audio-track-pill {
+@apply text-[0.55rem];
+}
+.audio-track-pill.active {
+@apply border-glow bg-glow/20 text-white shadow-neon;
 }
 .lipstick-kiss {
 @apply pointer-events-none fixed bottom-16 right-12 h-20 w-20 opacity-60;
