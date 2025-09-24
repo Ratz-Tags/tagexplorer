@@ -50,6 +50,7 @@ box-shadow: inset 0 -1px 0 0 rgba(255, 118, 214, 0.18);
 transition: background-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
   border-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
   box-shadow 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+overflow: visible;
 }
 .top-surface::after {
 content: '';
@@ -84,7 +85,7 @@ margin-bottom: 0;
 @apply mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink sm:flex-row sm:flex-wrap;
 backdrop-filter: blur(18px);
 position: sticky;
-top: calc(env(safe-area-inset-top, 0px) + 0.85rem);
+top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
 z-index: 75;
 /* Ensure the command bar stays visible when parent collapses */
 flex-shrink: 0;
@@ -92,7 +93,6 @@ flex-shrink: 0;
 .top-surface.is-sticky .command-bar {
 @apply border-white/20 bg-black/60;
 box-shadow: 0 18px 45px -25px rgba(255, 118, 214, 0.5);
-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
 }
 .command-group {
 @apply flex flex-wrap items-center justify-center gap-3;
@@ -294,7 +294,12 @@ display: none;
 @apply inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-2 text-[0.58rem] font-semibold uppercase tracking-[0.35em] text-slate-200 transition-all duration-200 hover:border-glow hover:bg-glow/15 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
 }
 #back-to-top {
-@apply fixed bottom-10 right-10 hidden shadow-pulse;
+display: none;
+}
+
+#back-to-top.is-visible {
+@apply inline-flex;
+display: inline-flex;
 }
 .gallery-spinner {
 @apply col-span-full flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-black/40 p-6 text-sm text-slate-300;
