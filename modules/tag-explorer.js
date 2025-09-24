@@ -11,7 +11,7 @@ import {
 const MAX_TAG_SELECTION = 2;
 
 let allArtists = [];
-let overlayEl = null;
+let popoverEl = null;
 let panelEl = null;
 let searchInputEl = null;
 let nameInputEl = null;
@@ -32,6 +32,9 @@ const observedTagLists =
   typeof WeakSet === "function" ? new WeakSet() : null;
 let heightSyncListenersBound = false;
 let heightSyncResizeHandler = null;
+let scrollRepositionHandler = null;
+let filtersButtonEl = null;
+let outsideClickHandler = null;
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -122,6 +125,85 @@ function showSelectionLimitMessage() {
   }, 2200);
 }
 
+function bindOutsideClickListener() {
+  if (outsideClickHandler || typeof document === "undefined") return;
+  outsideClickHandler = (event) => {
+    if (!isOpen) return;
+    const target = event.target;
+    if (
+      (popoverEl && popoverEl.contains(target)) ||
+      (filtersButtonEl && filtersButtonEl.contains(target))
+    ) {
+      return;
+    }
+    closeTagExplorer();
+  };
+  try {
+    document.addEventListener("mousedown", outsideClickHandler, true);
+    document.addEventListener("touchstart", outsideClickHandler, { passive: true });
+  } catch {
+    // ignore listener binding issues
+  }
+}
+
+function unbindOutsideClickListener() {
+  if (!outsideClickHandler || typeof document === "undefined") return;
+  try {
+    document.removeEventListener("mousedown", outsideClickHandler, true);
+    document.removeEventListener("touchstart", outsideClickHandler);
+  } catch {
+    // ignore listener cleanup issues
+  }
+  outsideClickHandler = null;
+}
+
+function positionPopover() {
+  if (!popoverEl || !panelEl || !filtersButtonEl || typeof window === "undefined") {
+    return;
+  }
+
+  const btnRect = filtersButtonEl.getBoundingClientRect();
+  if (!btnRect || !Number.isFinite(btnRect.top)) return;
+
+  const panelRect = panelEl.getBoundingClientRect();
+  const panelWidth = panelRect.width || panelEl.offsetWidth || 0;
+  const panelHeight = panelRect.height || panelEl.offsetHeight || 0;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+
+  let left = btnRect.right - panelWidth;
+  if (!Number.isFinite(left)) left = btnRect.left || 0;
+  const minMargin = 12;
+  if (left < minMargin) {
+    left = Math.max(minMargin, btnRect.left || minMargin);
+  }
+  if (viewportWidth && panelWidth) {
+    const maxLeft = viewportWidth - panelWidth - minMargin;
+    if (Number.isFinite(maxLeft)) {
+      left = Math.min(left, maxLeft);
+    }
+  }
+
+  let top = btnRect.bottom + 8;
+  let flipped = false;
+  if (viewportHeight && panelHeight) {
+    const maxTop = viewportHeight - panelHeight - minMargin;
+    if (Number.isFinite(maxTop) && top > maxTop) {
+      const aboveTop = btnRect.top - panelHeight - 8;
+      if (Number.isFinite(aboveTop) && aboveTop >= minMargin) {
+        top = aboveTop;
+        flipped = true;
+      } else {
+        top = Math.max(minMargin, maxTop);
+      }
+    }
+  }
+
+  popoverEl.style.left = `${Math.round(left)}px`;
+  popoverEl.style.top = `${Math.round(top)}px`;
+  popoverEl.classList.toggle("is-flipped", flipped);
+}
+
 function syncOpenCategoryHeights() {
   heightSyncFrame = null;
   if (!groupsContainerEl) return;
@@ -190,6 +272,9 @@ function ensureHeightSyncListeners() {
   if (heightSyncListenersBound || typeof window === "undefined") return;
   heightSyncResizeHandler = () => {
     scheduleOpenCategoryHeightSync();
+    if (isOpen) {
+      positionPopover();
+    }
   };
   try {
     window.addEventListener("resize", heightSyncResizeHandler, { passive: true });
@@ -198,12 +283,27 @@ function ensureHeightSyncListeners() {
     // ignore listener binding failures
   }
   try {
+    scrollRepositionHandler = () => {
+      if (isOpen) {
+        positionPopover();
+      }
+    };
+    window.addEventListener("scroll", scrollRepositionHandler, { passive: true });
+  } catch {
+    scrollRepositionHandler = null;
+  }
+  try {
     window.addEventListener("beforeunload", () => {
       if (heightSyncResizeHandler) {
         window.removeEventListener("resize", heightSyncResizeHandler);
         window.removeEventListener("orientationchange", heightSyncResizeHandler);
         heightSyncResizeHandler = null;
       }
+      if (scrollRepositionHandler) {
+        window.removeEventListener("scroll", scrollRepositionHandler);
+        scrollRepositionHandler = null;
+      }
+      unbindOutsideClickListener();
       if (tagListResizeObserver) {
         try {
           tagListResizeObserver.disconnect();
@@ -418,6 +518,9 @@ function renderCategories() {
 function renderExplorer() {
   renderSelectedTags();
   renderCategories();
+  if (isOpen) {
+    positionPopover();
+  }
 }
 
 function bindEscapeListener() {
@@ -440,15 +543,17 @@ function unbindEscapeListener() {
 
 function openTagExplorer() {
   if (!isInitialized) initTagExplorer();
-  if (!overlayEl || isOpen) return;
-  isOpen = true;
-  overlayEl.classList.add("open");
-  overlayEl.setAttribute("aria-hidden", "false");
-  document.body.classList.add("tag-filter-open");
-  if (panelEl) {
-    panelEl.setAttribute("tabindex", "-1");
-    panelEl.focus({ preventScroll: true });
+  if (!filtersButtonEl && typeof document !== "undefined") {
+    filtersButtonEl = document.getElementById("filters-btn");
   }
+  if (!popoverEl) return;
+  if (isOpen) {
+    closeTagExplorer();
+    return;
+  }
+  isOpen = true;
+  popoverEl.classList.add("open");
+  popoverEl.setAttribute("aria-hidden", "false");
   if (searchInputEl) {
     searchInputEl.value = searchValue;
   }
@@ -458,17 +563,38 @@ function openTagExplorer() {
     nameInputEl.value = currentName || "";
   }
   renderExplorer();
+  if (searchInputEl) {
+    try {
+      searchInputEl.focus({ preventScroll: true });
+    } catch {
+      // ignore focus issues
+    }
+  } else if (panelEl) {
+    panelEl.setAttribute("tabindex", "-1");
+    try {
+      panelEl.focus({ preventScroll: true });
+    } catch {
+      // ignore focus issues
+    }
+  }
+  positionPopover();
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      positionPopover();
+    });
+  }
   bindEscapeListener();
+  bindOutsideClickListener();
   emitOverlayToggle(true);
 }
 
 function closeTagExplorer() {
-  if (!overlayEl || !isOpen) return;
+  if (!popoverEl || !isOpen) return;
   isOpen = false;
-  overlayEl.classList.remove("open");
-  overlayEl.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("tag-filter-open");
+  popoverEl.classList.remove("open");
+  popoverEl.setAttribute("aria-hidden", "true");
   unbindEscapeListener();
+  unbindOutsideClickListener();
   emitOverlayToggle(false);
 }
 
@@ -483,26 +609,26 @@ function initTagExplorer() {
   if (isInitialized || typeof document === "undefined") return;
   ensurePinnedSelectedContainer();
 
-  overlayEl = document.createElement("div");
-  overlayEl.className = "filter-overlay";
-  overlayEl.setAttribute("aria-hidden", "true");
-  overlayEl.innerHTML = `
-    <div class="filter-panel" id="tag-filter-panel" role="dialog" aria-modal="true" aria-label="Tag filters">
-      <div class="filter-panel__handle" aria-hidden="true"></div>
-      <header class="filter-panel__header">
+  filtersButtonEl = document.getElementById("filters-btn");
+
+  popoverEl = document.createElement("div");
+  popoverEl.className = "filter-popover";
+  popoverEl.id = "tag-filter-popover";
+  popoverEl.setAttribute("aria-hidden", "true");
+  popoverEl.innerHTML = `
+    <div class="filter-panel filter-panel--floating" id="tag-filter-panel" role="region" aria-label="Tag filters">
+      <header class="filter-panel__header filter-panel__header--compact">
         <h2>Filters</h2>
-        <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
-      </header>
-      <div class="filter-panel__controls">
-        <div class="filter-panel__inputs">
-          <label class="visually-hidden" for="tag-filter-search">Search tags</label>
-          <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
-          <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
-          <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
-        </div>
-        <div class="filter-panel__actions">
+        <div class="filter-panel__header-buttons">
           <button type="button" class="filter-panel__clear">Clear all</button>
+          <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
         </div>
+      </header>
+      <div class="filter-panel__controls filter-panel__controls--floating">
+        <label class="visually-hidden" for="tag-filter-search">Search tags</label>
+        <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
+        <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
+        <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
         <p class="filter-panel__notice" aria-live="assertive"></p>
       </div>
       <div class="filter-panel__selected" aria-live="polite"></div>
@@ -510,23 +636,20 @@ function initTagExplorer() {
     </div>
   `;
 
-  document.body.appendChild(overlayEl);
+  document.body.appendChild(popoverEl);
 
-  panelEl = overlayEl.querySelector("#tag-filter-panel");
-  searchInputEl = overlayEl.querySelector("#tag-filter-search");
-  nameInputEl = overlayEl.querySelector("#tag-filter-name");
-  groupsContainerEl = overlayEl.querySelector(".filter-panel__groups");
-  overlaySelectedEl = overlayEl.querySelector(".filter-panel__selected");
-  limitNoticeEl = overlayEl.querySelector(".filter-panel__notice");
-  clearButtonEl = overlayEl.querySelector(".filter-panel__clear");
+  panelEl = popoverEl.querySelector("#tag-filter-panel");
+  searchInputEl = popoverEl.querySelector("#tag-filter-search");
+  nameInputEl = popoverEl.querySelector("#tag-filter-name");
+  groupsContainerEl = popoverEl.querySelector(".filter-panel__groups");
+  overlaySelectedEl = popoverEl.querySelector(".filter-panel__selected");
+  limitNoticeEl = popoverEl.querySelector(".filter-panel__notice");
+  clearButtonEl = popoverEl.querySelector(".filter-panel__clear");
+  if (panelEl) {
+    panelEl.setAttribute("tabindex", "-1");
+  }
 
-  overlayEl.addEventListener("click", (event) => {
-    if (event.target === overlayEl) {
-      closeTagExplorer();
-    }
-  });
-
-  const closeBtn = overlayEl.querySelector(".filter-panel__close");
+  const closeBtn = popoverEl.querySelector(".filter-panel__close");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => closeTagExplorer());
   }
