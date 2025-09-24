@@ -4,7 +4,12 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
-import { azureSpeak, setAzureTTSConfig, DEFAULT_VOICE } from "./azure-tts.js";
+import {
+  azureSpeak,
+  setAzureTTSConfig,
+  DEFAULT_VOICE,
+  showAzureVoiceSelector,
+} from "./azure-tts.js";
 import { getActiveTags } from "./tags.js";
 
 let copiedArtists = new Set();
@@ -43,9 +48,9 @@ function ensureTTSToggleButton() {
       let ttsBtn = document.getElementById("tts-toggle-btn");
       if (!ttsBtn) {
         ttsBtn = document.createElement("button");
+        ttsBtn.type = "button";
         ttsBtn.id = "tts-toggle-btn";
-        ttsBtn.className = "browse-btn";
-        ttsBtn.style.marginLeft = "0.7em";
+        ttsBtn.className = "audio-pill";
         ttsBtn.textContent = window._ttsEnabled ? "🔊 TTS On" : "🔇 TTS Off";
         ttsBtn.onclick = () => {
           window._ttsEnabled = !window._ttsEnabled;
@@ -58,15 +63,23 @@ function ensureTTSToggleButton() {
       let voiceBtn = document.getElementById("azure-voice-style-btn");
       if (!voiceBtn) {
         voiceBtn = document.createElement("button");
+        voiceBtn.type = "button";
         voiceBtn.id = "azure-voice-style-btn";
-        voiceBtn.className = "browse-btn";
-        voiceBtn.style.marginLeft = "0.7em";
-        voiceBtn.textContent = "Azure Voice/Style";
-        voiceBtn.onclick = () => {
-          if (window.showAzureVoiceSelector) {
-            window.showAzureVoiceSelector();
-          }
-        };
+        voiceBtn.className = "audio-pill";
+        voiceBtn.textContent = "Voice & Style";
+        voiceBtn.setAttribute("aria-haspopup", "dialog");
+        voiceBtn.setAttribute("aria-expanded", "false");
+        voiceBtn.addEventListener("click", () => {
+          showAzureVoiceSelector();
+        });
+        if (!voiceBtn.dataset.selectorBound) {
+          const updateExpandedState = (event) => {
+            const isOpen = Boolean(event?.detail?.open);
+            voiceBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+          };
+          document.addEventListener("azureTTS:selector", updateExpandedState);
+          voiceBtn.dataset.selectorBound = "true";
+        }
         controls.appendChild(voiceBtn);
       }
     }

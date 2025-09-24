@@ -1,402 +1,448 @@
-// Ensure Azure TTS is used and default voice is Ava (whisper), fallback to Ava default
-import { setAzureTTSConfig, fetchAzureVoices, showAzureVoiceSelector } from "./modules/azure-tts.js";
-async function setDefaultAzureVoice() {
+const STORAGE_KEY = "azureTTSConfig";
+const DEFAULT_VOICE = "en-US-AvaMultilingualNeural";
+const WHISPER_STYLE_CANONICAL = "Whispering";
+const DEFAULT_RATE = "-10%";
+const DEFAULT_VOLUME = "-15dB";
+const DEFAULT_PITCH = "0%";
+const SAMPLE_PREVIEW_LINE = "Caught you tweaking my whispers again, pet.";
+
+let azureConfig = {
+  voice: DEFAULT_VOICE,
+  style: WHISPER_STYLE_CANONICAL,
+  rate: DEFAULT_RATE,
+  volume: DEFAULT_VOLUME,
+  pitch: DEFAULT_PITCH,
+};
+
+let voiceListPromise = null;
+let latestObjectUrl = null;
+let voiceSelectorOverlay = null;
+let voiceSelectorList = null;
+let styleSelectEl = null;
+let previewBtn = null;
+let statusEl = null;
+let closeBtn = null;
+let escKeyHandler = null;
+
+function safeLocalStorage(action) {
+  if (typeof window === "undefined" || !window.localStorage) return;
   try {
-    if (!window._azureTTSVoice && window._azureTTSKey && window._azureTTSRegion) {
-      const voices = await fetchAzureVoices(window._azureTTSKey, window._azureTTSRegion);
-      const ava = voices.find(v => v.ShortName === "en-US-AvaMultilingualNeural");
-      if (ava) {
-        const wantsWhisper = Array.isArray(ava.StyleList) && ava.StyleList.includes("Whispering");
-        setAzureTTSConfig({ voice: ava.ShortName, style: wantsWhisper ? "Whispering" : undefined });
-      }
-    }
-    // Always ensure a default voice is set
-    if (!window._azureTTSVoice) setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
-  } catch (e) {
-    setAzureTTSConfig({ voice: "en-US-AvaMultilingualNeural" });
-  }
-}
-setDefaultAzureVoice();
-/**
- * Main entry point - Coordinates all modules and initializes the application
- */
-
-import {
-  initSidebar,
-  setAllArtists as setSidebarArtists,
-} from "./modules/sidebar.js";
-import { initAudio, initAudioUI } from "./modules/audio.js";
-import {
-  initTags,
-  setAllArtists as setTagsArtists,
-  setRenderArtistsCallback,
-  setRandomBackgroundCallback,
-  setTagTooltips,
-  setTagTaunts,
-  setTaunts,
-  getActiveTags,
-  getArtistNameFilter,
-  renderTagButtons,
-  setTagSearchMode,
-} from "./modules/tags.js";
-import {
-  initGallery,
-  filterArtists,
-  setRandomBackground,
-  setAllArtists as setGalleryArtists,
-  setGetActiveTagsCallback,
-  setGetArtistNameFilterCallback,
-  setSortMode,
-  setSortPreference,
-  forceSortAndRender,
-} from "./modules/gallery.js";
-import {
-  initUI,
-  setupInfiniteScroll,
-  setupBackgroundRotation,
-} from "./modules/ui.js";
-import {
-  openTagExplorer,
-  setAllArtists as setExplorerArtists,
-} from "./modules/tag-explorer.js";
-import { loadAppData } from "./modules/api.js";
-import { startTauntTicker } from "./modules/humiliation.js";
-
-
-import { renderPromptCacheUI } from "./modules/prompt-cache.js";
-import { createTTSToggleButton } from "./modules/tts-toggle.js";
-
-/**
- * Initialize the application
- */
-async function initApp() {
-  try {
-    // Load data files
-    const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
-
-    // Initialize modules
-    initUI();
-    initSidebar();
-    initAudio();
-    initAudioUI();
-
-    // Set initial background now that bg layer exists
-    setRandomBackground();
-
-    // Add TTS toggle button to audio controls
-    createTTSToggleButton();
-    await initTags();
-    initGallery();
-
-    // Set up data sharing between modules
-    setSidebarArtists(artists);
-    setTagsArtists(artists);
-    setGalleryArtists(artists);
-    setExplorerArtists(artists);
-
-    // Set up callback dependencies
-    setRenderArtistsCallback(filterArtists);
-    setRandomBackgroundCallback(setRandomBackground);
-    setGetActiveTagsCallback(getActiveTags);
-    setGetArtistNameFilterCallback(getArtistNameFilter);
-
-    // Configure data
-    setTagTooltips(tooltips);
-    setTagTaunts(tagTaunts);
-    setTaunts(generalTaunts);
-    startTauntTicker(generalTaunts, 30000);
-
-    // Use loaded tooltips to set a random tagline
-    const quotes = Object.values(tooltips).filter(Boolean);
-    if (quotes.length > 0) {
-      const random = quotes[Math.floor(Math.random() * quotes.length)];
-      const taglineElem = document.getElementById("tagline");
-      if (taglineElem) taglineElem.textContent = random;
-    }
-
-    // Initial render
-    renderTagButtons();
-    filterArtists();
-
-    // Set up background rotation
-    setupBackgroundRotation(setRandomBackground, 15000);
-
-    // Set up infinite scroll
-    setupInfiniteScroll(() => {
-      import("./modules/gallery.js").then((gallery) => {
-        const galleryInfo = gallery.getPaginationInfo();
-        if (galleryInfo.hasMore) {
-          filterArtists(false);
-        }
-      });
-    });
-
-    console.log("Application initialized successfully");
+    action(window.localStorage);
   } catch (error) {
-    console.error("Failed to initialize application:", error);
-    // Show user-friendly error message
-    document.body.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: #d63384;">
-        <h2>Failed to load the application</h2>
-        <p>Please refresh the page to try again.</p>
-        <p><small>Error: ${error.message}</small></p>
-      </div>
-    `;
+    // Ignore storage errors (private mode, etc.)
   }
 }
 
-// Initialize when DOM is ready
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initApp);
-} else {
-  initApp();
-}
-
-// tag-tooltips are loaded in initApp and used for tagline
-
-// Global error handling
-window.addEventListener("error", (event) => {
-  // Suppress media/network spam
-  if (event.error && event.error.name === 'DOMException') return;
-  if (event.error && event.error.message && event.error.message.includes('NetworkError')) return;
-  console.error("Unhandled error:", event.error);
-});
-
-window.addEventListener("unhandledrejection", (event) => {
-  // Suppress media/network spam
-  if (event.reason && event.reason.name === 'DOMException') return;
-  if (event.reason && event.reason.message && event.reason.message.includes('NetworkError')) return;
-  console.error("Unhandled promise rejection:", event.reason);
-});
-
-// Expose some functions globally for debugging
-window.kexplorer = {
-  filterArtists,
-  setRandomBackground,
-  getActiveTags,
-  renderTagButtons,
-  openTagExplorer,
-};
-
-// --- SIDEBAR TOGGLE BUTTON ---
-const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
-const copiedSidebarEl = document.getElementById("copied-sidebar");
-if (sidebarToggleBtn && copiedSidebarEl) {
-    sidebarToggleBtn.addEventListener("click", () => {
-        // Toggle visibility via class so CSS can manage layout
-        copiedSidebarEl.classList.toggle("sidebar-hidden");
-        const isHidden = copiedSidebarEl.classList.contains("sidebar-hidden");
-        copiedSidebarEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
-    });
-}
-
-const audioToggleBtn = document.querySelector(".audio-toggle");
-const audioPanelEl = document.getElementById("audio-panel");
-if (audioToggleBtn && audioPanelEl) {
-    audioToggleBtn.addEventListener("click", () => {
-        // Toggle visibility for fixed audio panel container
-        audioPanelEl.classList.toggle("hidden");
-        const isHidden = audioPanelEl.classList.contains("hidden");
-        audioPanelEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
-    });
-}
-
-const sidebarCloseBtn = document.querySelector(".copied-sidebar-close");
-const copiedSidebar = document.getElementById("copied-sidebar");
-if (sidebarCloseBtn && copiedSidebar) {
-  sidebarCloseBtn.addEventListener("click", () => {
-    // Hide the sidebar and clear any open state
-    copiedSidebar.classList.add("sidebar-hidden");
-    document.body.classList.remove("sidebar-open");
-    copiedSidebar.setAttribute("aria-hidden", "true");
+function persistConfig() {
+  safeLocalStorage((storage) => {
+    storage.setItem(STORAGE_KEY, JSON.stringify(azureConfig));
   });
 }
 
-const sortSelect = document.getElementById("sort-by");
-if (sortSelect) {
-  sortSelect.addEventListener("change", (e) => {
-    // No immediate sort, just set mode for button
-    // Optionally, update UI to reflect selection
-  });
-}
-
-const sortButtonElem = document.getElementById("sort-button");
-if (sortButtonElem && sortSelect) {
-  sortButtonElem.addEventListener("click", () => {
-    if (
-      sortSelect.value === "top" &&
-      typeof window.kexplorer !== "undefined" &&
-      typeof window.kexplorer.showTopArtistsByTagCount === "function"
-    ) {
-      window.kexplorer.showTopArtistsByTagCount();
-    } else {
-      setSortMode(sortSelect.value);
-      forceSortAndRender();
-    }
-  });
-}
-
-// Theme toggling
-const themeToggle = document.querySelector(".theme-toggle");
-const bodyEl = document.body;
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "incognito") {
-  bodyEl.classList.add("incognito-theme");
-  bodyEl.classList.remove("fem-theme");
-  setRandomBackground();
-} else {
-  bodyEl.classList.add("fem-theme");
-  bodyEl.classList.remove("incognito-theme");
-}
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    bodyEl.classList.toggle("incognito-theme");
-    bodyEl.classList.toggle("fem-theme");
-    const current = bodyEl.classList.contains("incognito-theme") ? "incognito" : "fem";
-    localStorage.setItem("theme", current);
-    setRandomBackground();
-  });
-}
-
-const sortPreferenceElem = document.getElementById("sort-preference");
-if (sortPreferenceElem) {
-  sortPreferenceElem.addEventListener("change", (e) => {
-    setSortPreference(e.target.value);
-  });
-}
-
-// Add tag search mode selector
-const tagSearchModeSelect = document.createElement("select");
-tagSearchModeSelect.id = "tag-search-mode";
-tagSearchModeSelect.innerHTML = `
-  <option value="contains">Contains</option>
-  <option value="starts">Starts with</option>
-  <option value="ends">Ends with</option>
-`;
-tagSearchModeSelect.style.marginLeft = "0.5em";
-const tagSearchInput = document.getElementById("tag-search");
-if (tagSearchInput && tagSearchInput.parentNode) {
-  tagSearchInput.parentNode.insertBefore(
-    tagSearchModeSelect,
-    tagSearchInput.nextSibling
-  );
-  tagSearchModeSelect.addEventListener("change", (e) => {
-    setTagSearchMode(e.target.value);
-  });
-}
-
-// Add JOI mode toggle button
-const joiBtn = document.createElement("button");
-joiBtn.textContent = "JOI Mode";
-joiBtn.className = "browse-btn humiliation-glow";
-joiBtn.style.marginLeft = "1em";
-let joiActive = false;
-joiBtn.onclick = () => {
-  if (!joiActive && window.startJOIMode) {
-    window.startJOIMode();
-    joiActive = true;
-    joiBtn.textContent = "Stop JOI Mode";
-    joiBtn.classList.add("active");
-  } else if (joiActive && window.stopJOIMode) {
-    window.stopJOIMode();
-    joiActive = false;
-    joiBtn.textContent = "JOI Mode";
-    joiBtn.classList.remove("active");
-  }
-};
-const controlsBar = document.querySelector(".sort-controls");
-if (controlsBar) controlsBar.appendChild(joiBtn);
-
-// Add Prompt Cache button
-const promptBtn = document.createElement("button");
-promptBtn.textContent = "Prompts";
-promptBtn.className = "browse-btn";
-promptBtn.style.marginLeft = "1em";
-promptBtn.onclick = () => {
-  renderPromptCacheUI();
-};
-if (controlsBar) controlsBar.appendChild(promptBtn);
-
-// --- Wire up static Top Artists button (fixes non-working UI button) ---
-const staticTopArtistsBtn = document.getElementById("show-top-artists");
-if (staticTopArtistsBtn) {
-  staticTopArtistsBtn.addEventListener("click", () => {
-    if (
-      typeof window.kexplorer !== "undefined" &&
-      typeof window.kexplorer.showTopArtistsByTagCount === "function"
-    ) {
-      window.kexplorer.showTopArtistsByTagCount();
-    }
-  });
-}
-
-// --- Add floating chibi mascot image (fixes chibi.png placement) ---
-window.addEventListener("DOMContentLoaded", () => {
-  if (!document.getElementById("floating-chibi-mascot")) {
-    const chibi = document.createElement("img");
-    chibi.id = "floating-chibi-mascot";
-    chibi.src = "icons/chibi.png";
-    chibi.alt = "Chibi Mascot";
-    chibi.style.position = "fixed";
-    chibi.style.bottom = "2.5em";
-    chibi.style.right = "2.5em";
-    chibi.style.width = "90px";
-    chibi.style.height = "auto";
-    chibi.style.zIndex = "13000";
-    chibi.style.pointerEvents = "none";
-    chibi.style.userSelect = "none";
-    chibi.style.filter = "drop-shadow(0 2px 12px #fd7bc5cc)";
-    document.body.appendChild(chibi);
-  }
-
-  // Tag Explorer Bar buttons
-  const topArtistsBtn = document.getElementById("top-artists-btn");
-  const joiModeBtn = document.getElementById("joi-mode-btn");
-  const promptsBtn = document.getElementById("prompts-btn");
-  const browseTagsBtn = document.getElementById("browse-tags-btn");
-  if (topArtistsBtn) {
-    topArtistsBtn.addEventListener("click", () => {
-      if (window.kexplorer && typeof window.kexplorer.showTopArtistsByTagCount === "function") {
-        window.kexplorer.showTopArtistsByTagCount();
+function loadStoredConfig() {
+  safeLocalStorage((storage) => {
+    const raw = storage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        azureConfig = { ...azureConfig, ...parsed };
       }
-    });
-  }
-  if (joiModeBtn) {
-    joiModeBtn.addEventListener("click", () => {
-      if (window.startJOIMode) window.startJOIMode();
-    });
-  }
-  if (promptsBtn) {
-    promptsBtn.addEventListener("click", () => {
-      if (window.renderPromptCacheUI) window.renderPromptCacheUI();
-    });
-  }
-  if (browseTagsBtn) {
-    browseTagsBtn.addEventListener("click", () => {
-      if (window.openTagExplorer) window.openTagExplorer();
-    });
-  }
-
-  // Make tag-explorer-bar fixed on scroll
-  const tagBar = document.getElementById("tag-explorer-bar");
-  let lastScrollY = 0;
-  window.addEventListener("scroll", () => {
-    if (!tagBar) return;
-    if (window.scrollY > 60) {
-      tagBar.classList.add("fixed");
-    } else {
-      tagBar.classList.remove("fixed");
+    } catch (error) {
+      // Ignore malformed JSON and reset storage
     }
-    lastScrollY = window.scrollY;
+  });
+  applyConfigToWindow();
+}
+
+function applyConfigToWindow() {
+  if (typeof window === "undefined") return;
+  window._azureTTSVoice = azureConfig.voice;
+  window._azureTTSStyle = azureConfig.style;
+  window._azureTTSRate = azureConfig.rate;
+  window._azureTTSVolume = azureConfig.volume;
+  window._azureTTSPitch = azureConfig.pitch;
+}
+
+function emitConfigChange() {
+  if (typeof window === "undefined") return;
+  const detail = { ...azureConfig };
+  document.dispatchEvent(
+    new CustomEvent("azureTTS:config", { detail })
+  );
+}
+
+function canonicalizeStyle(style) {
+  if (!style) return undefined;
+  return String(style).trim();
+}
+
+function normalizeVoiceConfig(partial = {}) {
+  const merged = { ...azureConfig, ...partial };
+  if (!merged.voice) merged.voice = DEFAULT_VOICE;
+  if (!merged.style) merged.style = WHISPER_STYLE_CANONICAL;
+  if (!merged.rate) merged.rate = DEFAULT_RATE;
+  if (!merged.volume) merged.volume = DEFAULT_VOLUME;
+  if (!merged.pitch) merged.pitch = DEFAULT_PITCH;
+  merged.style = canonicalizeStyle(merged.style);
+  return merged;
+}
+
+function setAzureTTSConfig(partial = {}) {
+  azureConfig = normalizeVoiceConfig(partial);
+  persistConfig();
+  applyConfigToWindow();
+  emitConfigChange();
+}
+
+function getAzureTTSConfig() {
+  return { ...azureConfig };
+}
+
+function ensureCredentials() {
+  if (typeof window === "undefined") {
+    throw new Error("Azure TTS requires browser environment");
+  }
+  const key = window._azureTTSKey;
+  const region = window._azureTTSRegion;
+  if (!key || !region) {
+    throw new Error("Azure TTS credentials are missing. Set window._azureTTSKey and window._azureTTSRegion.");
+  }
+  return { key, region };
+}
+
+function voiceEndpoint(region) {
+  return `https://${region}.tts.speech.microsoft.com/cognitiveservices/voices/list`;
+}
+
+function synthesisEndpoint(region) {
+  return `https://${region}.tts.speech.microsoft.com/cognitiveservices/v1`;
+}
+
+async function fetchAzureVoices(key, region, { forceRefresh = false } = {}) {
+  if (!key || !region) {
+    throw new Error("Azure TTS credentials are required to fetch voices");
+  }
+  if (!forceRefresh && voiceListPromise) return voiceListPromise;
+
+  voiceListPromise = fetch(voiceEndpoint(region), {
+    headers: {
+      "Ocp-Apim-Subscription-Key": key,
+      "User-Agent": "TagExplorer-TTS/1.0",
+      Accept: "application/json",
+    },
+  }).then((response) => {
+    if (!response.ok) {
+      throw new Error(`Failed to fetch Azure voices: ${response.status}`);
+    }
+    return response.json();
   });
 
-  // Remove old filter toggle logic if present
-  const filterToggle = document.getElementById("toggle-filters");
-  if (filterToggle) filterToggle.style.display = "none";
-});
+  const voices = await voiceListPromise;
+  return Array.isArray(voices) ? voices : [];
+}
 
-// Ensure top bar and tag bar are layered above gallery
-const topBar = document.querySelector('.top-bar');
-if (topBar) topBar.style.zIndex = '5000';
-const tagBar = document.getElementById('tag-explorer-bar');
-if (tagBar) tagBar.style.zIndex = '4500';
+function buildSSML(text, config) {
+  const { voice, style, rate, volume, pitch } = normalizeVoiceConfig(config);
+  const safeText = text.replace(/[<>]/g, "");
+  const styleAttr = style
+    ? `<mstts:express-as style="${style}">`
+    : "";
+  const closingStyle = style ? "</mstts:express-as>" : "";
+  return `<?xml version="1.0" encoding="utf-8"?>
+<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
+  <voice name="${voice}">
+    ${styleAttr}<prosody rate="${rate}" pitch="${pitch}" volume="${volume}">${safeText}</prosody>${closingStyle}
+  </voice>
+</speak>`;
+}
+
+async function azureSpeak(text, overrides = {}) {
+  if (!text) return null;
+  const { key, region } = ensureCredentials();
+  const config = normalizeVoiceConfig(overrides);
+  const ssml = buildSSML(text, config);
+
+  const response = await fetch(synthesisEndpoint(region), {
+    method: "POST",
+    headers: {
+      "Ocp-Apim-Subscription-Key": key,
+      "Content-Type": "application/ssml+xml",
+      "X-Microsoft-OutputFormat": "audio-24khz-96kbitrate-mono-mp3",
+      "User-Agent": "TagExplorer-TTS/1.0",
+      Accept: "audio/mpeg, audio/wav, audio/*;q=0.8",
+    },
+    body: ssml,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Azure TTS request failed: ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  if (latestObjectUrl) {
+    URL.revokeObjectURL(latestObjectUrl);
+  }
+  latestObjectUrl = URL.createObjectURL(blob);
+  return latestObjectUrl;
+}
+
+function highlightSelectedVoice(shortName) {
+  if (!voiceSelectorList) return;
+  const buttons = voiceSelectorList.querySelectorAll("[data-voice]");
+  buttons.forEach((btn) => {
+    if (btn.dataset.voice === shortName) {
+      btn.classList.add("active");
+      btn.setAttribute("aria-pressed", "true");
+    } else {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-pressed", "false");
+    }
+  });
+}
+
+function formatVoiceLabel(voice) {
+  const friendly = voice.FriendlyName || voice.DisplayName || voice.LocalName;
+  const gender = voice.Gender ? voice.Gender.toLowerCase() : "";
+  const locale = voice.LocaleName || voice.Locale;
+  const parts = [friendly || voice.ShortName];
+  if (locale) parts.push(locale);
+  if (gender) parts.push(gender);
+  return parts.join(" · ");
+}
+
+function toReadableStyle(style) {
+  if (!style) return "";
+  return style
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function filterWhisperStyles(styleList = []) {
+  return styleList.filter((style) =>
+    typeof style === "string" && style.toLowerCase().includes("whisper")
+  );
+}
+
+function updateStatusLine() {
+  if (!statusEl) return;
+  const { voice, style } = azureConfig;
+  const readableStyle = toReadableStyle(style) || "Whispering";
+  statusEl.textContent = `Voice: ${voice} · Style: ${readableStyle}`;
+}
+
+function updateStyleOptions(forVoice) {
+  if (!styleSelectEl) return;
+  const styles = filterWhisperStyles(forVoice?.StyleList);
+  styleSelectEl.innerHTML = "";
+
+  if (styles.length === 0) {
+    const option = document.createElement("option");
+    option.value = WHISPER_STYLE_CANONICAL;
+    option.textContent = toReadableStyle(WHISPER_STYLE_CANONICAL);
+    styleSelectEl.appendChild(option);
+    styleSelectEl.disabled = true;
+    setAzureTTSConfig({ style: WHISPER_STYLE_CANONICAL });
+    return;
+  }
+
+  styles.forEach((style) => {
+    const option = document.createElement("option");
+    option.value = style;
+    option.textContent = toReadableStyle(style);
+    styleSelectEl.appendChild(option);
+  });
+
+  const currentStyle = canonicalizeStyle(azureConfig.style);
+  const hasCurrent = styles.some(
+    (style) => canonicalizeStyle(style).toLowerCase() === currentStyle?.toLowerCase()
+  );
+  const effectiveStyle = hasCurrent ? azureConfig.style : styles[0];
+  styleSelectEl.value = effectiveStyle;
+  styleSelectEl.disabled = styles.length === 1;
+  setAzureTTSConfig({ style: effectiveStyle });
+  updateStatusLine();
+}
+
+function attachStyleListener() {
+  if (!styleSelectEl) return;
+  styleSelectEl.addEventListener("change", (event) => {
+    const value = canonicalizeStyle(event.target.value);
+    if (!value) return;
+    setAzureTTSConfig({ style: value });
+    updateStatusLine();
+  });
+}
+
+async function handlePreviewClick() {
+  if (!previewBtn) return;
+  previewBtn.disabled = true;
+  const original = previewBtn.textContent;
+  previewBtn.textContent = "Previewing…";
+  try {
+    const url = await azureSpeak(SAMPLE_PREVIEW_LINE);
+    if (url) {
+      const audio = new Audio(url);
+      audio.play().catch(() => {});
+    }
+  } catch (error) {
+    console.error("Azure TTS preview failed", error);
+  } finally {
+    previewBtn.disabled = false;
+    previewBtn.textContent = original;
+  }
+}
+
+function closeVoiceSelector() {
+  if (!voiceSelectorOverlay) return;
+  voiceSelectorOverlay.classList.add("hidden");
+  voiceSelectorOverlay.setAttribute("aria-hidden", "true");
+  if (typeof window !== "undefined") {
+    document.body.classList.remove("voice-selector-open");
+  }
+  if (typeof document !== "undefined") {
+    document.dispatchEvent(
+      new CustomEvent("azureTTS:selector", { detail: { open: false } })
+    );
+  }
+  if (escKeyHandler) {
+    document.removeEventListener("keydown", escKeyHandler);
+    escKeyHandler = null;
+  }
+}
+
+function ensureVoiceSelectorElements() {
+  if (voiceSelectorOverlay) return;
+  if (typeof document === "undefined") return;
+
+  voiceSelectorOverlay = document.createElement("div");
+  voiceSelectorOverlay.id = "azure-voice-selector";
+  voiceSelectorOverlay.className = "voice-selector-overlay hidden";
+  voiceSelectorOverlay.setAttribute("role", "dialog");
+  voiceSelectorOverlay.setAttribute("aria-modal", "true");
+  voiceSelectorOverlay.setAttribute("aria-hidden", "true");
+  voiceSelectorOverlay.tabIndex = -1;
+
+  voiceSelectorOverlay.innerHTML = `
+    <div class="voice-selector-card" role="document">
+      <header class="voice-selector-header">
+        <h2 id="azure-voice-selector-title">Azure Whisper Voices</h2>
+        <p>Choose which humiliating whisper follows you around the gallery.</p>
+      </header>
+      <div class="voice-selector-grid" data-role="voice-list" role="list"></div>
+      <div class="voice-selector-actions">
+        <div class="voice-style-field">
+          <label class="field-label" for="azure-voice-style-select">Voice style</label>
+          <select id="azure-voice-style-select" data-role="style-select" class="voice-style-select"></select>
+        </div>
+        <div class="voice-selector-buttons">
+          <button type="button" class="audio-pill" data-role="preview">Preview whisper</button>
+          <button type="button" class="audio-pill" data-role="close">Done</button>
+        </div>
+      </div>
+      <p class="voice-selector-footnote" data-role="status"></p>
+    </div>
+  `;
+
+  voiceSelectorList = voiceSelectorOverlay.querySelector("[data-role='voice-list']");
+  styleSelectEl = voiceSelectorOverlay.querySelector("[data-role='style-select']");
+  previewBtn = voiceSelectorOverlay.querySelector("[data-role='preview']");
+  closeBtn = voiceSelectorOverlay.querySelector("[data-role='close']");
+  statusEl = voiceSelectorOverlay.querySelector("[data-role='status']");
+
+  if (previewBtn) {
+    previewBtn.addEventListener("click", handlePreviewClick);
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => closeVoiceSelector());
+  }
+
+  attachStyleListener();
+
+  voiceSelectorOverlay.addEventListener("click", (event) => {
+    if (event.target === voiceSelectorOverlay) {
+      closeVoiceSelector();
+    }
+  });
+
+  document.body.appendChild(voiceSelectorOverlay);
+}
+
+function renderVoiceOptions(voices) {
+  if (!voiceSelectorList) return;
+  voiceSelectorList.innerHTML = "";
+  const sorted = voices
+    .slice()
+    .sort((a, b) => (a.LocalName || a.ShortName).localeCompare(b.LocalName || b.ShortName));
+
+  sorted.forEach((voice) => {
+    const whisperStyles = filterWhisperStyles(voice.StyleList);
+    if (!whisperStyles.length) return;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "voice-option";
+    button.dataset.voice = voice.ShortName;
+    button.setAttribute("role", "listitem");
+    button.setAttribute("aria-pressed", "false");
+    button.innerHTML = `
+      <span class="voice-option-title">${formatVoiceLabel(voice)}</span>
+      <span class="voice-option-meta">${whisperStyles.length} whisper style${whisperStyles.length === 1 ? "" : "s"}</span>
+    `;
+    button.addEventListener("click", () => {
+      setAzureTTSConfig({ voice: voice.ShortName, style: whisperStyles[0] || WHISPER_STYLE_CANONICAL });
+      highlightSelectedVoice(voice.ShortName);
+      updateStyleOptions(voice);
+    });
+    voiceSelectorList.appendChild(button);
+  });
+  highlightSelectedVoice(azureConfig.voice);
+}
+
+async function showAzureVoiceSelector() {
+  if (typeof document === "undefined") return;
+  ensureVoiceSelectorElements();
+  const { key, region } = ensureCredentials();
+  const voices = await fetchAzureVoices(key, region);
+  const whisperVoices = voices.filter((voice) =>
+    Array.isArray(voice?.StyleList) && filterWhisperStyles(voice.StyleList).length > 0
+  );
+
+  renderVoiceOptions(whisperVoices);
+
+  const activeVoice = whisperVoices.find((voice) => voice.ShortName === azureConfig.voice);
+  updateStyleOptions(activeVoice || whisperVoices[0]);
+  updateStatusLine();
+
+  voiceSelectorOverlay.classList.remove("hidden");
+  voiceSelectorOverlay.setAttribute("aria-hidden", "false");
+  voiceSelectorOverlay.focus({ preventScroll: true });
+  document.body.classList.add("voice-selector-open");
+  document.dispatchEvent(
+    new CustomEvent("azureTTS:selector", { detail: { open: true } })
+  );
+
+  escKeyHandler = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeVoiceSelector();
+    }
+  };
+  document.addEventListener("keydown", escKeyHandler);
+}
+
+if (typeof window !== "undefined") {
+  loadStoredConfig();
+  window.showAzureVoiceSelector = showAzureVoiceSelector;
+}
+
+export {
+  azureSpeak,
+  setAzureTTSConfig,
+  getAzureTTSConfig,
+  fetchAzureVoices,
+  showAzureVoiceSelector,
+  DEFAULT_VOICE,
+  WHISPER_STYLE_CANONICAL,
+};

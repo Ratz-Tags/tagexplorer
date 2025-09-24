@@ -31,6 +31,18 @@ let moanToggle = null;
 let hypnoAudio = null;
 let moanAudio = null;
 
+function syncAudioPanelLayout() {
+  if (typeof document === "undefined") return;
+  if (!panel) {
+    panel = document.getElementById("audio-panel");
+  }
+  const body = document.body;
+  if (!panel || !body) return;
+  const isVisible = !panel.classList.contains("hidden");
+  body.classList.toggle("audio-panel-open", isVisible);
+  panel.setAttribute("aria-hidden", isVisible ? "false" : "true");
+}
+
 /**
  * Gets the audio source path for a given track index (supports custom URLs).
  */
@@ -132,6 +144,7 @@ function toggleMoanPlayback() {
 function togglePanel() {
   if (!panel) return;
   panel.classList.toggle("hidden");
+  syncAudioPanelLayout();
 }
 
 /**
@@ -157,6 +170,8 @@ function initAudio() {
   moanToggle = document.getElementById("moan-toggle");
   hypnoAudio = document.getElementById("hypnoAudio");
   moanAudio = document.getElementById("moan-audio");
+
+  syncAudioPanelLayout();
 
   // ARIA and feedback improvements for audio controls
   const audioPlayer = document.getElementById("audio-player");
@@ -404,6 +419,7 @@ function setupAudioPanelToggle() {
         "Audio panel toggled. Now hidden:",
         panel.classList.contains("hidden")
       );
+      syncAudioPanelLayout();
     }
   }
   if (bar) {
@@ -526,5 +542,6 @@ initAudio = function () {
 export {
   initAudio,
   initAudioUI,
+  syncAudioPanelLayout,
   // Optionally export other functions if needed elsewhere
 };
