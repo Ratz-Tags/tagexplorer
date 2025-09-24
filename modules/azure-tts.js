@@ -98,14 +98,28 @@ function getAzureTTSConfig() {
   return { ...azureConfig };
 }
 
-function ensureCredentials() {
+async function ensureCredentials() {
   if (typeof window === "undefined") {
     throw new Error("Azure TTS requires browser environment");
   }
-  const key = window._azureTTSKey;
-  const region = window._azureTTSRegion;
+  
+  // Try to get credentials from window first (if already loaded)
+  let key = window._azureTTSKey;
+  let region = window._azureTTSRegion;
+  
+  // If not available, try to load from azure-tts.local.js
   if (!key || !region) {
-    throw new Error("Azure TTS credentials are missing. Set window._azureTTSKey and window._azureTTSRegion.");
+    try {
+      const module = await import('../azure-tts.local.js');
+      key = key || window._azureTTSKey;
+      region = region || window._azureTTSRegion;
+    } catch (error) {
+      console.warn("Could not load azure-tts.local.js:", error);
+    }
+  }
+  
+  if (!key || !region) {
+    throw new Error("Azure TTS credentials are missing. Ensure azure-tts.local.js sets window._azureTTSKey and window._azureTTSRegion.");
   }
   return { key, region };
 }
@@ -157,7 +171,7 @@ function buildSSML(text, config) {
 
 async function azureSpeak(text, overrides = {}) {
   if (!text) return null;
-  const { key, region } = ensureCredentials();
+  const { key, region } = await ensureCredentials();
   const config = normalizeVoiceConfig(overrides);
   const ssml = buildSSML(text, config);
 
@@ -433,7 +447,7 @@ async function showAzureVoiceSelector() {
   let credentials = null;
 
   try {
-    credentials = ensureCredentials();
+    credentials = await ensureCredentials();
   } catch (error) {
     console.warn("Azure TTS credentials missing", error);
     statusMessage = "Add your Azure Speech key and region to choose a whisper voice.";

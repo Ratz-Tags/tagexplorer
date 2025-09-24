@@ -19,8 +19,37 @@ const FALLBACK_AUDIO_FILES = [
 ];
 
 let audioFiles = [...FALLBACK_AUDIO_FILES];
+let audioFileData = null;
 
 let playlistContainer = null;
+let trackSelectEl = null;
+
+async function loadAudioFileData() {
+  try {
+    const response = await fetch('data/audio-files.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load audio files: ${response.status}`);
+    }
+    audioFileData = await response.json();
+    audioFiles = audioFileData.files.map(file => file.filename);
+    console.log(`Loaded ${audioFiles.length} audio files from data/audio-files.json`);
+    return audioFileData;
+  } catch (error) {
+    console.warn('Could not load audio file data, using fallback:', error);
+    audioFiles = [...FALLBACK_AUDIO_FILES];
+    // Create fallback data structure
+    audioFileData = {
+      generatedAt: new Date().toISOString(),
+      totalFiles: audioFiles.length,
+      files: audioFiles.map(filename => ({
+        filename,
+        title: filename.replace(/\.mp3$/i, '').replace(/_/g, ' '),
+        path: `audio/${filename}`
+      }))
+    };
+    return audioFileData;
+  }
+}
 
 function normalizeTrackList(list) {
   if (!Array.isArray(list)) return [];
@@ -58,15 +87,7 @@ function parsePlaylistAttribute(raw) {
   return [];
 }
 
-function hydrateAudioFilesFromDom() {
-  if (typeof document === "undefined") {
-    audioFiles = [...FALLBACK_AUDIO_FILES];
-    return;
-  }
-  const playlistAttr = hypnoAudio?.dataset?.playlist;
-  const parsed = parsePlaylistAttribute(playlistAttr);
-  audioFiles = parsed.length ? parsed : [...FALLBACK_AUDIO_FILES];
-}
+
 
 function isRemoteTrack(name) {
   return /^https?:\/\//i.test(name);
@@ -74,6 +95,16 @@ function isRemoteTrack(name) {
 
 function getTrackLabel(name) {
   if (!name) return "Untitled";
+  
+  // Try to find the title from audioFileData first
+  if (audioFileData && audioFileData.files) {
+    const fileData = audioFileData.files.find(file => file.filename === name);
+    if (fileData && fileData.title) {
+      return fileData.title;
+    }
+  }
+  
+  // Fallback to extracting from filename
   const afterSlash = name.split("/").pop();
   const withoutExt = afterSlash ? afterSlash.replace(/\.[^/.]+$/, "") : name;
   return withoutExt
@@ -82,53 +113,53 @@ function getTrackLabel(name) {
     .trim();
 }
 
-function ensurePlaylistContainer() {
-  if (!panel) return null;
-  if (!playlistContainer) {
-    playlistContainer = document.createElement("div");
-    playlistContainer.className = "audio-playlist";
-    playlistContainer.setAttribute("role", "list");
-    const controls = panel.querySelector(".audio-controls");
-    panel.insertBefore(playlistContainer, controls || null);
+function ensureTrackSelector() {
+  if (!trackSelectEl) {
+    trackSelectEl = document.getElementById("audio-track-select");
   }
-  return playlistContainer;
+  return trackSelectEl;
 }
 
 function highlightActiveTrack() {
-  if (!playlistContainer) return;
-  const buttons = playlistContainer.querySelectorAll("[data-track-index]");
-  buttons.forEach((button) => {
-    const index = Number(button.dataset.trackIndex);
-    if (index === currentTrack) {
-      button.classList.add("active");
-      button.setAttribute("aria-pressed", "true");
-    } else {
-      button.classList.remove("active");
-      button.setAttribute("aria-pressed", "false");
-    }
-  });
+  const selector = ensureTrackSelector();
+  if (!selector) return;
+  selector.value = String(currentTrack);
 }
 
-function renderPlaylist() {
-  const container = ensurePlaylistContainer();
-  if (!container) return;
-  container.innerHTML = "";
+function renderTrackSelector() {
+  const selector = ensureTrackSelector();
+  if (!selector) return;
+  
+  // Clear existing options
+  selector.innerHTML = "";
+  
+  // Add default option
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select a track...";
+  selector.appendChild(defaultOption);
+  
+  // Add options for each audio file
   audioFiles.forEach((file, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "audio-pill audio-track-pill";
-    button.dataset.trackIndex = String(index);
-    button.textContent = getTrackLabel(file);
-    button.addEventListener("click", () => {
-      if (currentTrack === index) {
-        safePlay(hypnoAudio);
-        return;
-      }
-      loadTrack(index);
-    });
-    container.appendChild(button);
+    const option = document.createElement("option");
+    option.value = String(index);
+    option.textContent = getTrackLabel(file);
+    selector.appendChild(option);
   });
-  highlightActiveTrack();
+  
+  // Set current track
+  selector.value = String(currentTrack);
+  
+  // Add change listener only once
+  if (!selector.dataset.listenerAdded) {
+    selector.addEventListener("change", (event) => {
+      const index = parseInt(event.target.value);
+      if (!isNaN(index) && index >= 0 && index < audioFiles.length) {
+        loadTrack(index);
+      }
+    });
+    selector.dataset.listenerAdded = "true";
+  }
 }
 
 function safePlay(audioEl) {
@@ -275,7 +306,7 @@ function shuffleTracks() {
   }
   audioFiles = shuffled;
   currentTrack = Math.max(shuffled.indexOf(currentTrackName), 0);
-  renderPlaylist();
+  renderTrackSelector();
   loadTrack(currentTrack);
   showAudioToast("Playlist shuffled", "info");
 }
@@ -300,7 +331,7 @@ function onTrackEnded() {
 /**
  * Initializes audio controls and sets up event listeners
  */
-function initAudio() {
+async function initAudio() {
   // Get DOM references
   panelToggle = document.getElementById("audio-panel-toggle");
   panel = document.getElementById("audio-panel");
@@ -313,8 +344,8 @@ function initAudio() {
   hypnoAudio = document.getElementById("hypnoAudio");
   moanAudio = document.getElementById("moan-audio");
 
-  hydrateAudioFilesFromDom();
-  renderPlaylist();
+  await loadAudioFileData();
+  renderTrackSelector();
   syncAudioPanelLayout();
 
   // ARIA and feedback improvements for audio controls
@@ -490,7 +521,7 @@ function addTrackByUrl(url) {
   const normalizedUrl = url.trim();
   audioFiles.push(normalizedUrl);
   currentTrack = audioFiles.length - 1;
-  renderPlaylist();
+  renderTrackSelector();
   loadTrack(currentTrack);
   showAudioToast(`Track added: ${getTrackLabel(normalizedUrl)}`, "success");
 }

@@ -121,7 +121,7 @@ async function initApp() {
     // Initialize modules
     initUI();
     initSidebar();
-    initAudio();
+    await initAudio();
     initAudioUI();
 
     // Set initial background now that bg layer exists

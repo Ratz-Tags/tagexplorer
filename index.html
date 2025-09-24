@@ -84,6 +84,12 @@
         <span aria-hidden="true">🎧</span>
         <span id="audio-track-name">No track playing</span>
       </div>
+      <div class="audio-track-selector" role="group" aria-label="Track selection">
+        <label class="field-label" for="audio-track-select">Select track</label>
+        <select id="audio-track-select" class="voice-style-select" aria-label="Choose audio track">
+          <option value="">Loading tracks...</option>
+        </select>
+      </div>
       <div class="audio-controls" role="group" aria-label="Audio playback controls">
         <button id="audio-prev" type="button" aria-label="Previous track">⏮</button>
         <button id="audio-toggle" type="button" aria-label="Play or pause">▶</button>
@@ -98,7 +104,6 @@
       id="hypnoAudio"
       preload="auto"
       aria-label="Hypnosis audio tracks"
-      data-playlist='["Blank.mp3","Filthy Habits.mp3","Girl Factory.mp3","Layer Zero.mp3","Nipples.mp3","Yes.mp3"]'
     ></audio>
   </section>
 

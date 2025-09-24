@@ -622,6 +622,9 @@ display: none;
 .audio-controls {
 @apply flex flex-wrap items-center justify-center gap-2;
 }
+.audio-track-selector {
+@apply mb-4 flex flex-col gap-2;
+}
 .audio-playlist {
 @apply mt-4 flex flex-wrap items-center justify-center gap-2;
 }
