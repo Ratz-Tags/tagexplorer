@@ -1,17 +1,11 @@
 const STORAGE_KEY = "azureTTSConfig";
 const DEFAULT_VOICE = "en-US-AvaMultilingualNeural";
-const WHISPER_STYLE_CANONICAL = "Whispering";
-const DEFAULT_RATE = "-10%";
-const DEFAULT_VOLUME = "-15dB";
-const DEFAULT_PITCH = "0%";
+const WHISPER_STYLE_CANONICAL = "whispering";
 const SAMPLE_PREVIEW_LINE = "Caught you tweaking my whispers again, pet.";
 
 let azureConfig = {
   voice: DEFAULT_VOICE,
   style: WHISPER_STYLE_CANONICAL,
-  rate: DEFAULT_RATE,
-  volume: DEFAULT_VOLUME,
-  pitch: DEFAULT_PITCH,
 };
 
 let voiceListPromise = null;
@@ -46,7 +40,7 @@ function loadStoredConfig() {
     try {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object") {
-        azureConfig = { ...azureConfig, ...parsed };
+        azureConfig = normalizeVoiceConfig(parsed);
       }
     } catch (error) {
       // Ignore malformed JSON and reset storage
@@ -59,9 +53,6 @@ function applyConfigToWindow() {
   if (typeof window === "undefined") return;
   window._azureTTSVoice = azureConfig.voice;
   window._azureTTSStyle = azureConfig.style;
-  window._azureTTSRate = azureConfig.rate;
-  window._azureTTSVolume = azureConfig.volume;
-  window._azureTTSPitch = azureConfig.pitch;
 }
 
 function emitConfigChange() {
@@ -78,14 +69,22 @@ function canonicalizeStyle(style) {
 }
 
 function normalizeVoiceConfig(partial = {}) {
-  const merged = { ...azureConfig, ...partial };
-  if (!merged.voice) merged.voice = DEFAULT_VOICE;
-  if (!merged.style) merged.style = WHISPER_STYLE_CANONICAL;
-  if (!merged.rate) merged.rate = DEFAULT_RATE;
-  if (!merged.volume) merged.volume = DEFAULT_VOLUME;
-  if (!merged.pitch) merged.pitch = DEFAULT_PITCH;
-  merged.style = canonicalizeStyle(merged.style);
-  return merged;
+  const merged = {
+    voice: DEFAULT_VOICE,
+    style: WHISPER_STYLE_CANONICAL,
+    ...azureConfig,
+    ...partial,
+  };
+  const rawStyle = canonicalizeStyle(merged.style);
+  const normalizedStyle = rawStyle
+    ? rawStyle.toLowerCase() === WHISPER_STYLE_CANONICAL
+      ? WHISPER_STYLE_CANONICAL
+      : rawStyle
+    : WHISPER_STYLE_CANONICAL;
+  return {
+    voice: merged.voice || DEFAULT_VOICE,
+    style: normalizedStyle,
+  };
 }
 
 function setAzureTTSConfig(partial = {}) {
@@ -142,26 +141,16 @@ async function fetchAzureVoices(key, region, { forceRefresh = false } = {}) {
   return Array.isArray(voices) ? voices : [];
 }
 
-function escapeForXML(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/'/g, '&apos;')
-    .replace(/"/g, '&quot;');
-}
-
 function buildSSML(text, config) {
-  const { voice, style, rate, volume, pitch } = normalizeVoiceConfig(config);
-  const safeText = escapeForXML(text);
-  const styleAttr = style
-    ? `<mstts:express-as style="${style}">`
-    : "";
-  const closingStyle = style ? "</mstts:express-as>" : "";
+  const { voice, style } = normalizeVoiceConfig(config);
+  const safeText = text.replace(/[<>]/g, "");
+  const content = style
+    ? `<mstts:express-as style="${style}">${safeText}</mstts:express-as>`
+    : safeText;
   return `<?xml version="1.0" encoding="utf-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
   <voice name="${voice}">
-    ${styleAttr}<prosody rate="${rate}" pitch="${pitch}" volume="${volume}">${safeText}</prosody>${closingStyle}
+    ${content}
   </voice>
 </speak>`;
 }
@@ -222,11 +211,16 @@ function formatVoiceLabel(voice) {
 
 function toReadableStyle(style) {
   if (!style) return "";
-  return style
+  const cleaned = style
     .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/_/g, " ")
+    .replace(/[_-]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  if (!cleaned) return "";
+  return cleaned
+    .split(" ")
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ");
 }
 
 function filterWhisperStyles(styleList = []) {
@@ -238,7 +232,8 @@ function filterWhisperStyles(styleList = []) {
 function updateStatusLine() {
   if (!statusEl) return;
   const { voice, style } = azureConfig;
-  const readableStyle = toReadableStyle(style) || "Whispering";
+  const fallbackLabel = toReadableStyle(WHISPER_STYLE_CANONICAL) || "Whispering";
+  const readableStyle = toReadableStyle(style) || fallbackLabel;
   statusEl.textContent = `Voice: ${voice} · Style: ${readableStyle}`;
 }
 
@@ -265,13 +260,19 @@ function updateStyleOptions(forVoice) {
   });
 
   const currentStyle = canonicalizeStyle(azureConfig.style);
-  const hasCurrent = styles.some(
-    (style) => canonicalizeStyle(style).toLowerCase() === currentStyle?.toLowerCase()
+  const matchingStyle = styles.find(
+    (style) =>
+      canonicalizeStyle(style).toLowerCase() === currentStyle?.toLowerCase()
   );
-  const effectiveStyle = hasCurrent ? azureConfig.style : styles[0];
-  styleSelectEl.value = effectiveStyle;
+  const effectiveStyle = matchingStyle || styles[0];
+  if (effectiveStyle) {
+    styleSelectEl.value = effectiveStyle;
+    setAzureTTSConfig({ style: effectiveStyle });
+  } else {
+    styleSelectEl.value = WHISPER_STYLE_CANONICAL;
+    setAzureTTSConfig({ style: WHISPER_STYLE_CANONICAL });
+  }
   styleSelectEl.disabled = styles.length === 1;
-  setAzureTTSConfig({ style: effectiveStyle });
   updateStatusLine();
 }
 

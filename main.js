@@ -30,10 +30,19 @@ async function setDefaultAzureVoice() {
           whisperVoices.find(
             (voice) => voice.ShortName === DEFAULT_VOICE
           ) || whisperVoices[0];
-        const voiceToUse = (preferred || fallback).ShortName;
+        const voiceToUse = preferred || fallback;
+        const whisperStyle = Array.isArray(voiceToUse?.StyleList)
+          ? voiceToUse.StyleList.find(
+              (style) =>
+                String(style).toLowerCase() === WHISPER_STYLE_CANONICAL
+            ) ||
+            voiceToUse.StyleList.find((style) =>
+              String(style).toLowerCase().includes("whisper")
+            )
+          : null;
         setAzureTTSConfig({
-          voice: voiceToUse,
-          style: WHISPER_STYLE_CANONICAL,
+          voice: voiceToUse.ShortName,
+          style: whisperStyle || WHISPER_STYLE_CANONICAL,
         });
         return;
       }
