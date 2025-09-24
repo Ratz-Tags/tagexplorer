@@ -142,9 +142,18 @@ async function fetchAzureVoices(key, region, { forceRefresh = false } = {}) {
   return Array.isArray(voices) ? voices : [];
 }
 
+function escapeForXML(text) {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildSSML(text, config) {
   const { voice, style, rate, volume, pitch } = normalizeVoiceConfig(config);
-  const safeText = text.replace(/[<>]/g, "");
+  const safeText = escapeForXML(text);
   const styleAttr = style
     ? `<mstts:express-as style="${style}">`
     : "";
