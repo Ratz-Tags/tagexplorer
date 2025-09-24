@@ -30,10 +30,19 @@ async function setDefaultAzureVoice() {
           whisperVoices.find(
             (voice) => voice.ShortName === DEFAULT_VOICE
           ) || whisperVoices[0];
-        const voiceToUse = (preferred || fallback).ShortName;
+        const voiceToUse = preferred || fallback;
+        const whisperStyle = Array.isArray(voiceToUse?.StyleList)
+          ? voiceToUse.StyleList.find(
+              (style) =>
+                String(style).toLowerCase() === WHISPER_STYLE_CANONICAL
+            ) ||
+            voiceToUse.StyleList.find((style) =>
+              String(style).toLowerCase().includes("whisper")
+            )
+          : null;
         setAzureTTSConfig({
-          voice: voiceToUse,
-          style: WHISPER_STYLE_CANONICAL,
+          voice: voiceToUse.ShortName,
+          style: whisperStyle || WHISPER_STYLE_CANONICAL,
         });
         return;
       }
@@ -55,7 +64,7 @@ import {
   initSidebar,
   setAllArtists as setSidebarArtists,
 } from "./modules/sidebar.js";
-import { initAudio, initAudioUI } from "./modules/audio.js";
+import { initAudio, initAudioUI, syncAudioPanelLayout } from "./modules/audio.js";
 import {
   initTags,
   setAllArtists as setTagsArtists,
@@ -121,16 +130,30 @@ async function initApp() {
     // Add TTS toggle button to audio controls
     createTTSToggleButton();
     // Add Azure TTS Voice Selector button to audio controls
-    const audioControls = document.querySelector('.audio-controls');
+    const audioControls = document.querySelector(".audio-controls");
     if (audioControls) {
-      const voiceBtn = document.createElement('button');
-      voiceBtn.textContent = 'Choose TTS Voice';
-      voiceBtn.className = 'browse-btn';
-      voiceBtn.style.marginLeft = '1em';
-      voiceBtn.onclick = () => {
-        showAzureVoiceSelector();
-      };
-      audioControls.appendChild(voiceBtn);
+      let voiceBtn = document.getElementById("azure-voice-style-btn");
+      if (!voiceBtn) {
+        voiceBtn = document.createElement("button");
+        voiceBtn.type = "button";
+        voiceBtn.id = "azure-voice-style-btn";
+        voiceBtn.className = "audio-pill";
+        voiceBtn.textContent = "Voice & Style";
+        voiceBtn.setAttribute("aria-haspopup", "dialog");
+        voiceBtn.setAttribute("aria-expanded", "false");
+        voiceBtn.addEventListener("click", () => {
+          showAzureVoiceSelector();
+        });
+        audioControls.appendChild(voiceBtn);
+      }
+      if (!voiceBtn.dataset.selectorBound) {
+        const updateExpandedState = (event) => {
+          const isOpen = Boolean(event?.detail?.open);
+          voiceBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        };
+        document.addEventListener("azureTTS:selector", updateExpandedState);
+        voiceBtn.dataset.selectorBound = "true";
+      }
     }
     await initTags();
     initGallery();
@@ -246,6 +269,7 @@ if (audioToggleBtn && audioPanelEl) {
         audioPanelEl.classList.toggle("hidden");
         const isHidden = audioPanelEl.classList.contains("hidden");
         audioPanelEl.setAttribute("aria-hidden", isHidden ? "true" : "false");
+        syncAudioPanelLayout();
     });
 }
 
