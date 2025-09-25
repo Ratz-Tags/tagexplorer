@@ -421,6 +421,32 @@ function handleTagToggle(tag) {
   renderExplorer();
 }
 
+function expandAllCategories() {
+  if (!groupsContainerEl) return;
+  const sections = groupsContainerEl.querySelectorAll(".tag-category-item");
+  sections.forEach(section => {
+    section.classList.add("open");
+    const header = section.querySelector(".tag-category-header");
+    const tagList = section.querySelector(".tag-category-tags");
+    if (header) header.setAttribute("aria-expanded", "true");
+    if (tagList) tagList.setAttribute("aria-hidden", "false");
+  });
+  scheduleOpenCategoryHeightSync();
+}
+
+function collapseAllCategories() {
+  if (!groupsContainerEl) return;
+  const sections = groupsContainerEl.querySelectorAll(".tag-category-item");
+  sections.forEach(section => {
+    section.classList.remove("open");
+    const header = section.querySelector(".tag-category-header");
+    const tagList = section.querySelector(".tag-category-tags");
+    if (header) header.setAttribute("aria-expanded", "false");
+    if (tagList) tagList.setAttribute("aria-hidden", "true");
+  });
+  scheduleOpenCategoryHeightSync();
+}
+
 function formatTagLabel(tag) {
   return tag.replace(/_/g, " ");
 }
@@ -454,8 +480,15 @@ function renderCategories() {
     const header = document.createElement("div");
     header.className = "tag-category-header";
     header.innerHTML = `
-      <span class="tag-category-title">${category}</span>
-      <span class="tag-category-count">${matchingTags.length}</span>
+      <div class="tag-category-info">
+        <span class="tag-category-title">${category}</span>
+        <span class="tag-category-count">${matchingTags.length}</span>
+      </div>
+      <div class="tag-category-arrow">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+          <path d="M4 2L8 6L4 10" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     `;
     
     header.addEventListener("click", () => {
@@ -662,7 +695,11 @@ function initTagExplorer() {
   popoverEl.innerHTML = `
     <div class="tag-explorer-header">
       <h2 class="tag-explorer-title">Filter Tags</h2>
-      <button type="button" class="tag-explorer-close" aria-label="Close tag explorer">×</button>
+      <div class="tag-explorer-controls">
+        <button type="button" class="tag-explorer-expand-all" aria-label="Expand all categories" title="Expand All">⊞</button>
+        <button type="button" class="tag-explorer-collapse-all" aria-label="Collapse all categories" title="Collapse All">⊟</button>
+        <button type="button" class="tag-explorer-close" aria-label="Close tag explorer">×</button>
+      </div>
     </div>
     <div class="tag-explorer-content">
       <div class="tag-explorer-search">
@@ -684,6 +721,16 @@ function initTagExplorer() {
   const closeBtn = popoverEl.querySelector(".tag-explorer-close");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => closeTagExplorer());
+  }
+  
+  const expandAllBtn = popoverEl.querySelector(".tag-explorer-expand-all");
+  if (expandAllBtn) {
+    expandAllBtn.addEventListener("click", () => expandAllCategories());
+  }
+  
+  const collapseAllBtn = popoverEl.querySelector(".tag-explorer-collapse-all");
+  if (collapseAllBtn) {
+    collapseAllBtn.addEventListener("click", () => collapseAllCategories());
   }
   
   const overlay = document.querySelector("#tag-explorer-overlay");
