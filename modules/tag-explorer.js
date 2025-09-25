@@ -566,12 +566,10 @@ function openTagExplorer() {
   isOpen = true;
   popoverEl.classList.add("open");
   popoverEl.setAttribute("aria-hidden", "false");
+  document.body.classList.add("tag-filter-open");
   if (filterTriggerEl) {
     filterTriggerEl.classList.add("is-open");
   }
-  isOpen = true;
-  popoverEl.classList.add("open");
-  popoverEl.setAttribute("aria-hidden", "false");
   if (searchInputEl) {
     searchInputEl.value = searchValue;
   }
@@ -612,6 +610,7 @@ function closeTagExplorer() {
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
   popoverEl.classList.remove("is-flipped");
+  document.body.classList.remove("tag-filter-open");
   if (filterTriggerEl) {
     filterTriggerEl.classList.remove("is-open");
     filterTriggerEl.classList.remove("is-flipped");
@@ -649,32 +648,28 @@ function initTagExplorer() {
   if (!popoverEl) {
     popoverEl = document.createElement("div");
     popoverEl.id = "tag-filter-popover";
-    if (filterTriggerEl) {
-      filterTriggerEl.appendChild(popoverEl);
-    } else {
-      document.body.appendChild(popoverEl);
-    }
+    document.body.appendChild(popoverEl);
   }
-  popoverEl.classList.add("filter-dropdown");
+  popoverEl.classList.add("filter-overlay");
   popoverEl.setAttribute("aria-hidden", "true");
   popoverEl.innerHTML = `
-    <div class="filter-panel filter-panel--dropdown" id="tag-filter-panel" role="region" aria-label="Tag filters">
-      <header class="filter-panel__header filter-panel__header--compact">
+    <div class="filter-panel" id="tag-filter-panel" role="region" aria-label="Tag filters">
+      <header class="filter-panel__header">
         <h2>Filters</h2>
-        <div class="filter-panel__header-buttons">
-          <button type="button" class="filter-panel__clear">Clear all</button>
-          <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
-        </div>
+        <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
       </header>
-      <div class="filter-panel__controls filter-panel__controls--dropdown">
+      <div class="filter-panel__controls">
         <label class="visually-hidden" for="tag-filter-search">Search tags</label>
-        <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
+        <input id="tag-filter-search" class="field-input" type="search" placeholder="Search tags" autocomplete="off" />
         <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
-        <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
+        <input id="tag-filter-name" class="field-input" type="search" placeholder="Filter artists by name" autocomplete="off" />
         <p class="filter-panel__notice" aria-live="assertive"></p>
       </div>
       <div class="filter-panel__selected" aria-live="polite"></div>
       <div class="filter-panel__groups"></div>
+      <div class="filter-panel__actions">
+        <button type="button" class="filter-panel__clear control-btn">Clear all</button>
+      </div>
     </div>
   `;
 
