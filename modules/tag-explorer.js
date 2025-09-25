@@ -11,7 +11,7 @@ import {
 const MAX_TAG_SELECTION = 2;
 
 let allArtists = [];
-let overlayEl = null;
+let popoverEl = null;
 let panelEl = null;
 let searchInputEl = null;
 let nameInputEl = null;
@@ -20,6 +20,7 @@ let overlaySelectedEl = null;
 let pinnedSelectedEl = null;
 let limitNoticeEl = null;
 let clearButtonEl = null;
+let filterTriggerEl = null;
 let isInitialized = false;
 let isOpen = false;
 let escapeListener = null;
@@ -32,6 +33,9 @@ const observedTagLists =
   typeof WeakSet === "function" ? new WeakSet() : null;
 let heightSyncListenersBound = false;
 let heightSyncResizeHandler = null;
+let scrollRepositionHandler = null;
+let filtersButtonEl = null;
+let outsideClickHandler = null;
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -122,6 +126,95 @@ function showSelectionLimitMessage() {
   }, 2200);
 }
 
+function bindOutsideClickListener() {
+  if (outsideClickHandler || typeof document === "undefined") return;
+  outsideClickHandler = (event) => {
+    if (!isOpen) return;
+    const target = event.target;
+    if (
+      (popoverEl && popoverEl.contains(target)) ||
+      (filterTriggerEl && filterTriggerEl.contains(target)) ||
+      (filtersButtonEl && filtersButtonEl.contains(target))
+    ) {
+      return;
+    }
+    closeTagExplorer();
+  };
+  try {
+    document.addEventListener("mousedown", outsideClickHandler, true);
+    document.addEventListener("touchstart", outsideClickHandler, { passive: true });
+  } catch {
+    // ignore listener binding issues
+  }
+}
+
+function unbindOutsideClickListener() {
+  if (!outsideClickHandler || typeof document === "undefined") return;
+  try {
+    document.removeEventListener("mousedown", outsideClickHandler, true);
+    document.removeEventListener("touchstart", outsideClickHandler);
+  } catch {
+    // ignore listener cleanup issues
+  }
+  outsideClickHandler = null;
+}
+
+function positionPopover() {
+  if (
+    !popoverEl ||
+    !panelEl ||
+    !filtersButtonEl ||
+    typeof window === "undefined"
+  ) {
+    return;
+  }
+
+  const btnRect = filtersButtonEl.getBoundingClientRect();
+  if (!btnRect || !Number.isFinite(btnRect.top)) return;
+
+  const viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight || 0;
+  const panelRect = panelEl.getBoundingClientRect();
+  const panelHeight = panelRect.height || panelEl.offsetHeight || 0;
+  const gutter = 16;
+
+  const spaceBelow = viewportHeight ? viewportHeight - btnRect.bottom - gutter : 0;
+  const spaceAbove = btnRect.top - gutter;
+  let flipped = false;
+  let availableSpace = spaceBelow;
+
+  if (panelHeight && spaceBelow < panelHeight && spaceAbove > spaceBelow) {
+    flipped = true;
+    availableSpace = spaceAbove;
+  }
+
+  const maxHeight = Math.max(
+    240,
+    Math.min(
+      560,
+      Number.isFinite(availableSpace)
+        ? Math.max(availableSpace - gutter / 2, 240)
+        : 320
+    )
+  );
+
+  if (Number.isFinite(maxHeight) && maxHeight > 0) {
+    try {
+      popoverEl.style.setProperty(
+        "--filter-panel-max-height",
+        `${Math.round(maxHeight)}px`
+      );
+    } catch {
+      // ignore style assignment issues
+    }
+  }
+
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.toggle("is-flipped", flipped);
+  }
+  popoverEl.classList.toggle("is-flipped", flipped);
+}
+
 function syncOpenCategoryHeights() {
   heightSyncFrame = null;
   if (!groupsContainerEl) return;
@@ -190,6 +283,9 @@ function ensureHeightSyncListeners() {
   if (heightSyncListenersBound || typeof window === "undefined") return;
   heightSyncResizeHandler = () => {
     scheduleOpenCategoryHeightSync();
+    if (isOpen) {
+      positionPopover();
+    }
   };
   try {
     window.addEventListener("resize", heightSyncResizeHandler, { passive: true });
@@ -198,12 +294,27 @@ function ensureHeightSyncListeners() {
     // ignore listener binding failures
   }
   try {
+    scrollRepositionHandler = () => {
+      if (isOpen) {
+        positionPopover();
+      }
+    };
+    window.addEventListener("scroll", scrollRepositionHandler, { passive: true });
+  } catch {
+    scrollRepositionHandler = null;
+  }
+  try {
     window.addEventListener("beforeunload", () => {
       if (heightSyncResizeHandler) {
         window.removeEventListener("resize", heightSyncResizeHandler);
         window.removeEventListener("orientationchange", heightSyncResizeHandler);
         heightSyncResizeHandler = null;
       }
+      if (scrollRepositionHandler) {
+        window.removeEventListener("scroll", scrollRepositionHandler);
+        scrollRepositionHandler = null;
+      }
+      unbindOutsideClickListener();
       if (tagListResizeObserver) {
         try {
           tagListResizeObserver.disconnect();
@@ -418,6 +529,9 @@ function renderCategories() {
 function renderExplorer() {
   renderSelectedTags();
   renderCategories();
+  if (isOpen) {
+    positionPopover();
+  }
 }
 
 function bindEscapeListener() {
@@ -440,14 +554,19 @@ function unbindEscapeListener() {
 
 function openTagExplorer() {
   if (!isInitialized) initTagExplorer();
-  if (!overlayEl || isOpen) return;
+  if (!filtersButtonEl && typeof document !== "undefined") {
+    filtersButtonEl = document.getElementById("filters-btn");
+  }
+  if (!popoverEl) return;
+  if (isOpen) {
+    closeTagExplorer();
+    return;
+  }
   isOpen = true;
-  overlayEl.classList.add("open");
-  overlayEl.setAttribute("aria-hidden", "false");
-  document.body.classList.add("tag-filter-open");
-  if (panelEl) {
-    panelEl.setAttribute("tabindex", "-1");
-    panelEl.focus({ preventScroll: true });
+  popoverEl.classList.add("open");
+  popoverEl.setAttribute("aria-hidden", "false");
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.add("is-open");
   }
   if (searchInputEl) {
     searchInputEl.value = searchValue;
@@ -458,17 +577,43 @@ function openTagExplorer() {
     nameInputEl.value = currentName || "";
   }
   renderExplorer();
+  if (searchInputEl) {
+    try {
+      searchInputEl.focus({ preventScroll: true });
+    } catch {
+      // ignore focus issues
+    }
+  } else if (panelEl) {
+    panelEl.setAttribute("tabindex", "-1");
+    try {
+      panelEl.focus({ preventScroll: true });
+    } catch {
+      // ignore focus issues
+    }
+  }
+  positionPopover();
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => {
+      positionPopover();
+    });
+  }
   bindEscapeListener();
+  bindOutsideClickListener();
   emitOverlayToggle(true);
 }
 
 function closeTagExplorer() {
-  if (!overlayEl || !isOpen) return;
+  if (!popoverEl || !isOpen) return;
   isOpen = false;
-  overlayEl.classList.remove("open");
-  overlayEl.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("tag-filter-open");
+  popoverEl.classList.remove("open");
+  popoverEl.setAttribute("aria-hidden", "true");
+  popoverEl.classList.remove("is-flipped");
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.remove("is-open");
+    filterTriggerEl.classList.remove("is-flipped");
+  }
   unbindEscapeListener();
+  unbindOutsideClickListener();
   emitOverlayToggle(false);
 }
 
@@ -483,26 +628,44 @@ function initTagExplorer() {
   if (isInitialized || typeof document === "undefined") return;
   ensurePinnedSelectedContainer();
 
-  overlayEl = document.createElement("div");
-  overlayEl.className = "filter-overlay";
-  overlayEl.setAttribute("aria-hidden", "true");
-  overlayEl.innerHTML = `
-    <div class="filter-panel" id="tag-filter-panel" role="dialog" aria-modal="true" aria-label="Tag filters">
-      <div class="filter-panel__handle" aria-hidden="true"></div>
-      <header class="filter-panel__header">
+  filtersButtonEl = document.getElementById("filters-btn");
+  if (filtersButtonEl) {
+    filterTriggerEl = filtersButtonEl.closest(".filter-trigger");
+    if (!filterTriggerEl && filtersButtonEl.parentElement) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "filter-trigger";
+      filtersButtonEl.parentElement.insertBefore(wrapper, filtersButtonEl);
+      wrapper.appendChild(filtersButtonEl);
+      filterTriggerEl = wrapper;
+    }
+  }
+
+  popoverEl = document.getElementById("tag-filter-popover");
+  if (!popoverEl) {
+    popoverEl = document.createElement("div");
+    popoverEl.id = "tag-filter-popover";
+    if (filterTriggerEl) {
+      filterTriggerEl.appendChild(popoverEl);
+    } else {
+      document.body.appendChild(popoverEl);
+    }
+  }
+  popoverEl.classList.add("filter-dropdown");
+  popoverEl.setAttribute("aria-hidden", "true");
+  popoverEl.innerHTML = `
+    <div class="filter-panel filter-panel--dropdown" id="tag-filter-panel" role="region" aria-label="Tag filters">
+      <header class="filter-panel__header filter-panel__header--compact">
         <h2>Filters</h2>
-        <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
-      </header>
-      <div class="filter-panel__controls">
-        <div class="filter-panel__inputs">
-          <label class="visually-hidden" for="tag-filter-search">Search tags</label>
-          <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
-          <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
-          <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
-        </div>
-        <div class="filter-panel__actions">
+        <div class="filter-panel__header-buttons">
           <button type="button" class="filter-panel__clear">Clear all</button>
+          <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
         </div>
+      </header>
+      <div class="filter-panel__controls filter-panel__controls--dropdown">
+        <label class="visually-hidden" for="tag-filter-search">Search tags</label>
+        <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
+        <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
+        <input id="tag-filter-name" class="filter-panel__search" type="search" placeholder="Filter artists by name" autocomplete="off" />
         <p class="filter-panel__notice" aria-live="assertive"></p>
       </div>
       <div class="filter-panel__selected" aria-live="polite"></div>
@@ -510,23 +673,18 @@ function initTagExplorer() {
     </div>
   `;
 
-  document.body.appendChild(overlayEl);
+  panelEl = popoverEl.querySelector("#tag-filter-panel");
+  searchInputEl = popoverEl.querySelector("#tag-filter-search");
+  nameInputEl = popoverEl.querySelector("#tag-filter-name");
+  groupsContainerEl = popoverEl.querySelector(".filter-panel__groups");
+  overlaySelectedEl = popoverEl.querySelector(".filter-panel__selected");
+  limitNoticeEl = popoverEl.querySelector(".filter-panel__notice");
+  clearButtonEl = popoverEl.querySelector(".filter-panel__clear");
+  if (panelEl) {
+    panelEl.setAttribute("tabindex", "-1");
+  }
 
-  panelEl = overlayEl.querySelector("#tag-filter-panel");
-  searchInputEl = overlayEl.querySelector("#tag-filter-search");
-  nameInputEl = overlayEl.querySelector("#tag-filter-name");
-  groupsContainerEl = overlayEl.querySelector(".filter-panel__groups");
-  overlaySelectedEl = overlayEl.querySelector(".filter-panel__selected");
-  limitNoticeEl = overlayEl.querySelector(".filter-panel__notice");
-  clearButtonEl = overlayEl.querySelector(".filter-panel__clear");
-
-  overlayEl.addEventListener("click", (event) => {
-    if (event.target === overlayEl) {
-      closeTagExplorer();
-    }
-  });
-
-  const closeBtn = overlayEl.querySelector(".filter-panel__close");
+  const closeBtn = popoverEl.querySelector(".filter-panel__close");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => closeTagExplorer());
   }
