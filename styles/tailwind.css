@@ -389,39 +389,139 @@ display: none;
 .confirmation-modal-content {
 @apply w-full max-w-md rounded-3xl border border-white/10 bg-panel/90 p-6 text-sm text-slate-200 shadow-neon;
 }
-.filter-overlay {
-@apply fixed inset-0 z-[11000] hidden bg-black/70 backdrop-blur-glass;
-}
-.filter-overlay.open {
-@apply flex items-start justify-center;
-padding: clamp(1rem, 4vw, 2.5rem) clamp(0.75rem, 3vw, 2rem);
-overflow-y: auto;
-}
-.filter-panel {
-@apply relative m-auto flex w-full max-w-6xl flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/90 p-8 shadow-neon;
-min-width: min(90vw, 800px);
-min-height: min(80vh, 600px);
-max-height: min(92vh, 960px);
-overflow: hidden;
+/* Tag Explorer Sidebar */
+.tag-explorer-sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  height: 100vh;
+  background: rgba(22, 21, 37, 0.95);
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  z-index: 1000;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.4, -0.2, 0.2, 1.2);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -10px 0 50px rgba(0, 0, 0, 0.5);
+  visibility: hidden;
+  opacity: 0;
 }
 
-/* Fold-specific sizing */
-@screen fold-cover {
-.filter-panel {
-  @apply max-w-full p-4 gap-4 rounded-2xl;
-  min-width: 95vw;
-  min-height: 85vh;
-  max-height: 90vh;
+.tag-explorer-sidebar.open {
+  transform: translateX(0);
+  visibility: visible;
+  opacity: 1;
 }
+
+.tag-explorer-header {
+  @apply flex items-center justify-between p-6 border-b border-white/10;
+  flex-shrink: 0;
+}
+
+.tag-explorer-title {
+  @apply text-lg font-display uppercase tracking-[0.4em] text-white;
+}
+
+.tag-explorer-close {
+  @apply w-8 h-8 flex items-center justify-center rounded-full border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:border-white/30 transition-all;
+  font-size: 1.2rem;
+}
+
+.tag-explorer-content {
+  @apply flex-1 overflow-hidden flex flex-col;
+}
+
+.tag-explorer-search {
+  @apply p-4 border-b border-white/10;
+  flex-shrink: 0;
+}
+
+.tag-explorer-search input {
+  @apply w-full px-4 py-3 rounded-xl border border-white/10 bg-black/40 text-white placeholder:text-slate-400 text-sm;
+  backdrop-filter: blur(10px);
+}
+
+.tag-explorer-search input:focus {
+  @apply outline-none ring-2 ring-glow/50 border-glow/50;
+}
+
+.tag-explorer-categories {
+  @apply flex-1 overflow-y-auto p-4;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 118, 214, 0.5) transparent;
+}
+
+.tag-category-item {
+  @apply mb-6;
+}
+
+.tag-category-header {
+  @apply flex items-center justify-between p-3 rounded-lg border border-white/5 bg-white/5 cursor-pointer hover:bg-white/10 transition-all;
+  margin-bottom: 0.75rem;
+}
+
+.tag-category-title {
+  @apply text-sm font-semibold uppercase tracking-[0.3em] text-slate-200;
+}
+
+.tag-category-count {
+  @apply text-xs text-slate-400 px-2 py-1 rounded-full bg-white/10;
+}
+
+.tag-category-tags {
+  @apply grid grid-cols-1 gap-2;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.tag-category-item.open .tag-category-tags {
+  max-height: 500px;
+}
+
+.tag-button-sidebar {
+  @apply w-full text-left px-3 py-2 rounded-lg border border-white/10 bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-300 hover:bg-white/10 hover:border-glow/50 hover:text-white transition-all;
+  font-weight: 500;
+}
+
+.tag-button-sidebar.active {
+  @apply bg-glow/20 border-glow/60 text-white;
+}
+
+.tag-button-sidebar:hover {
+  transform: translateX(2px);
+}
+
+/* Responsive sizing */
+@screen fold-cover {
+  .tag-explorer-sidebar {
+    width: 100vw;
+    height: 100vh;
+  }
 }
 
 @screen fold-inner {
-.filter-panel {
-  @apply max-w-7xl p-10 gap-8;
-  min-width: min(85vw, 1000px);
-  min-height: min(75vh, 700px);
-  max-height: min(90vh, 1200px);
+  .tag-explorer-sidebar {
+    width: 480px;
+  }
 }
+
+/* Overlay for mobile */
+.tag-explorer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.tag-explorer-overlay.visible {
+  opacity: 1;
+  visibility: visible;
 }
 .filter-panel__controls,
 .filter-panel__selected {

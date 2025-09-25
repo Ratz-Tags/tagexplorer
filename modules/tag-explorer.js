@@ -445,29 +445,25 @@ function renderCategories() {
     if (matchingTags.length === 0) return;
 
     renderedAny = true;
-    const section = document.createElement("section");
-    section.className = "filter-category";
+    const section = document.createElement("div");
+    section.className = "tag-category-item";
     const shouldOpen =
       searchValueLower !== "" || matchingTags.some((tag) => active.has(tag));
     if (shouldOpen) section.classList.add("open");
 
-    const slug = category
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 48);
-    const groupId = `filter-category-${index}-${slug || "group"}`;
-
-    const header = document.createElement("button");
-    header.type = "button";
-    header.className = "filter-category__header";
-    header.textContent = category;
-    header.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
-    header.setAttribute("aria-controls", groupId);
+    const header = document.createElement("div");
+    header.className = "tag-category-header";
+    header.innerHTML = `
+      <span class="tag-category-title">${category}</span>
+      <span class="tag-category-count">${matchingTags.length}</span>
+    `;
+    
+    header.addEventListener("click", () => {
+      section.classList.toggle("open");
+    });
 
     const tagList = document.createElement("div");
-    tagList.className = "filter-category__tags";
-    tagList.id = groupId;
+    tagList.className = "tag-category-tags";
     tagList.setAttribute("role", "group");
     tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
 
@@ -489,20 +485,10 @@ function renderCategories() {
     matchingTags.forEach((tag) => {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = "filter-tag-button";
+      btn.className = active.has(tag) ? "tag-button-sidebar active" : "tag-button-sidebar";
       btn.setAttribute("data-tag", tag);
       const count = counts[tag] || 0;
-      const labelSpan = document.createElement("span");
-      labelSpan.className = "filter-tag-button__label";
-      labelSpan.textContent = formatTagLabel(tag);
-      const countSpan = document.createElement("span");
-      countSpan.className = "filter-tag-button__count";
-      countSpan.textContent = `(${count})`;
-      btn.appendChild(labelSpan);
-      btn.appendChild(countSpan);
-      const isActive = active.has(tag);
-      btn.classList.toggle("is-active", isActive);
-      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+      btn.innerHTML = `${formatTagLabel(tag)} <span style="color: #94a3b8; font-size: 0.7em;">(${count})</span>`;
       btn.addEventListener("click", () => handleTagToggle(tag));
       tagList.appendChild(btn);
     });
@@ -566,7 +552,13 @@ function openTagExplorer() {
   isOpen = true;
   popoverEl.classList.add("open");
   popoverEl.setAttribute("aria-hidden", "false");
-  document.body.classList.add("tag-filter-open");
+  
+  // Show overlay on mobile
+  const overlay = document.querySelector("#tag-explorer-overlay");
+  if (overlay && window.innerWidth <= 520) {
+    overlay.classList.add("visible");
+  }
+  
   if (filterTriggerEl) {
     filterTriggerEl.classList.add("is-open");
   }
@@ -609,8 +601,13 @@ function closeTagExplorer() {
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
-  popoverEl.classList.remove("is-flipped");
-  document.body.classList.remove("tag-filter-open");
+  
+  // Hide overlay
+  const overlay = document.querySelector("#tag-explorer-overlay");
+  if (overlay) {
+    overlay.classList.remove("visible");
+  }
+  
   if (filterTriggerEl) {
     filterTriggerEl.classList.remove("is-open");
     filterTriggerEl.classList.remove("is-flipped");
@@ -660,66 +657,43 @@ function initTagExplorer() {
     popoverEl.id = "tag-filter-popover";
     document.body.appendChild(popoverEl);
   }
-  popoverEl.classList.add("filter-overlay");
+  popoverEl.classList.add("tag-explorer-sidebar");
   popoverEl.setAttribute("aria-hidden", "true");
   popoverEl.innerHTML = `
-    <div class="filter-panel" id="tag-filter-panel" role="region" aria-label="Tag filters">
-      <header class="filter-panel__header">
-        <h2>Filters</h2>
-        <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
-      </header>
-      <div class="filter-panel__controls">
-        <label class="visually-hidden" for="tag-filter-search">Search tags</label>
-        <input id="tag-filter-search" class="field-input" type="search" placeholder="Search tags" autocomplete="off" />
-        <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
-        <input id="tag-filter-name" class="field-input" type="search" placeholder="Filter artists by name" autocomplete="off" />
-        <p class="filter-panel__notice" aria-live="assertive"></p>
+    <div class="tag-explorer-header">
+      <h2 class="tag-explorer-title">Filter Tags</h2>
+      <button type="button" class="tag-explorer-close" aria-label="Close tag explorer">×</button>
+    </div>
+    <div class="tag-explorer-content">
+      <div class="tag-explorer-search">
+        <input id="tag-filter-search" type="search" placeholder="Search tags..." autocomplete="off" />
       </div>
-      <div class="filter-panel__selected" aria-live="polite"></div>
-      <div class="filter-panel__groups"></div>
-      <div class="filter-panel__actions">
-        <button type="button" class="filter-panel__clear control-btn">Clear all</button>
-      </div>
+      <div class="tag-explorer-categories" id="tag-explorer-categories"></div>
     </div>
   `;
+  
+  // Create overlay for mobile
+  const mobileOverlay = document.createElement("div");
+  mobileOverlay.className = "tag-explorer-overlay";
+  mobileOverlay.id = "tag-explorer-overlay";
+  document.body.appendChild(mobileOverlay);
 
-  panelEl = popoverEl.querySelector("#tag-filter-panel");
   searchInputEl = popoverEl.querySelector("#tag-filter-search");
-  nameInputEl = popoverEl.querySelector("#tag-filter-name");
-  groupsContainerEl = popoverEl.querySelector(".filter-panel__groups");
-  overlaySelectedEl = popoverEl.querySelector(".filter-panel__selected");
-  limitNoticeEl = popoverEl.querySelector(".filter-panel__notice");
-  clearButtonEl = popoverEl.querySelector(".filter-panel__clear");
-  if (panelEl) {
-    panelEl.setAttribute("tabindex", "-1");
-  }
-
-  const closeBtn = popoverEl.querySelector(".filter-panel__close");
+  groupsContainerEl = popoverEl.querySelector("#tag-explorer-categories");
+  
+  const closeBtn = popoverEl.querySelector(".tag-explorer-close");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => closeTagExplorer());
+  }
+  
+  const overlay = document.querySelector("#tag-explorer-overlay");
+  if (overlay) {
+    overlay.addEventListener("click", () => closeTagExplorer());
   }
 
   if (searchInputEl) {
     searchInputEl.addEventListener("input", (event) => {
       handleSearchInput(event.target.value || "");
-    });
-  }
-
-  if (nameInputEl) {
-    nameInputEl.addEventListener("input", (event) => {
-      handleArtistNameFilter(event.target.value || "");
-    });
-  }
-
-  if (clearButtonEl) {
-    clearButtonEl.addEventListener("click", (event) => {
-      event.preventDefault();
-      searchInputEl && (searchInputEl.value = "");
-      handleSearchInput("");
-      nameInputEl && (nameInputEl.value = "");
-      handleArtistNameFilter("");
-      clearAllTags();
-      renderExplorer();
     });
   }
 
