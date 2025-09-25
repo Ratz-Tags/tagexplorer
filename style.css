@@ -22,3 +22,17 @@
 .filter-panel--floating .filter-category__header{font-size:.75rem}
 .filter-panel--floating .filter-tag-button{padding:.4rem .55rem;font-size:.7rem;letter-spacing:.2em}
 @keyframes filterPopoverIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+/* Inline filter dropdown + command bar adjustments */
+.top-surface{position:relative;top:auto;z-index:40}
+.command-bar{position:static}
+.command-bar-shell{position:sticky;top:calc(env(safe-area-inset-top, 0px) + .65rem);z-index:75;display:flex;justify-content:center;padding:0 1rem;margin-bottom:1.25rem}
+.command-bar-shell .command-bar{width:100%}
+.filter-trigger{position:relative;display:inline-flex;align-items:stretch}
+.filter-trigger>.command-btn{width:100%}
+.filter-dropdown{position:absolute;inset-inline-end:0;top:calc(100% + .75rem);display:none;width:min(90vw,24rem);max-height:var(--filter-panel-max-height,26rem);z-index:11000;transform-origin:top right}
+.filter-dropdown.open{display:block;animation:filterPopoverIn 160ms cubic-bezier(.4,-0.2,.2,1.2)}
+.filter-trigger.is-flipped .filter-dropdown,.filter-dropdown.is-flipped{top:auto;bottom:calc(100% + .75rem);transform-origin:bottom right}
+.filter-panel--dropdown{margin:0;width:100%;max-height:var(--filter-panel-max-height,26rem);padding:1.25rem;gap:1rem;border-radius:1rem;box-shadow:0 18px 40px -20px rgba(102,243,255,.4);overflow:hidden}
+.filter-panel--dropdown .filter-panel__controls{display:flex;flex-direction:column;gap:.75rem}
+
+@media (min-width:640px){.command-bar-shell{padding:0 1.5rem}}

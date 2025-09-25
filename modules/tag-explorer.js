@@ -20,6 +20,7 @@ let overlaySelectedEl = null;
 let pinnedSelectedEl = null;
 let limitNoticeEl = null;
 let clearButtonEl = null;
+let filterTriggerEl = null;
 let isInitialized = false;
 let isOpen = false;
 let escapeListener = null;
@@ -132,6 +133,7 @@ function bindOutsideClickListener() {
     const target = event.target;
     if (
       (popoverEl && popoverEl.contains(target)) ||
+      (filterTriggerEl && filterTriggerEl.contains(target)) ||
       (filtersButtonEl && filtersButtonEl.contains(target))
     ) {
       return;
@@ -158,49 +160,59 @@ function unbindOutsideClickListener() {
 }
 
 function positionPopover() {
-  if (!popoverEl || !panelEl || !filtersButtonEl || typeof window === "undefined") {
+  if (
+    !popoverEl ||
+    !panelEl ||
+    !filtersButtonEl ||
+    typeof window === "undefined"
+  ) {
+
     return;
   }
 
   const btnRect = filtersButtonEl.getBoundingClientRect();
   if (!btnRect || !Number.isFinite(btnRect.top)) return;
 
+  const viewportHeight =
+    window.innerHeight || document.documentElement.clientHeight || 0;
   const panelRect = panelEl.getBoundingClientRect();
-  const panelWidth = panelRect.width || panelEl.offsetWidth || 0;
   const panelHeight = panelRect.height || panelEl.offsetHeight || 0;
-  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
-  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+  const gutter = 16;
 
-  let left = btnRect.right - panelWidth;
-  if (!Number.isFinite(left)) left = btnRect.left || 0;
-  const minMargin = 12;
-  if (left < minMargin) {
-    left = Math.max(minMargin, btnRect.left || minMargin);
-  }
-  if (viewportWidth && panelWidth) {
-    const maxLeft = viewportWidth - panelWidth - minMargin;
-    if (Number.isFinite(maxLeft)) {
-      left = Math.min(left, maxLeft);
-    }
-  }
-
-  let top = btnRect.bottom + 8;
+  const spaceBelow = viewportHeight ? viewportHeight - btnRect.bottom - gutter : 0;
+  const spaceAbove = btnRect.top - gutter;
   let flipped = false;
-  if (viewportHeight && panelHeight) {
-    const maxTop = viewportHeight - panelHeight - minMargin;
-    if (Number.isFinite(maxTop) && top > maxTop) {
-      const aboveTop = btnRect.top - panelHeight - 8;
-      if (Number.isFinite(aboveTop) && aboveTop >= minMargin) {
-        top = aboveTop;
-        flipped = true;
-      } else {
-        top = Math.max(minMargin, maxTop);
-      }
+  let availableSpace = spaceBelow;
+
+  if (panelHeight && spaceBelow < panelHeight && spaceAbove > spaceBelow) {
+    flipped = true;
+    availableSpace = spaceAbove;
+  }
+
+  const maxHeight = Math.max(
+    240,
+    Math.min(
+      560,
+      Number.isFinite(availableSpace)
+        ? Math.max(availableSpace - gutter / 2, 240)
+        : 320
+    )
+  );
+
+  if (Number.isFinite(maxHeight) && maxHeight > 0) {
+    try {
+      popoverEl.style.setProperty(
+        "--filter-panel-max-height",
+        `${Math.round(maxHeight)}px`
+      );
+    } catch {
+      // ignore style assignment issues
     }
   }
 
-  popoverEl.style.left = `${Math.round(left)}px`;
-  popoverEl.style.top = `${Math.round(top)}px`;
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.toggle("is-flipped", flipped);
+  }
   popoverEl.classList.toggle("is-flipped", flipped);
 }
 
@@ -554,6 +566,12 @@ function openTagExplorer() {
   isOpen = true;
   popoverEl.classList.add("open");
   popoverEl.setAttribute("aria-hidden", "false");
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.add("is-open");
+  }
+  isOpen = true;
+  popoverEl.classList.add("open");
+  popoverEl.setAttribute("aria-hidden", "false");
   if (searchInputEl) {
     searchInputEl.value = searchValue;
   }
@@ -593,6 +611,12 @@ function closeTagExplorer() {
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
+  popoverEl.classList.remove("is-flipped");
+  if (filterTriggerEl) {
+    filterTriggerEl.classList.remove("is-open");
+    filterTriggerEl.classList.remove("is-flipped");
+  }
+
   unbindEscapeListener();
   unbindOutsideClickListener();
   emitOverlayToggle(false);
@@ -610,13 +634,31 @@ function initTagExplorer() {
   ensurePinnedSelectedContainer();
 
   filtersButtonEl = document.getElementById("filters-btn");
+  if (filtersButtonEl) {
+    filterTriggerEl = filtersButtonEl.closest(".filter-trigger");
+    if (!filterTriggerEl && filtersButtonEl.parentElement) {
+      const wrapper = document.createElement("div");
+      wrapper.className = "filter-trigger";
+      filtersButtonEl.parentElement.insertBefore(wrapper, filtersButtonEl);
+      wrapper.appendChild(filtersButtonEl);
+      filterTriggerEl = wrapper;
+    }
+  }
 
-  popoverEl = document.createElement("div");
-  popoverEl.className = "filter-popover";
-  popoverEl.id = "tag-filter-popover";
+  popoverEl = document.getElementById("tag-filter-popover");
+  if (!popoverEl) {
+    popoverEl = document.createElement("div");
+    popoverEl.id = "tag-filter-popover";
+    if (filterTriggerEl) {
+      filterTriggerEl.appendChild(popoverEl);
+    } else {
+      document.body.appendChild(popoverEl);
+    }
+  }
+  popoverEl.classList.add("filter-dropdown");
   popoverEl.setAttribute("aria-hidden", "true");
   popoverEl.innerHTML = `
-    <div class="filter-panel filter-panel--floating" id="tag-filter-panel" role="region" aria-label="Tag filters">
+    <div class="filter-panel filter-panel--dropdown" id="tag-filter-panel" role="region" aria-label="Tag filters">
       <header class="filter-panel__header filter-panel__header--compact">
         <h2>Filters</h2>
         <div class="filter-panel__header-buttons">
@@ -624,7 +666,7 @@ function initTagExplorer() {
           <button type="button" class="filter-panel__close" aria-label="Close filters">×</button>
         </div>
       </header>
-      <div class="filter-panel__controls filter-panel__controls--floating">
+      <div class="filter-panel__controls filter-panel__controls--dropdown">
         <label class="visually-hidden" for="tag-filter-search">Search tags</label>
         <input id="tag-filter-search" class="filter-panel__search" type="search" placeholder="Search tags" autocomplete="off" />
         <label class="visually-hidden" for="tag-filter-name">Filter artists by name</label>
@@ -635,8 +677,6 @@ function initTagExplorer() {
       <div class="filter-panel__groups"></div>
     </div>
   `;
-
-  document.body.appendChild(popoverEl);
 
   panelEl = popoverEl.querySelector("#tag-filter-panel");
   searchInputEl = popoverEl.querySelector("#tag-filter-search");

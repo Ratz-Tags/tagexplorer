@@ -27,22 +27,29 @@
           </p>
         </div>
       </div>
-      <div class="surface-divider"></div>
+    </header>
+
+    <div class="surface-divider"></div>
+
+    <div class="command-bar-shell" role="presentation">
       <nav id="tag-explorer-bar" class="command-bar" role="toolbar" aria-label="Pinned humiliation controls">
         <div class="command-group" role="group" aria-label="Primary gallery controls">
           <button class="control-btn command-btn sidebar-toggle" type="button">PINNED</button>
           <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
           <button class="control-btn command-btn theme-toggle" type="button">GLOW</button>
           <button id="prompts-btn" class="control-btn command-btn" type="button">PROMPT</button>
-          <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
+          <div class="filter-trigger">
+            <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
+            <div id="tag-filter-popover" class="filter-dropdown" aria-hidden="true"></div>
+          </div>
         </div>
         <div class="command-status">
           <span class="hidden fold-cover:inline">COVER MODE</span>
           <span class="hidden fold-inner:inline">INNER MODE</span>
           <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
         </div>
-      </div>
-    </header>
+      </nav>
+    </div>
 
     <main class="relative z-10 flex-1">
       <div class="gallery-shell">
