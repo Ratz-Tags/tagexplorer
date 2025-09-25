@@ -66,7 +66,7 @@ box-shadow: 0 22px 55px -28px rgba(255, 118, 214, 0.55);
 opacity: 1;
 }
 .top-band {
-@apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 pb-8 pt-12;
+@apply mx-auto flex w-full flex-col gap-6 px-6 pb-8 pt-12;
 overflow: hidden;
 transition:
   transform 0.4s cubic-bezier(.4,-0.2,.2,1.2),
@@ -88,12 +88,13 @@ pointer-events: none;
   background: transparent;
 }
 .command-bar {
-@apply mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink sm:flex-row sm:flex-wrap;
+@apply mx-auto flex w-full flex-col items-center justify-center gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink sm:flex-row sm:flex-wrap;
 backdrop-filter: blur(18px);
 position: relative;
 z-index: 101;
 /* Ensure the command bar stays visible when parent collapses */
 flex-shrink: 0;
+max-width: 1400px;
 }
 .top-surface.is-sticky .command-bar {
 @apply border-white/20 bg-black/60;
@@ -151,7 +152,8 @@ z-index: 76;
 @apply w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-slate-100 placeholder:text-slate-500 focus:border-glow focus:outline-none focus:ring-2 focus:ring-glow/40;
 }
 .gallery-shell {
-@apply mx-auto flex w-full max-w-7xl flex-col gap-9 px-6 pb-20 pt-8 transition-all duration-500 ease-kink;
+@apply mx-auto flex w-full flex-col gap-9 px-6 pb-20 pt-8 transition-all duration-500 ease-kink;
+max-width: 1600px;
 }
 .top-surface.is-sticky + main .gallery-shell {
 @apply gap-8 pt-2;
