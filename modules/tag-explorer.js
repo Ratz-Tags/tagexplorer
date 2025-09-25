@@ -166,6 +166,7 @@ function positionPopover() {
     !filtersButtonEl ||
     typeof window === "undefined"
   ) {
+
     return;
   }
 
@@ -568,6 +569,9 @@ function openTagExplorer() {
   if (filterTriggerEl) {
     filterTriggerEl.classList.add("is-open");
   }
+  isOpen = true;
+  popoverEl.classList.add("open");
+  popoverEl.setAttribute("aria-hidden", "false");
   if (searchInputEl) {
     searchInputEl.value = searchValue;
   }
@@ -612,6 +616,7 @@ function closeTagExplorer() {
     filterTriggerEl.classList.remove("is-open");
     filterTriggerEl.classList.remove("is-flipped");
   }
+
   unbindEscapeListener();
   unbindOutsideClickListener();
   emitOverlayToggle(false);
