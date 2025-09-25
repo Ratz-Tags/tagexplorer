@@ -146,11 +146,11 @@ function setupStickyTopBar() {
   const update = () => {
     const scrollY = window.scrollY;
     
-    // Use larger hysteresis gap to prevent flickering completely
-    // Much wider gap between enter/exit thresholds
+    // Use smaller thresholds for more responsive header collapse
+    // Smaller gap for quicker response while still preventing flicker
     const shouldStick = isCurrentlySticky 
-      ? scrollY > 60   // Stay sticky until scroll drops below 60px
-      : scrollY > 200; // Don't become sticky until 200px (well past header height)
+      ? scrollY > 30   // Stay sticky until scroll drops below 30px
+      : scrollY > 80;  // Don't become sticky until 80px
     
     if (shouldStick !== isCurrentlySticky) {
       // Clear any pending debounced change

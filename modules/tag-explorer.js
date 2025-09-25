@@ -507,7 +507,6 @@ function renderCategories() {
     };
 
     header.addEventListener("click", (e) => {
-      console.log("Category header clicked:", category, "Current open state:", section.classList.contains("open"));
       e.preventDefault();
       e.stopPropagation();
       setExpandedState(!section.classList.contains("open"));

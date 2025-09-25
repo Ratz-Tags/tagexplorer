@@ -462,6 +462,9 @@ display: none;
   @apply flex-1 overflow-y-auto p-4;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 118, 214, 0.5) transparent;
+  /* Ensure proper height calculation for scrolling */
+  min-height: 0;
+  max-height: calc(100vh - 200px); /* Account for header and search areas */
 }
 
 .tag-category-item {
