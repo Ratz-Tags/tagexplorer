@@ -67,19 +67,17 @@ opacity: 1;
 }
 .top-band {
 @apply mx-auto flex w-full max-w-7xl flex-col gap-6 px-6 pb-8 pt-12;
-max-height: 480px;
 overflow: hidden;
 transition:
-  padding 0.5s cubic-bezier(.4,-0.2,.2,1.2),
-  max-height 0.5s cubic-bezier(.4,-0.2,.2,1.2),
-  opacity 0.5s cubic-bezier(.4,-0.2,.2,1.2);
+  transform 0.4s cubic-bezier(.4,-0.2,.2,1.2),
+  opacity 0.4s cubic-bezier(.4,-0.2,.2,1.2);
+transform: translateY(0);
+opacity: 1;
 }
 .top-surface.is-sticky .top-band {
-padding-bottom: 0;
-padding-top: 0;
-max-height: 0;
+transform: translateY(-100%);
 opacity: 0;
-margin-bottom: 0;
+pointer-events: none;
 }
 .command-bar-shell {
   position: sticky;

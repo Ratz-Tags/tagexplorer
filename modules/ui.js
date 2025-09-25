@@ -140,9 +140,33 @@ function setupStickyTopBar() {
   if (!header) return;
 
   let ticking = false;
+  let isCurrentlySticky = false;
+  let debounceTimer = null;
+  
   const update = () => {
-    const shouldStick = window.scrollY > 32;
-    header.classList.toggle("is-sticky", shouldStick);
+    const scrollY = window.scrollY;
+    
+    // Use larger hysteresis gap to prevent flickering completely
+    // Much wider gap between enter/exit thresholds
+    const shouldStick = isCurrentlySticky 
+      ? scrollY > 60   // Stay sticky until scroll drops below 60px
+      : scrollY > 200; // Don't become sticky until 200px (well past header height)
+    
+    if (shouldStick !== isCurrentlySticky) {
+      // Clear any pending debounced change
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+        debounceTimer = null;
+      }
+      
+      // Debounce the state change to prevent rapid toggling
+      debounceTimer = setTimeout(() => {
+        isCurrentlySticky = shouldStick;
+        header.classList.toggle("is-sticky", shouldStick);
+        debounceTimer = null;
+      }, 50); // 50ms debounce
+    }
+    
     ticking = false;
   };
 
@@ -157,6 +181,9 @@ function setupStickyTopBar() {
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("beforeunload", () => {
     window.removeEventListener("scroll", onScroll);
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+    }
   });
 }
 
