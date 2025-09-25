@@ -14,10 +14,17 @@ color-scheme: dark;
 }
 
 /* Specific containment for main containers */
-#root, .relative.z-10.flex.min-h-screen.flex-col {
+#root {
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+}
+
+/* Main container - allow sticky positioning by avoiding overflow-x: hidden */
+.relative.z-10.flex.min-h-screen.flex-col {
+  width: 100%;
+  max-width: 100vw;
+  /* Don't set overflow-x: hidden here as it breaks sticky positioning */
 }
 html {
 @apply bg-night text-slate-100 min-h-screen;
@@ -134,13 +141,7 @@ transition: opacity 0.5s cubic-bezier(.4,-0.2,.2,1.2), height 0.5s cubic-bezier(
 @apply h-0;
 opacity: 0;
 }
-.top-surface.is-sticky #tag-explorer-bar {
-@apply mt-0;
-/* Ensure command bar stays at the top when parent header is sticky */
-position: sticky;
-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
-z-index: 76;
-}
+/* Remove conflicting sticky positioning - let command-bar-shell handle its own stickiness */
 .brand-chip {
 @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-300;
 }
