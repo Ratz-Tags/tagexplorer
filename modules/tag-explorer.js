@@ -490,10 +490,6 @@ function renderCategories() {
         </svg>
       </div>
     `;
-    
-    header.addEventListener("click", () => {
-      section.classList.toggle("open");
-    });
 
     const tagList = document.createElement("div");
     tagList.className = "tag-category-tags";
@@ -510,7 +506,10 @@ function renderCategories() {
       }
     };
 
-    header.addEventListener("click", () => {
+    header.addEventListener("click", (e) => {
+      console.log("Category header clicked:", category, "Current open state:", section.classList.contains("open"));
+      e.preventDefault();
+      e.stopPropagation();
       setExpandedState(!section.classList.contains("open"));
     });
     section.appendChild(header);
