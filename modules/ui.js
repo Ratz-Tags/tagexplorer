@@ -136,55 +136,9 @@ function setupBackToTop() {
 }
 
 function setupStickyTopBar() {
-  const header = document.querySelector(".top-surface");
-  if (!header) return;
-
-  let ticking = false;
-  let isCurrentlySticky = false;
-  let debounceTimer = null;
-  
-  const update = () => {
-    const scrollY = window.scrollY;
-    
-    // Use smaller thresholds for more responsive header collapse
-    // Smaller gap for quicker response while still preventing flicker
-    const shouldStick = isCurrentlySticky 
-      ? scrollY > 30   // Stay sticky until scroll drops below 30px
-      : scrollY > 80;  // Don't become sticky until 80px
-    
-    if (shouldStick !== isCurrentlySticky) {
-      // Clear any pending debounced change
-      if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
-      }
-      
-      // Debounce the state change to prevent rapid toggling
-      debounceTimer = setTimeout(() => {
-        isCurrentlySticky = shouldStick;
-        header.classList.toggle("is-sticky", shouldStick);
-        debounceTimer = null;
-      }, 50); // 50ms debounce
-    }
-    
-    ticking = false;
-  };
-
-  const onScroll = () => {
-    if (!ticking) {
-      window.requestAnimationFrame(update);
-      ticking = true;
-    }
-  };
-
-  update();
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("beforeunload", () => {
-    window.removeEventListener("scroll", onScroll);
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-  });
+  // Header is no longer sticky - this function is disabled
+  // The header will scroll naturally with the page content
+  return;
 }
 
 /**
