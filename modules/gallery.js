@@ -327,22 +327,19 @@ function lazyLoadBestImage(artist, img) {
     return;
   }
 
-  const observer = new IntersectionObserver(
-    (entries, obs) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        obs.unobserve(entry.target);
-        if (entry.target && entry.target._lazyObserver === obs) {
-          entry.target._lazyObserver = null;
-        }
-        setBestImage(artist, img);
-      });
-    },
-    { rootMargin: "120px 0px" }
-  );
-
+  const observer = initImageObserver();
   observer.observe(img);
   img._lazyObserver = observer;
+}
+
+// Function called by the intersection observer
+function loadArtistImage(img) {
+  if (!img || img._loadingImage) return;
+  
+  const artistData = img.__artistData;
+  if (!artistData) return;
+  
+  setBestImage(artistData, img);
 }
 
 function primeVisibleArtistImages(buffer = 180) {
@@ -686,6 +683,32 @@ function renderArtistsPage(options = {}) {
   pruneGalleryPages(getCurrentPage());
 }
 
+// Intersection observer for lazy loading images
+let imageObserver = null;
+
+function initImageObserver() {
+  if (imageObserver) return imageObserver;
+  
+  imageObserver = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          loadArtistImage(img);
+          imageObserver.unobserve(img);
+        }
+      });
+    },
+    {
+      root: null,
+      rootMargin: '100px', // Start loading 100px before the image is visible
+      threshold: 0.01
+    }
+  );
+  
+  return imageObserver;
+}
+
 // Helper to render a list of artists using the normal card structure
 function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (!artistGallery) return;
@@ -693,9 +716,11 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     removePageFromDom(pageNumber);
   }
   const frag = document.createDocumentFragment();
-  let eagerBudget = pageNumber === 1 ? 12 : 0;
+  let eagerBudget = pageNumber === 1 ? 6 : 0; // Reduced from 12 to 6 for less initial load
   const selectedTags =
     selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
+  const observer = initImageObserver();
+  
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card group";
@@ -707,9 +732,12 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     img.loading = "lazy";
     img.alt = `${artist.artistName.replace(/_/g, " ")} preview`;
     img.__artistData = artist;
+    img.style.backgroundColor = "#1a1825"; // Placeholder color
+    
     const cacheKey = `danbooru-image-${artist.artistName}`;
     const cachedUrl = localStorage.getItem(cacheKey);
     if (cachedUrl) {
+      // If we have a cached URL, use it immediately
       img.src = cachedUrl;
       img.style.display = "block";
       img.onerror = () => {
@@ -717,6 +745,7 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
         img.style.display = "block";
       };
     } else {
+      // Use intersection observer for lazy loading
       if (eagerBudget > 0) {
         eagerBudget -= 1;
         setBestImage(artist, img);

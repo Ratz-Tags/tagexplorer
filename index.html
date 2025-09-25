@@ -38,10 +38,7 @@
           <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
           <button class="control-btn command-btn theme-toggle" type="button">GLOW</button>
           <button id="prompts-btn" class="control-btn command-btn" type="button">PROMPT</button>
-          <div class="filter-trigger">
-            <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
-            <div id="tag-filter-popover" class="tag-explorer-sidebar" aria-hidden="true"></div>
-          </div>
+          <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
         </div>
         <div class="command-status">
           <span class="hidden fold-cover:inline">COVER MODE</span>
@@ -69,6 +66,9 @@
       </div>
     </main>
   </div>
+
+  <!-- Tag Explorer Sidebar - Moved outside main content for proper positioning -->
+  <div id="tag-filter-popover" class="tag-explorer-sidebar" aria-hidden="true"></div>
 
   <aside class="sidebar-wrapper" aria-label="Copied artists">
     <div id="copied-sidebar" class="sidebar-panel sidebar-hidden" role="complementary" aria-label="Pinned artists">

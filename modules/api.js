@@ -1,11 +1,197 @@
 /**
- * API module - Handles Danbooru API interactions and caching
+ * API module - Handles Danbooru API interactions and caching with rate limiting
  */
 
 // Use the global fetch implementation (available in modern browsers and Node 18+)
 const fetchFn = fetch;
 
 import { fetchWithCache } from "./fetch-cache.js";
+
+// Rate limiting configuration
+const RATE_LIMIT_CONFIG = {
+  minDelay: 1000, // Minimum 1 second between requests
+  maxDelay: 10000, // Maximum 10 seconds delay for backoff
+  maxRetries: 3,
+  backoffMultiplier: 2,
+};
+
+// Request queue and tracking
+let requestQueue = [];
+let isProcessingQueue = false;
+let lastRequestTime = 0;
+let currentDelay = RATE_LIMIT_CONFIG.minDelay;
+
+// Request deduplication
+const pendingRequests = new Map(); // url -> Promise
+const requestBatches = new Map(); // batch key -> array of requests
+
+/**
+ * Rate-limited fetch wrapper with exponential backoff and deduplication
+ */
+async function rateLimitedFetch(url, options = {}) {
+  // Check if this request is already pending
+  const requestKey = `${url}:${JSON.stringify(options)}`;
+  if (pendingRequests.has(requestKey)) {
+    return pendingRequests.get(requestKey);
+  }
+  
+  const promise = new Promise((resolve, reject) => {
+    requestQueue.push({ url, options, resolve, reject, retries: 0 });
+    processQueue();
+  });
+  
+  // Store the promise for deduplication
+  pendingRequests.set(requestKey, promise);
+  
+  // Clean up after completion
+  promise.finally(() => {
+    pendingRequests.delete(requestKey);
+  });
+  
+  return promise;
+}
+
+/**
+ * Process the request queue with rate limiting
+ */
+async function processQueue() {
+  if (isProcessingQueue || requestQueue.length === 0) return;
+  
+  isProcessingQueue = true;
+  
+  while (requestQueue.length > 0) {
+    const request = requestQueue.shift();
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+    
+    // Wait if we need to respect rate limits
+    if (timeSinceLastRequest < currentDelay) {
+      await new Promise(resolve => setTimeout(resolve, currentDelay - timeSinceLastRequest));
+    }
+    
+    try {
+      lastRequestTime = Date.now();
+      const response = await fetchFn(request.url, request.options);
+      
+      if (response.status === 429) {
+        // Rate limited - implement exponential backoff
+        request.retries++;
+        if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
+          currentDelay = Math.min(
+            currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier,
+            RATE_LIMIT_CONFIG.maxDelay
+          );
+          console.warn(`Rate limited, backing off to ${currentDelay}ms delay (retry ${request.retries}/${RATE_LIMIT_CONFIG.maxRetries})`);
+          
+          // Show user feedback on first rate limit hit
+          if (request.retries === 1) {
+            showRateLimitWarning();
+          }
+          
+          requestQueue.unshift(request); // Put back at front
+          continue;
+        } else {
+          console.error('Danbooru rate limit exceeded, max retries reached');
+          showRateLimitError();
+          request.reject(new Error('Rate limit exceeded, max retries reached'));
+          continue;
+        }
+      } else if (response.ok) {
+        // Success - reduce delay gradually
+        currentDelay = Math.max(
+          Math.floor(currentDelay * 0.9),
+          RATE_LIMIT_CONFIG.minDelay
+        );
+        hideRateLimitWarning();
+      } else {
+        // Other HTTP errors
+        console.warn(`API request failed with status ${response.status}: ${request.url}`);
+      }
+      
+      request.resolve(response);
+      
+    } catch (error) {
+      request.reject(error);
+    }
+  }
+  
+  isProcessingQueue = false;
+}
+
+/**
+ * User feedback for rate limiting
+ */
+let rateLimitWarningEl = null;
+
+function showRateLimitWarning() {
+  if (typeof document === 'undefined') return;
+  
+  hideRateLimitWarning(); // Remove any existing warning
+  
+  rateLimitWarningEl = document.createElement('div');
+  rateLimitWarningEl.className = 'rate-limit-warning';
+  rateLimitWarningEl.innerHTML = `
+    <div style="
+      position: fixed; 
+      top: 80px; 
+      right: 20px; 
+      background: rgba(255, 130, 87, 0.9); 
+      color: white; 
+      padding: 12px 20px; 
+      border-radius: 12px; 
+      font-size: 0.8rem; 
+      z-index: 10000;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 130, 87, 0.3);
+      max-width: 300px;
+    ">
+      ⚠️ API rate limited - slowing down requests...
+    </div>
+  `;
+  
+  document.body.appendChild(rateLimitWarningEl);
+}
+
+function showRateLimitError() {
+  if (typeof document === 'undefined') return;
+  
+  hideRateLimitWarning();
+  
+  rateLimitWarningEl = document.createElement('div');
+  rateLimitWarningEl.className = 'rate-limit-error';
+  rateLimitWarningEl.innerHTML = `
+    <div style="
+      position: fixed; 
+      top: 80px; 
+      right: 20px; 
+      background: rgba(239, 68, 68, 0.9); 
+      color: white; 
+      padding: 12px 20px; 
+      border-radius: 12px; 
+      font-size: 0.8rem; 
+      z-index: 10000;
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      max-width: 300px;
+    ">
+      ❌ API rate limit exceeded - some images may not load
+    </div>
+  `;
+  
+  document.body.appendChild(rateLimitWarningEl);
+  
+  // Auto-hide error after 5 seconds
+  setTimeout(() => {
+    hideRateLimitWarning();
+  }, 5000);
+}
+
+function hideRateLimitWarning() {
+  if (rateLimitWarningEl && rateLimitWarningEl.parentNode) {
+    rateLimitWarningEl.parentNode.removeChild(rateLimitWarningEl);
+    rateLimitWarningEl = null;
+  }
+}
 
 /**
  * Checks if a post has all the specified tags
@@ -58,7 +244,7 @@ async function fetchPosts(tags, options = {}) {
   )}+order:${order}&limit=${limit}&page=${page}`;
 
   try {
-    const response = await fetchFn(url);
+    const response = await rateLimitedFetch(url);
     const data = await response.json();
 
     // Cache the result if enabled
@@ -136,6 +322,20 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
   const apiCacheKey = `danbooru-api-${artistName}-${effectiveTags.join(",")}-${cacheSignature}`;
   const useCache = options.useCache !== false;
+  
+  // Check cache first
+  if (useCache) {
+    const cached = sessionStorage.getItem(apiCacheKey);
+    if (cached) {
+      try {
+        const data = JSON.parse(cached);
+        return filterValidImagePosts(data, effectiveTags);
+      } catch {
+        // Invalid cache, continue to fetch
+      }
+    }
+  }
+  
   // Include artist name with up to two selected tags for the API search
   const queryTags = [artistName, ...effectiveTags];
   const posts = await fetchPosts(queryTags, {
@@ -146,6 +346,43 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     order,
   });
   return filterValidImagePosts(posts, effectiveTags);
+}
+
+/**
+ * Batch fetch multiple artist images with staggered requests
+ */
+async function fetchArtistImagesBatch(requests, options = {}) {
+  const { batchDelay = 500, maxConcurrent = 3 } = options;
+  const results = new Map();
+  
+  // Process requests in smaller concurrent batches
+  for (let i = 0; i < requests.length; i += maxConcurrent) {
+    const batch = requests.slice(i, i + maxConcurrent);
+    
+    const batchPromises = batch.map(async (request) => {
+      try {
+        const result = await fetchArtistImages(
+          request.artistName,
+          request.selectedTags,
+          request.options
+        );
+        results.set(request.key || request.artistName, result);
+      } catch (error) {
+        console.warn(`Failed to fetch images for ${request.artistName}:`, error);
+        results.set(request.key || request.artistName, []);
+      }
+    });
+    
+    // Wait for this batch to complete
+    await Promise.all(batchPromises);
+    
+    // Add delay between batches (except for the last one)
+    if (i + maxConcurrent < requests.length) {
+      await new Promise(resolve => setTimeout(resolve, batchDelay));
+    }
+  }
+  
+  return results;
 }
 /**
  * Gets artist image count with caching
@@ -188,7 +425,7 @@ export async function getArtistImageCount(artistName, options = {}) {
     return artist.postCount;
   }
   try {
-    const resp = await fetchFn(
+    const resp = await rateLimitedFetch(
       `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
       )}`
@@ -285,7 +522,7 @@ async function fetchAllArtistImages(
  */
 export async function fetchPostCountForTags(tags) {
   const url = `https://danbooru.donmai.us/counts/posts?tags=${tags.join("+")}`;
-  const response = await fetchFn(url);
+  const response = await rateLimitedFetch(url);
   if (!response.ok) return 0;
   const html = await response.text();
   // Extract the post count from the HTML using a regex
@@ -304,6 +541,7 @@ export {
   filterValidImagePosts,
   getRandomBackgroundImage,
   fetchArtistImages,
+  fetchArtistImagesBatch,
   fetchAllArtistImages,
   clearArtistCache,
   loadAppData,
