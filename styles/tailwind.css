@@ -391,9 +391,30 @@ padding: clamp(1rem, 4vw, 2.5rem) clamp(0.75rem, 3vw, 2rem);
 overflow-y: auto;
 }
 .filter-panel {
-@apply relative m-auto flex w-full max-w-5xl flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/90 p-8 shadow-neon;
+@apply relative m-auto flex w-full max-w-6xl flex-col gap-6 rounded-[2rem] border border-white/10 bg-panel/90 p-8 shadow-neon;
+min-width: min(90vw, 800px);
+min-height: min(80vh, 600px);
 max-height: min(92vh, 960px);
 overflow: hidden;
+}
+
+/* Fold-specific sizing */
+@screen fold-cover {
+.filter-panel {
+  @apply max-w-full p-4 gap-4 rounded-2xl;
+  min-width: 95vw;
+  min-height: 85vh;
+  max-height: 90vh;
+}
+}
+
+@screen fold-inner {
+.filter-panel {
+  @apply max-w-7xl p-10 gap-8;
+  min-width: min(85vw, 1000px);
+  min-height: min(75vh, 700px);
+  max-height: min(90vh, 1200px);
+}
 }
 .filter-panel__controls,
 .filter-panel__selected {

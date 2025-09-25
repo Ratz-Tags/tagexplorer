@@ -642,6 +642,16 @@ function initTagExplorer() {
       wrapper.appendChild(filtersButtonEl);
       filterTriggerEl = wrapper;
     }
+    
+    // Bind filter button click event
+    filtersButtonEl.addEventListener("click", (event) => {
+      event.preventDefault();
+      if (isOpen) {
+        closeTagExplorer();
+      } else {
+        openTagExplorer();
+      }
+    });
   }
 
   popoverEl = document.getElementById("tag-filter-popover");
