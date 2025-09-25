@@ -91,67 +91,67 @@ const categoryRules = [
   },
   {
     category: "Anal & Object Play",
-    tags: [
+    keywords: [
       "anal_fingering", "anal_fisting", "anal_object_insertion", "object_insertion", "object_insertion_from_behind", "large_insertion", "sounding", "urethral_insertion", "dildo_riding", "huge_dildo", "strap-on", "pegging", "sex_toy", "sex_machine", "milking_machine", "penis_milking", "prostate_milking", "hand_milking", "handsfree_ejaculation"
     ]
   },
   {
     category: "Domination, Power & Sadism",
-    tags: [
+    keywords: [
       "femdom", "dominatrix", "sadism", "assertive_female", "pet_play", "cbt", "punishment", "boot_worship", "trample"
     ]
   },
   {
     category: "Feet & Legs",
-    tags: [
+    keywords: [
       "foot_worship", "toe_sucking", "sockjob"
     ]
   },
   {
     category: "Tentacles & Monsters",
-    tags: [
+    keywords: [
       "tentacle_sex", "tentacle_pit", "knotting"
     ]
   },
   {
     category: "Cum, Fluids & Orifices",
-    tags: [
+    keywords: [
       "cum", "cum_in_ass", "cum_in_mouth", "precum", "swallowing", "gokkun", "drinking_from_condom", "pouring_from_condom", "used_condom", "pussy_juice", "lactation"
     ]
   },
   {
     category: "Mind, Hypnosis & Control",
-    tags: [
+    keywords: [
       "hypnosis", "mind_break", "mind_control"
     ]
   },
   {
     category: "Public, Cheating & Social",
-    tags: [
+    keywords: [
       "before_and_after", "annoyed", "cheating_(relationship)", "clothed_female_nude_male", "public_nudity"
     ]
   },
   {
     category: "Body & Skin",
-    tags: [
+    keywords: [
       "dark_skin", "nipple_piercing", "pubic_hair", "lactation", "stomach_bulge"
     ]
   },
   {
     category: "Oral & Face",
-    tags: [
+    keywords: [
       "fellatio", "oral", "sitting_on_face"
     ]
   },
   {
     category: "Orgasm & Denial",
-    tags: [
+    keywords: [
       "orgasm_denial", "forced_orgasm", "ruined_orgasm", "premature_ejaculation"
     ]
   },
   {
     category: "Nonconsensual & Extreme",
-    tags: [
+    keywords: [
       "rape", "netorare", "netorase"
     ]
   },
@@ -173,7 +173,7 @@ function categorizeTags(flatTagArray) {
     // Try to match tag to a category
     for (let i = 0; i < categoryRules.length; i++) {
       const rule = categoryRules[i];
-      if (rule.keywords.some(keyword => tag.includes(keyword))) {
+      if (rule.keywords && rule.keywords.some(keyword => tag.includes(keyword))) {
         categorized[i].tags.push(tag);
         matched = true;
         break;
