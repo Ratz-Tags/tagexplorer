@@ -81,12 +81,19 @@ max-height: 0;
 opacity: 0;
 margin-bottom: 0;
 }
+.command-bar-shell {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: transparent;
+}
 .command-bar {
 @apply mx-auto flex w-full max-w-6xl flex-col items-center justify-center gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink sm:flex-row sm:flex-wrap;
 backdrop-filter: blur(18px);
-position: sticky;
-top: calc(env(safe-area-inset-top, 0px) + 0.5rem);
-z-index: 75;
+position: relative;
+z-index: 101;
 /* Ensure the command bar stays visible when parent collapses */
 flex-shrink: 0;
 }
