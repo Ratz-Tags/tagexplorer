@@ -4,7 +4,6 @@ import {
   clearArtistCache,
   buildImageUrl,
   fetchAllArtistImages,
-  getQueueInfo,
   getArtistImageCount,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
@@ -271,7 +270,8 @@ function setBestImage(artist, img) {
 
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
-  const apiCacheKey = `danbooru-api-${artistData.artistName}-${selectedTags.join(",")}`;
+  // API cache key no longer includes selectedTags since API only uses artistName + order:approvals
+  const apiCacheKey = `danbooru-api-${artistData.artistName}`;
 
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
@@ -1226,71 +1226,7 @@ function initGallery() {
   }
 }
 
-// Debug HUD: shows API queue length and current delay (helpful for rate-limit tuning)
-function attachDebugHud() {
-  if (typeof document === 'undefined') return;
-  let hud = document.getElementById('api-debug-hud');
-  if (hud) return hud;
-  hud = document.createElement('div');
-  hud.id = 'api-debug-hud';
-  hud.style.position = 'fixed';
-  hud.style.right = '12px';
-  hud.style.bottom = '12px';
-  hud.style.zIndex = '14000';
-  hud.style.padding = '8px 10px';
-  hud.style.borderRadius = '8px';
-  hud.style.background = 'rgba(0,0,0,0.6)';
-  hud.style.backdropFilter = 'blur(6px)';
-  hud.style.color = 'white';
-  hud.style.fontSize = '12px';
-  hud.style.fontFamily = 'Inter, system-ui, sans-serif';
-  hud.style.boxShadow = '0 6px 18px rgba(0,0,0,0.5)';
-  hud.innerHTML = `<div style="min-width:150px">API queue: <span id="api-queue-len">-</span><br>delay: <span id="api-delay">-</span>ms</div>`;
-  document.body.appendChild(hud);
 
-  const lenEl = hud.querySelector('#api-queue-len');
-  const delayEl = hud.querySelector('#api-delay');
-
-  // Update from dispatched events
-  window.addEventListener('api:queue:update', (e) => {
-    try {
-      const d = e.detail || {};
-      if (typeof d.length !== 'undefined') lenEl.textContent = String(d.length);
-      if (typeof d.currentDelay !== 'undefined') delayEl.textContent = String(d.currentDelay);
-    } catch (err) {}
-  });
-
-  // Poll getQueueInfo every second as a fallback
-  const poll = setInterval(() => {
-    try {
-      const q = getQueueInfo();
-      if (q && typeof q.length !== 'undefined') lenEl.textContent = String(q.length);
-      if (q && typeof q.currentDelay !== 'undefined') delayEl.textContent = String(q.currentDelay);
-    } catch (err) {
-      // ignore
-    }
-  }, 1000);
-
-  // minimize HUD on click
-  hud.addEventListener('click', () => {
-    if (hud.style.opacity === '0.4') {
-      hud.style.opacity = '1';
-      hud.style.transform = '';
-    } else {
-      hud.style.opacity = '0.4';
-      hud.style.transform = 'scale(0.98)';
-    }
-  });
-
-  return hud;
-}
-
-// attach HUD when gallery initializes
-const _origInitGallery = initGallery;
-initGallery = function() {
-  _origInitGallery();
-  try { attachDebugHud(); } catch(e) { /* ignore in non-browser env */ }
-};
 
 // Export setBestImage for smoke testing in-browser
 export { setBestImage as _test_setBestImage };

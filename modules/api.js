@@ -38,13 +38,6 @@ async function rateLimitedFetch(url, options = {}) {
   
   const promise = new Promise((resolve, reject) => {
     requestQueue.push({ url, options, resolve, reject, retries: 0 });
-    // notify listeners and start processing
-    try {
-      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
-        const detail = { length: requestQueue.length, currentDelay };
-        try { window.dispatchEvent(new CustomEvent('api:queue:update', { detail })); } catch(e) { /* ignore */ }
-      }
-    } catch (e) {}
     console.debug && console.debug('[api] enqueued', url, 'queueLen=', requestQueue.length);
     processQueue();
   });
@@ -101,7 +94,6 @@ async function processQueue() {
           }
           
           requestQueue.unshift(request); // Put back at front
-          try { if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') { window.dispatchEvent(new CustomEvent('api:queue:update', { detail: { length: requestQueue.length, currentDelay } })); } } catch(e){}
           continue;
         } else {
           console.error('Danbooru rate limit exceeded, max retries reached');
@@ -118,8 +110,6 @@ async function processQueue() {
         // Other HTTP errors
         console.warn(`API request failed with status ${response.status}: ${request.url}`);
       }
-      // notify listeners that queue length changed
-      try { if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') { window.dispatchEvent(new CustomEvent('api:queue:update', { detail: { length: requestQueue.length, currentDelay } })); } } catch(e){}
       request.resolve(response);
       
     } catch (error) {
@@ -128,16 +118,6 @@ async function processQueue() {
   }
   
   isProcessingQueue = false;
-}
-
-// Expose a simple queue info function for debugging
-function getQueueInfo() {
-  return {
-    length: requestQueue.length,
-    isProcessing: isProcessingQueue,
-    currentDelay,
-    lastRequestTime,
-  };
 }
 
 /**
@@ -334,13 +314,13 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  // Only two tags may be queried; slice for safety
-  const effectiveTags = selectedTags.slice(0, 2);
+  // API only supports 2 tags max - use artistName + order:approvals only
+  // selectedTags are for client-side filtering only
   const page = Math.max(1, options.page || 1);
   const limit = options.limit || 200;
   const order = options.order || "approvals";
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
-  const apiCacheKey = `danbooru-api-${artistName}-${effectiveTags.join(",")}-${cacheSignature}`;
+  const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
   
   // Check cache first
@@ -349,15 +329,15 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     if (cached) {
       try {
         const data = JSON.parse(cached);
-        return filterValidImagePosts(data, effectiveTags);
+        return filterValidImagePosts(data, selectedTags);
       } catch {
         // Invalid cache, continue to fetch
       }
     }
   }
   
-  // Include artist name with up to two selected tags for the API search
-  const queryTags = [artistName, ...effectiveTags];
+  // API call: only artistName + order:approvals (max 2 tags)
+  const queryTags = [artistName, `order:${order}`];
   const posts = await fetchPosts(queryTags, {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
@@ -365,7 +345,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     page,
     order,
   });
-  return filterValidImagePosts(posts, effectiveTags);
+  return filterValidImagePosts(posts, selectedTags);
 }
 
 /**
@@ -566,9 +546,6 @@ export {
   clearArtistCache,
   loadAppData,
 };
-
-// Debug helper
-export { getQueueInfo };
 
 // All functions in this file are defined and used as follows:
 
