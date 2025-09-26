@@ -9,10 +9,11 @@ import { fetchWithCache } from "./fetch-cache.js";
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  minDelay: 1000, // Minimum 1 second between requests
-  maxDelay: 10000, // Maximum 10 seconds delay for backoff
-  maxRetries: 3,
-  backoffMultiplier: 2,
+  // Tuned defaults: slightly more aggressive but include jitter to reduce thundering herd
+  minDelay: 600, // Minimum 600ms between requests (helps throughput)
+  maxDelay: 8000, // Maximum 8s delay for backoff
+  maxRetries: 4, // allow an extra retry before failing
+  backoffMultiplier: 1.8, // gentler backoff multiplier
 };
 
 // Request queue and tracking
@@ -37,6 +38,14 @@ async function rateLimitedFetch(url, options = {}) {
   
   const promise = new Promise((resolve, reject) => {
     requestQueue.push({ url, options, resolve, reject, retries: 0 });
+    // notify listeners and start processing
+    try {
+      if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+        const detail = { length: requestQueue.length, currentDelay };
+        try { window.dispatchEvent(new CustomEvent('api:queue:update', { detail })); } catch(e) { /* ignore */ }
+      }
+    } catch (e) {}
+    console.debug && console.debug('[api] enqueued', url, 'queueLen=', requestQueue.length);
     processQueue();
   });
   
@@ -77,10 +86,13 @@ async function processQueue() {
         // Rate limited - implement exponential backoff
         request.retries++;
         if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
-          currentDelay = Math.min(
-            currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier,
+          // Increase delay with multiplier, clamp to maxDelay, and add small random jitter
+          const next = Math.min(
+            Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
             RATE_LIMIT_CONFIG.maxDelay
           );
+          const jitter = Math.floor(Math.random() * Math.max(100, Math.floor(next * 0.12))); // up to ~12% jitter
+          currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
           console.warn(`Rate limited, backing off to ${currentDelay}ms delay (retry ${request.retries}/${RATE_LIMIT_CONFIG.maxRetries})`);
           
           // Show user feedback on first rate limit hit
@@ -89,6 +101,7 @@ async function processQueue() {
           }
           
           requestQueue.unshift(request); // Put back at front
+          try { if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') { window.dispatchEvent(new CustomEvent('api:queue:update', { detail: { length: requestQueue.length, currentDelay } })); } } catch(e){}
           continue;
         } else {
           console.error('Danbooru rate limit exceeded, max retries reached');
@@ -98,16 +111,15 @@ async function processQueue() {
         }
       } else if (response.ok) {
         // Success - reduce delay gradually
-        currentDelay = Math.max(
-          Math.floor(currentDelay * 0.9),
-          RATE_LIMIT_CONFIG.minDelay
-        );
+        // Reduce currentDelay gradually toward minDelay
+        currentDelay = Math.max(Math.floor(currentDelay * 0.88), RATE_LIMIT_CONFIG.minDelay);
         hideRateLimitWarning();
       } else {
         // Other HTTP errors
         console.warn(`API request failed with status ${response.status}: ${request.url}`);
       }
-      
+      // notify listeners that queue length changed
+      try { if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') { window.dispatchEvent(new CustomEvent('api:queue:update', { detail: { length: requestQueue.length, currentDelay } })); } } catch(e){}
       request.resolve(response);
       
     } catch (error) {
@@ -116,6 +128,16 @@ async function processQueue() {
   }
   
   isProcessingQueue = false;
+}
+
+// Expose a simple queue info function for debugging
+function getQueueInfo() {
+  return {
+    length: requestQueue.length,
+    isProcessing: isProcessingQueue,
+    currentDelay,
+    lastRequestTime,
+  };
 }
 
 /**
@@ -546,6 +568,9 @@ export {
   clearArtistCache,
   loadAppData,
 };
+
+// Debug helper
+export { getQueueInfo };
 
 // All functions in this file are defined and used as follows:
 

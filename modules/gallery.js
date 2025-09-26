@@ -4,6 +4,7 @@ import {
   clearArtistCache,
   buildImageUrl,
   fetchAllArtistImages,
+  getQueueInfo,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
@@ -89,6 +90,40 @@ let gallerySentinel = null;
 let allArtists = [];
 let getActiveTags = null;
 let getArtistNameFilter = null;
+
+// TTL-backed session cache defaults and helpers (module scope so multiple functions can reuse)
+const DEFAULT_ALLPOSTS_TTL_MS = 1000 * 60 * 60; // 1 hour
+
+function setWithTTL(key, value, ttl = DEFAULT_ALLPOSTS_TTL_MS) {
+  try {
+    const payload = { t: Date.now(), ttl: ttl, v: value };
+    sessionStorage.setItem(key, JSON.stringify(payload));
+  } catch (e) {
+    // ignore quota errors
+  }
+}
+
+function getWithTTL(key) {
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const created = Number(parsed.t) || 0;
+    const ttl = Number(parsed.ttl) || 0;
+    if (ttl > 0 && Date.now() - created > ttl) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return parsed.v;
+  } catch (e) {
+    return null;
+  }
+}
+
+function removeWithTTL(key) {
+  try { sessionStorage.removeItem(key); } catch (e) {}
+}
 
 function resetGallerySentinel() {
   gallerySentinel = null;
@@ -246,13 +281,17 @@ function setBestImage(artist, img) {
 
     if (validPosts.length === 0) {
       if (!isFallback && selectedTags.length > 0) {
-        fetchArtistImages(artistData.artistName)
-          .then((fallbackData) => {
-            processApiData(fallbackData, true);
-          })
-          .catch(() => {
-            showNoEntries();
-          });
+        // Wait briefly to allow any rate-limited requests to complete before giving up
+        const WAIT_MS = 700; // small grace period
+        setTimeout(() => {
+          fetchArtistImages(artistData.artistName)
+            .then((fallbackData) => {
+              processApiData(fallbackData, true);
+            })
+            .catch(() => {
+              showNoEntries();
+            });
+        }, WAIT_MS);
       } else {
         showNoEntries();
       }
@@ -379,6 +418,25 @@ async function openArtistZoom(artist) {
   let loading = false;
   let currentIndex = 0;
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
+  const allPostsCacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+
+  // Module-scope TTL helpers are used: getWithTTL / setWithTTL / removeWithTTL
+
+  // Try to reuse cached full-post lists for this artist + tag signature (TTL-aware)
+  try {
+    const cachedAll = getWithTTL(allPostsCacheKey);
+    if (cachedAll && Array.isArray(cachedAll) && cachedAll.length > 0) {
+      posts = cachedAll.slice();
+      // compute total pages based on 40-per-page page size used below
+      zoomTotalPages = Math.max(1, Math.ceil(posts.length / 40));
+      // render first page immediately from cache
+      const initial = posts.slice(0, 40);
+      renderThumbs(initial, 0);
+      page = Math.floor(posts.length / 40) + 1;
+    }
+  } catch (e) {
+    // ignore cache parse errors
+  }
 
   function returnToGrid() {
     if (zoomContent) zoomContent.style.display = "none";
@@ -420,25 +478,51 @@ async function openArtistZoom(artist) {
     loading = true;
     try {
       const api = await import("./api.js");
+      const LIMIT = 40;
+
+      // If we already have cached posts that include this page, render from them
+      const startIdx = (page - 1) * LIMIT;
+      const endIdx = page * LIMIT;
+      if (posts.length >= endIdx) {
+        const slice = posts.slice(startIdx, endIdx);
+        renderThumbs(slice, startIdx);
+        page++;
+        return;
+      }
+
+      // If this is the first network fetch, try to get a rough page count from the API
       if (page === 1) {
         try {
           const count = await api.getArtistImageCount(artist.artistName);
-          zoomTotalPages = Math.max(1, Math.ceil(count / 40));
+          if (count && Number.isFinite(count)) {
+            zoomTotalPages = Math.max(1, Math.ceil(count / LIMIT));
+          }
         } catch {
           zoomTotalPages = Infinity;
         }
       }
+
       const newPosts = await api.fetchArtistImages(artist.artistName, selectedTags, {
-        limit: 40,
+        limit: LIMIT,
         page,
         order: "approvals",
       });
+
       if (!Array.isArray(newPosts) || newPosts.length === 0) {
         zoomTotalPages = page - 1;
         return;
       }
+
       const start = posts.length;
       posts = posts.concat(newPosts);
+      // Persist accumulated posts into session cache to reuse for fullscreen later
+      try {
+        // Persist accumulated posts into TTL-backed session cache to reuse for fullscreen later
+        setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
+      } catch (e) {
+        // ignore storage errors
+      }
+
       renderThumbs(newPosts, start);
       page++;
     } finally {
@@ -813,8 +897,8 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       if (typeof clearArtistCache === "function") {
         clearArtistCache(artist.artistName);
       }
-      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
-      sessionStorage.removeItem(cacheKey);
+  const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+  if (typeof removeWithTTL === 'function') removeWithTTL(cacheKey);
       localStorage.removeItem(`danbooru-image-${artist.artistName}`);
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
@@ -1101,6 +1185,75 @@ function initGallery() {
   }
 }
 
+// Debug HUD: shows API queue length and current delay (helpful for rate-limit tuning)
+function attachDebugHud() {
+  if (typeof document === 'undefined') return;
+  let hud = document.getElementById('api-debug-hud');
+  if (hud) return hud;
+  hud = document.createElement('div');
+  hud.id = 'api-debug-hud';
+  hud.style.position = 'fixed';
+  hud.style.right = '12px';
+  hud.style.bottom = '12px';
+  hud.style.zIndex = '14000';
+  hud.style.padding = '8px 10px';
+  hud.style.borderRadius = '8px';
+  hud.style.background = 'rgba(0,0,0,0.6)';
+  hud.style.backdropFilter = 'blur(6px)';
+  hud.style.color = 'white';
+  hud.style.fontSize = '12px';
+  hud.style.fontFamily = 'Inter, system-ui, sans-serif';
+  hud.style.boxShadow = '0 6px 18px rgba(0,0,0,0.5)';
+  hud.innerHTML = `<div style="min-width:150px">API queue: <span id="api-queue-len">-</span><br>delay: <span id="api-delay">-</span>ms</div>`;
+  document.body.appendChild(hud);
+
+  const lenEl = hud.querySelector('#api-queue-len');
+  const delayEl = hud.querySelector('#api-delay');
+
+  // Update from dispatched events
+  window.addEventListener('api:queue:update', (e) => {
+    try {
+      const d = e.detail || {};
+      if (typeof d.length !== 'undefined') lenEl.textContent = String(d.length);
+      if (typeof d.currentDelay !== 'undefined') delayEl.textContent = String(d.currentDelay);
+    } catch (err) {}
+  });
+
+  // Poll getQueueInfo every second as a fallback
+  const poll = setInterval(() => {
+    try {
+      const q = getQueueInfo();
+      if (q && typeof q.length !== 'undefined') lenEl.textContent = String(q.length);
+      if (q && typeof q.currentDelay !== 'undefined') delayEl.textContent = String(q.currentDelay);
+    } catch (err) {
+      // ignore
+    }
+  }, 1000);
+
+  // minimize HUD on click
+  hud.addEventListener('click', () => {
+    if (hud.style.opacity === '0.4') {
+      hud.style.opacity = '1';
+      hud.style.transform = '';
+    } else {
+      hud.style.opacity = '0.4';
+      hud.style.transform = 'scale(0.98)';
+    }
+  });
+
+  return hud;
+}
+
+// attach HUD when gallery initializes
+const _origInitGallery = initGallery;
+initGallery = function() {
+  _origInitGallery();
+  try { attachDebugHud(); } catch(e) { /* ignore in non-browser env */ }
+};
+
+// Export setBestImage for smoke testing in-browser
+export { setBestImage as _test_setBestImage };
+
 function setSortMode(mode, options = {}) {
   const { preservePage = false, deferRender = false } = options;
   sortMode = mode;
@@ -1223,3 +1376,22 @@ export {
   hideZoomTauntOverlay,
   openArtistOnDanbooru
 };
+
+// Helpers to inspect and clear the per-artist fullscreen cache
+function getArtistAllPostsCache(artistName, tags = []) {
+  try {
+    const key = `allPosts-${artistName}-${tags.join(",")}`;
+    return getWithTTL ? getWithTTL(key) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function clearArtistAllPostsCache(artistName, tags = []) {
+  try {
+    const key = `allPosts-${artistName}-${tags.join(",")}`;
+    if (typeof removeWithTTL === 'function') removeWithTTL(key);
+  } catch (e) {}
+}
+
+export { getArtistAllPostsCache, clearArtistAllPostsCache, DEFAULT_ALLPOSTS_TTL_MS };
