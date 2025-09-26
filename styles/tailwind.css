@@ -70,7 +70,7 @@ content: '';
 @apply absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,rgba(255,255,255,0)_32%,rgba(255,255,255,0.04)_64%,rgba(255,255,255,0)_100%)] opacity-60 mix-blend-screen pointer-events-none;
 }
 .top-surface {
-@apply relative z-[70] w-full overflow-hidden border-b border-white/10 bg-panel/80 backdrop-blur-glass flex flex-col;
+@apply relative z-[70] w-full border-b border-white/10 bg-panel/80 backdrop-blur-glass flex flex-col;
 box-shadow: inset 0 -1px 0 0 rgba(255, 118, 214, 0.18);
 transition: background-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
   border-color 0.5s cubic-bezier(.4,-0.2,.2,1.2),
@@ -92,7 +92,7 @@ opacity: 1;
 }
 .top-band {
 @apply mx-auto flex w-full flex-col gap-6 px-6 pb-8 pt-12;
-overflow: hidden;
+overflow: visible;
 transition:
   transform 0.4s cubic-bezier(.4,-0.2,.2,1.2),
   opacity 0.4s cubic-bezier(.4,-0.2,.2,1.2);

@@ -5,6 +5,7 @@ import {
   buildImageUrl,
   fetchAllArtistImages,
   getQueueInfo,
+  getArtistImageCount,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 
@@ -1142,13 +1143,20 @@ async function filterArtists(reset = true, force = false) {
       for (let i = 0; i < artists.length; i += batchSize) {
         if (gen !== filterGeneration) return;
         const batch = artists.slice(i, i + batchSize);
+        
+        // Process batch in parallel (10 artists at once)
         await Promise.all(
           batch.map(async (artist) => {
-            const totalCount = artist.postCount || 0;
-            artist._totalImageCount = totalCount;
-            artist._imageCount = totalCount;
-            if (gen !== filterGeneration) {
-              return;
+            if (gen !== filterGeneration) return;
+            try {
+              // Use existing postCount if available, otherwise fetch from API
+              const totalCount = artist.postCount || await getArtistImageCount(artist.artistName);
+              artist._totalImageCount = totalCount;
+              artist._imageCount = totalCount;
+            } catch (e) {
+              // If API fails, use fallback count
+              artist._totalImageCount = artist.postCount || 0;
+              artist._imageCount = artist.postCount || 0;
             }
           })
         );
@@ -1156,6 +1164,13 @@ async function filterArtists(reset = true, force = false) {
         done += batch.length;
         if (spin && spin.updateProgress) spin.updateProgress(done);
 
+        // Re-render every batch to show progress
+        if (gen === filterGeneration) {
+          sortCurrentArtists();
+          renderArtistsPage({ force: true });
+        }
+
+        // Short delay between batches
         if (i + batchSize < artists.length) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
         }
@@ -1170,7 +1185,7 @@ async function filterArtists(reset = true, force = false) {
     renderArtistsPage({ force: true }); // Render immediately
 
     if (reset) {
-      await fetchInBatches(filtered, 5, 1000, generation, spinner).catch(
+      await fetchInBatches(filtered, 10, 500, generation, spinner).catch(
         (e) => {
           console.error("Batch fetch failed:", e);
         }
@@ -1179,7 +1194,7 @@ async function filterArtists(reset = true, force = false) {
       sortCurrentArtists();
       renderArtistsPage({ force: true });
     } else if (force) {
-      fetchInBatches(filtered, 5, 1000, generation, spinner).then(() => {
+      fetchInBatches(filtered, 10, 500, generation, spinner).then(() => {
         if (generation !== filterGeneration) return;
         sortCurrentArtists();
         renderArtistsPage({ force: true });
