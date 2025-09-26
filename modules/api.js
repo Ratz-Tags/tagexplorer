@@ -269,16 +269,14 @@ async function fetchPosts(tags, options = {}) {
     const response = await rateLimitedFetch(url);
     const data = await response.json();
 
-    // Cache the result if enabled
-    if (useCache && cacheKey && Array.isArray(data)) {
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(data));
-      } catch {
-        // Cache quota exceeded, ignore
-      }
+  // Cache the result if enabled and non-empty (don't cache empty results)
+  if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(data));
+    } catch {
+      // Cache quota exceeded, ignore
     }
-
-    return Array.isArray(data) ? data : [];
+  }    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.warn("Danbooru API fetch failed:", error);
     return [];

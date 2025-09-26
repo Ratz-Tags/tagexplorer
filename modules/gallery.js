@@ -534,42 +534,13 @@ async function openArtistZoom(artist) {
         order: "approvals",
       });
 
-      // If the first-page result is empty, it may have been served from a stale/empty session cache.
-      // Try a forced network fetch (no cache) before giving up.
-      let finalPosts = newPosts;
-      if ((!Array.isArray(finalPosts) || finalPosts.length === 0) && page === 1) {
-        try {
-          // Clear potential session cache for this page signature so fetchArtistImages won't immediately return cached empty.
-          try {
-            const effectiveTags = (selectedTags || []).slice(0, 2);
-            const cacheSignature = [`p${page}`, `l${LIMIT}`, `o${"approvals"}`].join("");
-            const apiCacheKey = `danbooru-api-${artist.artistName}-${effectiveTags.join(",")}-${cacheSignature}`;
-            // remove older uncoupled key (no TTL) and our TTL-backed variants
-            try { sessionStorage.removeItem(apiCacheKey); } catch (e) {}
-            try { if (typeof removeWithTTL === 'function') removeWithTTL(apiCacheKey); } catch (e) {}
-          } catch (e) {}
-
-          const forced = await api.fetchArtistImages(artist.artistName, selectedTags, {
-            limit: LIMIT,
-            page,
-            order: "approvals",
-            useCache: false,
-          });
-          if (Array.isArray(forced) && forced.length > 0) {
-            finalPosts = forced;
-          }
-        } catch (e) {
-          // ignore network errors here; we'll fall through to the empty-case handling
-        }
-      }
-
-      if (!Array.isArray(finalPosts) || finalPosts.length === 0) {
+      if (!Array.isArray(newPosts) || newPosts.length === 0) {
         zoomTotalPages = page - 1;
         return;
       }
 
-  const start = posts.length;
-  posts = posts.concat(finalPosts);
+      const start = posts.length;
+      posts = posts.concat(newPosts);
       // Persist accumulated posts into session cache to reuse for fullscreen later
       try {
         // Persist accumulated posts into TTL-backed session cache to reuse for fullscreen later
@@ -578,7 +549,7 @@ async function openArtistZoom(artist) {
         // ignore storage errors
       }
 
-  renderThumbs(finalPosts, start);
+      renderThumbs(newPosts, start);
       page++;
     } finally {
       loading = false;

@@ -17,6 +17,8 @@
     <label>Artist name: <input id="artistName" value="sakimichan" /></label>
     <button id="runFetch">Run fetchArtistImages</button>
     <button id="runSetBest">Run setBestImage test</button>
+    <button id="setShortTTL">Set TTL to 5sec</button>
+    <button id="expireCaches">Expire all caches</button>
   </div>
   <div id="results" class="log"></div>
 
@@ -55,6 +57,26 @@
         out('setBestImage invoked; observe img.src change or console for errors.');
       } catch (e) {
         out('setBestImage failed: ' + String(e));
+      }
+    });
+
+    document.getElementById('setShortTTL').addEventListener('click', async () => {
+      try {
+        const gallery = await import('../modules/gallery.js');
+        const newTTL = gallery.setAllPostsTTL(5000); // 5 seconds
+        out('Set TTL to 5 seconds: ' + newTTL + 'ms');
+      } catch (e) {
+        out('setAllPostsTTL failed: ' + String(e));
+      }
+    });
+
+    document.getElementById('expireCaches').addEventListener('click', async () => {
+      try {
+        const gallery = await import('../modules/gallery.js');
+        const expired = gallery.expireAllPostsCaches();
+        out('Expired ' + expired + ' cache keys');
+      } catch (e) {
+        out('expireAllPostsCaches failed: ' + String(e));
       }
     });
   </script>
