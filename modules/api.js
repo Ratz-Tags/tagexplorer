@@ -210,7 +210,81 @@ function postHasAllTags(post, tags) {
  */
 function buildImageUrl(url) {
   if (!url) return "";
-  return url.startsWith("http") ? url : `https://danbooru.donmai.us${url}`;
+  if (url.startsWith("data:")) return url;
+  if (url.startsWith("http")) return url;
+  if (url.startsWith("//")) return `https:${url}`;
+  if (url.startsWith("/")) return `https://danbooru.donmai.us${url}`;
+  return `https://danbooru.donmai.us/${url}`;
+}
+
+const IMAGE_FILE_EXTENSIONS = new Set([
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "webp",
+  "avif",
+  "bmp",
+  "heic",
+  "heif",
+]);
+
+function extractExtension(url) {
+  if (!url) return "";
+  try {
+    const normalized = url.split("?")[0];
+    const lastDot = normalized.lastIndexOf(".");
+    if (lastDot === -1) return "";
+    return normalized.slice(lastDot + 1).toLowerCase();
+  } catch (e) {
+    return "";
+  }
+}
+
+function isImageExtension(ext) {
+  if (!ext) return false;
+  const normalized = String(ext).toLowerCase();
+  return IMAGE_FILE_EXTENSIONS.has(normalized);
+}
+
+function selectVariantUrl(post, types) {
+  if (!post || !Array.isArray(post?.media_asset?.variants)) return "";
+  for (const type of types) {
+    const variant = post.media_asset.variants.find(
+      (entry) => entry && entry.type === type && entry.url
+    );
+    if (variant && variant.url) {
+      return variant.url;
+    }
+  }
+  return "";
+}
+
+function resolvePostUrls(post) {
+  const originalCandidates = [
+    post?.large_file_url,
+    post?.file_url,
+    selectVariantUrl(post, ["original", "image", "large"]),
+  ];
+  const previewCandidates = [
+    post?.preview_file_url,
+    selectVariantUrl(post, [
+      "720x720",
+      "540x540",
+      "360x360",
+      "180x180",
+      "medium",
+      "small",
+    ]),
+  ];
+
+  const fullUrl = originalCandidates.find(Boolean) || "";
+  const previewUrl = previewCandidates.find(Boolean) || fullUrl;
+
+  return {
+    fullUrl,
+    previewUrl,
+  };
 }
 
 /**
@@ -267,11 +341,53 @@ async function fetchPosts(tags, options = {}) {
  * Filters posts to only include valid image posts
  */
 function filterValidImagePosts(posts, tags = []) {
-  return posts.filter((post) => {
-    const url = post?.large_file_url || post?.file_url;
-    const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-    return isImage && !post.is_banned && postHasAllTags(post, tags);
-  });
+  if (!Array.isArray(posts)) return [];
+
+  const filtered = [];
+
+  for (const post of posts) {
+    if (!post || post.is_banned || post.is_deleted) {
+      continue;
+    }
+
+    const { fullUrl, previewUrl } = resolvePostUrls(post);
+    if (!fullUrl) {
+      continue;
+    }
+
+    const normalizedFull = buildImageUrl(fullUrl);
+    const normalizedPreview = buildImageUrl(previewUrl);
+
+    const extFromField = String(post?.file_ext || "").toLowerCase();
+    const extFromUrl = extractExtension(normalizedFull);
+    const effectiveExt = extFromField || extFromUrl;
+
+    if (effectiveExt && !isImageExtension(effectiveExt)) {
+      continue;
+    }
+
+    if (!postHasAllTags(post, tags)) {
+      continue;
+    }
+
+    const enriched = { ...post };
+    if (!enriched.large_file_url) {
+      enriched.large_file_url = normalizedFull;
+    }
+    if (!enriched.file_url) {
+      enriched.file_url = normalizedFull;
+    }
+    if (!enriched.preview_file_url && normalizedPreview) {
+      enriched.preview_file_url = normalizedPreview;
+    }
+    if (!enriched.file_ext && effectiveExt) {
+      enriched.file_ext = effectiveExt;
+    }
+
+    filtered.push(enriched);
+  }
+
+  return filtered;
 }
 
 /**
