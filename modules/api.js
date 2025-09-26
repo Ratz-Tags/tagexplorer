@@ -452,8 +452,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // API call: only artistName + order:approvals (max 2 tags)
-  const queryTags = [artistName, `order:${order}`];
+  // API call: only artistName (order is handled by fetchPosts options)
+  const queryTags = [artistName];
   const posts = await fetchPosts(queryTags, {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,

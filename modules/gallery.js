@@ -270,8 +270,9 @@ function setBestImage(artist, img) {
 
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
-  // API cache key no longer includes selectedTags since API only uses artistName + order:approvals
-  const apiCacheKey = `danbooru-api-${artistData.artistName}`;
+  // API cache key matches the format used in api.js fetchArtistImages
+  const cacheSignature = "p1l200oapprovals"; // Default: page=1, limit=200, order=approvals
+  const apiCacheKey = `danbooru-api-${artistData.artistName}-${cacheSignature}`;
 
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
