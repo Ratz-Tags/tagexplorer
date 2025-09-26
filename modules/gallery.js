@@ -92,7 +92,7 @@ let getActiveTags = null;
 let getArtistNameFilter = null;
 
 // TTL-backed session cache defaults and helpers (module scope so multiple functions can reuse)
-const DEFAULT_ALLPOSTS_TTL_MS = 1000 * 60 * 60; // 1 hour
+let DEFAULT_ALLPOSTS_TTL_MS = 1000 * 60 * 60; // 1 hour (mutable for tests)
 
 function setWithTTL(key, value, ttl = DEFAULT_ALLPOSTS_TTL_MS) {
   try {
@@ -123,6 +123,32 @@ function getWithTTL(key) {
 
 function removeWithTTL(key) {
   try { sessionStorage.removeItem(key); } catch (e) {}
+}
+
+// Runtime helpers for testing: change TTL and expire existing caches
+function setAllPostsTTL(ms) {
+  const n = Number(ms) || 0;
+  if (n > 0) DEFAULT_ALLPOSTS_TTL_MS = n;
+  return DEFAULT_ALLPOSTS_TTL_MS;
+}
+
+function expireAllPostsCaches() {
+  try {
+    const toRemove = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (!key) continue;
+      if (key.startsWith('allPosts-') || key.startsWith('danbooru-api-')) {
+        toRemove.push(key);
+      }
+    }
+    toRemove.forEach((k) => {
+      try { sessionStorage.removeItem(k); } catch (e) {}
+    });
+    return toRemove.length;
+  } catch (e) {
+    return 0;
+  }
 }
 
 function resetGallerySentinel() {
@@ -1423,4 +1449,4 @@ function clearArtistAllPostsCache(artistName, tags = []) {
   } catch (e) {}
 }
 
-export { getArtistAllPostsCache, clearArtistAllPostsCache, DEFAULT_ALLPOSTS_TTL_MS };
+export { getArtistAllPostsCache, clearArtistAllPostsCache, DEFAULT_ALLPOSTS_TTL_MS, setAllPostsTTL, expireAllPostsCaches };
