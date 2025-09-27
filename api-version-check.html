@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Version Check</title>
+</head>
+<body>
+    <h1>API Version Check</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        // Check if our fix is loaded
+        import('./modules/api.js').then(async (api) => {
+            const resultsDiv = document.getElementById('results');
+            
+            // Display API version
+            resultsDiv.innerHTML = `<p>Loading API version: ${api.getApiVersion()}</p>`;
+            
+            // Check if rateLimitedFetchJson is being used
+            try {
+                // Try to make a request and see if we get the old error
+                const testPromises = [
+                    api.fetchPosts(['chastity_cage'], { limit: 1, page: 1 }),
+                    api.fetchPosts(['chastity_cage'], { limit: 1, page: 1 }),
+                    api.fetchPosts(['chastity_cage'], { limit: 1, page: 1 })
+                ];
+                
+                const results = await Promise.all(testPromises);
+                
+                resultsDiv.innerHTML = `
+                    <h2 style="color: green;">✓ API Fix is Working!</h2>
+                    <p>Successfully completed ${results.length} concurrent requests</p>
+                    <p>Result lengths: ${results.map(r => r.length).join(', ')}</p>
+                    <p>Timestamp: ${new Date().toISOString()}</p>
+                `;
+                
+            } catch (error) {
+                if (error.message.includes('body stream already read')) {
+                    resultsDiv.innerHTML = `
+                        <h2 style="color: red;">✗ Old API Version Still Loaded</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>Please hard refresh (Ctrl+F5) to clear cache</p>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h2 style="color: orange;">⚠ Different Error</h2>
+                        <p>Error: ${error.message}</p>
+                        <p>This might be expected (rate limiting, network, etc.)</p>
+                    `;
+                }
+            }
+        }).catch(error => {
+            document.getElementById('results').innerHTML = `
+                <h2 style="color: red;">Module Load Error</h2>
+                <p>${error.message}</p>
+            `;
+        });
+    </script>
+</body>
+</html>

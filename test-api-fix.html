@@ -4,26 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Fix Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px 0; background: #007acc; color: white; border: none; cursor: pointer; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
 </head>
 <body>
-    <h1>API Fix Test</h1>
-    <button id="testButton">Test Concurrent API Calls</button>
-    <div id="results"></div>
-    <div id="errors"></div>
+    <h1>API Fix Test - Image Loading Issues</h1>
+    
+    <div class="test-section">
+        <h2>Test 1: Concurrent fetchPosts Calls</h2>
+        <button id="testFetchPosts">Test Concurrent fetchPosts</button>
+        <div id="fetchPostsResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Concurrent fetchArtistImages Calls</h2>
+        <button id="testFetchArtistImages">Test Concurrent fetchArtistImages</button>
+        <div id="fetchArtistImagesResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Gallery Image Loading Simulation</h2>
+        <button id="testGalleryLoading">Test Gallery Image Loading</button>
+        <div id="galleryResults"></div>
+    </div>
 
     <script type="module">
-        import { fetchPosts } from './modules/api.js';
+        import { fetchPosts, fetchArtistImages } from './modules/api.js';
 
-        document.getElementById('testButton').addEventListener('click', async () => {
-            const resultsDiv = document.getElementById('results');
-            const errorsDiv = document.getElementById('errors');
-            
-            resultsDiv.innerHTML = '<p>Testing concurrent API calls...</p>';
-            errorsDiv.innerHTML = '';
+        // Test 1: Concurrent fetchPosts calls
+        document.getElementById('testFetchPosts').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('fetchPostsResults');
+            resultsDiv.innerHTML = '<p>Testing concurrent fetchPosts calls...</p>';
 
             try {
-                // Make multiple concurrent requests with the same parameters
-                // This should trigger the deduplication and test our fix
                 const promises = [
                     fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
                     fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
@@ -35,21 +53,105 @@
                 const results = await Promise.all(promises);
                 
                 resultsDiv.innerHTML = `
-                    <h2>Success!</h2>
-                    <p>All ${results.length} concurrent requests completed successfully.</p>
-                    <p>First result count: ${results[0].length}</p>
-                    <p>All results have same length: ${results.every(r => r.length === results[0].length)}</p>
+                    <div class="success">
+                        <h3>✓ fetchPosts Test Passed!</h3>
+                        <p>All ${results.length} concurrent requests completed successfully.</p>
+                        <p>First result count: ${results[0].length}</p>
+                        <p>All results identical: ${results.every(r => r.length === results[0].length)}</p>
+                    </div>
                 `;
-                
-                console.log('Test results:', results);
                 
             } catch (error) {
-                errorsDiv.innerHTML = `
-                    <h2>Error occurred:</h2>
-                    <p style="color: red;">${error.message}</p>
-                    <pre>${error.stack}</pre>
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>✗ fetchPosts Test Failed!</h3>
+                        <p>${error.message}</p>
+                    </div>
                 `;
-                console.error('Test error:', error);
+                console.error('fetchPosts test error:', error);
+            }
+        });
+
+        // Test 2: Concurrent fetchArtistImages calls
+        document.getElementById('testFetchArtistImages').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('fetchArtistImagesResults');
+            resultsDiv.innerHTML = '<p>Testing concurrent fetchArtistImages calls...</p>';
+
+            try {
+                // Test with a known artist that should have images
+                const artistName = 'zonkpunch';
+                const promises = [
+                    fetchArtistImages(artistName, [], { limit: 5, page: 1 }),
+                    fetchArtistImages(artistName, [], { limit: 5, page: 1 }),
+                    fetchArtistImages(artistName, [], { limit: 5, page: 1 }),
+                    fetchArtistImages(artistName, [], { limit: 5, page: 1 }),
+                    fetchArtistImages(artistName, [], { limit: 5, page: 1 })
+                ];
+
+                const results = await Promise.all(promises);
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✓ fetchArtistImages Test Passed!</h3>
+                        <p>All ${results.length} concurrent requests completed successfully.</p>
+                        <p>Results for artist "${artistName}": ${results[0].length} images</p>
+                        <p>All results identical: ${results.every(r => r.length === results[0].length)}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>✗ fetchArtistImages Test Failed!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                console.error('fetchArtistImages test error:', error);
+            }
+        });
+
+        // Test 3: Gallery image loading simulation
+        document.getElementById('testGalleryLoading').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('galleryResults');
+            resultsDiv.innerHTML = '<p>Simulating gallery image loading scenario...</p>';
+
+            try {
+                // Simulate the scenario from gallery.js where multiple components
+                // might request images for the same artist simultaneously
+                const artistName = 'zonkpunch';
+                
+                // These would typically be called from different parts of the gallery
+                const backgroundPromise = fetchPosts(['chastity_cage'], { limit: 40, page: 1, useCache: false });
+                const artistPromise1 = fetchArtistImages(artistName, [], { limit: 200, page: 1, order: 'approvals' });
+                const artistPromise2 = fetchArtistImages(artistName, [], { limit: 200, page: 1, order: 'approvals' });
+                const artistPromise3 = fetchArtistImages(artistName, [], { limit: 200, page: 1, order: 'approvals' });
+
+                const [backgroundResult, artistResult1, artistResult2, artistResult3] = await Promise.all([
+                    backgroundPromise,
+                    artistPromise1,
+                    artistPromise2,
+                    artistPromise3
+                ]);
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✓ Gallery Loading Simulation Passed!</h3>
+                        <p>Background images: ${backgroundResult.length}</p>
+                        <p>Artist images (call 1): ${artistResult1.length}</p>
+                        <p>Artist images (call 2): ${artistResult2.length}</p>
+                        <p>Artist images (call 3): ${artistResult3.length}</p>
+                        <p>All artist results identical: ${artistResult1.length === artistResult2.length && artistResult2.length === artistResult3.length}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>✗ Gallery Loading Simulation Failed!</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                console.error('Gallery simulation error:', error);
             }
         });
     </script>

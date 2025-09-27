@@ -1,6 +1,13 @@
 /**
  * API module - Handles Danbooru API interactions and caching with rate limiting
+ * Version: 2024-09-27-artist-deduplication-fix
  */
+
+// Debug function to check API version
+export const API_VERSION = "2024-09-27-artist-deduplication-fix";
+export function getApiVersion() {
+  return API_VERSION;
+}
 
 // Use the global fetch implementation (available in modern browsers and Node 18+)
 const fetchFn = fetch;
@@ -24,7 +31,7 @@ let currentDelay = RATE_LIMIT_CONFIG.minDelay;
 
 // Request deduplication
 const pendingRequests = new Map(); // url -> Promise
-const pendingJsonRequests = new Map(); // url -> Promise<json>
+const pendingArtistRequests = new Map(); // artistName -> Promise
 const requestBatches = new Map(); // batch key -> array of requests
 
 /**
@@ -34,7 +41,9 @@ async function rateLimitedFetch(url, options = {}) {
   // Check if this request is already pending
   const requestKey = `${url}:${JSON.stringify(options)}`;
   if (pendingRequests.has(requestKey)) {
-    return pendingRequests.get(requestKey);
+    // Clone the response to allow multiple readers
+    const sharedResponse = await pendingRequests.get(requestKey);
+    return sharedResponse.clone();
   }
   
   const promise = new Promise((resolve, reject) => {
@@ -121,36 +130,7 @@ async function processQueue() {
   isProcessingQueue = false;
 }
 
-/**
- * Rate-limited JSON fetch with deduplication at the JSON level
- * This prevents "body stream already read" errors when multiple callers
- * make identical requests simultaneously
- */
-async function rateLimitedFetchJson(url, options = {}) {
-  // Check if this JSON request is already pending
-  const requestKey = `json:${url}:${JSON.stringify(options)}`;
-  if (pendingJsonRequests.has(requestKey)) {
-    return pendingJsonRequests.get(requestKey);
-  }
-  
-  const promise = rateLimitedFetch(url, options)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-      return response.json();
-    });
-  
-  // Store the JSON promise for deduplication
-  pendingJsonRequests.set(requestKey, promise);
-  
-  // Clean up after completion
-  promise.finally(() => {
-    pendingJsonRequests.delete(requestKey);
-  });
-  
-  return promise;
-}
+
 
 /**
  * User feedback for rate limiting
@@ -352,7 +332,8 @@ async function fetchPosts(tags, options = {}) {
   )}+order:${order}&limit=${limit}&page=${page}`;
 
   try {
-    const data = await rateLimitedFetchJson(url);
+    const response = await rateLimitedFetch(url);
+    const data = await response.json();
 
   // Cache the result if enabled and non-empty (don't cache empty results)
   if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
@@ -467,8 +448,19 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   const limit = options.limit || 200;
   const order = options.order || "approvals";
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
+  // IMPORTANT: Don't include selectedTags in cache key since API call doesn't use them
+  // selectedTags are only used for client-side filtering after the API response
   const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
+  
+  // Create deduplication key for this specific artist API call (ignoring selectedTags)
+  const artistRequestKey = `${artistName}-${cacheSignature}`;
+  
+  // Check if this exact artist API call is already pending
+  if (pendingArtistRequests.has(artistRequestKey)) {
+    const posts = await pendingArtistRequests.get(artistRequestKey);
+    return filterValidImagePosts(posts, selectedTags);
+  }
   
   // Check cache first
   if (useCache) {
@@ -483,15 +475,25 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // API call: only artistName (order is handled by fetchPosts options)
-  const queryTags = [artistName];
-  const posts = await fetchPosts(queryTags, {
+  // Create the API call promise
+  const apiPromise = fetchPosts([artistName], {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
     limit,
     page,
     order,
   });
+  
+  // Store the promise for deduplication
+  pendingArtistRequests.set(artistRequestKey, apiPromise);
+  
+  // Clean up after completion
+  apiPromise.finally(() => {
+    pendingArtistRequests.delete(artistRequestKey);
+  });
+  
+  // Wait for the API call and filter the results
+  const posts = await apiPromise;
   return filterValidImagePosts(posts, selectedTags);
 }
 
@@ -572,11 +574,13 @@ export async function getArtistImageCount(artistName, options = {}) {
     return artist.postCount;
   }
   try {
-    const data = await rateLimitedFetchJson(
+    const resp = await rateLimitedFetch(
       `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
       )}`
     );
+    if (!resp.ok) throw new Error(`status ${resp.status}`);
+    const data = await resp.json();
     const count = data?.counts?.posts;
     if (typeof count === "number") {
       return count;

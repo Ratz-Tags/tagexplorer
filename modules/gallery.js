@@ -377,7 +377,9 @@ function setBestImage(artist, img) {
       return;
     }
 
-    fetchArtistImages(artistData.artistName, selectedTags)
+    // For thumbnail images, fetch without tag filtering to get all artist images
+    // We'll do a more lenient filtering in processApiData
+    fetchArtistImages(artistData.artistName, [])
       .then((data) => {
         setApiCache(data);
         processApiData(data);

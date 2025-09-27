@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fresh API Test</title>
+</head>
+<body>
+    <h1>Fresh API Test (Cache Busted)</h1>
+    <div id="results">Loading...</div>
+
+    <script type="module">
+        // Force fresh load with timestamp
+        const timestamp = Date.now();
+        const apiModule = await import(`./modules/api.js?v=${timestamp}`);
+        
+        const resultsDiv = document.getElementById('results');
+        
+        resultsDiv.innerHTML = `
+            <p><strong>API Version:</strong> ${apiModule.getApiVersion()}</p>
+            <p><strong>Cache bust timestamp:</strong> ${timestamp}</p>
+            <hr>
+            <p>Testing concurrent API calls...</p>
+        `;
+        
+        try {
+            // Test concurrent calls
+            const promises = Array(5).fill().map(() => 
+                apiModule.fetchPosts(['chastity_cage'], { limit: 1, page: 1 })
+            );
+            
+            const results = await Promise.all(promises);
+            
+            resultsDiv.innerHTML += `
+                <div style="color: green;">
+                    <h2>✓ SUCCESS: All concurrent calls completed!</h2>
+                    <p>Results: ${results.map(r => r.length).join(', ')}</p>
+                    <p>Test completed at: ${new Date().toLocaleTimeString()}</p>
+                </div>
+            `;
+            
+        } catch (error) {
+            resultsDiv.innerHTML += `
+                <div style="color: red;">
+                    <h2>✗ ERROR: ${error.message}</h2>
+                    <pre>${error.stack}</pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

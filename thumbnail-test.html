@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Loading Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-artist { 
+            display: inline-block; 
+            margin: 10px; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            text-align: center; 
+        }
+        .test-artist img { 
+            width: 150px; 
+            height: 150px; 
+            object-fit: cover; 
+            background: #f0f0f0; 
+        }
+        .test-artist .name { 
+            margin-top: 5px; 
+            font-weight: bold; 
+        }
+        .test-artist .tags { 
+            margin-top: 5px; 
+            font-size: 0.8em; 
+            color: #666; 
+        }
+    </style>
+</head>
+<body>
+    <h1>Thumbnail Loading Test with Selected Tags</h1>
+    <p>Testing whether artist thumbnails load properly when tags are selected.</p>
+    
+    <div>
+        <label>
+            <input type="checkbox" id="femdomTag" onchange="updateTags()"> Femdom
+        </label>
+        <label>
+            <input type="checkbox" id="chastityTag" onchange="updateTags()"> Chastity Cage
+        </label>
+        <button onclick="loadThumbnails()">Load Artist Thumbnails</button>
+    </div>
+    
+    <div id="artists-container"></div>
+
+    <script type="module">
+        import { fetchArtistImages } from './modules/api.js';
+        
+        let selectedTags = [];
+        
+        window.updateTags = function() {
+            selectedTags = [];
+            if (document.getElementById('femdomTag').checked) selectedTags.push('femdom');
+            if (document.getElementById('chastityTag').checked) selectedTags.push('chastity_cage');
+            console.log('Selected tags:', selectedTags);
+        };
+        
+        window.loadThumbnails = async function() {
+            const container = document.getElementById('artists-container');
+            container.innerHTML = '<p>Loading...</p>';
+            
+            // Test a few known artists
+            const testArtists = [
+                'zonkpunch',
+                'chelodoy',
+                'backsash',
+                'jinu',
+                'tokifuji'
+            ];
+            
+            container.innerHTML = '';
+            
+            for (const artistName of testArtists) {
+                const artistDiv = document.createElement('div');
+                artistDiv.className = 'test-artist';
+                
+                const img = document.createElement('img');
+                img.src = 'fallback.jpg';
+                img.alt = artistName;
+                img.onerror = () => {
+                    img.src = 'fallback.jpg';
+                    img.style.background = '#ffcccc';
+                };
+                
+                const nameDiv = document.createElement('div');
+                nameDiv.className = 'name';
+                nameDiv.textContent = artistName;
+                
+                const tagsDiv = document.createElement('div');
+                tagsDiv.className = 'tags';
+                tagsDiv.textContent = `Tags: ${selectedTags.join(', ') || 'none'}`;
+                
+                artistDiv.appendChild(img);
+                artistDiv.appendChild(nameDiv);
+                artistDiv.appendChild(tagsDiv);
+                container.appendChild(artistDiv);
+                
+                // Test the API call that's now used in setBestImage
+                try {
+                    const results = await fetchArtistImages(artistName, []);
+                    console.log(`${artistName}: ${results.length} images found`);
+                    
+                    if (results.length > 0) {
+                        // Simulate the same filtering logic as in processApiData
+                        let validPosts = results;
+                        if (selectedTags.length > 0) {
+                            const tagMatchedPosts = results.filter((post) => {
+                                if (!post.tag_string) return false;
+                                const postTags = post.tag_string.split(" ");
+                                return selectedTags.some(tag => postTags.includes(tag));
+                            });
+                            
+                            if (tagMatchedPosts.length > 0) {
+                                validPosts = tagMatchedPosts;
+                                tagsDiv.innerHTML += ` (${tagMatchedPosts.length} matching)`;
+                            } else {
+                                tagsDiv.innerHTML += ` (0 matching, using any)`;
+                            }
+                        }
+                        
+                        if (validPosts.length > 0) {
+                            const url = validPosts[0].large_file_url || validPosts[0].file_url;
+                            if (url) {
+                                img.src = url;
+                                img.style.background = '#ccffcc';
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error loading ${artistName}:`, error);
+                    tagsDiv.innerHTML += ' (ERROR)';
+                    img.style.background = '#ffcccc';
+                }
+            }
+        };
+        
+        // Load initially
+        loadThumbnails();
+    </script>
+</body>
+</html>

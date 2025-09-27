@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Selection API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        button { padding: 10px 20px; margin: 10px 0; background: #007acc; color: white; border: none; cursor: pointer; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Tag Selection API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test: Multiple fetchArtistImages with same artist + different selectedTags</h2>
+        <p>This simulates what happens when tags are selected and multiple artist cards load simultaneously.</p>
+        <button id="testTagFiltering">Test Tag Filtering Issue</button>
+        <div id="tagResults"></div>
+    </div>
+
+    <script type="module">
+        import { fetchArtistImages } from './modules/api.js';
+
+        document.getElementById('testTagFiltering').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('tagResults');
+            resultsDiv.innerHTML = '<p>Testing concurrent fetchArtistImages calls with different selectedTags...</p>';
+
+            try {
+                const artistName = 'zonkpunch';
+                
+                // Simulate what happens when multiple artist cards render with different tag combinations
+                // This is the exact scenario that causes the issue
+                const promises = [
+                    fetchArtistImages(artistName, [], { limit: 200, page: 1, order: 'approvals' }),
+                    fetchArtistImages(artistName, ['chastity_cage'], { limit: 200, page: 1, order: 'approvals' }),
+                    fetchArtistImages(artistName, ['femdom'], { limit: 200, page: 1, order: 'approvals' }),
+                    fetchArtistImages(artistName, ['chastity_cage', 'femdom'], { limit: 200, page: 1, order: 'approvals' }),
+                    fetchArtistImages(artistName, [], { limit: 200, page: 1, order: 'approvals' }), // Duplicate
+                ];
+
+                const start = Date.now();
+                const results = await Promise.all(promises);
+                const duration = Date.now() - start;
+                
+                resultsDiv.innerHTML = `
+                    <div class="success">
+                        <h3>✅ SUCCESS!</h3>
+                        <p><strong>Duration:</strong> ${duration}ms</p>
+                        <p><strong>Results:</strong> ${results.map((r, i) => `Call ${i+1}: ${r.length} images`).join(', ')}</p>
+                        <p><strong>Note:</strong> All calls use same artist but different selectedTags</p>
+                        <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ FAILED</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <details>
+                            <summary>Stack trace</summary>
+                            <pre>${error.stack}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

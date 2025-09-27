@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple API Test</title>
+</head>
+<body>
+    <h1>Simple API Test (Clone Fix)</h1>
+    <button id="test">Test Concurrent Calls</button>
+    <div id="output"></div>
+
+    <script type="module">
+        const testBtn = document.getElementById('test');
+        const output = document.getElementById('output');
+
+        testBtn.addEventListener('click', async () => {
+            output.innerHTML = 'Testing...';
+            
+            try {
+                const apiModule = await import(`./modules/api.js?t=${Date.now()}`);
+                console.log('API Version:', apiModule.getApiVersion());
+                
+                // Test the exact scenario that was failing
+                const promises = [
+                    apiModule.fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    apiModule.fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    apiModule.fetchPosts(['chastity_cage'], { limit: 5, page: 1 })
+                ];
+                
+                const start = Date.now();
+                const results = await Promise.all(promises);
+                const duration = Date.now() - start;
+                
+                output.innerHTML = `
+                    <div style="color: green;">
+                        <h2>✅ SUCCESS!</h2>
+                        <p><strong>API Version:</strong> ${apiModule.getApiVersion()}</p>
+                        <p><strong>Duration:</strong> ${duration}ms</p>
+                        <p><strong>Results:</strong> ${results.map(r => r.length).join(', ')}</p>
+                        <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+                    </div>
+                `;
+                
+            } catch (error) {
+                output.innerHTML = `
+                    <div style="color: red;">
+                        <h2>❌ FAILED</h2>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                        <details>
+                            <summary>Stack trace</summary>
+                            <pre>${error.stack}</pre>
+                        </details>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
