@@ -34,6 +34,9 @@ const pendingRequests = new Map(); // url -> Promise
 const pendingArtistRequests = new Map(); // artistName -> Promise
 const requestBatches = new Map(); // batch key -> array of requests
 
+// In-memory API JSON cache to avoid reparsing/rehydration during a session
+const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
+
 /**
  * Rate-limited fetch wrapper with exponential backoff and deduplication
  */
@@ -332,8 +335,19 @@ async function fetchPosts(tags, options = {}) {
   )}+order:${order}&limit=${limit}&page=${page}`;
 
   try {
+    // Use a memory cache key: prefer the explicit cacheKey, otherwise use the URL
+    const memoryKey = cacheKey || url;
+    if (apiMemoryCache.has(memoryKey)) {
+      return apiMemoryCache.get(memoryKey);
+    }
+
     const response = await rateLimitedFetch(url);
     const data = await response.json();
+
+    // Populate in-memory cache for this session (even if useCache is false)
+    if (Array.isArray(data) && data.length > 0) {
+      try { apiMemoryCache.set(memoryKey, data); } catch (e) {}
+    }
 
   // Cache the result if enabled and non-empty (don't cache empty results)
   if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
@@ -464,10 +478,16 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   
   // Check cache first
   if (useCache) {
+    // Try in-memory cache first (fast)
+    if (apiMemoryCache.has(apiCacheKey)) {
+      return filterValidImagePosts(apiMemoryCache.get(apiCacheKey), selectedTags);
+    }
+
     const cached = sessionStorage.getItem(apiCacheKey);
     if (cached) {
       try {
         const data = JSON.parse(cached);
+        try { apiMemoryCache.set(apiCacheKey, data); } catch (e) {}
         return filterValidImagePosts(data, selectedTags);
       } catch {
         // Invalid cache, continue to fetch
@@ -494,6 +514,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   
   // Wait for the API call and filter the results
   const posts = await apiPromise;
+  try { apiMemoryCache.set(apiCacheKey, posts); } catch (e) {}
   return filterValidImagePosts(posts, selectedTags);
 }
 
@@ -574,6 +595,26 @@ export async function getArtistImageCount(artistName, options = {}) {
     return artist.postCount;
   }
   try {
+    // small session cache to avoid repeated /counts calls
+    const cacheKey = `danbooru-count-artist-${artistName}`;
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const created = Number(parsed.t) || 0;
+          const ttl = Number(parsed.ttl) || 0;
+          if (ttl === 0 || Date.now() - created <= ttl) {
+            if (typeof parsed.v === 'number') return parsed.v;
+          } else {
+            sessionStorage.removeItem(cacheKey);
+          }
+        }
+      }
+    } catch (e) {
+      // ignore sessionStorage errors
+    }
+
     const resp = await rateLimitedFetch(
       `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
@@ -583,6 +624,11 @@ export async function getArtistImageCount(artistName, options = {}) {
     const data = await resp.json();
     const count = data?.counts?.posts;
     if (typeof count === "number") {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ t: Date.now(), ttl: 1000 * 60 * 60, v: count }));
+      } catch (e) {
+        // ignore storage errors
+      }
       return count;
     }
   } catch (e) {
@@ -650,7 +696,34 @@ async function fetchAllArtistImages(
   const MAX_PAGES = options.maxPages || 1000; // safety cap
   let page = 1;
   let allPosts = [];
+  // If parallel option is requested, attempt to fetch pages in parallel
+  if (options.parallel) {
+    try {
+      const count = await getArtistImageCount(artistName);
+      if (!count || count <= 0) return [];
+      const totalPages = Math.min(MAX_PAGES, Math.max(1, Math.ceil(count / LIMIT)));
 
+      const requests = [];
+      for (let p = 1; p <= totalPages; p++) {
+        requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
+      }
+
+      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 300, maxConcurrent: options.maxConcurrent || 4 });
+      for (let p = 1; p <= totalPages; p++) {
+        const key = `p${p}`;
+        const pagePosts = batchResults.get(key) || [];
+        if (Array.isArray(pagePosts) && pagePosts.length) {
+          allPosts = allPosts.concat(pagePosts);
+        }
+      }
+      return allPosts;
+    } catch (e) {
+      console.warn('Parallel fetchAllArtistImages failed, falling back to sequential:', e);
+      // fallthrough to sequential below
+    }
+  }
+
+  // Sequential fetch (default)
   while (page <= MAX_PAGES) {
     const posts = await fetchArtistImages(artistName, selectedTags, {
       limit: LIMIT,
@@ -670,14 +743,41 @@ async function fetchAllArtistImages(
  * Fetches post count for a set of tags using Danbooru's /counts/posts endpoint (HTML response)
  */
 export async function fetchPostCountForTags(tags) {
-  const url = `https://danbooru.donmai.us/counts/posts?tags=${tags.join("+")}`;
-  const response = await rateLimitedFetch(url);
-  if (!response.ok) return 0;
-  const html = await response.text();
-  // Extract the post count from the HTML using a regex
-  const match = html.match(/Post count for.*?:\s*(\d+)/);
-  if (match && match[1]) {
-    return parseInt(match[1], 10);
+  const joined = Array.isArray(tags) ? tags.join('+') : String(tags || '');
+  const cacheKey = `danbooru-count-tags-${joined}`;
+
+  // Try session cache first (1 hour TTL)
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const created = Number(parsed.t) || 0;
+        const ttl = Number(parsed.ttl) || 0;
+        if (ttl === 0 || Date.now() - created <= ttl) {
+          return typeof parsed.v === 'number' ? parsed.v : 0;
+        }
+        sessionStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (e) {}
+
+  const url = `https://danbooru.donmai.us/counts/posts?tags=${joined}`;
+  try {
+    const response = await rateLimitedFetch(url);
+    if (!response.ok) return 0;
+    const html = await response.text();
+    // Extract the post count from the HTML using a regex
+    const match = html.match(/Post count for.*?:\s*(\d+)/);
+    if (match && match[1]) {
+      const value = parseInt(match[1], 10);
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ t: Date.now(), ttl: 1000 * 60 * 60, v: value }));
+      } catch (e) {}
+      return value;
+    }
+  } catch (e) {
+    console.warn('fetchPostCountForTags failed:', e);
   }
   return 0;
 }

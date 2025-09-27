@@ -448,23 +448,65 @@ async function openArtistZoom(artist) {
   let loading = false;
   let currentIndex = 0;
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-  const allPostsCacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
-
-  // Module-scope TTL helpers are used: getWithTTL / setWithTTL / removeWithTTL
-
-  // Try to reuse cached full-post lists for this artist + tag signature (TTL-aware)
+  const allPostsCacheKey = `allPosts-${artist.artistName}`;
   try {
     const cachedAll = getWithTTL(allPostsCacheKey);
     if (cachedAll && Array.isArray(cachedAll) && cachedAll.length > 0) {
+      console.debug(`[gallery] allPosts cache hit for ${artist.artistName}: ${cachedAll.length} posts`);
       posts = cachedAll.slice();
-      // compute total pages based on 40-per-page page size used below
       zoomTotalPages = Math.max(1, Math.ceil(posts.length / 40));
-      // render first page immediately from cache
       const initial = posts.slice(0, 40);
       renderThumbs(initial, 0);
       page = Math.floor(posts.length / 40) + 1;
+    } else {
+      // Attempt to reconstruct from per-page session cache (danbooru-api-... keys)
+      try {
+        const prefix = `danbooru-api-${artist.artistName}-`;
+        const pageEntries = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (!key || !key.startsWith(prefix)) continue;
+          const suffix = key.slice(prefix.length);
+          const m = suffix.match(/p(\d+)l(\d+)o(.+)/);
+          const pageNum = m ? Number(m[1]) : NaN;
+          try {
+            const raw = sessionStorage.getItem(key);
+            if (!raw) continue;
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              pageEntries.push({ page: isNaN(pageNum) ? 0 : pageNum, posts: parsed });
+            }
+          } catch (e) {
+            // ignore parse errors
+          }
+        }
+        if (pageEntries.length) {
+          pageEntries.sort((a, b) => a.page - b.page);
+          const reconstructed = [];
+          for (const e of pageEntries) {
+            reconstructed.push(...e.posts);
+          }
+          if (reconstructed.length) {
+            console.debug(`[gallery] reconstructed ${reconstructed.length} posts for ${artist.artistName} from per-page session cache`);
+            posts = reconstructed;
+            setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
+            zoomTotalPages = Math.max(1, Math.ceil(posts.length / 40));
+            const initial = posts.slice(0, 40);
+            renderThumbs(initial, 0);
+            page = Math.floor(posts.length / 40) + 1;
+          } else {
+            console.debug(`[gallery] failed to reconstruct posts for ${artist.artistName} from per-page session cache`);
+          }
+        } else {
+          console.debug(`[gallery] no per-page session cache found for ${artist.artistName}`);
+        }
+      } catch (e) {
+        console.debug(`[gallery] error reconstructing per-page cache for ${artist.artistName}:`, e);
+        // ignore reconstruction failures and continue to network fetch below
+      }
     }
   } catch (e) {
+    console.debug(`[gallery] error in allPosts cache/reconstruction for ${artist.artistName}:`, e);
     // ignore cache parse errors
   }
 
@@ -532,29 +574,50 @@ async function openArtistZoom(artist) {
         }
       }
 
-      const newPosts = await api.fetchArtistImages(artist.artistName, selectedTags, {
-        limit: LIMIT,
-        page,
-        order: "approvals",
-      });
+      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 4, batchDelay: 300 });
 
-      if (!Array.isArray(newPosts) || newPosts.length === 0) {
-        zoomTotalPages = page - 1;
+      if (Array.isArray(newPosts) && newPosts.length > 0) {
+        console.debug(`[gallery] network fetchAllArtistImages loaded ${newPosts.length} posts for ${artist.artistName}`);
+        posts = newPosts.slice();
+        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch (e) {}
+        zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
+        const initial = posts.slice(0, LIMIT);
+        renderThumbs(initial, 0);
+        page = Math.floor(posts.length / LIMIT) + 1;
+        if (posts.length <= LIMIT) return;
+      } else {
+        console.debug(`[gallery] network fetchAllArtistImages returned no posts for ${artist.artistName}, falling back to per-page fetch`);
+        const startIdx = (page - 1) * LIMIT;
+        const endIdx = page * LIMIT;
+        if (posts.length >= endIdx) {
+          const slice = posts.slice(startIdx, endIdx);
+          renderThumbs(slice, startIdx);
+          page++;
+          return;
+        }
+
+        const perPagePosts = await api.fetchArtistImages(artist.artistName, [], {
+          limit: LIMIT,
+          page,
+          order: "approvals",
+        });
+
+        if (!Array.isArray(perPagePosts) || perPagePosts.length === 0) {
+          console.debug(`[gallery] per-page fetch returned no posts for ${artist.artistName}`);
+          zoomTotalPages = page - 1;
+          return;
+        }
+
+        const start = posts.length;
+        posts = posts.concat(perPagePosts);
+        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch(e) {}
+
+        renderThumbs(perPagePosts, start);
+        page++;
         return;
       }
 
-      const start = posts.length;
-      posts = posts.concat(newPosts);
-      // Persist accumulated posts into session cache to reuse for fullscreen later
-      try {
-        // Persist accumulated posts into TTL-backed session cache to reuse for fullscreen later
-        setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
-      } catch (e) {
-        // ignore storage errors
-      }
-
-      renderThumbs(newPosts, start);
-      page++;
+      
     } finally {
       loading = false;
     }
