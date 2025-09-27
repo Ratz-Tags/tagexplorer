@@ -24,6 +24,7 @@ let currentDelay = RATE_LIMIT_CONFIG.minDelay;
 
 // Request deduplication
 const pendingRequests = new Map(); // url -> Promise
+const pendingJsonRequests = new Map(); // url -> Promise<json>
 const requestBatches = new Map(); // batch key -> array of requests
 
 /**
@@ -118,6 +119,37 @@ async function processQueue() {
   }
   
   isProcessingQueue = false;
+}
+
+/**
+ * Rate-limited JSON fetch with deduplication at the JSON level
+ * This prevents "body stream already read" errors when multiple callers
+ * make identical requests simultaneously
+ */
+async function rateLimitedFetchJson(url, options = {}) {
+  // Check if this JSON request is already pending
+  const requestKey = `json:${url}:${JSON.stringify(options)}`;
+  if (pendingJsonRequests.has(requestKey)) {
+    return pendingJsonRequests.get(requestKey);
+  }
+  
+  const promise = rateLimitedFetch(url, options)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    });
+  
+  // Store the JSON promise for deduplication
+  pendingJsonRequests.set(requestKey, promise);
+  
+  // Clean up after completion
+  promise.finally(() => {
+    pendingJsonRequests.delete(requestKey);
+  });
+  
+  return promise;
 }
 
 /**
@@ -320,8 +352,7 @@ async function fetchPosts(tags, options = {}) {
   )}+order:${order}&limit=${limit}&page=${page}`;
 
   try {
-    const response = await rateLimitedFetch(url);
-    const data = await response.json();
+    const data = await rateLimitedFetchJson(url);
 
   // Cache the result if enabled and non-empty (don't cache empty results)
   if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
@@ -541,13 +572,11 @@ export async function getArtistImageCount(artistName, options = {}) {
     return artist.postCount;
   }
   try {
-    const resp = await rateLimitedFetch(
+    const data = await rateLimitedFetchJson(
       `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(
         artistName
       )}`
     );
-    if (!resp.ok) throw new Error(`status ${resp.status}`);
-    const data = await resp.json();
     const count = data?.counts?.posts;
     if (typeof count === "number") {
       return count;

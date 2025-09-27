@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Fix Test</title>
+</head>
+<body>
+    <h1>API Fix Test</h1>
+    <button id="testButton">Test Concurrent API Calls</button>
+    <div id="results"></div>
+    <div id="errors"></div>
+
+    <script type="module">
+        import { fetchPosts } from './modules/api.js';
+
+        document.getElementById('testButton').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results');
+            const errorsDiv = document.getElementById('errors');
+            
+            resultsDiv.innerHTML = '<p>Testing concurrent API calls...</p>';
+            errorsDiv.innerHTML = '';
+
+            try {
+                // Make multiple concurrent requests with the same parameters
+                // This should trigger the deduplication and test our fix
+                const promises = [
+                    fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    fetchPosts(['chastity_cage'], { limit: 5, page: 1 }),
+                    fetchPosts(['chastity_cage'], { limit: 5, page: 1 })
+                ];
+
+                const results = await Promise.all(promises);
+                
+                resultsDiv.innerHTML = `
+                    <h2>Success!</h2>
+                    <p>All ${results.length} concurrent requests completed successfully.</p>
+                    <p>First result count: ${results[0].length}</p>
+                    <p>All results have same length: ${results.every(r => r.length === results[0].length)}</p>
+                `;
+                
+                console.log('Test results:', results);
+                
+            } catch (error) {
+                errorsDiv.innerHTML = `
+                    <h2>Error occurred:</h2>
+                    <p style="color: red;">${error.message}</p>
+                    <pre>${error.stack}</pre>
+                `;
+                console.error('Test error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
