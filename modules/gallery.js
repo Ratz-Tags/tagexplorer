@@ -1464,6 +1464,33 @@ export {
   openArtistOnDanbooru
 };
 
+// Testing helper: center a supplied image element on detected face or apply bias.
+async function _test_centerFaceInThumb(imgEl) {
+  if (!imgEl) throw new Error('imgEl required');
+  // reuse face-detection logic from renderThumbs but operate on provided element
+  const applyUpwardBias = () => { imgEl.style.objectPosition = 'center 30%'; };
+  const runFaceDetection = async () => {
+    if (typeof FaceDetector !== 'undefined') {
+      try {
+        if (!imgEl.complete) await new Promise((res) => { imgEl.onload = res; imgEl.onerror = res; });
+        const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        const faces = await detector.detect(imgEl);
+        if (faces && faces.length > 0) {
+          const face = faces[0].boundingBox;
+          const cx = (face.x + face.width / 2) / imgEl.naturalWidth * 100;
+          const cy = (face.y + face.height / 2) / imgEl.naturalHeight * 100;
+          imgEl.style.objectPosition = `${Math.round(cx)}% ${Math.round(cy)}%`;
+          return;
+        }
+      } catch (e) {}
+    }
+    applyUpwardBias();
+  };
+  await runFaceDetection();
+}
+
+export { _test_centerFaceInThumb };
+
 // Helpers to inspect and clear the per-artist fullscreen cache
 function getArtistAllPostsCache(artistName, tags = []) {
   try {

@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Face-aware Thumbnail Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:Inter,system-ui,sans-serif;background:#0c0b16;color:#fff;padding:1rem}
+    .row{display:flex;gap:1rem;align-items:flex-start;margin-bottom:1rem}
+    .thumb{width:200px;height:150px;overflow:hidden;border-radius:12px;border:1px solid #222}
+    .thumb img{width:100%;height:100%;object-fit:cover;object-position:center center}
+    button{padding:.5rem 1rem;border-radius:8px;border:1px solid #333;background:#111;color:#fff}
+    .note{font-size:0.9rem;color:#9aa}
+  </style>
+</head>
+<body>
+  <h1>Face-aware Thumbnail Test</h1>
+  <p class="note">This page uses the browser FaceDetector API when available. If not available, a small upward bias is applied so faces near the top are more likely visible.</p>
+
+  <div id="samples"></div>
+  <div>
+    <button id="applyAll">Apply face-centering to all</button>
+  </div>
+
+  <script type="module">
+    const sampleUrls = [
+      // replace or add your own preview URLs here for testing
+      'https://i.imgur.com/5b6Qm6G.jpg',
+      'https://i.imgur.com/2GcZy2y.jpg',
+      'https://i.imgur.com/0rVx1sT.jpg'
+    ];
+
+    const container = document.getElementById('samples');
+
+    (async function init(){
+      const gallery = await import('../modules/gallery.js');
+      sampleUrls.forEach((u, i) => {
+        const row = document.createElement('div');
+        row.className = 'row';
+        const thumbWrap = document.createElement('div');
+        thumbWrap.className = 'thumb';
+        const status = document.createElement('div');
+        status.className = 'note';
+        status.textContent = 'idle';
+
+        const img = document.createElement('img');
+        img.alt = 'sample-'+i;
+        // wire handlers before assigning src so we never miss failures
+        img.onload = () => {
+          // show that it loaded; object-position may be updated later
+          status.textContent = 'loaded — ' + (img.style.objectPosition || 'center center');
+        };
+        img.onerror = () => {
+          // prevent infinite loop if fallback also errors
+          if (img.dataset.fallbacked) {
+            status.textContent = 'error loading image';
+            return;
+          }
+          img.dataset.fallbacked = '1';
+          status.textContent = 'using fallback';
+          img.src = '../fallback.jpg';
+        };
+        // now assign the desired source
+        img.src = u;
+        thumbWrap.appendChild(img);
+
+  const ctrl = document.createElement('div');
+        const btn = document.createElement('button');
+        btn.textContent = 'Center face';
+        btn.addEventListener('click', async () => {
+          try {
+            status.textContent = 'running...';
+            await gallery._test_centerFaceInThumb(img);
+            btn.textContent = 'Done';
+            status.textContent = 'object-position: ' + (img.style.objectPosition || 'center center');
+          } catch (e) {
+            btn.textContent = 'Error';
+            status.textContent = 'error';
+            console.error(e);
+          }
+        });
+  ctrl.appendChild(btn);
+  // append the status element created earlier next to the button
+  ctrl.appendChild(status);
+        row.appendChild(thumbWrap);
+        row.appendChild(ctrl);
+        container.appendChild(row);
+      });
+
+      document.getElementById('applyAll').addEventListener('click', async () => {
+        const imgs = Array.from(document.querySelectorAll('#samples img'));
+        for (const img of imgs) {
+          await gallery._test_centerFaceInThumb(img);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
