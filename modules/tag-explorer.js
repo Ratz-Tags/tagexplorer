@@ -8,7 +8,9 @@ import {
   clearAllTags,
 } from "./tags.js";
 
-const MAX_TAG_SELECTION = 2;
+// Removed client-side selection cap: allow unlimited tag selection.
+// Server/API handles any practical limits; keep client lightweight.
+const MAX_TAG_SELECTION = Infinity;
 
 let allArtists = [];
 let popoverEl = null;
@@ -117,13 +119,8 @@ function clearSelectionLimitMessage() {
 }
 
 function showSelectionLimitMessage() {
-  if (!limitNoticeEl) return;
-  limitNoticeEl.textContent = `You can only select up to ${MAX_TAG_SELECTION} tags at a time.`;
-  limitNoticeEl.classList.add("visible");
-  if (limitMessageTimer) clearTimeout(limitMessageTimer);
-  limitMessageTimer = setTimeout(() => {
-    clearSelectionLimitMessage();
-  }, 2200);
+  // No-op when unlimited selection is allowed. Keep function for compatibility.
+  return;
 }
 
 function bindOutsideClickListener() {
@@ -406,17 +403,7 @@ function renderSelectedTags() {
 
 function handleTagToggle(tag) {
   const active = getActiveTags();
-  if (!active.has(tag) && active.size >= MAX_TAG_SELECTION) {
-    if (typeof navigator !== "undefined" && navigator.vibrate) {
-      try {
-        navigator.vibrate(50);
-      } catch {
-        // ignore vibration errors
-      }
-    }
-    showSelectionLimitMessage();
-    return;
-  }
+  // Unlimited selection: directly toggle without client-side limits.
   toggleTag(tag);
   renderExplorer();
 }

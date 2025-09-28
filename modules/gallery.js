@@ -7,6 +7,7 @@ import {
   getArtistImageCount,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
+import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -341,21 +342,25 @@ function setBestImage(artist, img) {
       img.onload = () => {
         img.onerror = null;
         img.onload = null;
-        if (index === 0) {
-          localStorage.setItem(cacheKey, url);
-        }
-        artistData._thumbnailPostId = validPosts[index]?.id;
+          if (index === 0) {
+            localStorage.setItem(cacheKey, url);
+          }
+          // Attach the resolved post id to the img element for per-post persistence
+          const postId = validPosts[index]?.id;
+          if (postId) {
+            try { img.dataset.postId = String(postId); } catch {};
+          }
+          artistData._thumbnailPostId = postId;
       };
       img.src = url;
     }
 
-    const imageUrls = validPosts
-      .slice(0, 5)
-      .map((post) => {
-        const url = post.large_file_url || post.file_url;
-        return buildImageUrl(url);
-      })
-      .filter(Boolean);
+    // Prefer smaller preview URLs for thumbnails to improve perceived load
+    const candidateUrls = pickThumbnailCandidateUrls(validPosts, { maxPosts: 8 });
+    const imageUrls = candidateUrls
+      .map((u) => buildImageUrl(u))
+      .filter(Boolean)
+      .slice(0, 5);
 
     if (imageUrls.length > 0) {
       tryLoadUrls(imageUrls);
@@ -404,6 +409,12 @@ function lazyLoadBestImage(artist, img) {
   const observer = initImageObserver();
   observer.observe(img);
   img._lazyObserver = observer;
+
+  // Also observe for face detection/persistence
+  const fobs = initFaceObserver();
+  if (fobs) {
+    try { fobs.observe(img); } catch {}
+  }
 }
 
 // Function called by the intersection observer
@@ -676,8 +687,24 @@ async function openArtistZoom(artist) {
         applyUpwardBias();
       };
 
+      // Apply persisted object-position if available (per-artist)
+      try {
+        const artistName = raw?.artist || raw?.tag_string?.split && raw?.tag_string[0];
+        const cacheKey = artistName ? `objpos-${artistName}` : null;
+        const persisted = cacheKey ? localStorage.getItem(cacheKey) : null;
+        if (persisted) {
+          thumb.style.objectPosition = persisted;
+        }
+      } catch (e) {}
+
       // Schedule non-blocking detection after insertion so it doesn't stall rendering
       setTimeout(() => { void runFaceDetection(); }, 30);
+
+      // Ensure the faceObserver will observe this thumbnail to persist results
+      try {
+        const fobs = initFaceObserver();
+        if (fobs) fobs.observe(thumb);
+      } catch (e) {}
       const index = startIndex + idx;
       thumb.addEventListener("click", () => {
         currentIndex = index;
@@ -906,6 +933,45 @@ function renderArtistsPage(options = {}) {
 
 // Intersection observer for lazy loading images
 let imageObserver = null;
+
+// Face detection observer: run detect+persist when thumbnails enter viewport
+let faceObserver = null;
+let DEV_FACE_OVERLAY = false;
+
+function initFaceObserver() {
+  if (faceObserver) return faceObserver;
+  if (typeof IntersectionObserver !== 'function') return null;
+  faceObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      const img = entry.target;
+      try { faceObserver.unobserve(img); } catch {}
+      // Skip if already has persisted object-position for this post or artist
+      const postId = img.dataset.postId;
+      if (postId) {
+        const key = `objpos-post-${postId}`;
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          img.style.objectPosition = stored;
+          return;
+        }
+      } else {
+        const artist = img.__artistData;
+        if (artist && artist.artistName) {
+          const key = `objpos-${artist.artistName}`;
+          const stored = localStorage.getItem(key);
+          if (stored) {
+            img.style.objectPosition = stored;
+            return;
+          }
+        }
+      }
+      // run detection and persist result
+      runFaceDetectAndPersist(img).catch(() => {});
+    });
+  }, { root: null, rootMargin: '200px', threshold: 0.01 });
+  return faceObserver;
+}
 
 function initImageObserver() {
   if (imageObserver) return imageObserver;
@@ -1490,6 +1556,100 @@ async function _test_centerFaceInThumb(imgEl) {
 }
 
 export { _test_centerFaceInThumb };
+
+// Run face detection on an image, persist object-position, and optionally draw overlay
+async function runFaceDetectAndPersist(img) {
+  if (!img) return;
+  const applyUpwardBias = () => { img.style.objectPosition = 'center 30%'; };
+  try {
+    if (typeof FaceDetector !== 'undefined') {
+      if (!img.complete) await new Promise((res) => { img.onload = res; img.onerror = res; });
+      const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+      const faces = await detector.detect(img);
+      if (faces && faces.length > 0) {
+        const face = faces[0].boundingBox;
+        const cx = (face.x + face.width / 2) / img.naturalWidth * 100;
+        const cy = (face.y + face.height / 2) / img.naturalHeight * 100;
+        const pos = `${Math.round(cx)}% ${Math.round(cy)}%`;
+        img.style.objectPosition = pos;
+        // persist per-post if available, otherwise per-artist as fallback
+        const postId = img.dataset.postId;
+        if (postId) {
+          try { localStorage.setItem(`objpos-post-${postId}`, pos); } catch {}
+        } else {
+          const artist = img.__artistData;
+          if (artist && artist.artistName) {
+            try { localStorage.setItem(`objpos-${artist.artistName}`, pos); } catch {}
+          }
+        }
+        if (DEV_FACE_OVERLAY) drawFaceOverlay(img, face);
+        return pos;
+      }
+    }
+  } catch (e) {
+    // detection error -- fallthrough to bias
+  }
+  applyUpwardBias();
+  return img.style.objectPosition;
+}
+
+function drawFaceOverlay(img, box) {
+  try {
+    // Create overlay container inside the thumbnail wrapper
+    const wrap = img.parentElement || img;
+    let overlay = wrap.querySelector && wrap.querySelector('.face-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'face-overlay';
+      overlay.style.position = 'absolute';
+      overlay.style.pointerEvents = 'none';
+      overlay.style.left = '0';
+      overlay.style.top = '0';
+      overlay.style.width = '100%';
+      overlay.style.height = '100%';
+      overlay.style.boxSizing = 'border-box';
+      overlay.style.zIndex = '2';
+      if (wrap.style.position === '' || wrap.style.position === 'static') {
+        wrap.style.position = 'relative';
+      }
+      wrap.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+    const rect = document.createElement('div');
+    rect.style.position = 'absolute';
+    rect.style.border = '2px solid rgba(255,0,128,0.85)';
+    rect.style.background = 'rgba(255,0,128,0.12)';
+    // compute box relative to natural size and map to element
+    const sx = img.naturalWidth ? img.naturalWidth : img.width;
+    const sy = img.naturalHeight ? img.naturalHeight : img.height;
+    const left = (box.x / sx) * 100;
+    const top = (box.y / sy) * 100;
+    const w = (box.width / sx) * 100;
+    const h = (box.height / sy) * 100;
+    rect.style.left = `${left}%`;
+    rect.style.top = `${top}%`;
+    rect.style.width = `${w}%`;
+    rect.style.height = `${h}%`;
+    overlay.appendChild(rect);
+  } catch (e) {}
+}
+
+function setDevFaceOverlay(enabled) {
+  DEV_FACE_OVERLAY = Boolean(enabled);
+}
+
+function clearPersistedObjposForArtist(artistName) {
+  try { localStorage.removeItem(`objpos-${artistName}`); } catch {}
+}
+
+// Export controls
+export { setDevFaceOverlay, clearPersistedObjposForArtist };
+
+function clearPersistedObjposForPost(postId) {
+  try { localStorage.removeItem(`objpos-post-${postId}`); } catch {}
+}
+
+export { clearPersistedObjposForPost };
 
 // Helpers to inspect and clear the per-artist fullscreen cache
 function getArtistAllPostsCache(artistName, tags = []) {

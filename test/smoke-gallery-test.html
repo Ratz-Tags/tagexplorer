@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Gallery Smoke Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body{font-family:Inter,system-ui,sans-serif;background:#0c0b16;color:#fff;padding:1rem}
+    #artist-gallery{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .artist-card{width:150px;height:120px;border:1px solid #222;border-radius:8px;overflow:hidden}
+    .artist-card img{width:100%;height:100%;object-fit:cover}
+    .note{color:#9aa}
+  </style>
+</head>
+<body>
+  <h1>Gallery Smoke Test</h1>
+  <p class="note">This page loads a small subset of the gallery functions and reports any console errors in the UI.</p>
+  <div id="status" class="note">starting...</div>
+  <div id="artist-gallery"></div>
+  <script type="module">
+    (async function(){
+      const status = document.getElementById('status');
+      try {
+        const gallery = await import('../modules/gallery.js');
+        // minimal wiring
+        gallery.initGallery();
+        // load sample artists.json (exists at repo root)
+        try {
+          const res = await fetch('../artists.json');
+          if (!res.ok) throw new Error('artists.json fetch failed');
+          const artists = await res.json();
+          gallery.setAllArtists(artists.slice(0,24));
+          gallery.setGetActiveTagsCallback(() => new Set());
+          gallery.setGetArtistNameFilterCallback(() => '');
+          await gallery.filterArtists(true, true);
+          status.textContent = 'gallery rendered — check console for errors.';
+        } catch (e) {
+          status.textContent = 'failed to load artists.json: ' + e.message;
+        }
+      } catch (e) {
+        status.textContent = 'failed to import gallery module: ' + e.message;
+      }
+    })();
+  </script>
+</body>
+</html>
