@@ -938,6 +938,61 @@ let imageObserver = null;
 let faceObserver = null;
 let DEV_FACE_OVERLAY = false;
 
+// LRU-backed storage for objpos entries to avoid unbounded localStorage growth
+const OBJPOS_LRU_KEY = 'objpos-lru-list';
+const OBJPOS_LRU_LIMIT = 1000; // cap entries
+
+function readObjposLRU() {
+  try {
+    const raw = localStorage.getItem(OBJPOS_LRU_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+  } catch (e) {}
+  return [];
+}
+
+function writeObjposLRU(list) {
+  try {
+    if (!Array.isArray(list)) list = [];
+    // trim to limit
+    if (list.length > OBJPOS_LRU_LIMIT) list = list.slice(0, OBJPOS_LRU_LIMIT);
+    localStorage.setItem(OBJPOS_LRU_KEY, JSON.stringify(list));
+  } catch (e) {}
+}
+
+function lruSetObjpos(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    return;
+  }
+  try {
+    const list = readObjposLRU();
+    const idx = list.indexOf(key);
+    if (idx !== -1) list.splice(idx, 1);
+    list.unshift(key);
+    // Evict if over limit
+    while (list.length > OBJPOS_LRU_LIMIT) {
+      const removed = list.pop();
+      try { localStorage.removeItem(removed); } catch (e) {}
+    }
+    writeObjposLRU(list);
+  } catch (e) {}
+}
+
+function lruRemoveObjpos(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+  try {
+    const list = readObjposLRU();
+    const idx = list.indexOf(key);
+    if (idx !== -1) {
+      list.splice(idx, 1);
+      writeObjposLRU(list);
+    }
+  } catch (e) {}
+}
+
 function initFaceObserver() {
   if (faceObserver) return faceObserver;
   if (typeof IntersectionObserver !== 'function') return null;
@@ -1096,22 +1151,44 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     reloadBtn.textContent = "⟳";
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
+      // Prevent any default browser action and stop event bubbling so
+      // the UI doesn't shift focus or change the URL/hash which can
+      // cause the page to jump to the top.
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+
+      // Remember current scroll position so we can restore it after
+      // we refresh the artist data. This avoids the page jumping to
+      // the top when the gallery is re-rendered.
+      const prevScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
+
       if (typeof clearArtistCache === "function") {
         clearArtistCache(artist.artistName);
       }
-  const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
-  if (typeof removeWithTTL === 'function') removeWithTTL(cacheKey);
+      const cacheKey = `allPosts-${artist.artistName}-${selectedTags.join(",")}`;
+      if (typeof removeWithTTL === 'function') removeWithTTL(cacheKey);
       localStorage.removeItem(`danbooru-image-${artist.artistName}`);
       artist._imageCount = undefined;
       artist._totalImageCount = undefined;
       artist._tagMatchCount = undefined;
       name.textContent = artist.artistName.replace(/_/g, " ") + " [Loading…]";
+
+      // Re-render but then restore scroll position. Use a short timeout
+      // to let the DOM updates settle before restoring scroll.
       setTimeout(() => {
         if (typeof filterArtists === "function") {
-          filterArtists(true, true);
+          // Use the force=true flag to update counts but avoid resetting
+          // the pagination to the top unless a full reset is required.
+          filterArtists(false, true).then(() => {
+            // Restore scroll position after render completes
+            try { window.scrollTo(prevScroll.x, prevScroll.y); } catch (e) {}
+          }).catch(() => {
+            try { window.scrollTo(prevScroll.x, prevScroll.y); } catch (e) {}
+          });
+        } else {
+          try { window.scrollTo(prevScroll.x, prevScroll.y); } catch (e) {}
         }
-      }, 100);
+      }, 50);
     });
 
     const tagsToggle = document.createElement("button");
@@ -1575,11 +1652,11 @@ async function runFaceDetectAndPersist(img) {
         // persist per-post if available, otherwise per-artist as fallback
         const postId = img.dataset.postId;
         if (postId) {
-          try { localStorage.setItem(`objpos-post-${postId}`, pos); } catch {}
+          try { lruSetObjpos(`objpos-post-${postId}`, pos); } catch {}
         } else {
           const artist = img.__artistData;
           if (artist && artist.artistName) {
-            try { localStorage.setItem(`objpos-${artist.artistName}`, pos); } catch {}
+            try { lruSetObjpos(`objpos-${artist.artistName}`, pos); } catch {}
           }
         }
         if (DEV_FACE_OVERLAY) drawFaceOverlay(img, face);
@@ -1639,14 +1716,14 @@ function setDevFaceOverlay(enabled) {
 }
 
 function clearPersistedObjposForArtist(artistName) {
-  try { localStorage.removeItem(`objpos-${artistName}`); } catch {}
+  try { lruRemoveObjpos(`objpos-${artistName}`); } catch {}
 }
 
 // Export controls
 export { setDevFaceOverlay, clearPersistedObjposForArtist };
 
 function clearPersistedObjposForPost(postId) {
-  try { localStorage.removeItem(`objpos-post-${postId}`); } catch {}
+  try { lruRemoveObjpos(`objpos-post-${postId}`); } catch {}
 }
 
 export { clearPersistedObjposForPost };
