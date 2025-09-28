@@ -603,10 +603,14 @@ function openTagExplorer() {
   }
   renderExplorer();
   if (searchInputEl) {
-    try {
-      searchInputEl.focus({ preventScroll: true });
-    } catch {
-      // ignore focus issues
+    // Avoid auto-focusing the search input on small screens to prevent
+    // triggering the mobile virtual keyboard and browser zoom behavior.
+    if (typeof window !== 'undefined' && window.innerWidth > 520) {
+      try {
+        searchInputEl.focus({ preventScroll: true });
+      } catch {
+        // ignore focus issues
+      }
     }
   } else if (panelEl) {
     panelEl.setAttribute("tabindex", "-1");

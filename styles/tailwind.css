@@ -473,7 +473,11 @@ display: none;
 }
 
 .tag-explorer-search input {
-  @apply w-full px-4 py-3 rounded-xl border border-white/10 bg-black/40 text-white placeholder:text-slate-400 text-sm;
+  /* Prevent mobile browsers from auto-zooming inputs by ensuring font-size >= 16px
+     and avoiding aggressive text-size adjustments. */
+  @apply w-full px-4 py-3 rounded-xl border border-white/10 bg-black/40 text-white placeholder:text-slate-400;
+  @apply text-base leading-6; /* >=16px on most browsers */
+  -webkit-text-size-adjust: 100%;
   backdrop-filter: blur(10px);
 }
 
@@ -488,6 +492,23 @@ display: none;
   /* Ensure proper height calculation for scrolling */
   min-height: 0;
   max-height: calc(100vh - 200px); /* Account for header and search areas */
+}
+
+/* Fullscreen viewer tweaks: keep controls visible on small viewports */
+.zoom-prev,
+.zoom-next {
+  position: fixed; /* viewport relative */
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 14000;
+  /* give a comfortable inset and respect safe-area */
+  padding: 1rem;
+}
+.zoom-prev { left: max(1rem, env(safe-area-inset-left, 1rem)); }
+.zoom-next { right: max(1rem, env(safe-area-inset-right, 1rem)); }
+
+.fullscreen-img {
+  @apply max-h-[78vh] w-full rounded-2xl object-contain shadow-neon;
 }
 
 .tag-category-item {
