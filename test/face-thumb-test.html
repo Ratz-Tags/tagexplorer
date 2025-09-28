@@ -23,17 +23,39 @@
   </div>
 
   <script type="module">
-    const sampleUrls = [
-      // replace or add your own preview URLs here for testing
-      'https://i.imgur.com/5b6Qm6G.jpg',
-      'https://i.imgur.com/2GcZy2y.jpg',
-      'https://i.imgur.com/0rVx1sT.jpg'
+    // Try to use real preview images from the project's API (better test).
+    // If the API fetch fails (CORS, network, rate-limit), fall back to stable
+    // Wikimedia Commons images that contain faces.
+    let sampleUrls = [];
+    const fallbackStable = [
+      'https://upload.wikimedia.org/wikipedia/commons/d/d3/Albert_Einstein_Head.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/6/6a/Mona_Lisa.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/1/10/We_Can_Do_It%21_poster.jpg'
     ];
 
     const container = document.getElementById('samples');
 
     (async function init(){
-      const gallery = await import('../modules/gallery.js');
+      const [gallery, api] = await Promise.all([import('../modules/gallery.js'), import('../modules/api.js')]);
+      // show a quick indicator above the samples
+      const info = document.createElement('div');
+      info.className = 'note';
+      info.textContent = 'resolving sample images...';
+      document.body.insertBefore(info, container);
+      try {
+        const posts = await api.fetchArtistImages('sakimichan', [], { limit: 6, page: 1, useCache: false });
+        if (Array.isArray(posts) && posts.length > 0) {
+          sampleUrls = posts.slice(0, 3).map(p => api.buildImageUrl(p.preview_file_url || p.large_file_url || p.file_url));
+          info.textContent = 'using Danbooru previews for samples';
+        }
+      } catch (e) {
+        info.textContent = 'Danbooru fetch failed — using stable fallbacks';
+      }
+      if (!sampleUrls || sampleUrls.length < 3) {
+        sampleUrls = fallbackStable.slice(0,3);
+        if (info.textContent.indexOf('Danbooru') === -1) info.textContent = 'using stable fallbacks';
+      }
+
       sampleUrls.forEach((u, i) => {
         const row = document.createElement('div');
         row.className = 'row';
