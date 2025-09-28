@@ -638,7 +638,46 @@ async function openArtistZoom(artist) {
       thumb.className = "artist-thumb";
       thumb.style.width = "100%";
       thumb.style.height = "100%";
+      // Default cover behavior. We'll attempt to bias/center on faces below.
       thumb.style.objectFit = "cover";
+      thumb.style.objectPosition = "center center";
+
+      // Face-aware centering: use the browser FaceDetector API when available
+      // for reliable face bounding boxes. Fallback to an upward bias (center
+      // 30%) so faces that are in the upper area of illustrations are more
+      // likely to be visible in the cropped preview.
+      const applyUpwardBias = () => {
+        // move framing slightly upwards which commonly shows faces in portraits
+        thumb.style.objectPosition = 'center 30%';
+      };
+
+      const runFaceDetection = async () => {
+        // If the FaceDetector API is available, run it on the loaded image.
+        if (typeof FaceDetector !== 'undefined') {
+          try {
+            // Ensure the image is loaded before detecting
+            if (!thumb.complete) await new Promise((res) => { thumb.onload = res; thumb.onerror = res; });
+            const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+            const faces = await detector.detect(thumb);
+            if (faces && faces.length > 0) {
+              const face = faces[0].boundingBox; // x, y, width, height
+              // Compute center of face in percentage coordinates
+              const cx = (face.x + face.width / 2) / thumb.naturalWidth * 100;
+              const cy = (face.y + face.height / 2) / thumb.naturalHeight * 100;
+              // Set object-position so the face center lines up in the thumbnail
+              thumb.style.objectPosition = `${Math.round(cx)}% ${Math.round(cy)}%`;
+              return;
+            }
+          } catch (e) {
+            // FaceDetector may throw on some images/browsers — fallback below
+          }
+        }
+        // If FaceDetector not available or failed, apply upward bias
+        applyUpwardBias();
+      };
+
+      // Schedule non-blocking detection after insertion so it doesn't stall rendering
+      setTimeout(() => { void runFaceDetection(); }, 30);
       const index = startIndex + idx;
       thumb.addEventListener("click", () => {
         currentIndex = index;
