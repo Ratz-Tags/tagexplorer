@@ -326,10 +326,8 @@ async function fetchPosts(tags, options = {}) {
     }
   }
 
-  // Danbooru limits basic searches to two tags. Ensure we never send more.
-  const tagsParam = Array.isArray(tags)
-    ? tags.slice(0, 2).join(" ")
-    : tags;
+  // Send all tags provided by the caller. Do not impose a client-side two-tag limit here.
+  const tagsParam = Array.isArray(tags) ? tags.join(" ") : tags;
   const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
     tagsParam
   )}+order:${order}&limit=${limit}&page=${page}`;
@@ -456,21 +454,19 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  // API only supports 2 tags max - use artistName + order:approvals only
-  // selectedTags are for client-side filtering only
+  // Send all selected tags to the API (no artificial client-side two-tag limit)
   const page = Math.max(1, options.page || 1);
   const limit = options.limit || 200;
   const order = options.order || "approvals";
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
-  // IMPORTANT: Don't include selectedTags in cache key since API call doesn't use them
-  // selectedTags are only used for client-side filtering after the API response
-  const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
+  const tagSignature = Array.isArray(selectedTags) && selectedTags.length ? selectedTags.join(",") : "_all";
+  const apiCacheKey = `danbooru-api-${artistName}-${tagSignature}-${cacheSignature}`;
   const useCache = options.useCache !== false;
   
-  // Create deduplication key for this specific artist API call (ignoring selectedTags)
-  const artistRequestKey = `${artistName}-${cacheSignature}`;
+  // Create deduplication key for this specific artist+tags API call
+  const artistRequestKey = `${artistName}-${tagSignature}-${cacheSignature}`;
   
-  // Check if this exact artist API call is already pending
+  // Check if this exact artist+tags API call is already pending
   if (pendingArtistRequests.has(artistRequestKey)) {
     const posts = await pendingArtistRequests.get(artistRequestKey);
     return filterValidImagePosts(posts, selectedTags);
@@ -495,8 +491,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // Create the API call promise
-  const apiPromise = fetchPosts([artistName], {
+  // Create the API call promise - include artistName + all selectedTags
+  const apiPromise = fetchPosts([artistName, ...(Array.isArray(selectedTags) ? selectedTags : [])], {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
     limit,
