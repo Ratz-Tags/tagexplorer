@@ -1,5 +1,6 @@
 import { vibrate } from "./ui.js";
 import { fetchWithCache } from "./fetch-cache.js";
+import { categorizeTags, flattenCategorizedTags } from "./tag-categories.js";
 
 /**
  * Tags module - Handles tag filtering, buttons, and related functionality
@@ -31,185 +32,37 @@ let kinkTags = [];
 // Kink tags list (dynamically created from kink-tags.json)
 let kinkTagsByCategory = [];
 
-// Smart categorization rules
-const categoryRules = [
-  {
-    category: "Bondage & Restraints",
-    keywords: ["bondage", "bound", "hogtie", "restraints", "restrained", "leash", "spreader_bar", "shibari", "immobilization"]
-  },
-  {
-    category: "Chastity & Control",
-    keywords: ["chastity_cage", "flat_chastity_cage", "chastity_cage_emission", "holding_key", "orgasm_denial"]
-  },
-  {
-    category: "Feminization & Gender Play",
-    keywords: ["feminization", "forced_feminization", "bimbofication", "crossdressing", "crossdressing_(mtf)", "trap"]
-  },
-  {
-    category: "Humiliation & Degradation",
-    keywords: ["humiliation", "bullying", "small_penis", "small_penis_humiliation", "public_nudity", "body_writing", "cumdump", "viewer_on_leash"]
-  },
-  {
-    category: "Mind Control & Hypnosis",
-    keywords: ["mind_control", "mind_break", "hypnosis"]
-  },
-  {
-    category: "Anal Play",
-    keywords: ["anal_", "pegging"]
-  },
-  {
-    category: "Oral & Fellatio",
-    keywords: ["fellatio", "oral", "irrumatio", "gokkun", "swallowing"]
-  },
-  {
-    category: "Domination & Control",
-    keywords: ["femdom", "dominatrix", "assertive_female", "forced", "sadism"]
-  },
-  {
-    category: "Toys & Machines",
-    keywords: ["sex_toy", "sex_machine", "milking_machine", "dildo", "strap-on", "huge_dildo"]
-  },
-  {
-    category: "Penetration & Insertion",
-    keywords: ["insertion", "penetrated", "stomach_bulge", "large_insertion", "urethral_insertion", "sounding"]
-  },
-  {
-    category: "Fetishes & Kinks",
-    keywords: ["foot_", "toe_", "sockjob", "lactation", "pet_play", "spanking", "gag", "gagged"]
-  },
-  {
-    category: "Fluids & Emission",
-    keywords: ["cum", "precum", "ejaculating", "milking", "pussy_juice", "premature_ejaculation", "handsfree_ejaculation"]
-  },
-  {
-    category: "Relationship Dynamics",
-    keywords: ["netorare", "netorase", "cheating", "clothed_female_nude_male"]
-  },
-  {
-    category: "Fantasy & Tentacles",
-    keywords: ["tentacle", "futanari", "knotting"]
-  },
-  {
-    category: "Anal & Object Play",
-    keywords: [
-      "anal_fingering", "anal_fisting", "anal_object_insertion", "object_insertion", "object_insertion_from_behind", "large_insertion", "sounding", "urethral_insertion", "dildo_riding", "huge_dildo", "strap-on", "pegging", "sex_toy", "sex_machine", "milking_machine", "penis_milking", "prostate_milking", "hand_milking", "handsfree_ejaculation"
-    ]
-  },
-  {
-    category: "Domination, Power & Sadism",
-    keywords: [
-      "femdom", "dominatrix", "sadism", "assertive_female", "pet_play", "cbt", "punishment", "boot_worship", "trample"
-    ]
-  },
-  {
-    category: "Feet & Legs",
-    keywords: [
-      "foot_worship", "toe_sucking", "sockjob"
-    ]
-  },
-  {
-    category: "Tentacles & Monsters",
-    keywords: [
-      "tentacle_sex", "tentacle_pit", "knotting"
-    ]
-  },
-  {
-    category: "Cum, Fluids & Orifices",
-    keywords: [
-      "cum", "cum_in_ass", "cum_in_mouth", "precum", "swallowing", "gokkun", "drinking_from_condom", "pouring_from_condom", "used_condom", "pussy_juice", "lactation"
-    ]
-  },
-  {
-    category: "Mind, Hypnosis & Control",
-    keywords: [
-      "hypnosis", "mind_break", "mind_control"
-    ]
-  },
-  {
-    category: "Public, Cheating & Social",
-    keywords: [
-      "before_and_after", "annoyed", "cheating_(relationship)", "clothed_female_nude_male", "public_nudity"
-    ]
-  },
-  {
-    category: "Body & Skin",
-    keywords: [
-      "dark_skin", "nipple_piercing", "pubic_hair", "lactation", "stomach_bulge"
-    ]
-  },
-  {
-    category: "Oral & Face",
-    keywords: [
-      "fellatio", "oral", "sitting_on_face"
-    ]
-  },
-  {
-    category: "Orgasm & Denial",
-    keywords: [
-      "orgasm_denial", "forced_orgasm", "ruined_orgasm", "premature_ejaculation"
-    ]
-  },
-  {
-    category: "Nonconsensual & Extreme",
-    keywords: [
-      "rape", "netorare", "netorase"
-    ]
-  },
-];
-
-function categorizeTags(flatTagArray) {
-  // Create categories from flat tag array using smart rules
-  const categorized = categoryRules.map(rule => ({ 
-    category: rule.category, 
-    tags: [] 
-  }));
-  
-  // Add "Other" category for unmatched tags
-  categorized.push({ category: "Other", tags: [] });
-  
-  flatTagArray.forEach(tag => {
-    let matched = false;
-    
-    // Try to match tag to a category
-    for (let i = 0; i < categoryRules.length; i++) {
-      const rule = categoryRules[i];
-      if (rule.keywords && rule.keywords.some(keyword => tag.includes(keyword))) {
-        categorized[i].tags.push(tag);
-        matched = true;
-        break;
-      }
-    }
-    
-    // If no match, add to "Other"
-    if (!matched) {
-      categorized[categorized.length - 1].tags.push(tag);
-    }
-  });
-  
-  // Remove empty categories
-  return categorized.filter(cat => cat.tags.length > 0);
-}
-
 function setKinkTags(tagsByCategory) {
-  // Accepts array of { category, tags } objects OR flat array
-  if (Array.isArray(tagsByCategory)) {
-    // Check if it's a flat array (first element is string) or categorized (first element has category property)
-    if (tagsByCategory.length > 0 && typeof tagsByCategory[0] === 'string') {
-      // It's a flat array, categorize it
-      kinkTagsByCategory = categorizeTags(tagsByCategory);
-    } else {
-      // It's already categorized
-      for (const cat of tagsByCategory) {
-        if (!cat.category || !Array.isArray(cat.tags)) return;
-      }
-      kinkTagsByCategory.length = 0;
-      kinkTagsByCategory.push(...tagsByCategory);
-    }
-    // Regenerate the flat list of kinkTags
-    kinkTags = kinkTagsByCategory.flatMap(category => category.tags);
-  }
-}
+  if (!Array.isArray(tagsByCategory)) return;
 
+  if (tagsByCategory.length > 0 && typeof tagsByCategory[0] === "string") {
+    kinkTagsByCategory = categorizeTags(tagsByCategory);
+  } else {
+    const normalized = [];
+    for (const cat of tagsByCategory) {
+      if (!cat || typeof cat.category !== "string" || !Array.isArray(cat.tags)) {
+        return;
+      }
+      const sanitizedTags = Array.from(
+        new Set(
+          cat.tags
+            .map((tag) => (typeof tag === "string" ? tag : String(tag ?? "")))
+            .map((tag) => tag.trim().toLowerCase().replace(/\s+/g, "_"))
+            .filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b));
+      const categoryName = String(cat.category).trim();
+      if (sanitizedTags.length === 0) continue;
+      normalized.push({
+        category: categoryName,
+        tags: sanitizedTags,
+      });
+    }
+    kinkTagsByCategory = normalized;
+  }
+
+  kinkTags = flattenCategorizedTags(kinkTagsByCategory);
+}
 
 // Tag icons mapping
 const tagIcons = {
@@ -512,7 +365,7 @@ async function initTags(
   setRandomBackground = setRandomBgFunc;
 
   // Initial population of kinkTags from default categories
-  kinkTags = kinkTagsByCategory.flatMap(category => category.tags);
+  kinkTags = flattenCategorizedTags(kinkTagsByCategory);
 
   // DOM element lookups
   tagButtonsContainer = document.getElementById("tag-buttons");
@@ -548,10 +401,10 @@ async function initTags(
     });
   }
 
-  // Load kink tags from file and categorize them automatically
+  // Load kink tags from file (already categorized in production, but we can fall back to categorizing flat arrays)
   const loadedTags = await fetchWithCache("kink-tags.json");
   if (Array.isArray(loadedTags)) {
-    setKinkTags(loadedTags); // This will now automatically categorize the flat array
+    setKinkTags(loadedTags);
   }
 }
 
