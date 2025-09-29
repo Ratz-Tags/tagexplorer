@@ -19,8 +19,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: back
+          fetch-depth: 0
           persist-credentials: true
+
+      - name: Prepare back branch
+        run: |
+          git fetch origin back || true
+          if git show-ref --quiet refs/remotes/origin/back; then
+            git checkout back
+            git reset --hard origin/back
+          else
+            git checkout -b back
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
