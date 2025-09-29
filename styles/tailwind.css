@@ -272,6 +272,10 @@ mix-blend-mode: screen;
 }
 .artist-image {
 @apply h-full w-full object-cover transition-all duration-700 ease-kink group-hover:scale-105;
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 .artist-footer {
 @apply flex flex-1 flex-col justify-between gap-3 px-5 py-4;

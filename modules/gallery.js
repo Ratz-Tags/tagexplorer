@@ -8,6 +8,7 @@ import {
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
+import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -351,12 +352,24 @@ function setBestImage(artist, img) {
             try { img.dataset.postId = String(postId); } catch {};
           }
           artistData._thumbnailPostId = postId;
+          
+          // Mark as quality-enhanced and set image rendering attributes
+          try {
+            img.dataset.qualityEnhanced = 'true';
+            img.decoding = 'async';
+            if ('fetchPriority' in HTMLImageElement.prototype) {
+              img.fetchPriority = 'high';
+            }
+          } catch (e) {}
       };
       img.src = url;
     }
 
-    // Prefer smaller preview URLs for thumbnails to improve perceived load
-    const candidateUrls = pickThumbnailCandidateUrls(validPosts, { maxPosts: 8 });
+    // Use higher quality images for artist cards to avoid pixelation
+    const candidateUrls = pickThumbnailCandidateUrls(validPosts, { 
+      maxPosts: 8, 
+      preferHighQuality: true // Prefer higher quality images to prevent pixelation
+    });
     const imageUrls = candidateUrls
       .map((u) => buildImageUrl(u))
       .filter(Boolean)
@@ -929,6 +942,9 @@ function renderArtistsPage(options = {}) {
   }
 
   pruneGalleryPages(getCurrentPage());
+  
+  // Enhance all gallery images to prevent pixelation
+  setTimeout(() => enhanceGalleryImages(), 50);
 }
 
 // Intersection observer for lazy loading images
@@ -1057,6 +1073,10 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   if (pageNumber > 0 && renderedPages.has(pageNumber)) {
     removePageFromDom(pageNumber);
   }
+  
+  // Inject image quality CSS if not already done
+  injectImageQualityCss();
+  
   const frag = document.createDocumentFragment();
   let eagerBudget = pageNumber === 1 ? 6 : 0; // Reduced from 12 to 6 for less initial load
   const selectedTags =
@@ -1604,7 +1624,8 @@ export {
   getFilteredArtists,
   setArtistsPerPage,
   hideZoomTauntOverlay,
-  openArtistOnDanbooru
+  openArtistOnDanbooru,
+  enhanceGalleryImages
 };
 
 // Testing helper: center a supplied image element on detected face or apply bias.
