@@ -1,5 +1,16 @@
 [
   {
+    "category": "Domination & Power Dynamics",
+    "tags": [
+      "assertive_female",
+      "bdsm",
+      "dominatrix",
+      "femdom",
+      "forced",
+      "sadism"
+    ]
+  },
+  {
     "category": "Bondage & Restraints",
     "tags": [
       "bondage",
@@ -15,7 +26,7 @@
     ]
   },
   {
-    "category": "Chastity & Control",
+    "category": "Chastity & Orgasm Control",
     "tags": [
       "chastity_cage",
       "chastity_cage_emission",
@@ -25,22 +36,24 @@
     ]
   },
   {
-    "category": "Feminization & Gender Play",
+    "category": "Feminization & Transformation",
     "tags": [
       "bimbofication",
       "crossdressing",
       "crossdressing_(mtf)",
       "feminization",
       "forced_feminization",
-      "strap-on",
       "trap"
     ]
   },
   {
     "category": "Humiliation & Degradation",
     "tags": [
+      "annoyed",
+      "assisted_exposure",
       "body_writing",
       "bullying",
+      "clothed_female_nude_male",
       "cumdump",
       "humiliation",
       "public_nudity",
@@ -57,18 +70,23 @@
     ]
   },
   {
-    "category": "Anal Play",
+    "category": "Anal Play & Pegging",
     "tags": [
       "anal_fingering",
       "anal_fisting",
       "anal_object_insertion",
-      "pegging"
+      "cum_in_ass",
+      "pegging",
+      "strap-on"
     ]
   },
   {
-    "category": "Oral & Fellatio",
+    "category": "Oral & Mouth Play",
     "tags": [
+      "cum_in_mouth",
       "fellatio",
+      "gag",
+      "gagged",
       "gokkun",
       "irrumatio",
       "oral",
@@ -76,17 +94,7 @@
     ]
   },
   {
-    "category": "Domination & Control",
-    "tags": [
-      "assertive_female",
-      "dominatrix",
-      "femdom",
-      "forced",
-      "sadism"
-    ]
-  },
-  {
-    "category": "Toys & Machines",
+    "category": "Toys, Machines & Objects",
     "tags": [
       "dildo_riding",
       "huge_dildo",
@@ -109,44 +117,43 @@
     ]
   },
   {
-    "category": "Fetishes & Kinks",
+    "category": "Body Worship & Sensory",
     "tags": [
       "foot_worship",
-      "gag",
-      "gagged",
       "lactation",
-      "pet_play",
       "sockjob",
       "spanking",
       "toe_sucking"
     ]
   },
   {
-    "category": "Fluids & Emission",
+    "category": "Cum & Fluids",
     "tags": [
+      "condom",
       "cum",
-      "cum_in_ass",
-      "cum_in_mouth",
+      "drinking_from_condom",
       "hand_milking",
       "handsfree_ejaculation",
       "penis_milking",
+      "pouring_from_condom",
       "precum",
       "premature_ejaculation",
       "prostate_milking",
-      "pussy_juice"
+      "pussy_juice",
+      "used_condom"
     ]
   },
   {
-    "category": "Relationship Dynamics",
+    "category": "Relationship & Cuckoldry",
     "tags": [
+      "before_and_after",
       "cheating_(relationship)",
-      "clothed_female_nude_male",
       "netorare",
       "netorase"
     ]
   },
   {
-    "category": "Fantasy & Tentacles",
+    "category": "Fantasy & Non-Human",
     "tags": [
       "futanari",
       "knotting",
@@ -155,22 +162,13 @@
     ]
   },
   {
-    "category": "Cum, Fluids & Orifices",
+    "category": "Roleplay & Pet Play",
     "tags": [
-      "drinking_from_condom",
-      "pouring_from_condom",
-      "used_condom"
+      "pet_play"
     ]
   },
   {
-    "category": "Public, Cheating & Social",
-    "tags": [
-      "annoyed",
-      "before_and_after"
-    ]
-  },
-  {
-    "category": "Body & Skin",
+    "category": "Physical Attributes",
     "tags": [
       "dark_skin",
       "nipple_piercing",
@@ -178,17 +176,9 @@
     ]
   },
   {
-    "category": "Nonconsensual & Extreme",
+    "category": "Extreme & Non-Consensual",
     "tags": [
       "rape"
-    ]
-  },
-  {
-    "category": "Other",
-    "tags": [
-      "assisted_exposure",
-      "bdsm",
-      "condom"
     ]
   }
 ]
