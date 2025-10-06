@@ -22,7 +22,7 @@ function getThumbnailUrl(artist) {
  */
 
 // Gallery state
-const DEFAULT_ARTISTS_PER_PAGE = 100;
+const DEFAULT_ARTISTS_PER_PAGE = 200;
 const MAX_PAGES_IN_DOM = 6;
 
 let filtered = [];

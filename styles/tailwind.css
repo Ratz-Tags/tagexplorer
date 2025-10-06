@@ -334,6 +334,8 @@ display: none;
 #back-to-top.is-visible {
 @apply inline-flex;
 display: inline-flex;
+/* Position above desperation meter */
+@apply fixed bottom-[5.5rem] right-6 z-[9500];
 }
 .gallery-spinner {
 @apply col-span-full flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-black/40 p-6 text-sm text-slate-300;
@@ -354,48 +356,149 @@ background: linear-gradient(90deg, rgba(102,243,255,0.9), rgba(255,100,212,0.9))
 @apply fixed left-1/2 top-8 z-[12000] -translate-x-1/2 rounded-full border border-white/10 bg-black/80 px-6 py-3 text-sm font-medium text-white shadow-neon;
 }
 .fullscreen-wrapper {
-@apply fixed inset-0 z-[12000] flex items-center justify-center bg-black/80 backdrop-blur-glass p-6;
+@apply fixed inset-0 z-[12000] flex items-center justify-center bg-black/80 backdrop-blur-glass;
+  /* Remove padding to allow full use of viewport */
+  padding: 0;
+  overflow: hidden;
 }
 .zoom-content {
-@apply relative flex w-full max-w-6xl flex-col items-center gap-6 rounded-3xl border border-white/10 bg-panel/90 p-6 shadow-neon backdrop-blur-glass;
+@apply relative flex w-full flex-col items-center gap-6 rounded-3xl border border-white/10 bg-panel/90 shadow-neon backdrop-blur-glass;
+  /* Constrain to viewport with safe margins */
+  max-width: min(1600px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  margin: 1rem;
+  padding: 1rem;
+  overflow-y: auto;
+  /* Ensure content scrolls if needed without pushing controls off-screen */
+  box-sizing: border-box;
 }
 .zoom-main {
-@apply flex w-full max-w-3xl flex-col items-center gap-4;
+@apply flex w-full flex-col items-center gap-4;
+  max-width: 100%;
+  /* Allow content to scroll within zoom-content if needed */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .fullscreen-img {
-@apply max-h-[72vh] w-full rounded-2xl object-contain shadow-neon;
+  /* Constrain image to available space, accounting for controls and padding */
+  max-height: calc(100vh - 12rem);
+  max-width: 100%;
+  width: auto;
+  height: auto;
+@apply rounded-2xl object-contain shadow-neon;
 }
 .zoom-tags,
 .zoom-top-tags {
-@apply flex flex-wrap justify-center gap-2 text-[0.6rem] uppercase tracking-[0.3em] text-slate-200;
+@apply flex flex-wrap justify-center gap-2 text-slate-200;
+  /* Smaller text and tighter spacing to prevent overflow */
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  max-width: 100%;
 }
 .zoom-tag-pill {
-@apply rounded-full border border-white/15 bg-white/10 px-2.5 py-1;
+@apply rounded-full border border-white/15 bg-white/10;
+  /* Smaller padding for more compact tags */
+  padding: 0.35rem 0.65rem;
+  font-size: 0.5rem;
+  white-space: nowrap;
 }
 .zoom-toolbar {
 @apply flex w-full justify-center gap-3;
 }
 .zoom-prev,
 .zoom-next {
-@apply absolute top-1/2 -translate-y-1/2 rounded-full border border-white/20 bg-black/60 p-4 text-lg text-white transition-all duration-200 hover:border-glow hover:bg-glow/40;
+  /* Position relative to viewport, not content */
+@apply rounded-full border border-white/20 bg-black/60 p-4 text-lg text-white transition-all duration-200 hover:border-glow hover:bg-glow/40;
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 12001;
 }
 .zoom-prev {
-@apply left-6;
+  left: max(1rem, env(safe-area-inset-left, 1rem));
 }
 .zoom-next {
-@apply right-6;
+  right: max(1rem, env(safe-area-inset-right, 1rem));
 }
 .zoom-close {
-@apply absolute right-6 top-6 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-blush hover:bg-blush/40;
+  /* Position relative to viewport, not content */
+@apply rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-blush hover:bg-blush/40;
+  position: fixed;
+  top: max(1.5rem, env(safe-area-inset-top, 1.5rem));
+  right: max(1.5rem, env(safe-area-inset-right, 1.5rem));
+  z-index: 12001;
 }
 .zoom-back-btn {
-@apply absolute left-6 top-6 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-glow hover:bg-glow/30;
+  /* Position relative to viewport, not content */
+@apply rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm uppercase tracking-[0.3em] text-slate-100 hover:border-glow hover:bg-glow/30;
+  position: fixed;
+  top: max(1.5rem, env(safe-area-inset-top, 1.5rem));
+  left: max(1.5rem, env(safe-area-inset-left, 1.5rem));
+  z-index: 12001;
 }
 .zoom-focus-mode .zoom-content {
 @apply max-w-4xl;
 }
 .hide-tags .zoom-tags {
 display: none;
+}
+
+/* Mobile-specific adjustments for fullscreen viewer */
+@media (max-width: 640px) {
+  .zoom-content {
+    /* Tighter margins on mobile */
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    margin: 0.5rem;
+    padding: 0.75rem;
+  }
+  
+  .fullscreen-img {
+    /* More conservative height on mobile to ensure controls are visible */
+    max-height: calc(100vh - 10rem);
+  }
+  
+  .zoom-prev,
+  .zoom-next {
+    /* Smaller touch targets on mobile but still accessible */
+    padding: 0.75rem;
+    font-size: 1rem;
+  }
+  
+  .zoom-close,
+  .zoom-back-btn {
+    /* Smaller but still tappable */
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .zoom-tags,
+  .zoom-top-tags {
+    /* Even smaller on mobile to prevent wrapping */
+    font-size: 0.45rem;
+    letter-spacing: 0.15em;
+    gap: 0.375rem;
+  }
+  
+  .zoom-tag-pill {
+    /* Tighter padding on mobile */
+    padding: 0.25rem 0.5rem;
+    font-size: 0.45rem;
+  }
+}
+
+/* Very small screens (fold cover, etc.) */
+@media (max-width: 520px) and (orientation: portrait) {
+  .fullscreen-img {
+    max-height: calc(100vh - 8rem);
+  }
+  
+  .zoom-prev,
+  .zoom-next {
+    /* Ensure controls don't overlap content */
+    padding: 0.5rem;
+  }
 }
 .artist-thumb-grid {
 @apply grid h-full w-full max-w-5xl grid-cols-4 gap-2 overflow-y-auto rounded-3xl border border-white/10 bg-black/60 p-4;
@@ -498,22 +601,9 @@ display: none;
   max-height: calc(100vh - 200px); /* Account for header and search areas */
 }
 
-/* Fullscreen viewer tweaks: keep controls visible on small viewports */
-.zoom-prev,
-.zoom-next {
-  position: fixed; /* viewport relative */
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 14000;
-  /* give a comfortable inset and respect safe-area */
-  padding: 1rem;
-}
-.zoom-prev { left: max(1rem, env(safe-area-inset-left, 1rem)); }
-.zoom-next { right: max(1rem, env(safe-area-inset-right, 1rem)); }
-
-.fullscreen-img {
-  @apply max-h-[78vh] w-full rounded-2xl object-contain shadow-neon;
-}
+/* Note: Fullscreen viewer controls (.zoom-prev, .zoom-next, .zoom-close, .zoom-back-btn)
+   are now positioned relative to viewport in the main .zoom-* rules above to ensure
+   they remain accessible even when content is large. */
 
 .tag-category-item {
   @apply mb-6;
@@ -870,6 +960,9 @@ bottom: calc(env(safe-area-inset-bottom) + 12rem);
 }
 body.audio-panel-open #desperation-meter {
 bottom: calc(env(safe-area-inset-bottom) + 12rem);
+}
+body.audio-panel-open #back-to-top.is-visible {
+bottom: calc(env(safe-area-inset-bottom) + 17.5rem);
 }
 body.voice-selector-open #audio-panel {
 opacity: 0;
