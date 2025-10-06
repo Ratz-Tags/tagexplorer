@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import { getArtistImageCount } from '../modules/api.js';
 
+import { categorizeTags } from '../modules/tag-categories.js';
+
 // List of core tags used to limit collected tags
 const coreTags = [
   'chastity_cage',
@@ -329,8 +331,9 @@ async function updateKinkTags() {
   }
 
   const tags = Array.from(new Set(tagSet)).sort();
-  await fs.writeFile('kink-tags.json', JSON.stringify(tags, null, 2) + '\n');
-  console.log(`✅ kink-tags.json updated with ${tags.length} tags`);
+  const categorizedTags = categorizeTags(tags);
+  await fs.writeFile('kink-tags.json', JSON.stringify(categorizedTags, null, 2) + '\n');
+  console.log(`✅ kink-tags.json updated with ${tags.length} tags across ${categorizedTags.length} categories`);
 
   // Discover artists by (coreTag + kinkTag) and augment artists.json
   console.log('⏳ discovering artists by core+kink tags...');
