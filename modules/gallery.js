@@ -1233,6 +1233,18 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       tagsToggle.title = willShow ? "Hide tags" : "Show tags";
     });
 
+    // Pin/Favorite button
+    const pinBtn = document.createElement("button");
+    pinBtn.type = "button";
+    pinBtn.className = "copy-button";
+    pinBtn.setAttribute("aria-label", "Pin artist as favorite");
+    pinBtn.textContent = "📌";
+    pinBtn.title = "Pin as favorite";
+    pinBtn.onclick = (e) => {
+      e.stopPropagation();
+      handleArtistCopy(artist, img.src);
+    };
+
     // Similar artists button
     const similarBtn = document.createElement("button");
     similarBtn.type = "button";
@@ -1251,6 +1263,7 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     actions.style.gap = "0.5rem";
     actions.style.flexWrap = "wrap";
     actions.appendChild(copyBtn);
+    actions.appendChild(pinBtn);
     actions.appendChild(reloadBtn);
     actions.appendChild(similarBtn);
     actions.appendChild(tagsToggle);
