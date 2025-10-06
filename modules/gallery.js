@@ -9,6 +9,7 @@ import {
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
 import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js";
+import { showSimilarArtistsModal, setAllArtists as setSimilarArtists } from "./similar-artists.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -200,12 +201,18 @@ function showGalleryEmptyState() {
 
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
-  const activeMode = mode === "count" ? "count" : "name";
-  if (activeMode === "count") {
+  
+  if (mode === "count") {
     list.sort(
       (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
     );
+  } else if (mode === "tag-frequency") {
+    // Sort by most common tag frequency (descending)
+    list.sort(
+      (a, b) => (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0)
+    );
   } else {
+    // Default: sort by name
     list.sort((a, b) =>
       a.artistName.localeCompare(b.artistName, undefined, {
         sensitivity: "base",
@@ -1226,10 +1233,26 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       tagsToggle.title = willShow ? "Hide tags" : "Show tags";
     });
 
+    // Similar artists button
+    const similarBtn = document.createElement("button");
+    similarBtn.type = "button";
+    similarBtn.className = "browse-btn";
+    similarBtn.style.cssText = "padding: 0.35rem 0.75rem; font-size: 0.55rem;";
+    similarBtn.textContent = "Similar";
+    similarBtn.title = "Find similar artists";
+    similarBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showSimilarArtistsModal(artist, { limit: 12, minSimilarity: 0.05 });
+    });
+
     const actions = document.createElement("div");
     actions.className = "artist-actions";
+    actions.style.display = "flex";
+    actions.style.gap = "0.5rem";
+    actions.style.flexWrap = "wrap";
     actions.appendChild(copyBtn);
     actions.appendChild(reloadBtn);
+    actions.appendChild(similarBtn);
     actions.appendChild(tagsToggle);
 
     const footer = document.createElement("div");
@@ -1372,6 +1395,29 @@ async function filterArtists(reset = true, force = false) {
     const activeTags = getActiveTags ? getActiveTags() : new Set();
     const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
 
+    // Determine the most common tag from active tags (for sorting)
+    let mostCommonTag = null;
+    if (activeTags.size > 0) {
+      const tagCounts = {};
+      const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
+      
+      // Count how many artists have each active tag
+      activeTags.forEach(tag => {
+        tagCounts[tag] = sourceArtists.filter(artist => 
+          (artist.kinkTags || []).includes(tag)
+        ).length;
+      });
+      
+      // Find the most common tag
+      let maxCount = 0;
+      for (const [tag, count] of Object.entries(tagCounts)) {
+        if (count > maxCount) {
+          maxCount = count;
+          mostCommonTag = tag;
+        }
+      }
+    }
+
     // Filter artists
     const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
 
@@ -1402,6 +1448,15 @@ async function filterArtists(reset = true, force = false) {
     if (spinner.setTotal) spinner.setTotal(filtered.length);
     if (spinner.updateProgress) spinner.updateProgress(0);
 
+    // Auto-switch to tag-frequency sorting if we have a most common tag
+    if (mostCommonTag && sortMode !== "tag-frequency") {
+      console.log(`Auto-switching to tag-frequency sort (most common: ${mostCommonTag})`);
+      sortMode = "tag-frequency";
+    } else if (!mostCommonTag && sortMode === "tag-frequency") {
+      // Switch back to default if no tags active
+      sortMode = "name";
+    }
+
     sortCurrentArtists();
 
     // Always fetch counts for the current filtered artists
@@ -1425,6 +1480,15 @@ async function filterArtists(reset = true, force = false) {
               // Use existing postCount if available, otherwise fetch from API
               const totalCount = artist.postCount || await getArtistImageCount(artist.artistName);
               artist._totalImageCount = totalCount;
+              
+              // If we have a most common tag, fetch the count for artist+tag combo
+              if (mostCommonTag) {
+                const { fetchPostCountForTags } = await import("./api.js");
+                const tagCount = await fetchPostCountForTags([artist.artistName, mostCommonTag]);
+                artist._mostCommonTagCount = tagCount || 0;
+              } else {
+                artist._mostCommonTagCount = 0;
+              }
               artist._imageCount = totalCount;
             } catch (e) {
               // If API fails, use fallback count
@@ -1531,6 +1595,8 @@ function setAllArtists(artists) {
   } else {
     allArtists = [];
   }
+  // Also set artists for similar-artists module
+  setSimilarArtists(allArtists);
 }
 
 function setGetActiveTagsCallback(callback) {

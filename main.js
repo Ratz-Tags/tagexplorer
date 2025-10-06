@@ -102,7 +102,7 @@ import { loadAppData } from "./modules/api.js";
 import { startTauntTicker } from "./modules/humiliation.js";
 
 
-import { renderPromptCacheUI } from "./modules/prompt-cache.js";
+
 import { createTTSToggleButton } from "./modules/tts-toggle.js";
 import {
   initTagExplorer,
@@ -246,8 +246,6 @@ window.kexplorer = {
   getActiveTags,
   renderTagButtons,
 };
-// Ensure buttons that reference window.* work
-window.renderPromptCacheUI = renderPromptCacheUI;
 
 // --- SIDEBAR TOGGLE BUTTON ---
 const sidebarToggleBtn = document.querySelector(".sidebar-toggle");
@@ -360,14 +358,7 @@ if (tagSearchInput && tagSearchInput.parentNode) {
 
 
 window.addEventListener("DOMContentLoaded", () => {
-  const promptsBtn = document.getElementById("prompts-btn");
   const filtersBtn = document.getElementById("filters-btn");
-
-  if (promptsBtn) {
-    promptsBtn.addEventListener("click", () => {
-      if (window.renderPromptCacheUI) window.renderPromptCacheUI();
-    });
-  }
 
   if (filtersBtn) {
     filtersBtn.addEventListener("click", () => {
@@ -388,17 +379,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // Fallback: delegate clicks for tag-explorer-bar buttons if individual binding failed
 // This ensures all tag-explorer-bar buttons work regardless of render timing
-['prompts-btn', 'filters-btn'].forEach(id => {
-  document.addEventListener('click', (e) => {
-    const t = e.target;
-    if (t && t.id === id) {
-      e.preventDefault();
-      if (id === 'prompts-btn' && window.renderPromptCacheUI) {
-        window.renderPromptCacheUI();
-      }
-      if (id === 'filters-btn') {
-        openTagExplorer();
-      }
-    }
-  });
+document.addEventListener('click', (e) => {
+  const t = e.target;
+  if (t && t.id === 'filters-btn') {
+    e.preventDefault();
+    openTagExplorer();
+  }
 });

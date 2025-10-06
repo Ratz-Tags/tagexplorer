@@ -831,12 +831,7 @@ body.sidebar-open .sidebar-wrapper,
 .sidebar-suggest-btn {
 @apply browse-btn w-full justify-center;
 }
-.prompt-suggestion-overlay {
-@apply fixed inset-0 z-[13000] flex items-center justify-center bg-black/70 backdrop-blur-glass p-6;
-}
-.prompt-suggestion-overlay .modal-card {
-@apply w-full max-w-3xl rounded-[2rem] border border-white/10 bg-panel/95 p-8 text-sm text-slate-200 shadow-neon;
-}
+
 .retry-btn {
 @apply browse-btn w-full;
 }
