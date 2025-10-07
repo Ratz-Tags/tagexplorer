@@ -778,6 +778,102 @@ export async function fetchPostCountForTags(tags) {
   return 0;
 }
 
+/**
+ * Fetch general (non-kink) style tags for an artist from Danbooru
+ * These tags are used for visual similarity matching
+ */
+export async function fetchArtistStyleTags(artistName, options = {}) {
+  const { limit = 200, useCache = true } = options;
+  const cacheKey = `danbooru-style-tags-${artistName}`;
+  
+  // Try session cache first (24 hour TTL for style tags)
+  if (useCache) {
+    try {
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const created = Number(parsed.t) || 0;
+          const ttl = Number(parsed.ttl) || 0;
+          if (ttl === 0 || Date.now() - created <= ttl) {
+            return Array.isArray(parsed.v) ? parsed.v : [];
+          }
+          sessionStorage.removeItem(cacheKey);
+        }
+      }
+    } catch (e) {}
+  }
+  
+  // Style-related tag categories to look for
+  const STYLE_TAG_PATTERNS = [
+    'monochrome', 'greyscale', 'sketch', 'lineart', 'comic', 'manga',
+    'realistic', 'anime_style', 'western_style', 'chibi', 'pixel_art',
+    'watercolor_(medium)', 'traditional_media', 'digital_media',
+    'thick_thighs', 'muscular', 'petite', 'voluptuous', 'slender',
+    'huge_breasts', 'large_breasts', 'medium_breasts', 'small_breasts', 'flat_chest',
+    'curvy', 'hourglass_figure', 'wide_hips', 'narrow_waist',
+    'soft_shading', 'cel_shading', 'flat_colors', 'painterly',
+    'stylized', 'semi-realistic', 'cartoon', 'anime_coloring'
+  ];
+  
+  try {
+    // Fetch posts for the artist
+    const posts = await fetchPosts([artistName], {
+      limit,
+      page: 1,
+      order: 'score',
+      useCache: true
+    });
+    
+    if (!posts || posts.length === 0) return [];
+    
+    // Collect all general tags from posts
+    const tagFrequency = new Map();
+    
+    for (const post of posts) {
+      if (!post.tag_string_general) continue;
+      
+      const generalTags = post.tag_string_general.split(' ');
+      
+      for (const tag of generalTags) {
+        // Check if tag matches style patterns
+        const isStyleTag = STYLE_TAG_PATTERNS.some(pattern => 
+          tag.includes(pattern) || pattern.includes(tag)
+        );
+        
+        if (isStyleTag) {
+          tagFrequency.set(tag, (tagFrequency.get(tag) || 0) + 1);
+        }
+      }
+    }
+    
+    // Convert to array and sort by frequency
+    const styleTags = Array.from(tagFrequency.entries())
+      .sort((a, b) => b[1] - a[1]) // Sort by frequency descending
+      .filter(([tag, count]) => count >= Math.ceil(posts.length * 0.1)) // Must appear in at least 10% of posts
+      .map(([tag]) => tag);
+    
+    // Cache the result (24 hour TTL)
+    if (useCache && styleTags.length > 0) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ 
+          t: Date.now(), 
+          ttl: 1000 * 60 * 60 * 24, // 24 hours
+          v: styleTags 
+        }));
+      } catch (e) {
+        console.warn('Failed to cache style tags:', e);
+      }
+    }
+    
+    return styleTags;
+    
+  } catch (error) {
+    console.warn(`Failed to fetch style tags for ${artistName}:`, error);
+    return [];
+  }
+}
+
 // Export functions for ES modules
 export {
   postHasAllTags,
@@ -796,7 +892,7 @@ export {
 
 // postHasAllTags: exported, used by filterValidImagePosts
 // buildImageUrl: exported, used by gallery.js, api.js
-// fetchPosts: exported, used by fetchArtistImages, getRandomBackgroundImage
+// fetchPosts: exported, used by fetchArtistImages, getRandomBackgroundImage, fetchArtistStyleTags
 // filterValidImagePosts: exported, used by fetchArtistImages
 // getRandomBackgroundImage: exported, used by gallery.js
 // fetchArtistImages: exported, used by gallery.js, api.js
@@ -806,5 +902,6 @@ export {
 // loadAppData: exported, used by main.js
 // fetchAllArtistImages: exported, used by gallery.js
 // fetchPostCountForTags: exported, used by gallery.js
+// fetchArtistStyleTags: exported, used by similar-artists.js
 
 // No unused or undefined functions in this file.

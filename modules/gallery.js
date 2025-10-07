@@ -5,6 +5,7 @@ import {
   buildImageUrl,
   fetchAllArtistImages,
   getArtistImageCount,
+  fetchArtistStyleTags,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
@@ -1618,6 +1619,54 @@ function setAllArtists(artists) {
   }
   // Also set artists for similar-artists module
   setSimilarArtists(allArtists);
+  
+  // Start background fetch of style tags for all artists
+  fetchStyleTagsForAllArtists();
+}
+
+/**
+ * Fetch style tags for all artists in the background
+ * This runs slowly over time to avoid overwhelming the API
+ */
+async function fetchStyleTagsForAllArtists() {
+  if (!allArtists || allArtists.length === 0) return;
+  
+  console.log(`Starting background style tag fetch for ${allArtists.length} artists...`);
+  
+  // Process artists in small batches with delays to respect rate limits
+  const BATCH_SIZE = 5;
+  const BATCH_DELAY = 3000; // 3 seconds between batches
+  
+  for (let i = 0; i < allArtists.length; i += BATCH_SIZE) {
+    const batch = allArtists.slice(i, i + BATCH_SIZE);
+    
+    // Fetch style tags for this batch in parallel
+    const promises = batch.map(async (artist) => {
+      if (!artist || !artist.artistName) return;
+      
+      try {
+        const styleTags = await fetchArtistStyleTags(artist.artistName, { limit: 100 });
+        if (styleTags && styleTags.length > 0) {
+          artist.styleTags = styleTags;
+          console.log(`Fetched ${styleTags.length} style tags for ${artist.artistName}`);
+        }
+      } catch (error) {
+        console.warn(`Failed to fetch style tags for ${artist.artistName}:`, error);
+      }
+    });
+    
+    await Promise.all(promises);
+    
+    // Update similar artists module with new style tags
+    setSimilarArtists(allArtists);
+    
+    // Wait before next batch (except for the last batch)
+    if (i + BATCH_SIZE < allArtists.length) {
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    }
+  }
+  
+  console.log('Style tag fetch complete for all artists');
 }
 
 function setGetActiveTagsCallback(callback) {
