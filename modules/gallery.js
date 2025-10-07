@@ -1808,9 +1808,9 @@ export {
   setArtistsPerPage,
   hideZoomTauntOverlay,
   openArtistOnDanbooru,
-  enhanceGalleryImages,
-  forceFetchStyleTags
+  enhanceGalleryImages
 };
+// Note: forceFetchStyleTags is exported inline on line ~1692
 
 // Testing helper: center a supplied image element on detected face or apply bias.
 async function _test_centerFaceInThumb(imgEl) {
