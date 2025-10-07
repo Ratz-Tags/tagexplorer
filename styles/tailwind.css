@@ -247,8 +247,16 @@ mix-blend-mode: screen;
 @apply flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-slate-200;
 }
 .gallery-grid {
-@apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+@apply grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6;
 }
+
+/* Fold4 inner display: 980px wide should show 4 columns */
+@screen fold-inner {
+  .gallery-grid {
+    @apply grid-cols-4;
+  }
+}
+
 .gallery-empty-state {
 @apply col-span-full flex flex-col items-center gap-4 rounded-[2rem] border border-rose-300/25 bg-rose-950/30 p-8 text-center text-[0.6rem] uppercase tracking-[0.35em] text-rose-100/80 shadow-neon;
 }
