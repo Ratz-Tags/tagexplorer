@@ -286,16 +286,23 @@ cursor: pointer;
 @apply text-base font-semibold uppercase tracking-[0.25em] text-white;
 }
 .artist-tags {
-@apply flex flex-wrap gap-2 text-xs uppercase tracking-[0.2em] text-slate-300;
-max-height: 0;
-opacity: 0;
-overflow: hidden;
-transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
-            opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+@apply flex-wrap gap-2 text-xs uppercase tracking-[0.2em] text-slate-300;
+display: none;
 }
 .artist-card.show-tags .artist-tags {
-max-height: 500px; /* Large enough for multiple rows of tags */
-opacity: 1;
+@apply flex;
+animation: fadeInTags 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeInTags {
+from {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+to {
+  opacity: 1;
+  transform: translateY(0);
+}
 }
 .gallery-tag {
 @apply inline-flex items-center rounded-full border border-white/10 bg-black/40 px-2 py-1 text-[0.55rem] font-medium uppercase tracking-[0.3em] text-slate-200;

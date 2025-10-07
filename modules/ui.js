@@ -359,7 +359,6 @@ function createFullscreenViewer(options = {}) {
     closeBtn,
     prevBtn,
     nextBtn,
-    tauntHeader,
   };
 }
 
