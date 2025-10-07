@@ -39,11 +39,16 @@ const FETCH_TAUNTS = [
 let currentOverlay = null;
 let messageInterval = null;
 let currentMessageIndex = 0;
+let cancelRequested = false;
+let onCancelCallback = null;
 
 /**
  * Show the force fetch overlay with progress bar and taunts
  */
-export function showForceFetchOverlay(totalArtists) {
+export function showForceFetchOverlay(totalArtists, onCancel = null) {
+  // Reset cancellation state
+  cancelRequested = false;
+  onCancelCallback = onCancel;
   // Remove any existing overlay
   hideForceFetchOverlay();
   
@@ -84,7 +89,7 @@ export function showForceFetchOverlay(totalArtists) {
     </div>
     
     <div style="margin-top: 2rem;">
-      <button id="fetch-cancel-btn" class="browse-btn" style="padding: 0.5rem 1.5rem; opacity: 0.5; cursor: not-allowed;" disabled>
+      <button id="fetch-cancel-btn" class="browse-btn" style="padding: 0.5rem 1.5rem;">
         Cancel (Coward)
       </button>
     </div>
@@ -93,6 +98,30 @@ export function showForceFetchOverlay(totalArtists) {
   overlay.appendChild(modalContent);
   document.body.appendChild(overlay);
   currentOverlay = overlay;
+  
+  // Add cancel button handler
+  const cancelBtn = modalContent.querySelector('#fetch-cancel-btn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', () => {
+      cancelRequested = true;
+      if (onCancelCallback) {
+        onCancelCallback();
+      }
+      
+      // Update button to show cancellation
+      cancelBtn.textContent = 'Cancelling...';
+      cancelBtn.disabled = true;
+      cancelBtn.style.opacity = '0.5';
+      cancelBtn.style.cursor = 'not-allowed';
+      
+      // Update taunt
+      const tauntEl = document.getElementById('fetch-taunt');
+      if (tauntEl) {
+        tauntEl.textContent = "Giving up already? Pathetic.";
+        tauntEl.style.color = 'rgba(255, 102, 102, 0.9)';
+      }
+    });
+  }
   
   // Rotate taunts every 4 seconds
   currentMessageIndex = 0;
@@ -137,6 +166,21 @@ export function updateForceFetchProgress(current, total) {
 }
 
 /**
+ * Check if cancellation has been requested
+ */
+export function isCancelRequested() {
+  return cancelRequested;
+}
+
+/**
+ * Reset cancellation state
+ */
+export function resetCancellation() {
+  cancelRequested = false;
+  onCancelCallback = null;
+}
+
+/**
  * Hide the force fetch overlay
  */
 export function hideForceFetchOverlay() {
@@ -155,6 +199,7 @@ export function hideForceFetchOverlay() {
         currentOverlay.remove();
       }
       currentOverlay = null;
+      resetCancellation();
     }, 300);
   }
 }

@@ -11,6 +11,7 @@ import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
 import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js";
 import { showSimilarArtistsModal, setAllArtists as setSimilarArtists } from "./similar-artists.js";
+import { toggleFavorite, isFavorite } from "./favorites.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -1238,12 +1239,24 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     const pinBtn = document.createElement("button");
     pinBtn.type = "button";
     pinBtn.className = "copy-button";
-    pinBtn.setAttribute("aria-label", "Pin artist as favorite");
-    pinBtn.textContent = "📌";
-    pinBtn.title = "Pin as favorite";
+    const isCurrentlyFavorited = isFavorite(artist.artistName);
+    pinBtn.textContent = isCurrentlyFavorited ? "⭐" : "📌";
+    pinBtn.title = isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites";
+    pinBtn.setAttribute("aria-label", isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites");
+    pinBtn.style.filter = isCurrentlyFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
     pinBtn.onclick = (e) => {
       e.stopPropagation();
-      handleArtistCopy(artist, img.src);
+      const nowFavorited = toggleFavorite(artist.artistName);
+      pinBtn.textContent = nowFavorited ? "⭐" : "📌";
+      pinBtn.title = nowFavorited ? "Remove from favorites" : "Add to favorites";
+      pinBtn.setAttribute("aria-label", nowFavorited ? "Remove from favorites" : "Add to favorites");
+      pinBtn.style.filter = nowFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
+      
+      // Show toast notification
+      const message = nowFavorited ? `★ ${artist.artistName} added to favorites` : `Removed ${artist.artistName} from favorites`;
+      if (typeof window.showToast === 'function') {
+        window.showToast(message);
+      }
     };
 
     // Similar artists button
@@ -1625,15 +1638,16 @@ function setAllArtists(artists) {
 }
 
 /**
- * Fetch style tags for all artists in the background
- * This runs slowly over time to avoid overwhelming the API
+ * Fetch style tags for a specific list of artists
+ * @param {Array} artistList - Array of artists to fetch style tags for
  * @param {Function} onProgress - Optional callback(current, total) for progress updates
+ * @param {Function} shouldCancel - Optional callback that returns true if fetch should be cancelled
  */
-async function fetchStyleTagsForAllArtists(onProgress = null) {
-  if (!allArtists || allArtists.length === 0) return;
+async function fetchStyleTagsForArtistList(artistList, onProgress = null, shouldCancel = null) {
+  if (!artistList || artistList.length === 0) return;
   
-  const total = allArtists.length;
-  console.log(`Starting background style tag fetch for ${total} artists...`);
+  const total = artistList.length;
+  console.log(`Starting style tag fetch for ${total} artists...`);
   
   // Process artists in small batches with delays to respect rate limits
   const BATCH_SIZE = 5;
@@ -1641,8 +1655,14 @@ async function fetchStyleTagsForAllArtists(onProgress = null) {
   
   let processed = 0;
   
-  for (let i = 0; i < allArtists.length; i += BATCH_SIZE) {
-    const batch = allArtists.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < artistList.length; i += BATCH_SIZE) {
+    // Check for cancellation
+    if (shouldCancel && shouldCancel()) {
+      console.log(`Style tag fetch cancelled at ${processed}/${total} artists`);
+      return;
+    }
+    
+    const batch = artistList.slice(i, i + BATCH_SIZE);
     
     // Fetch style tags for this batch in parallel
     const promises = batch.map(async (artist) => {
@@ -1672,12 +1692,12 @@ async function fetchStyleTagsForAllArtists(onProgress = null) {
     setSimilarArtists(allArtists);
     
     // Wait before next batch (except for the last batch)
-    if (i + BATCH_SIZE < allArtists.length) {
+    if (i + BATCH_SIZE < artistList.length) {
       await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
     }
   }
   
-  console.log('Style tag fetch complete for all artists');
+  console.log('Style tag fetch complete');
   
   // Final progress update
   if (onProgress) {
@@ -1686,28 +1706,56 @@ async function fetchStyleTagsForAllArtists(onProgress = null) {
 }
 
 /**
- * Force fetch style tags for all artists with UI feedback
+ * Fetch style tags for all artists in the background
+ * This runs slowly over time to avoid overwhelming the API
+ * @param {Function} onProgress - Optional callback(current, total) for progress updates
+ * @param {Function} shouldCancel - Optional callback that returns true if fetch should be cancelled
+ */
+async function fetchStyleTagsForAllArtists(onProgress = null, shouldCancel = null) {
+  return fetchStyleTagsForArtistList(allArtists, onProgress, shouldCancel);
+}
+
+/**
+ * Force fetch style tags for currently filtered artists with UI feedback
  * This is the user-triggered version with progress display
  */
 export async function forceFetchStyleTags() {
-  const { showForceFetchOverlay, updateForceFetchProgress, showFetchComplete, hideForceFetchOverlay } = await import('./force-fetch-ui.js');
+  const { showForceFetchOverlay, updateForceFetchProgress, showFetchComplete, hideForceFetchOverlay, isCancelRequested } = await import('./force-fetch-ui.js');
   
-  if (!allArtists || allArtists.length === 0) {
-    alert('No artists loaded yet. Please wait for the gallery to load.');
+  // Use filtered artists (those matching current tags), not all artists
+  const artistsToFetch = filtered.length > 0 ? filtered : allArtists;
+  
+  if (!artistsToFetch || artistsToFetch.length === 0) {
+    alert('No artists to fetch. Please wait for the gallery to load.');
     return;
   }
   
-  // Show the overlay with progress bar
-  showForceFetchOverlay(allArtists.length);
+  const totalCount = artistsToFetch.length;
+  const hasFilters = filtered.length > 0;
+  
+  console.log(`Force fetching style tags for ${totalCount} ${hasFilters ? 'filtered' : 'total'} artists...`);
+  
+  // Show the overlay with progress bar and cancel handler
+  showForceFetchOverlay(totalCount);
   
   try {
-    // Run the fetch with progress callback
-    await fetchStyleTagsForAllArtists((current, total) => {
-      updateForceFetchProgress(current, total);
-    });
+    // Fetch only the filtered artists
+    await fetchStyleTagsForArtistList(
+      artistsToFetch,
+      (current, total) => {
+        updateForceFetchProgress(current, total);
+      },
+      () => isCancelRequested()
+    );
     
-    // Show completion message
-    showFetchComplete(allArtists.length);
+    // Check if cancelled
+    if (isCancelRequested()) {
+      hideForceFetchOverlay();
+      console.log('Style tag fetch cancelled by user');
+    } else {
+      // Show completion message
+      showFetchComplete(totalCount);
+    }
     
   } catch (error) {
     console.error('Force fetch failed:', error);
@@ -1788,6 +1836,55 @@ function openArtistOnDanbooru(artist) {
 }
 
 // --- EXPORTS ---
+/**
+ * Filter gallery to show only favorited artists
+ */
+async function filterGalleryToFavorites() {
+  const { filterToFavorites, getFavoritesCount } = await import('./favorites.js');
+  
+  if (getFavoritesCount() === 0) {
+    console.warn('No favorite artists to filter');
+    return;
+  }
+  
+  // Filter the current artist list to favorites only
+  filtered = filterToFavorites(allArtists);
+  
+  // Reset pagination and re-render
+  currentPage = 1;
+  renderedPages.clear();
+  totalPages = Math.ceil(filtered.length / artistsPerPage);
+  pagination.current = 1;
+  pagination.total = totalPages;
+  
+  renderArtistsPage({ force: true });
+  
+  console.log(`Filtered to ${filtered.length} favorite artists`);
+}
+
+/**
+ * Clear favorites filter and show all artists
+ */
+async function clearGalleryFilters() {
+  // Re-run the normal filter logic to restore the filtered state
+  if (getActiveTagsCallback) {
+    const activeTags = getActiveTagsCallback();
+    const nameFilter = getArtistNameFilterCallback ? getArtistNameFilterCallback() : '';
+    filterArtists(activeTags, nameFilter);
+  } else {
+    // Fallback: show all artists
+    filtered = [...allArtists];
+    currentPage = 1;
+    renderedPages.clear();
+    totalPages = Math.ceil(filtered.length / artistsPerPage);
+    pagination.current = 1;
+    pagination.total = totalPages;
+    renderArtistsPage({ force: true });
+  }
+  
+  console.log('Cleared favorites filter');
+}
+
 export {
   getCurrentPage,
   setCurrentPage,
@@ -1808,7 +1905,9 @@ export {
   setArtistsPerPage,
   hideZoomTauntOverlay,
   openArtistOnDanbooru,
-  enhanceGalleryImages
+  enhanceGalleryImages,
+  filterGalleryToFavorites,
+  clearGalleryFilters
 };
 // Note: forceFetchStyleTags is exported inline on line ~1692
 

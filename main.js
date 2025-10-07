@@ -379,6 +379,68 @@ window.addEventListener("DOMContentLoaded", () => {
       await forceFetchStyleTags();
     });
   }
+
+  // Favorites button handler
+  const favoritesBtn = document.getElementById("favorites-btn");
+  const favoritesCount = document.getElementById("favorites-count");
+  
+  if (favoritesBtn) {
+    let showingFavorites = false;
+    
+    favoritesBtn.addEventListener("click", async () => {
+      const { filterGalleryToFavorites, clearGalleryFilters } = await import('./modules/gallery.js');
+      const { getFavoritesCount } = await import('./modules/favorites.js');
+      
+      if (getFavoritesCount() === 0) {
+        alert('No favorite artists yet. Star some artists first!');
+        return;
+      }
+      
+      showingFavorites = !showingFavorites;
+      
+      if (showingFavorites) {
+        filterGalleryToFavorites();
+        favoritesBtn.classList.add('active');
+        favoritesBtn.setAttribute('aria-pressed', 'true');
+      } else {
+        clearGalleryFilters();
+        favoritesBtn.classList.remove('active');
+        favoritesBtn.setAttribute('aria-pressed', 'false');
+      }
+    });
+  }
+  
+  // Listen for favorites changes to update the count badge
+  document.addEventListener('favorites:changed', (e) => {
+    if (favoritesCount) {
+      const count = e.detail.count;
+      favoritesCount.textContent = count;
+      favoritesCount.classList.toggle('hidden', count === 0);
+    }
+    
+    // Update button disabled state
+    if (favoritesBtn) {
+      const count = e.detail.count;
+      favoritesBtn.disabled = count === 0;
+      if (count === 0 && favoritesBtn.classList.contains('active')) {
+        favoritesBtn.classList.remove('active');
+        favoritesBtn.setAttribute('aria-pressed', 'false');
+      }
+    }
+  });
+  
+  // Initialize favorites count on page load
+  (async () => {
+    const { getFavoritesCount } = await import('./modules/favorites.js');
+    const count = getFavoritesCount();
+    if (favoritesCount) {
+      favoritesCount.textContent = count;
+      favoritesCount.classList.toggle('hidden', count === 0);
+    }
+    if (favoritesBtn) {
+      favoritesBtn.disabled = count === 0;
+    }
+  })();
 });
 
 // Remove inline z-index overrides; CSS now controls stacking order
