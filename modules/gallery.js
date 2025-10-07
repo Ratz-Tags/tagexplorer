@@ -1627,15 +1627,19 @@ function setAllArtists(artists) {
 /**
  * Fetch style tags for all artists in the background
  * This runs slowly over time to avoid overwhelming the API
+ * @param {Function} onProgress - Optional callback(current, total) for progress updates
  */
-async function fetchStyleTagsForAllArtists() {
+async function fetchStyleTagsForAllArtists(onProgress = null) {
   if (!allArtists || allArtists.length === 0) return;
   
-  console.log(`Starting background style tag fetch for ${allArtists.length} artists...`);
+  const total = allArtists.length;
+  console.log(`Starting background style tag fetch for ${total} artists...`);
   
   // Process artists in small batches with delays to respect rate limits
   const BATCH_SIZE = 5;
   const BATCH_DELAY = 3000; // 3 seconds between batches
+  
+  let processed = 0;
   
   for (let i = 0; i < allArtists.length; i += BATCH_SIZE) {
     const batch = allArtists.slice(i, i + BATCH_SIZE);
@@ -1657,6 +1661,13 @@ async function fetchStyleTagsForAllArtists() {
     
     await Promise.all(promises);
     
+    processed += batch.length;
+    
+    // Call progress callback if provided
+    if (onProgress) {
+      onProgress(processed, total);
+    }
+    
     // Update similar artists module with new style tags
     setSimilarArtists(allArtists);
     
@@ -1667,6 +1678,42 @@ async function fetchStyleTagsForAllArtists() {
   }
   
   console.log('Style tag fetch complete for all artists');
+  
+  // Final progress update
+  if (onProgress) {
+    onProgress(total, total);
+  }
+}
+
+/**
+ * Force fetch style tags for all artists with UI feedback
+ * This is the user-triggered version with progress display
+ */
+export async function forceFetchStyleTags() {
+  const { showForceFetchOverlay, updateForceFetchProgress, showFetchComplete, hideForceFetchOverlay } = await import('./force-fetch-ui.js');
+  
+  if (!allArtists || allArtists.length === 0) {
+    alert('No artists loaded yet. Please wait for the gallery to load.');
+    return;
+  }
+  
+  // Show the overlay with progress bar
+  showForceFetchOverlay(allArtists.length);
+  
+  try {
+    // Run the fetch with progress callback
+    await fetchStyleTagsForAllArtists((current, total) => {
+      updateForceFetchProgress(current, total);
+    });
+    
+    // Show completion message
+    showFetchComplete(allArtists.length);
+    
+  } catch (error) {
+    console.error('Force fetch failed:', error);
+    hideForceFetchOverlay();
+    alert('Failed to fetch style tags. Check console for details.');
+  }
 }
 
 function setGetActiveTagsCallback(callback) {
@@ -1761,7 +1808,8 @@ export {
   setArtistsPerPage,
   hideZoomTauntOverlay,
   openArtistOnDanbooru,
-  enhanceGalleryImages
+  enhanceGalleryImages,
+  forceFetchStyleTags
 };
 
 // Testing helper: center a supplied image element on detected face or apply bias.

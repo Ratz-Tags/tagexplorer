@@ -369,6 +369,16 @@ window.addEventListener("DOMContentLoaded", () => {
       filtersBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
     });
   }
+  
+  // Force fetch button handler
+  const forceFetchBtn = document.getElementById("force-fetch-btn");
+  if (forceFetchBtn) {
+    forceFetchBtn.addEventListener("click", async () => {
+      // Import and call force fetch
+      const { forceFetchStyleTags } = await import('./modules/gallery.js');
+      await forceFetchStyleTags();
+    });
+  }
 });
 
 // Remove inline z-index overrides; CSS now controls stacking order
