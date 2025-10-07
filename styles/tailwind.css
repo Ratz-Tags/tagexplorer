@@ -269,6 +269,7 @@ mix-blend-mode: screen;
 }
 .artist-media {
 @apply relative aspect-[3/4] overflow-hidden;
+cursor: pointer;
 }
 .artist-image {
 @apply h-full w-full object-cover transition-all duration-700 ease-kink group-hover:scale-105;

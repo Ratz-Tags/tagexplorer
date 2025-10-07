@@ -1123,16 +1123,16 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
       }
       img.style.display = "block";
     }
-    img.addEventListener("click", () => {
-      const preload = new Image();
-      preload.src = img.src;
-      preload.onload = () => openArtistZoom(artist);
-      preload.onerror = () => openArtistZoom(artist);
-    });
-
     const media = document.createElement("div");
     media.className = "artist-media";
+    media.style.cursor = "pointer";
     media.appendChild(img);
+    
+    // Add click handler to media container for better reliability
+    media.addEventListener("click", (e) => {
+      e.stopPropagation();
+      openArtistZoom(artist);
+    });
 
     const name = document.createElement("div");
     name.className = "artist-name";
