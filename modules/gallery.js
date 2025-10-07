@@ -1470,15 +1470,13 @@ async function filterArtists(reset = true, force = false) {
       sortMode = "name";
     }
 
-    // Store scroll position before sorting
-    const scrollY = window.scrollY;
+    // Sort immediately with available data (no waiting for API)
     sortCurrentArtists();
-    // Restore scroll position after sort
-    requestAnimationFrame(() => {
-      window.scrollTo(0, scrollY);
-    });
+    
+    // Render immediately to show results fast
+    renderArtistsPage({ force: true });
 
-    // Always fetch counts for the current filtered artists
+    // Always fetch counts for the current filtered artists (in background)
     async function fetchInBatches(
       artists,
       batchSize = 10,
@@ -1520,15 +1518,8 @@ async function filterArtists(reset = true, force = false) {
         done += batch.length;
         if (spin && spin.updateProgress) spin.updateProgress(done);
 
-        // Re-render every batch to show progress (preserve scroll position)
-        if (gen === filterGeneration) {
-          const currentScrollY = window.scrollY;
-          sortCurrentArtists();
-          renderArtistsPage({ force: true });
-          requestAnimationFrame(() => {
-            window.scrollTo(0, currentScrollY);
-          });
-        }
+        // Don't re-sort during batch processing to avoid jumps
+        // Just update the progress indicator
 
         // Short delay between batches
         if (i + batchSize < artists.length) {
@@ -1538,16 +1529,15 @@ async function filterArtists(reset = true, force = false) {
 
       if (gen !== filterGeneration) return;
 
+      // Only sort and render once at the end (silently, without jumping)
       const finalScrollY = window.scrollY;
       sortCurrentArtists();
       renderArtistsPage({ force: true });
-      requestAnimationFrame(() => {
-        window.scrollTo(0, finalScrollY);
-      });
+      // Use behavior: instant to prevent smooth scrolling
+      window.scrollTo({ top: finalScrollY, behavior: 'instant' });
     }
 
-    renderArtistsPage({ force: true }); // Render immediately
-
+    // Initial render already happened above, start fetching counts in background
     if (reset) {
       await fetchInBatches(filtered, 10, 500, generation, spinner).catch(
         (e) => {
@@ -1558,18 +1548,14 @@ async function filterArtists(reset = true, force = false) {
       const resetScrollY = window.scrollY;
       sortCurrentArtists();
       renderArtistsPage({ force: true });
-      requestAnimationFrame(() => {
-        window.scrollTo(0, resetScrollY);
-      });
+      window.scrollTo({ top: resetScrollY, behavior: 'instant' });
     } else if (force) {
       fetchInBatches(filtered, 10, 500, generation, spinner).then(() => {
         if (generation !== filterGeneration) return;
         const forceScrollY = window.scrollY;
         sortCurrentArtists();
         renderArtistsPage({ force: true });
-        requestAnimationFrame(() => {
-          window.scrollTo(0, forceScrollY);
-        });
+        window.scrollTo({ top: forceScrollY, behavior: 'instant' });
       });
     }
   } catch (error) {
