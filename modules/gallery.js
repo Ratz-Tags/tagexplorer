@@ -1649,9 +1649,9 @@ async function fetchStyleTagsForArtistList(artistList, onProgress = null, should
   const total = artistList.length;
   console.log(`Starting style tag fetch for ${total} artists...`);
   
-  // Process artists in small batches with delays to respect rate limits
-  const BATCH_SIZE = 5;
-  const BATCH_DELAY = 3000; // 3 seconds between batches
+  // Process artists in batches with delays to respect rate limits
+  const BATCH_SIZE = 20;
+  const BATCH_DELAY = 1000; // 1 second between batches (20 artists/sec)
   
   let processed = 0;
   
