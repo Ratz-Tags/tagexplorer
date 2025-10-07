@@ -1470,7 +1470,13 @@ async function filterArtists(reset = true, force = false) {
       sortMode = "name";
     }
 
+    // Store scroll position before sorting
+    const scrollY = window.scrollY;
     sortCurrentArtists();
+    // Restore scroll position after sort
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollY);
+    });
 
     // Always fetch counts for the current filtered artists
     async function fetchInBatches(
@@ -1514,10 +1520,14 @@ async function filterArtists(reset = true, force = false) {
         done += batch.length;
         if (spin && spin.updateProgress) spin.updateProgress(done);
 
-        // Re-render every batch to show progress
+        // Re-render every batch to show progress (preserve scroll position)
         if (gen === filterGeneration) {
+          const currentScrollY = window.scrollY;
           sortCurrentArtists();
           renderArtistsPage({ force: true });
+          requestAnimationFrame(() => {
+            window.scrollTo(0, currentScrollY);
+          });
         }
 
         // Short delay between batches
@@ -1528,8 +1538,12 @@ async function filterArtists(reset = true, force = false) {
 
       if (gen !== filterGeneration) return;
 
+      const finalScrollY = window.scrollY;
       sortCurrentArtists();
       renderArtistsPage({ force: true });
+      requestAnimationFrame(() => {
+        window.scrollTo(0, finalScrollY);
+      });
     }
 
     renderArtistsPage({ force: true }); // Render immediately
@@ -1541,13 +1555,21 @@ async function filterArtists(reset = true, force = false) {
         }
       );
       if (generation !== filterGeneration) return;
+      const resetScrollY = window.scrollY;
       sortCurrentArtists();
       renderArtistsPage({ force: true });
+      requestAnimationFrame(() => {
+        window.scrollTo(0, resetScrollY);
+      });
     } else if (force) {
       fetchInBatches(filtered, 10, 500, generation, spinner).then(() => {
         if (generation !== filterGeneration) return;
+        const forceScrollY = window.scrollY;
         sortCurrentArtists();
         renderArtistsPage({ force: true });
+        requestAnimationFrame(() => {
+          window.scrollTo(0, forceScrollY);
+        });
       });
     }
   } catch (error) {
