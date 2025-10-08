@@ -564,7 +564,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     foldAdapter,
   });
 
-  setRandomBackground();
+  // Don't call setRandomBackground() here - let the controller handle it after initialization
 
   await initTags();
   initGallery();

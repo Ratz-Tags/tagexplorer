@@ -732,8 +732,9 @@ async function setRandomBackground(options = {}) {
   }
 
   if (!imageUrl) {
-    console.warn('[ambience] no image available, using fallback background');
-    blur.style.backgroundColor = '#111';
+    console.warn('[ambience] no image available, will retry on next refresh');
+    // Don't set backgroundColor here - leave it transparent so lattice shows
+    // The controller will retry automatically
     return;
   }
 

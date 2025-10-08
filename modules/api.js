@@ -26,11 +26,11 @@ let artistsListPromise = null;
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  // Optimized for better UX: faster initial requests with reasonable backoff
-  minDelay: 300, // Minimum 300ms between requests (faster throughput)
-  maxDelay: 6000, // Maximum 6s delay for backoff
+  // Ultra-fast for maximum responsiveness
+  minDelay: 50, // Minimum 50ms between requests (very fast throughput)
+  maxDelay: 5000, // Maximum 5s delay for backoff
   maxRetries: 4, // allow an extra retry before failing
-  backoffMultiplier: 1.6, // moderate backoff multiplier
+  backoffMultiplier: 1.5, // moderate backoff multiplier
 };
 
 // Request queue and tracking
@@ -568,7 +568,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
  * Batch fetch multiple artist images with staggered requests
  */
 async function fetchArtistImagesBatch(requests, options = {}) {
-  const { batchDelay = 250, maxConcurrent = 5 } = options;
+  const { batchDelay = 150, maxConcurrent = 6 } = options;
   const results = new Map();
   
   // Process requests in smaller concurrent batches
@@ -831,7 +831,7 @@ async function fetchAllArtistImages(
         requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
       }
 
-      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 200, maxConcurrent: options.maxConcurrent || 6 });
+      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 100, maxConcurrent: options.maxConcurrent || 8 });
       for (let p = 1; p <= totalPages; p++) {
         const key = `p${p}`;
         const pagePosts = batchResults.get(key) || [];
