@@ -416,6 +416,17 @@ mix-blend-mode: screen;
 @apply grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6;
 }
 
+.gallery-chunk {
+  display: contents;
+}
+
+@supports not (display: contents) {
+  .gallery-chunk {
+    @apply flex flex-wrap gap-6;
+    width: 100%;
+  }
+}
+
 /* Fold4 inner display: 980px wide should show 4 columns */
 @screen fold-inner {
   .gallery-grid {
