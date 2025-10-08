@@ -1338,6 +1338,136 @@ display: none;
 }
 }
 
+/* ============================
+   Landing Page Styles
+   ============================ */
+@layer components {
+  .landing-body {
+    @apply overflow-x-hidden relative;
+  }
+  
+  .landing-background {
+    @apply fixed inset-0 z-0 overflow-hidden;
+    background: radial-gradient(ellipse at top, rgba(102,243,255,0.12), transparent 50%),
+                radial-gradient(ellipse at bottom right, rgba(255,100,212,0.12), transparent 50%),
+                #0c0b16;
+  }
+  
+  .landing-montage {
+    @apply absolute inset-0 opacity-20;
+  }
+  
+  .landing-montage__frame {
+    @apply absolute opacity-0 transition-opacity duration-[3s] ease-in-out;
+    will-change: opacity;
+  }
+  
+  .landing-montage__frame img {
+    @apply w-full h-full object-cover;
+    filter: blur(12px) saturate(0.8);
+  }
+  
+  .landing-montage__frame--alpha {
+    @apply inset-0;
+  }
+  
+  .landing-montage__frame--beta {
+    @apply top-0 left-1/4 right-0 bottom-1/4;
+  }
+  
+  .landing-montage__frame--gamma {
+    @apply top-1/4 left-0 right-1/4 bottom-0;
+  }
+  
+  .landing-grid {
+    @apply absolute inset-0 opacity-30;
+    background-image:
+      linear-gradient(rgba(102,243,255,0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(102,243,255,0.1) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  
+  .landing-noise {
+    @apply absolute inset-0 opacity-[0.03];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='3.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+  
+  .landing-shell {
+    @apply relative z-10 flex min-h-screen flex-col px-6 py-12 sm:px-12;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .landing-header {
+    @apply flex items-start justify-between gap-8 mb-12 sm:mb-16;
+    flex-wrap: wrap;
+  }
+  
+  .landing-brand {
+    @apply flex flex-col gap-2;
+  }
+  
+  .landing-whisper {
+    @apply text-xs uppercase tracking-[0.4em] text-rose-200/60;
+  }
+  
+  .landing-nav {
+    @apply flex items-center gap-6;
+  }
+  
+  .landing-link {
+    @apply text-sm uppercase tracking-[0.4em] text-slate-300 transition-colors duration-200 hover:text-glow;
+    text-decoration: none;
+  }
+  
+  .landing-main {
+    @apply flex-1 flex flex-col items-start justify-center max-w-3xl gap-8;
+  }
+  
+  .landing-title {
+    @apply text-5xl sm:text-6xl lg:text-7xl font-display uppercase tracking-[0.3em] text-white;
+    text-shadow: 0 0 40px rgba(102,243,255,0.4);
+    position: relative;
+  }
+  
+  .landing-title::before {
+    content: attr(data-shadow);
+    @apply absolute inset-0 text-glow/20;
+    filter: blur(8px);
+    z-index: -1;
+  }
+  
+  .landing-intro {
+    @apply text-base sm:text-lg leading-relaxed text-slate-300 max-w-2xl;
+    letter-spacing: 0.05em;
+  }
+  
+  .landing-actions {
+    @apply flex flex-wrap items-center gap-4 mt-4;
+  }
+  
+  .landing-enter {
+    @apply inline-flex items-center justify-center px-8 py-4 rounded-full border border-glow/40 bg-glow/20 text-sm font-semibold uppercase tracking-[0.5em] text-white shadow-[0_0_0_2px_rgba(255,100,212,0.25)] transition-all duration-300 hover:translate-y-[-2px] hover:shadow-neon;
+    text-decoration: none;
+  }
+  
+  .landing-audio {
+    @apply inline-flex items-center justify-center px-6 py-4 rounded-full border border-white/10 bg-white/5 text-sm font-semibold uppercase tracking-[0.4em] text-slate-200 transition-all duration-300 hover:translate-y-[-2px] hover:border-glow hover:text-white;
+  }
+  
+  .landing-disclaimer {
+    @apply mt-8 p-4 rounded-2xl border border-white/10 bg-black/30 text-xs uppercase tracking-[0.3em] text-slate-400 max-w-xl;
+  }
+  
+  .landing-disclaimer span {
+    @apply text-rose-200/80;
+  }
+  
+  .landing-footer {
+    @apply mt-auto pt-12 text-xs uppercase tracking-[0.35em] text-slate-500 max-w-2xl;
+  }
+}
+
 @keyframes screenPulse {
 0% { opacity: 1; }
 50% { opacity: 0.6; }
