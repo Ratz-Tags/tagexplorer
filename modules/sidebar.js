@@ -561,64 +561,9 @@ function initSidebar() {
       overlay.setAttribute("aria-hidden", "true");
       document.body.appendChild(overlay);
     }
-    function openSidebar() {
-      vibrate && vibrate();
-      copiedSidebar.classList.remove("sidebar-hidden");
-      copiedSidebar.setAttribute("aria-hidden", "false");
-      document.body.classList.add("sidebar-open");
-      if (sidebarWrapper) {
-        sidebarWrapper.classList.add("visible");
-        sidebarWrapper.setAttribute("aria-hidden", "false");
-      }
-      overlay.style.display = "block";
-      overlay.setAttribute("aria-hidden", "false");
-      copiedSidebar.setAttribute("aria-modal", "true");
-      copiedSidebar.setAttribute("tabindex", "0");
-      copiedSidebar.focus();
-    }
-    function closeSidebar() {
-      copiedSidebar.classList.add("sidebar-hidden");
-      copiedSidebar.setAttribute("aria-hidden", "true");
-      document.body.classList.remove("sidebar-open");
-      if (sidebarWrapper) {
-        sidebarWrapper.classList.remove("visible");
-        sidebarWrapper.setAttribute("aria-hidden", "true");
-      }
-      overlay.style.display = "none";
-      overlay.setAttribute("aria-hidden", "true");
-      copiedSidebar.removeAttribute("aria-modal");
-      copiedSidebar.removeAttribute("tabindex");
-    }
-    // Sidebar toggle buttons
-    const sidebarToggles = document.querySelectorAll(".sidebar-toggle");
-    sidebarToggles.forEach((btn) => {
-      btn.addEventListener("click", openSidebar);
-    });
-    // Overlay click closes sidebar
-    overlay.addEventListener("click", closeSidebar);
-    // Close button
-    const closeBtn = copiedSidebar.querySelector(".copied-sidebar-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", closeSidebar);
-      closeBtn.setAttribute("aria-label", "Close sidebar");
-      closeBtn.setAttribute("tabindex", "0");
-    }
-    // Escape key closes sidebar
-    copiedSidebar.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") closeSidebar();
-    });
-    // Touch swipe left to close (mobile UX)
-    let touchStartX = null;
-    copiedSidebar.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 1) touchStartX = e.touches[0].clientX;
-    });
-    copiedSidebar.addEventListener("touchend", (e) => {
-      if (touchStartX !== null && e.changedTouches.length === 1) {
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        if (dx < -60) closeSidebar();
-      }
-      touchStartX = null;
-    });
+    // Note: Event listeners for sidebar toggle, close button, overlay click, escape key, and touch swipe
+    // are now managed by setupSidebarToggle() in pages/gallery.js to avoid duplicate bindings
+    // and properly handle fold-mode logic.
     // Ensure sidebar is hidden by default unless .sidebar-open is on body
     if (!document.body.classList.contains("sidebar-open")) {
       copiedSidebar.classList.add("sidebar-hidden");

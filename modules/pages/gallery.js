@@ -280,6 +280,37 @@ function setupSidebarToggle() {
     });
   }
 
+  // Overlay click closes sidebar
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      setSidebarHidden(true, { userInitiated: true });
+    });
+  }
+
+  // Escape key closes sidebar
+  copiedSidebarEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      setSidebarHidden(true, { userInitiated: true });
+    }
+  });
+
+  // Touch swipe left to close (mobile UX)
+  let touchStartX = null;
+  copiedSidebarEl.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+    }
+  });
+  copiedSidebarEl.addEventListener('touchend', (e) => {
+    if (touchStartX !== null && e.changedTouches.length === 1) {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (dx < -60) {
+        setSidebarHidden(true, { userInitiated: true });
+      }
+    }
+    touchStartX = null;
+  });
+
   copiedSidebarEl._setSidebarHidden = (hidden, options = {}) => {
     setSidebarHidden(hidden, options);
   };
