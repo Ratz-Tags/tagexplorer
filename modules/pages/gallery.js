@@ -273,12 +273,12 @@ function setupSidebarToggle() {
     });
   });
 
-  const sidebarCloseBtn = document.querySelector('.copied-sidebar-close');
-  if (sidebarCloseBtn) {
-    sidebarCloseBtn.addEventListener('click', () => {
+  // Use event delegation to handle both static and dynamically created close buttons
+  copiedSidebarEl.addEventListener('click', (e) => {
+    if (e.target.closest('.copied-sidebar-close')) {
       setSidebarHidden(true, { userInitiated: true });
-    });
-  }
+    }
+  });
 
   // Overlay click closes sidebar
   if (overlay) {

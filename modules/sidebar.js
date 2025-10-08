@@ -195,21 +195,9 @@ function updateCopiedSidebar() {
   closeBtn.className = "copied-sidebar-close";
   closeBtn.innerHTML = '<span class="sidebar-icon">✖️</span>';
   closeBtn.title = "Close";
-  closeBtn.onclick = () => {
-    copiedSidebar.classList.add("sidebar-hidden");
-    copiedSidebar.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("sidebar-open");
-    const sidebarWrapper = copiedSidebar.closest(".sidebar-wrapper");
-    if (sidebarWrapper) {
-      sidebarWrapper.classList.remove("visible");
-      sidebarWrapper.setAttribute("aria-hidden", "true");
-    }
-    const overlay = document.getElementById("sidebar-overlay");
-    if (overlay) {
-      overlay.style.display = "none";
-      overlay.setAttribute("aria-hidden", "true");
-    }
-  };
+  closeBtn.setAttribute("aria-label", "Close sidebar");
+  // Note: Click handler will be attached by setupSidebarToggle() in gallery.js
+  // to ensure consistent behavior and fold-mode awareness
   copiedSection.appendChild(closeBtn);
 
   const copiedList = document.createElement("div");
