@@ -2,6 +2,9 @@ export async function initLandingPage({ shell }) {
   const audioButton = document.querySelector('[data-landing-audio]');
   let setupPromise = null;
 
+  // Initialize background montage rotation
+  initMontage();
+
   function revealAudioPanel() {
     if (!shell?.audioPanel) return;
     shell.audioPanel.removeAttribute('hidden');
@@ -10,6 +13,28 @@ export async function initLandingPage({ shell }) {
       panel.classList.remove('hidden');
       panel.setAttribute('aria-hidden', 'false');
     }
+  }
+
+  function initMontage() {
+    const frames = document.querySelectorAll('.landing-montage__frame');
+    if (frames.length === 0) return;
+
+    let currentIndex = 0;
+    
+    // Show first frame immediately
+    frames[0].style.opacity = '1';
+    
+    // Rotate frames every 4 seconds
+    setInterval(() => {
+      // Fade out current frame
+      frames[currentIndex].style.opacity = '0';
+      
+      // Move to next frame
+      currentIndex = (currentIndex + 1) % frames.length;
+      
+      // Fade in next frame
+      frames[currentIndex].style.opacity = '1';
+    }, 4000);
   }
 
   if (audioButton) {
