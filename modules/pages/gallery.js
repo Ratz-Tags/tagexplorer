@@ -6,6 +6,8 @@ import {
   initAudio,
   initAudioUI,
   syncAudioPanelLayout,
+  toggleGlobalMute,
+  getGlobalMuteState,
 } from '../audio.js';
 import {
   initTags,
@@ -51,6 +53,42 @@ import {
 } from '../tag-explorer.js';
 import { showAzureVoiceSelector } from '../azure-tts.js';
 
+const MOTION_STORAGE_KEY = 'te.motion.preference';
+const MOTION_DEFAULT = 'full';
+
+function readMotionPreference() {
+  if (typeof window === 'undefined') return MOTION_DEFAULT;
+  try {
+    const value = window.localStorage.getItem(MOTION_STORAGE_KEY);
+    if (value === 'reduced' || value === 'full') {
+      return value;
+    }
+  } catch {
+    // Ignore storage access failures.
+  }
+  return MOTION_DEFAULT;
+}
+
+function applyMotionPreference(mode) {
+  if (typeof document === 'undefined') return MOTION_DEFAULT;
+  const normalized = mode === 'reduced' ? 'reduced' : 'full';
+  document.documentElement.dataset.motion = normalized;
+  document.body.dataset.motion = normalized;
+  try {
+    window.localStorage.setItem(MOTION_STORAGE_KEY, normalized);
+  } catch {
+    // Ignore storage failures.
+  }
+  try {
+    document.dispatchEvent(
+      new CustomEvent('motion:change', { detail: { mode: normalized } }),
+    );
+  } catch {
+    // Ignore custom event dispatch failures.
+  }
+  return normalized;
+}
+
 function setupVoiceSelectorButton() {
   const audioControls = document.querySelector('.audio-controls');
   if (!audioControls) return;
@@ -80,8 +118,9 @@ function setupVoiceSelectorButton() {
 }
 
 function setupThemeToggle() {
-  const themeToggle = document.querySelector('.theme-toggle');
+  const themeToggles = Array.from(document.querySelectorAll('.theme-toggle'));
   const bodyEl = document.body;
+  if (!bodyEl) return;
   const savedTheme = localStorage.getItem('theme');
   if (savedTheme === 'incognito') {
     bodyEl.classList.add('incognito-theme');
@@ -91,15 +130,17 @@ function setupThemeToggle() {
     bodyEl.classList.add('fem-theme');
     bodyEl.classList.remove('incognito-theme');
   }
-  if (themeToggle) {
-    themeToggle.addEventListener('click', () => {
-      bodyEl.classList.toggle('incognito-theme');
-      bodyEl.classList.toggle('fem-theme');
-      const current = bodyEl.classList.contains('incognito-theme') ? 'incognito' : 'fem';
-      localStorage.setItem('theme', current);
-      setRandomBackground();
-    });
-  }
+  if (!themeToggles.length) return;
+  const handleToggle = () => {
+    bodyEl.classList.toggle('incognito-theme');
+    bodyEl.classList.toggle('fem-theme');
+    const current = bodyEl.classList.contains('incognito-theme') ? 'incognito' : 'fem';
+    localStorage.setItem('theme', current);
+    setRandomBackground();
+  };
+  themeToggles.forEach((toggleEl) => {
+    toggleEl.addEventListener('click', handleToggle);
+  });
 }
 
 function setupTagSearchModeSelector() {
@@ -178,48 +219,273 @@ function setupFavoritesButton() {
 }
 
 function setupSidebarToggle() {
-  const sidebarToggleBtn = document.querySelector('.sidebar-toggle');
   const copiedSidebarEl = document.getElementById('copied-sidebar');
-  if (sidebarToggleBtn && copiedSidebarEl) {
-    sidebarToggleBtn.addEventListener('click', () => {
-      copiedSidebarEl.classList.toggle('sidebar-hidden');
-      const isHidden = copiedSidebarEl.classList.contains('sidebar-hidden');
-      copiedSidebarEl.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+  if (!copiedSidebarEl) return;
+  const sidebarWrapper = copiedSidebarEl.closest('.sidebar-wrapper');
+  const overlay = document.getElementById('sidebar-overlay');
+  const toggleButtons = Array.from(document.querySelectorAll('.sidebar-toggle'));
+
+  const setSidebarHidden = (hidden, { userInitiated = false } = {}) => {
+    const isHidden = Boolean(hidden);
+    copiedSidebarEl.classList.toggle('sidebar-hidden', isHidden);
+    copiedSidebarEl.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+    if (sidebarWrapper) {
+      sidebarWrapper.classList.toggle('visible', !isHidden);
+      sidebarWrapper.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+    }
+    if (overlay) {
+      const foldMode = document.documentElement?.dataset?.foldMode;
+      const shouldShowOverlay = !isHidden && foldMode !== 'fold-inner';
+      overlay.style.display = shouldShowOverlay ? 'block' : 'none';
+      overlay.setAttribute('aria-hidden', shouldShowOverlay ? 'false' : 'true');
+    }
+    document.body.classList.toggle('sidebar-open', !isHidden);
+    if (userInitiated) {
+      copiedSidebarEl.dataset.userHidden = isHidden ? 'true' : 'false';
+    }
+  };
+
+  toggleButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const willHide = !copiedSidebarEl.classList.contains('sidebar-hidden');
+      setSidebarHidden(willHide, { userInitiated: true });
+    });
+  });
+
+  const sidebarCloseBtn = document.querySelector('.copied-sidebar-close');
+  if (sidebarCloseBtn) {
+    sidebarCloseBtn.addEventListener('click', () => {
+      setSidebarHidden(true, { userInitiated: true });
     });
   }
 
-  const sidebarCloseBtn = document.querySelector('.copied-sidebar-close');
-  const copiedSidebar = document.getElementById('copied-sidebar');
-  if (sidebarCloseBtn && copiedSidebar) {
-    sidebarCloseBtn.addEventListener('click', () => {
-      copiedSidebar.classList.add('sidebar-hidden');
-      copiedSidebar.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('sidebar-open');
-      const sidebarWrapper = copiedSidebar.closest('.sidebar-wrapper');
-      if (sidebarWrapper) {
-        sidebarWrapper.classList.remove('visible');
-        sidebarWrapper.setAttribute('aria-hidden', 'true');
-      }
-      const overlay = document.getElementById('sidebar-overlay');
-      if (overlay) {
-        overlay.style.display = 'none';
-        overlay.setAttribute('aria-hidden', 'true');
-      }
-    });
-  }
+  copiedSidebarEl._setSidebarHidden = (hidden, options = {}) => {
+    setSidebarHidden(hidden, options);
+  };
+
+  setSidebarHidden(copiedSidebarEl.classList.contains('sidebar-hidden'));
 }
 
 function setupAudioToggle() {
-  const audioToggleBtn = document.querySelector('.audio-toggle');
   const audioPanelEl = document.getElementById('audio-panel');
-  if (audioToggleBtn && audioPanelEl) {
-    audioToggleBtn.addEventListener('click', () => {
-      audioPanelEl.classList.toggle('hidden');
-      const isHidden = audioPanelEl.classList.contains('hidden');
-      audioPanelEl.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
-      syncAudioPanelLayout();
+  if (!audioPanelEl) return;
+  const audioToggleButtons = Array.from(document.querySelectorAll('.audio-toggle'));
+
+  const setAudioHidden = (hidden) => {
+    const isHidden = Boolean(hidden);
+    audioPanelEl.classList.toggle('hidden', isHidden);
+    audioPanelEl.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
+    audioToggleButtons.forEach((btn) => {
+      btn.setAttribute('aria-pressed', isHidden ? 'false' : 'true');
+      btn.classList.toggle('is-active', !isHidden);
     });
+    syncAudioPanelLayout();
+  };
+
+  audioToggleButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const willHide = !audioPanelEl.classList.contains('hidden');
+      setAudioHidden(willHide);
+    });
+  });
+
+  setAudioHidden(audioPanelEl.classList.contains('hidden'));
+}
+
+function setupMuteToggle() {
+  const muteBtn = document.getElementById('cover-mute-btn');
+  if (!muteBtn) return;
+
+  const updateButtonState = (muted) => {
+    const isMuted = Boolean(muted);
+    muteBtn.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+    muteBtn.classList.toggle('is-active', isMuted);
+    muteBtn.dataset.state = isMuted ? 'muted' : 'unmuted';
+    const label = muteBtn.querySelector('.cover-command-label');
+    if (label) {
+      label.textContent = isMuted ? 'Muted' : 'Mute';
+    }
+  };
+
+  updateButtonState(typeof getGlobalMuteState === 'function' ? getGlobalMuteState() : false);
+
+  muteBtn.addEventListener('click', () => {
+    const muted = typeof toggleGlobalMute === 'function' ? toggleGlobalMute() : false;
+    updateButtonState(muted);
+  });
+
+  document.addEventListener('audio:mutechange', (event) => {
+    if (!event?.detail || typeof event.detail.muted === 'undefined') return;
+    updateButtonState(Boolean(event.detail.muted));
+  });
+}
+
+function setupMotionToggle(initialMode) {
+  const desiredMode = initialMode || readMotionPreference();
+  const motionBtn = document.getElementById('cover-motion-btn');
+
+  const updateButtonState = (mode) => {
+    if (!motionBtn) return;
+    const normalized = mode === 'reduced' ? 'reduced' : 'full';
+    const isReduced = normalized === 'reduced';
+    motionBtn.setAttribute('aria-pressed', isReduced ? 'true' : 'false');
+    motionBtn.setAttribute(
+      'aria-label',
+      isReduced ? 'Enable motion animations' : 'Reduce motion animations',
+    );
+    motionBtn.classList.toggle('is-active', isReduced);
+    motionBtn.dataset.state = normalized;
+    const label = motionBtn.querySelector('.cover-command-label');
+    if (label) {
+      label.textContent = isReduced ? 'Motion Off' : 'Motion';
+    }
+  };
+
+  const applyAndUpdate = (mode) => {
+    const normalized = applyMotionPreference(mode);
+    updateButtonState(normalized);
+  };
+
+  if (!motionBtn) {
+    applyAndUpdate(desiredMode);
+    return () => {};
   }
+
+  applyAndUpdate(desiredMode);
+
+  motionBtn.addEventListener('click', () => {
+    const nextMode = motionBtn.dataset.state === 'reduced' ? 'full' : 'reduced';
+    applyAndUpdate(nextMode);
+  });
+
+  document.addEventListener('motion:change', (event) => {
+    if (!event?.detail?.mode) return;
+    updateButtonState(event.detail.mode);
+  });
+
+  return (mode) => {
+    if (mode) {
+      applyAndUpdate(mode);
+    }
+  };
+}
+
+function setupCoverSettingsSheet() {
+  const sheet = document.getElementById('cover-settings-sheet');
+  const trigger = document.getElementById('cover-settings-btn');
+  if (!sheet || !trigger) {
+    return { close: () => {} };
+  }
+
+  const closeButtons = Array.from(sheet.querySelectorAll('[data-close]'));
+
+  const openSheet = () => {
+    sheet.classList.add('is-open');
+    sheet.setAttribute('aria-hidden', 'false');
+    trigger.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('settings-sheet-open');
+  };
+
+  const closeSheet = () => {
+    sheet.classList.remove('is-open');
+    sheet.setAttribute('aria-hidden', 'true');
+    trigger.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('settings-sheet-open');
+  };
+
+  trigger.addEventListener('click', () => {
+    if (sheet.classList.contains('is-open')) {
+      closeSheet();
+    } else {
+      openSheet();
+    }
+  });
+
+  closeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      closeSheet();
+    });
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && sheet.classList.contains('is-open')) {
+      closeSheet();
+    }
+  });
+
+  return { close: closeSheet, open: openSheet };
+}
+
+function updateCommandStatusLabels(mode) {
+  const labels = document.querySelectorAll('.command-status__label');
+  const normalized = mode || 'default';
+  labels.forEach((label) => {
+    const target = label?.dataset?.mode ? `fold-${label.dataset.mode}` : null;
+    const isActive = target && target === normalized;
+    label.classList.toggle('is-active', Boolean(isActive));
+    label.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
+}
+
+function syncSidebarForFold(mode) {
+  const sidebar = document.getElementById('copied-sidebar');
+  if (!sidebar || typeof sidebar._setSidebarHidden !== 'function') return;
+  if (mode === 'fold-inner') {
+    if (typeof sidebar.dataset.foldPrevHidden === 'undefined') {
+      sidebar.dataset.foldPrevHidden = sidebar.dataset.userHidden || (sidebar.classList.contains('sidebar-hidden') ? 'true' : 'false');
+    }
+    sidebar._setSidebarHidden(false);
+  } else {
+    if (typeof sidebar.dataset.foldPrevHidden !== 'undefined') {
+      const shouldHide = sidebar.dataset.foldPrevHidden === 'true';
+      sidebar._setSidebarHidden(shouldHide);
+      delete sidebar.dataset.foldPrevHidden;
+    } else if (typeof sidebar.dataset.userHidden !== 'undefined') {
+      sidebar._setSidebarHidden(sidebar.dataset.userHidden === 'true');
+    }
+  }
+}
+
+function setupFoldModeSync({ foldAdapter, closeSettings }) {
+  const applyMode = (mode) => {
+    const normalized = mode || 'default';
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.foldMode = normalized;
+      document.body.dataset.foldMode = normalized;
+      const shellRoot = document.querySelector('[data-shell]');
+      if (shellRoot) {
+        shellRoot.dataset.foldMode = normalized;
+      }
+    }
+    updateCommandStatusLabels(normalized);
+    if (normalized !== 'fold-cover' && typeof closeSettings === 'function') {
+      closeSettings();
+    }
+    if (normalized !== 'fold-cover' && typeof document !== 'undefined') {
+      document.body.classList.remove('filters-open');
+    }
+    syncSidebarForFold(normalized);
+  };
+
+  const currentMode =
+    (foldAdapter && typeof foldAdapter.getMode === 'function' && foldAdapter.getMode()) ||
+    document.body.dataset.foldMode ||
+    'default';
+  applyMode(currentMode);
+
+  if (!foldAdapter || typeof foldAdapter.subscribe !== 'function') {
+    return () => {};
+  }
+
+  const unsubscribe = foldAdapter.subscribe((mode) => {
+    applyMode(mode || 'default');
+  });
+
+  return () => {
+    if (typeof unsubscribe === 'function') {
+      unsubscribe();
+    }
+  };
 }
 
 function setupSortControls() {
@@ -242,23 +508,28 @@ function setupSortControls() {
 }
 
 function setupFiltersButton() {
-  const filtersBtn = document.getElementById('filters-btn');
-  if (filtersBtn) {
-    filtersBtn.addEventListener('click', () => {
-      openTagExplorer();
-    });
-    document.addEventListener('tagFilters:toggle', (event) => {
-      const isOpen = !!(event?.detail && event.detail.open);
-      filtersBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
-  }
+  const filterButtons = [
+    document.getElementById('filters-btn'),
+    document.getElementById('cover-filters-btn'),
+  ].filter(Boolean);
+  if (!filterButtons.length) return;
 
-  document.addEventListener('click', (e) => {
-    const t = e.target;
-    if (t && t.id === 'filters-btn') {
-      e.preventDefault();
-      openTagExplorer();
-    }
+  const handleToggle = (event) => {
+    event.preventDefault();
+    openTagExplorer();
+  };
+
+  filterButtons.forEach((btn) => {
+    btn.addEventListener('click', handleToggle);
+    btn.setAttribute('aria-expanded', 'false');
+  });
+
+  document.addEventListener('tagFilters:toggle', (event) => {
+    const isOpen = Boolean(event?.detail?.open);
+    filterButtons.forEach((btn) => {
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    });
+    document.body.classList.toggle('filters-open', isOpen);
   });
 }
 
@@ -271,7 +542,7 @@ function setupForceFetch() {
   });
 }
 
-export async function initGalleryPage() {
+export async function initGalleryPage({ foldAdapter } = {}) {
   const savedState = restoreGalleryState();
 
   const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
@@ -283,6 +554,13 @@ export async function initGalleryPage() {
   createTTSToggleButton();
   setupVoiceSelectorButton();
   setupAudioToggle();
+  setupMuteToggle();
+  setupMotionToggle(readMotionPreference());
+  const settingsSheet = setupCoverSettingsSheet();
+  const foldCleanup = setupFoldModeSync({
+    foldAdapter,
+    closeSettings: settingsSheet.close,
+  });
 
   setRandomBackground();
 
@@ -368,7 +646,13 @@ export async function initGalleryPage() {
 
   return {
     beforeNavigate: persistState,
-    onDispose: persistState,
+    onDispose: () => {
+      persistState();
+      if (typeof foldCleanup === 'function') foldCleanup();
+      if (settingsSheet && typeof settingsSheet.close === 'function') {
+        settingsSheet.close();
+      }
+    },
   };
 }
 

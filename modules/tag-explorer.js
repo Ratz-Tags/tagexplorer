@@ -573,8 +573,13 @@ function openTagExplorer() {
   
   // Show overlay on mobile
   const overlay = document.querySelector("#tag-explorer-overlay");
-  if (overlay && window.innerWidth <= 520) {
+  const foldMode = document.documentElement?.dataset?.foldMode;
+  const isCoverMode = foldMode === 'fold-cover' || (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px)').matches);
+  if (overlay && isCoverMode) {
     overlay.classList.add("visible");
+  }
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.add('filters-open');
   }
   
   if (filterTriggerEl) {
@@ -628,6 +633,9 @@ function closeTagExplorer() {
   const overlay = document.querySelector("#tag-explorer-overlay");
   if (overlay) {
     overlay.classList.remove("visible");
+  }
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.remove('filters-open');
   }
   
   if (filterTriggerEl) {

@@ -1,6 +1,7 @@
 import { ensureDefaultWhisperVoice } from './modules/azure-tts.js';
 import { mountShell } from './modules/shell.js';
 import { initRouter } from './modules/router.js';
+import { initFoldAdapter } from './modules/fold-adapter.js';
 
 const PAGE_LAZY_MODULES = {
   landing: () => import('./modules/pages/landing.js'),
@@ -12,10 +13,15 @@ const PAGE_LAZY_MODULES = {
 
 const pageId = document.body.dataset.page || 'gallery';
 let beforeNavigateHandler = null;
+let foldAdapterInstance = null;
 
 async function bootstrap() {
   try {
     const shell = await mountShell({ page: pageId });
+    if (!foldAdapterInstance) {
+      foldAdapterInstance = initFoldAdapter();
+    }
+    const foldAdapter = foldAdapterInstance;
 
     if (['landing', 'gallery', 'artist'].includes(pageId)) {
       await ensureDefaultWhisperVoice();
@@ -38,7 +44,7 @@ async function bootstrap() {
       const module = await loadModule();
       const initializer = module.initPage || module.initGalleryPage || module.initLandingPage;
       if (typeof initializer === 'function') {
-        const lifecycle = await initializer({ page: pageId, shell });
+        const lifecycle = await initializer({ page: pageId, shell, foldAdapter });
         if (lifecycle && typeof lifecycle.beforeNavigate === 'function') {
           beforeNavigateHandler = lifecycle.beforeNavigate;
         }
