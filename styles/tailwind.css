@@ -414,12 +414,60 @@ mix-blend-mode: screen;
 }
 .gallery-grid {
   @apply grid gap-6;
-  /* Auto-fit grid that adapts to available width */
+  /* Centered responsive grid */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+  grid-template-columns: repeat(2, 1fr);
   justify-content: center;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Progressive enhancement for wider screens */
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .gallery-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* When sidebar is present (fold-inner), reduce columns */
+body[data-fold-mode="fold-inner"] .gallery-grid {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 1280px) {
+  body[data-fold-mode="fold-inner"] .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1536px) {
+  body[data-fold-mode="fold-inner"] .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1920px) {
+  body[data-fold-mode="fold-inner"] .gallery-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
 }
 
 .gallery-empty-state {
