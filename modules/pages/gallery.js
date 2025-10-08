@@ -284,7 +284,10 @@ function setupSidebarToggle() {
     setSidebarHidden(hidden, options);
   };
 
-  setSidebarHidden(copiedSidebarEl.classList.contains('sidebar-hidden'));
+  // Initialize visibility - start hidden by default
+  // (syncSidebarForFold will handle fold-inner mode separately)
+  const initiallyHidden = copiedSidebarEl.classList.contains('sidebar-hidden');
+  setSidebarHidden(initiallyHidden);
 }
 
 function setupAudioToggle() {

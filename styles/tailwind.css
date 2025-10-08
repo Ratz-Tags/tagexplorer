@@ -322,15 +322,12 @@ body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar {
 }
 /* In fold-inner mode, sidebar-wrapper is always visible as part of layout */
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
-  display: block !important;
-}
-body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
   position: sticky;
   top: calc(1.25rem + var(--safe-area-top));
   right: auto;
   bottom: auto;
   left: auto;
-  display: block;
+  display: block !important;
   width: 100%;
   max-height: calc(100vh - var(--safe-area-top) - 2rem);
   pointer-events: auto;
