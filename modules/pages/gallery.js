@@ -164,7 +164,10 @@ function setupTagSearchModeSelector() {
   }
 }
 
-function setupFavoritesButton() {
+async function setupFavoritesButton() {
+  await customElements.whenDefined('te-command-bar');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  
   const favoritesBtn = document.getElementById('favorites-btn');
   const favoritesCount = document.getElementById('favorites-count');
   if (!favoritesBtn) return;
@@ -230,6 +233,14 @@ function setupSidebarToggle() {
 
   const setSidebarHidden = (hidden, { userInitiated = false } = {}) => {
     const isHidden = Boolean(hidden);
+    
+    // Move focus away from sidebar before hiding to prevent aria-hidden focus warning
+    if (isHidden && copiedSidebarEl.contains(document.activeElement)) {
+      document.activeElement?.blur();
+      // Try to focus a safe element like the body
+      document.body.focus();
+    }
+    
     copiedSidebarEl.classList.toggle('sidebar-hidden', isHidden);
     copiedSidebarEl.setAttribute('aria-hidden', isHidden ? 'true' : 'false');
     if (sidebarWrapper) {
@@ -466,7 +477,13 @@ function setupSortControls() {
   }
 }
 
-function setupFiltersButton() {
+async function setupFiltersButton() {
+  // Wait for command-bar web component to be defined
+  await customElements.whenDefined('te-command-bar');
+  
+  // Small delay to ensure DOM is updated
+  await new Promise(resolve => setTimeout(resolve, 0));
+  
   const filterButtons = [
     document.getElementById('filters-btn'),
     document.getElementById('cover-filters-btn'),
@@ -492,7 +509,10 @@ function setupFiltersButton() {
   });
 }
 
-function setupForceFetch() {
+async function setupForceFetch() {
+  await customElements.whenDefined('te-command-bar');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  
   const forceFetchBtn = document.getElementById('force-fetch-btn');
   if (!forceFetchBtn) return;
   forceFetchBtn.addEventListener('click', async () => {
