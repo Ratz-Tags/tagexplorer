@@ -29,8 +29,8 @@ function getThumbnailUrl(artist) {
 
 // Gallery state
 const VIRTUAL_BATCH_SIZE = 48;
-const MAX_VIRTUAL_CHUNKS = 5;
-const VIRTUAL_OVERSCAN_CHUNKS = 1;
+const MAX_VIRTUAL_CHUNKS = 10; // Increased from 5 to keep more chunks for infinite scroll
+const VIRTUAL_OVERSCAN_CHUNKS = 2; // Increased from 1 for better coverage
 
 const DEFAULT_ARTISTS_PER_PAGE = VIRTUAL_BATCH_SIZE;
 const MAX_PAGES_IN_DOM = MAX_VIRTUAL_CHUNKS + VIRTUAL_OVERSCAN_CHUNKS;
@@ -1330,7 +1330,7 @@ async function openArtistZoom(artist) {
     content.appendChild(toolbar);
   }
 
-  showZoomTauntOverlay();
+  // Removed taunt overlay - no longer needed
 
   await loadPage();
 
@@ -2270,46 +2270,7 @@ function setSortPreference(preference) {
 }
 
 
-function showZoomTauntOverlay() {
-  let old = document.getElementById("taunt-overlay");
-  if (old) old.remove();
-  const overlay = document.createElement("div");
-  overlay.id = "taunt-overlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "50%";
-  overlay.style.transform = "translateX(-50%)";
-  overlay.style.width = "auto";
-  overlay.style.maxWidth = "95vw";
-  overlay.style.height = "auto";
-  overlay.style.display = "flex";
-  overlay.style.alignItems = "flex-start";
-  overlay.style.justifyContent = "center";
-  overlay.style.pointerEvents = "none";
-  overlay.style.margin = "0";
-  overlay.style.zIndex = "13000";
-  overlay.style.padding = "0.5em 0";
-  const taunt = document.createElement("div");
-  taunt.className = "taunt-header";
-  taunt.style.fontFamily = "'Hi Melody', sans-serif";
-  taunt.style.fontSize = window.innerWidth < 600 ? "1em" : "1.1em";
-  taunt.style.color = "#fd7bc5";
-  taunt.style.textAlign = "center";
-  taunt.style.margin = "1.2em 0 0 0";
-  taunt.style.background = "rgba(255,255,255,0.85)";
-  taunt.style.borderRadius = "1.2em";
-  taunt.style.boxShadow = "0 2px 16px rgba(253,123,197,0.13)";
-  taunt.style.padding = window.innerWidth < 600 ? "0.7em 1.2em" : "0.8em 2.2em";
-  taunt.style.maxWidth = "90vw";
-  taunt.innerHTML =
-    'You really think you deserve to see more? <span style="color:#a0005a;font-size:1.1em;">Pathetic.</span> 💖✨';
-  overlay.appendChild(taunt);
-  document.body.appendChild(overlay);
-}
-function hideZoomTauntOverlay() {
-  const old = document.getElementById("taunt-overlay");
-  if (old) old.remove();
-}
+// Removed taunt overlay functions - no longer needed
 
 function buildDanbooruArtistUrl(artistName) {
   if (!artistName) return "https://danbooru.donmai.us/posts";
@@ -2391,7 +2352,6 @@ export {
   getPaginationInfo,
   getFilteredArtists,
   setArtistsPerPage,
-  hideZoomTauntOverlay,
   openArtistOnDanbooru,
   enhanceGalleryImages,
   filterGalleryToFavorites,

@@ -1,7 +1,7 @@
 /**
  * UI module - General UI utilities and helper functions
  */
-import { hideZoomTauntOverlay } from "./gallery.js";
+
 /**
  * Shows a "no entries" message next to an element
  */
@@ -378,7 +378,6 @@ function createFullscreenViewer(options = {}) {
   closeBtn.className = "zoom-close";
   closeBtn.textContent = "×";
   closeBtn.onclick = () => {
-    hideZoomTauntOverlay();
     wrapper.remove();
   };
   content.appendChild(closeBtn);
