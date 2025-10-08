@@ -1,6 +1,8 @@
 import { vibrate } from "./ui.js";
 import { fetchWithCache } from "./fetch-cache.js";
 import { categorizeTags, flattenCategorizedTags } from "./tag-categories.js";
+import { dispatchWhisperEvent, getTagLineForIntensity } from "./tts-dispatcher.js";
+import { getTTSIntensity } from "./tts-toggle.js";
 
 /**
  * Tags module - Handles tag filtering, buttons, and related functionality
@@ -118,9 +120,13 @@ function spawnBubble(tag) {
   chibi.src = "icons/chibi.png";
   chibi.className = "chibi";
   const line = document.createElement("span");
-  const pool = tagTaunts[tag] || taunts;
+  const intensity = getTTSIntensity();
+  const candidate = getTagLineForIntensity(tag, intensity);
+  const fallbackPool = Array.isArray(taunts) ? taunts : [];
+  const fallbackLine = fallbackPool[Math.floor(Math.random() * fallbackPool.length)];
   line.textContent =
-    pool[Math.floor(Math.random() * pool.length)] ||
+    candidate ||
+    fallbackLine ||
     `Still chasing '${tag}' huh? You're beyond help.`;
   div.append(chibi, line);
   jrpgBubbles.appendChild(div);
@@ -246,9 +252,12 @@ function renderTagButtons() {
         if (activeTags.has(tag)) {
           activeTags.delete(tag);
         } else {
-          if (activeTags.size >= 2) return;
           activeTags.add(tag);
           spawnBubble(tag);
+          dispatchWhisperEvent('tag_add', { tag, maxIntensity: 2 });
+          if (activeTags.size > 5) {
+            dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
+          }
         }
         button.setAttribute(
           "aria-pressed",
@@ -278,9 +287,12 @@ function renderTagButtons() {
       if (activeTags.has(filter)) {
         activeTags.delete(filter);
       } else {
-        if (activeTags.size >= 2) return;
         activeTags.add(filter);
         spawnBubble(filter);
+        dispatchWhisperEvent('tag_add', { tag: filter, maxIntensity: 2 });
+        if (activeTags.size > 5) {
+          dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
+        }
       }
       renderTagButtons();
       if (renderArtists) renderArtists(true);
@@ -295,22 +307,28 @@ function renderTagButtons() {
  * Clears all active tags
  */
 function clearAllTags() {
+  const hadTags = activeTags.size > 0;
   activeTags.clear();
   renderTagButtons();
   if (navigator.vibrate) navigator.vibrate(50);
   if (renderArtists) renderArtists(true); // <-- force full update
   if (setRandomBackground) setRandomBackground();
   emitTagUpdate();
+  if (hadTags) {
+    dispatchWhisperEvent('tag_clear', { maxIntensity: 2 });
+  }
 }
 
 /**
  * Toggles a single tag on or off
  */
 function toggleTag(tag) {
+  let added = false;
   if (activeTags.has(tag)) {
     activeTags.delete(tag);
   } else {
     activeTags.add(tag);
+    added = true;
     spawnBubble(tag);
   }
   // After changing state, try to update any visible tag buttons' aria-pressed
@@ -323,6 +341,12 @@ function toggleTag(tag) {
   if (setRandomBackground) setRandomBackground();
   if (navigator.vibrate) navigator.vibrate(50);
   emitTagUpdate();
+  if (added) {
+    dispatchWhisperEvent('tag_add', { tag, maxIntensity: 2 });
+    if (activeTags.size > 5) {
+      dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
+    }
+  }
 }
 
 function hydrateTagState(tags, { silent = false } = {}) {

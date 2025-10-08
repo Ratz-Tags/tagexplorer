@@ -13,6 +13,7 @@ import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
 import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js";
 import { showSimilarArtistsModal, setAllArtists as setSimilarArtists } from "./similar-artists.js";
 import { toggleFavorite, isFavorite } from "./favorites.js";
+import { dispatchWhisperEvent } from "./tts-dispatcher.js";
 
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
@@ -479,6 +480,7 @@ function primeVisibleArtistImages(buffer = 180) {
 async function openArtistZoom(artist) {
   // remove existing viewer
   document.querySelectorAll(".fullscreen-wrapper").forEach((el) => el.remove());
+  dispatchWhisperEvent('artist_open', { minIntensity: 2 });
 
   let grid, zoomContent, backBtn;
   let posts = [];

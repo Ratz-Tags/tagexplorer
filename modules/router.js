@@ -1,4 +1,5 @@
 import { preloadArtistBySlug, preloadDataset } from './api.js';
+import { dispatchWhisperEvent } from './tts-dispatcher.js';
 
 const ARTIST_ROUTE_REGEX = /\/artist\/([^/]+)\/?$/;
 
@@ -70,6 +71,10 @@ export function initRouter({ beforeNavigate } = {}) {
 
   window.addEventListener('pageshow', () => {
     setTimeout(clearGlitch, 120);
+  });
+
+  window.addEventListener('popstate', () => {
+    dispatchWhisperEvent('back', { maxIntensity: 2 });
   });
 }
 

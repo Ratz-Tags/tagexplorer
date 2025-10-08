@@ -3,6 +3,14 @@ const DEFAULT_VOICE = "en-US-AvaMultilingualNeural";
 const WHISPER_STYLE_CANONICAL = "whispering";
 const SAMPLE_PREVIEW_LINE = "Caught you tweaking my whispers again, pet.";
 
+const INTENSITY_PROFILES = {
+  1: { rate: "-15%", volume: "-32%", pitch: "-6%" },
+  2: { rate: "-10%", volume: "-24%", pitch: "-2%" },
+  3: { rate: "-6%", volume: "-16%", pitch: "+1%" },
+};
+
+const FALLBACK_INTENSITY = 2;
+
 let azureConfig = {
   voice: DEFAULT_VOICE,
   style: WHISPER_STYLE_CANONICAL,
@@ -10,6 +18,8 @@ let azureConfig = {
 
 let voiceListPromise = null;
 let latestObjectUrl = null;
+let whisperVoicePool = [];
+let whisperVoiceCursor = 0;
 let voiceSelectorOverlay = null;
 let voiceSelectorList = null;
 let styleSelectEl = null;
@@ -54,6 +64,71 @@ function applyConfigToWindow() {
   if (typeof window === "undefined") return;
   window._azureTTSVoice = azureConfig.voice;
   window._azureTTSStyle = azureConfig.style;
+}
+
+function clampIntensity(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return FALLBACK_INTENSITY;
+  if (numeric <= 0) return 0;
+  if (numeric >= 3) return 3;
+  return Math.max(1, Math.floor(numeric));
+}
+
+function getIntensityProfile(intensity) {
+  const lane = clampIntensity(intensity) || FALLBACK_INTENSITY;
+  return INTENSITY_PROFILES[lane] || INTENSITY_PROFILES[FALLBACK_INTENSITY];
+}
+
+function normalizeVoicePoolEntry(voice) {
+  if (!voice || typeof voice !== "object") return null;
+  const styles = filterWhisperStyles(voice.StyleList);
+  if (!styles.length) return null;
+  return {
+    voice: voice.ShortName || voice.VoiceId || DEFAULT_VOICE,
+    styles,
+  };
+}
+
+function registerWhisperVoicePool(voices = []) {
+  const normalized = Array.isArray(voices)
+    ? voices
+        .map(normalizeVoicePoolEntry)
+        .filter(Boolean)
+    : [];
+  if (!normalized.length) return;
+  whisperVoicePool = normalized;
+  whisperVoiceCursor = 0;
+}
+
+function pickStyleForIntensity(styles = [], intensity = FALLBACK_INTENSITY) {
+  if (!Array.isArray(styles) || styles.length === 0) {
+    return azureConfig.style || WHISPER_STYLE_CANONICAL;
+  }
+  const canonical = styles.find(
+    (style) => canonicalizeStyle(style) === WHISPER_STYLE_CANONICAL
+  );
+  if (canonical) return canonical;
+  const containsWhisper = styles.find((style) =>
+    String(style).toLowerCase().includes("whisper")
+  );
+  if (containsWhisper) return containsWhisper;
+  const index = clampIntensity(intensity) % styles.length;
+  return styles[index];
+}
+
+function getNextWhisperConfig(intensity = FALLBACK_INTENSITY) {
+  if (!whisperVoicePool.length) {
+    return {
+      voice: azureConfig.voice || DEFAULT_VOICE,
+      style: azureConfig.style || WHISPER_STYLE_CANONICAL,
+    };
+  }
+  const entry = whisperVoicePool[whisperVoiceCursor % whisperVoicePool.length];
+  whisperVoiceCursor = (whisperVoiceCursor + 1) % whisperVoicePool.length;
+  return {
+    voice: entry.voice,
+    style: pickStyleForIntensity(entry.styles, intensity),
+  };
 }
 
 function emitConfigChange() {
@@ -156,12 +231,17 @@ async function fetchAzureVoices(key, region, { forceRefresh = false } = {}) {
   return Array.isArray(voices) ? voices : [];
 }
 
-function buildSSML(text, config) {
+function buildSSML(text, config, { intensity, event } = {}) {
   const { voice, style } = normalizeVoiceConfig(config);
+  const profile = getIntensityProfile(intensity ?? FALLBACK_INTENSITY);
   const safeText = text.replace(/[<>]/g, "");
+  const prosodyOpen = `<prosody rate="${profile.rate}" volume="${profile.volume}" pitch="${profile.pitch}">`;
+  const prosodyClose = `</prosody>`;
+  const eventAttr = event ? ` mstts:styledegree="1.0"` : "";
+  const inner = `${prosodyOpen}${safeText}${prosodyClose}`;
   const content = style
-    ? `<mstts:express-as style="${style}">${safeText}</mstts:express-as>`
-    : safeText;
+    ? `<mstts:express-as style="${style}"${eventAttr}>${inner}</mstts:express-as>`
+    : inner;
   return `<?xml version="1.0" encoding="utf-8"?>
 <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US" xmlns:mstts="https://www.w3.org/2001/mstts">
   <voice name="${voice}">
@@ -170,14 +250,26 @@ function buildSSML(text, config) {
 </speak>`;
 }
 
-async function azureSpeak(text, overrides = {}) {
+async function azureSpeak(text, overrides = {}, meta = {}) {
   if (!text) return null;
   const { key, region } = await ensureCredentials();
-  // When no overrides provided, use the current stored configuration
-  const config = Object.keys(overrides).length === 0 
-    ? { ...azureConfig }  // Use current config directly
-    : normalizeVoiceConfig(overrides);  // Merge with overrides
-  const ssml = buildSSML(text, config);
+  const {
+    ssml: ssmlOverride,
+    intensity: overrideIntensity,
+    ...voiceOverrides
+  } = overrides || {};
+  const hasOverrides = Object.keys(voiceOverrides).length > 0;
+  const config = hasOverrides
+    ? normalizeVoiceConfig(voiceOverrides)
+    : { ...azureConfig };
+  const resolvedIntensity =
+    clampIntensity(
+      overrideIntensity ?? meta.intensity ?? FALLBACK_INTENSITY
+    ) || FALLBACK_INTENSITY;
+  const ssml = ssmlOverride || buildSSML(text, config, {
+    intensity: resolvedIntensity,
+    event: meta.event,
+  });
 
   const response = await fetch(synthesisEndpoint(region), {
     method: "POST",
@@ -201,6 +293,20 @@ async function azureSpeak(text, overrides = {}) {
   }
   latestObjectUrl = URL.createObjectURL(blob);
   return latestObjectUrl;
+}
+
+function composeWhisperSSML(text, { intensity, event, voice, style, rotate = false } = {}) {
+  const lane = clampIntensity(intensity ?? FALLBACK_INTENSITY) || FALLBACK_INTENSITY;
+  let config;
+  if (rotate) {
+    config = getNextWhisperConfig(lane);
+  } else if (voice || style) {
+    config = normalizeVoiceConfig({ voice, style });
+  } else {
+    config = { ...azureConfig };
+  }
+  const ssml = buildSSML(text, config, { intensity: lane, event });
+  return { ssml, voice: config.voice, style: config.style, intensity: lane };
 }
 
 function highlightSelectedVoice(shortName) {
@@ -475,6 +581,7 @@ async function showAzureVoiceSelector() {
   }
 
   if (whisperVoices.length > 0) {
+    registerWhisperVoicePool(whisperVoices);
     renderVoiceOptions(whisperVoices);
     const activeVoice = whisperVoices.find(
       (voice) => voice.ShortName === azureConfig.voice
@@ -532,6 +639,9 @@ export {
   showAzureVoiceSelector,
   DEFAULT_VOICE,
   WHISPER_STYLE_CANONICAL,
+  composeWhisperSSML,
+  getNextWhisperConfig,
+  registerWhisperVoicePool,
 };
 
 export async function ensureDefaultWhisperVoice() {
@@ -551,6 +661,7 @@ export async function ensureDefaultWhisperVoice() {
             )
           : [];
         if (whisperVoices.length) {
+          registerWhisperVoicePool(whisperVoices);
           const currentVoice = window._azureTTSVoice;
           const preferred = whisperVoices.find((voice) => voice.ShortName === currentVoice);
           const fallback =
