@@ -303,14 +303,17 @@ body[data-fold-mode="fold-cover"] .gallery-shell {
 .gallery-layout > * {
   min-width: 0 !important;
 }
+.gallery-layout > te-pinned-sidebar {
+  display: none;
+}
 body[data-fold-mode="fold-inner"] .gallery-layout {
   flex-direction: row !important;
   align-items: flex-start !important;
   gap: clamp(2rem, 4vw, 3rem) !important;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar {
-  display: block !important;
-  flex: 0 0 clamp(260px, 22vw, 320px) !important;
+  display: block;
+  flex: 0 0 clamp(260px, 22vw, 320px);
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
   position: sticky;
