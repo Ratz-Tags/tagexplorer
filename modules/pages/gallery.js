@@ -45,16 +45,18 @@ import {
   restoreGalleryState,
 } from '../api.js';
 import { startTauntTicker } from '../humiliation.js';
-import { createTTSToggleButton } from '../tts-toggle.js';
+import { createTTSToggleButton, createTTSIntensityControl } from '../tts-toggle.js';
 import {
   initTagExplorer,
   openTagExplorer,
   setAllArtists as setExplorerArtists,
 } from '../tag-explorer.js';
 import { showAzureVoiceSelector } from '../azure-tts.js';
+import { configureWhisperCatalog, dispatchWhisperEvent } from '../tts-dispatcher.js';
 
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
+const IDLE_THRESHOLD_MS = 60000;
 
 function readMotionPreference() {
   if (typeof window === 'undefined') return MOTION_DEFAULT;
@@ -542,16 +544,61 @@ function setupForceFetch() {
   });
 }
 
+function setupIdleWhispers() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') {
+    return () => {};
+  }
+  let idleTimer = null;
+
+  const schedule = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      dispatchWhisperEvent('idle', { minIntensity: 1 });
+      schedule();
+    }, IDLE_THRESHOLD_MS);
+  };
+
+  const handleActivity = () => {
+    if (document.visibilityState === 'hidden') return;
+    schedule();
+  };
+
+  const handleVisibility = () => {
+    if (document.visibilityState === 'hidden') {
+      if (idleTimer) clearTimeout(idleTimer);
+    } else {
+      schedule();
+    }
+  };
+
+  const events = ['pointerdown', 'keydown', 'mousemove', 'scroll', 'touchstart', 'focus'];
+  events.forEach((eventName) =>
+    window.addEventListener(eventName, handleActivity, { passive: true })
+  );
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  schedule();
+
+  return () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    events.forEach((eventName) =>
+      window.removeEventListener(eventName, handleActivity)
+    );
+    document.removeEventListener('visibilitychange', handleVisibility);
+  };
+}
+
 export async function initGalleryPage({ foldAdapter } = {}) {
   const savedState = restoreGalleryState();
 
-  const { artists, tooltips, generalTaunts, tagTaunts } = await loadAppData();
+  const { artists, tooltips, generalTaunts, tagTaunts, ttsLines } = await loadAppData();
 
   initUI();
   initSidebar();
   await initAudio();
   initAudioUI();
   createTTSToggleButton();
+  createTTSIntensityControl();
   setupVoiceSelectorButton();
   setupAudioToggle();
   setupMuteToggle();
@@ -580,6 +627,11 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setTagTooltips(tooltips);
   setTagTaunts(tagTaunts);
   setTaunts(generalTaunts);
+  configureWhisperCatalog({
+    events: ttsLines,
+    tags: tagTaunts,
+    generalTaunts,
+  });
   startTauntTicker(generalTaunts, 30000);
 
   const quotes = Object.values(tooltips || {}).filter(Boolean);
@@ -623,6 +675,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupForceFetch();
   setupFavoritesButton();
 
+  const idleCleanup = setupIdleWhispers();
+
   window.kexplorer = {
     filterArtists,
     setRandomBackground,
@@ -652,6 +706,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       if (settingsSheet && typeof settingsSheet.close === 'function') {
         settingsSheet.close();
       }
+      if (typeof idleCleanup === 'function') idleCleanup();
     },
   };
 }

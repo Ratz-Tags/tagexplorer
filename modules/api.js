@@ -18,6 +18,7 @@ const ARTISTS_DATA_URL = new URL("../artists.json", import.meta.url).href;
 const TOOLTIP_DATA_URL = new URL("../tag-tooltips.json", import.meta.url).href;
 const TAUNTS_DATA_URL = new URL("../taunts.json", import.meta.url).href;
 const TAG_TAUNTS_DATA_URL = new URL("../tag-taunts.json", import.meta.url).href;
+const TTS_LINES_DATA_URL = new URL("../data/tts_lines.json", import.meta.url).href;
 
 const GALLERY_STATE_KEY = "tagexplorer:gallery:state";
 const ARTIST_LOOKUP = new Map();
@@ -694,12 +695,13 @@ function clearArtistCache(artistName) {
  */
 async function loadAppData() {
   try {
-    const [artists, tooltips, generalTaunts, tagTaunts] =
+    const [artists, tooltips, generalTaunts, tagTaunts, ttsLines] =
       await Promise.all([
         getArtistsIndex(),
         fetchWithCache(TOOLTIP_DATA_URL),
         fetchWithCache(TAUNTS_DATA_URL),
         fetchWithCache(TAG_TAUNTS_DATA_URL),
+        fetchWithCache(TTS_LINES_DATA_URL),
       ]);
 
     return {
@@ -707,6 +709,7 @@ async function loadAppData() {
       tooltips,
       generalTaunts,
       tagTaunts,
+      ttsLines,
     };
   } catch (error) {
     console.error("Failed to load required data files:", error);
@@ -750,6 +753,8 @@ export async function preloadDataset(key) {
       return fetchWithCache(TAUNTS_DATA_URL);
     case 'tag-taunts':
       return fetchWithCache(TAG_TAUNTS_DATA_URL);
+    case 'tts-lines':
+      return fetchWithCache(TTS_LINES_DATA_URL);
     default:
       return null;
   }

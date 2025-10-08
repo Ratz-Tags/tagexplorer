@@ -7,6 +7,7 @@ import { getThumbnailUrl } from "./gallery.js";
 import { azureSpeak } from "./azure-tts.js";
 import { getActiveTags } from "./tags.js";
 import { isTTSEnabled, createTTSToggleButton } from "./tts-toggle.js";
+import { dispatchWhisperEvent } from "./tts-dispatcher.js";
 
 if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", () => {
@@ -102,6 +103,9 @@ function handleArtistCopy(artist, imgSrc) {
       showToast(
         added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`
       );
+      if (added && copiedArtists.size > 5) {
+        dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
+      }
       // --- INCREASE HUMILIATION METER ---
       if (typeof window.incrementDesperationMeter === "function") {
         window.incrementDesperationMeter(1);
