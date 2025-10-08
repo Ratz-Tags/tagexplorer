@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TagExplorer · About</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Learn how TagExplorer weaponizes Danbooru artist tags into a humiliation-driven experience.">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="info-body" data-page="about">
+  <div class="info-background" aria-hidden="true"></div>
+  <div class="info-shell" data-shell>
+    <header class="info-header">
+      <a class="tag-explorer-wordmark" href="../" data-router-link>TagExplorer</a>
+      <nav class="info-nav" aria-label="Primary">
+        <a href="../gallery/" class="info-link" data-router-link>Gallery</a>
+        <a href="./" class="info-link active" data-router-link>About</a>
+        <a href="../data/" class="info-link" data-router-link>Data</a>
+      </nav>
+    </header>
+    <main class="info-main" aria-labelledby="about-title">
+      <h1 id="about-title" class="info-title">Designed to tease, tuned to perform</h1>
+      <section class="info-section">
+        <h2>Mission</h2>
+        <p>TagExplorer is a static Danbooru companion that filters NSFW artist tags into a neon-glass gallery. The humiliation layer—whispering Azure TTS, teasing copy, glowing filters—pushes you along every scroll.</p>
+      </section>
+      <section class="info-section">
+        <h2>Fold-first Layout</h2>
+        <p>Built Fold4-first, the gallery swaps between bottom-docked controls on the cover display and dual-pane layouts on the inner display. Safe-area insets and input reach are respected so your thumbs never catch a cold edge.</p>
+      </section>
+      <section class="info-section">
+        <h2>Accessibility & Consent</h2>
+        <ul>
+          <li>All whispered lines surface captions and respect prefers-reduced-motion.</li>
+          <li>Local storage tracks filters and favorites; clearing cache wipes the shame.</li>
+          <li>Explicit content warning persists across sessions. You can always bail out.</li>
+        </ul>
+      </section>
+      <section class="info-section">
+        <h2>Credits</h2>
+        <p>Curated from Danbooru. Motion crafted with CSS view transitions and Motion One. Azure Cognitive Services powers the whispers—only whisper-capable voices are ever selected.</p>
+      </section>
+    </main>
+  </div>
+  <te-audio-panel data-static-panel hidden data-src-prefix="../"></te-audio-panel>
+  <script type="module" src="../main.js"></script>
+</body>
+</html>

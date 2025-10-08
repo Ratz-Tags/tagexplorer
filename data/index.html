@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TagExplorer · Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Browse TagExplorer's static datasets for artists, tags, and whisper taunts.">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="data-body" data-page="data">
+  <div class="data-background" aria-hidden="true"></div>
+  <div class="data-shell" data-shell>
+    <header class="data-header">
+      <a class="tag-explorer-wordmark" href="../" data-router-link>TagExplorer</a>
+      <nav class="data-nav" aria-label="Primary">
+        <a href="../gallery/" class="data-link" data-router-link>Gallery</a>
+        <a href="../about/" class="data-link" data-router-link>About</a>
+        <a href="./" class="data-link active" data-router-link>Data</a>
+      </nav>
+    </header>
+    <main class="data-main" aria-labelledby="data-title">
+      <h1 id="data-title" class="data-title">Public Datasets</h1>
+      <p class="data-intro">These JSON payloads power the gallery. Load them directly for experiments or to audit what TagExplorer whispers about you.</p>
+      <ul class="data-list">
+        <li><a href="../artists.json" data-preload="artists">artists.json</a> — canonical list of curated Danbooru artists.</li>
+        <li><a href="../tag-tooltips.json">tag-tooltips.json</a> — tooltip copy rotated into the gallery.</li>
+        <li><a href="../taunts.json">taunts.json</a> — general humiliation lines for idle states.</li>
+        <li><a href="../tag-taunts.json">tag-taunts.json</a> — tag-specific whispers that escalate as you filter.</li>
+      </ul>
+    </main>
+  </div>
+  <script type="module" src="../main.js"></script>
+</body>
+</html>

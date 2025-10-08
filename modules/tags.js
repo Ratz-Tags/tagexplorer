@@ -325,6 +325,14 @@ function toggleTag(tag) {
   emitTagUpdate();
 }
 
+function hydrateTagState(tags, { silent = false } = {}) {
+  const next = Array.isArray(tags) ? tags.filter(Boolean) : [];
+  activeTags = new Set(next);
+  renderTagButtons();
+  if (renderArtists) renderArtists(true);
+  if (!silent) emitTagUpdate();
+}
+
 /**
  * Handles tag search input with debouncing and search mode
  */
@@ -499,6 +507,7 @@ export {
   toggleTag,
   spawnBubble,
   setTagSearchMode,
+  hydrateTagState,
 };
 
 // All functions in this file are defined and used as follows:

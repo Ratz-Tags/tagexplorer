@@ -17,6 +17,7 @@ let previewBtn = null;
 let statusEl = null;
 let closeBtn = null;
 let escKeyHandler = null;
+let ensureDefaultVoicePromise = null;
 
 function safeLocalStorage(action) {
   if (typeof window === "undefined" || !window.localStorage) return;
@@ -532,3 +533,54 @@ export {
   DEFAULT_VOICE,
   WHISPER_STYLE_CANONICAL,
 };
+
+export async function ensureDefaultWhisperVoice() {
+  if (ensureDefaultVoicePromise) return ensureDefaultVoicePromise;
+
+  ensureDefaultVoicePromise = (async () => {
+    try {
+      if (typeof window !== 'undefined' && window._azureTTSKey && window._azureTTSRegion) {
+        const voices = await fetchAzureVoices(
+          window._azureTTSKey,
+          window._azureTTSRegion
+        );
+        const whisperVoices = Array.isArray(voices)
+          ? voices.filter((voice) =>
+              Array.isArray(voice?.StyleList) &&
+              voice.StyleList.some((style) => String(style).toLowerCase() === 'whispering')
+            )
+          : [];
+        if (whisperVoices.length) {
+          const currentVoice = window._azureTTSVoice;
+          const preferred = whisperVoices.find((voice) => voice.ShortName === currentVoice);
+          const fallback =
+            whisperVoices.find((voice) => voice.ShortName === DEFAULT_VOICE) || whisperVoices[0];
+          const voiceToUse = preferred || fallback;
+          const whisperStyle = Array.isArray(voiceToUse?.StyleList)
+            ? voiceToUse.StyleList.find(
+                (style) => String(style).toLowerCase() === WHISPER_STYLE_CANONICAL
+              ) ||
+              voiceToUse.StyleList.find((style) =>
+                String(style).toLowerCase().includes('whisper')
+              )
+            : null;
+          setAzureTTSConfig({
+            voice: voiceToUse.ShortName,
+            style: whisperStyle || WHISPER_STYLE_CANONICAL,
+          });
+          return;
+        }
+      }
+    } catch (error) {
+      // Ignore errors and fall back to default voice
+      console.warn('[azure-tts] ensureDefaultWhisperVoice fallback', error);
+    }
+
+    setAzureTTSConfig({
+      voice: DEFAULT_VOICE,
+      style: WHISPER_STYLE_CANONICAL,
+    });
+  })();
+
+  return ensureDefaultVoicePromise;
+}

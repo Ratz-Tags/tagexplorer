@@ -2,124 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TagExplorer · Artist Gallery</title>
-  <meta name="description" content="Discover NSFW artists on Danbooru with whispered humiliation-driven tag filters.">
+  <title>TagExplorer · Initiation</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Enter TagExplorer's humiliation-driven Danbooru gallery if you dare."/>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="relative min-h-screen overflow-x-hidden">
-  <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
-  <div class="relative z-10 flex min-h-screen flex-col">
-    <header class="top-surface">
-      <div class="top-band">
-        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div class="space-y-4">
-            <span class="tag-explorer-wordmark">TagExplorer</span>
-            <h1 class="gallery-title text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
-            <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
-          </div>
-          <p class="top-bar-tease max-w-sm text-xs uppercase tracking-[0.35em] text-rose-200/80 lg:text-right">
-            I'll keep the glow pinned above every scroll so you can't pretend you're not begging for more.
-          </p>
-        </div>
+<body data-page="landing" class="landing-body">
+  <div class="landing-background" aria-hidden="true">
+    <div class="landing-montage">
+      <div class="landing-montage__frame landing-montage__frame--alpha">
+        <img src="https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/69_%28tranquilo%29.jpg" alt="" loading="lazy" decoding="async">
       </div>
-    </header>
-
-    <div class="surface-divider"></div>
-
-    <div class="command-bar-shell" role="presentation">
-      <nav id="tag-explorer-bar" class="command-bar" role="toolbar" aria-label="Pinned humiliation controls">
-        <div class="command-group" role="group" aria-label="Primary gallery controls">
-          <button class="control-btn command-btn sidebar-toggle" type="button">PINNED</button>
-          <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
-          <button class="control-btn command-btn theme-toggle" type="button">GLOW</button>
-          <button id="filters-btn" class="control-btn command-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="tag-filter-panel">FILTER</button>
-          <button id="favorites-btn" class="control-btn command-btn" type="button" aria-label="Show favorite artists">
-            <span id="favorites-label">⭐ FAVS</span>
-            <span id="favorites-count" class="favorites-count hidden"></span>
-          </button>
-          <button id="force-fetch-btn" class="control-btn command-btn" type="button" aria-label="Force fetch style tags">FETCH</button>
-        </div>
-        <div class="command-status">
-          <span class="hidden fold-cover:inline">COVER MODE</span>
-          <span class="hidden fold-inner:inline">INNER MODE</span>
-        </div>
-      </nav>
+      <div class="landing-montage__frame landing-montage__frame--beta">
+        <img src="https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/4tb_%284tera_byte%29.jpg" alt="" loading="lazy" decoding="async">
+      </div>
+      <div class="landing-montage__frame landing-montage__frame--gamma">
+        <img src="https://cdn.zele.st/data/NAX/Images/danbooru-artist-tags-v4.5/2n5.jpg" alt="" loading="lazy" decoding="async">
+      </div>
     </div>
-
-    <!-- Back to top button (fixed position, bottom right) -->
-    <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
-
-    <main class="relative z-10 flex-1">
-      <div class="gallery-shell">
-        <section class="gallery-intro" aria-label="Pinned humiliation briefing">
-          <div class="gallery-intro__header">
-            <h2 class="gallery-intro__title">Pinned filter leash engaged</h2>
-            <p class="gallery-intro__subtitle">The FILTER button above is your only mercy. Tap it when you're ready to admit what you crave.</p>
-          </div>
-          <p class="gallery-intro__copy">Your feed refreshes in cruel 100-artist waves. Scroll to the bottom to beg for the next batch, or clear your shame when you finally give up.</p>
-          <button id="clear-tags" class="browse-btn gallery-intro__reset" type="button" style="display: none;">Clear tags</button>
-        </section>
-
-        <section class="space-y-4">
-          <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
-          <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
-        </section>
+    <div class="landing-grid"></div>
+    <div class="landing-noise"></div>
+  </div>
+  <div class="landing-shell">
+    <header class="landing-header">
+      <div class="landing-brand">
+        <span class="tag-explorer-wordmark">TagExplorer</span>
+        <p class="landing-whisper">caught you creeping back in</p>
+      </div>
+      <nav class="landing-nav" aria-label="Primary">
+        <a class="landing-link" href="./gallery/" data-router-link>Gallery</a>
+        <a class="landing-link" href="./about/" data-router-link>About</a>
+        <a class="landing-link" href="./data/" data-router-link>Data</a>
+      </nav>
+    </header>
+    <main class="landing-main" aria-labelledby="landing-title">
+      <h1 id="landing-title" class="landing-title" data-shadow="Whisper Protocol Engaged">Whisper Protocol Engaged</h1>
+      <p class="landing-intro">Each tap leaves a trace. Every filter, every tag — archived, mocked, replayed in soft hisses. Step through if the shame-glow is what you wanted.</p>
+      <div class="landing-actions">
+        <a class="landing-enter" href="./gallery/" data-router-link data-glitch-trigger>Enter Gallery</a>
+        <button class="landing-audio" data-landing-audio type="button">Unmute the whispers</button>
+      </div>
+      <div class="landing-disclaimer" role="note">
+        <p>18+. Explicit Danbooru content. Azure whisper TTS. Motion-heavy. Switch on <span>reduce motion</span> if you bruise easy.</p>
       </div>
     </main>
+    <footer class="landing-footer">
+      <p>Galaxy Z Fold4 tuned. Local storage captures your filter guilt. Proceeding implies consent to gentle torment.</p>
+    </footer>
   </div>
-
-  <!-- Tag Explorer Sidebar - Moved outside main content for proper positioning -->
-  <div id="tag-filter-popover" class="tag-explorer-sidebar" aria-hidden="true"></div>
-
-  <aside class="sidebar-wrapper" aria-label="Copied artists">
-    <div id="copied-sidebar" class="sidebar-panel sidebar-hidden" role="complementary" aria-label="Pinned artists">
-      <div class="sidebar-header">
-        <h2 class="text-sm font-display uppercase tracking-[0.4em] text-white">Pinned Artists</h2>
-        <button class="copied-sidebar-close" aria-label="Close sidebar">Close</button>
-      </div>
-      <div class="sidebar-content">
-        <div class="sidebar-taunt-banner">No artists copied yet. Too shy to commit?</div>
-        <div class="sidebar-sections"></div>
-      </div>
-    </div>
-  </aside>LatencyFlex
-
-  <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
-
-  <section id="audio-section" aria-label="Audio controls">
-    <div id="audio-panel" class="audio-panel hidden" role="region" aria-label="Hypnosis audio player">
-      <div class="audio-header">
-        <span aria-hidden="true">🎧</span>
-        <span id="audio-track-name">No track playing</span>
-      </div>
-      <div class="audio-track-selector" role="group" aria-label="Track selection">
-        <label class="field-label" for="audio-track-select">Select track</label>
-        <select id="audio-track-select" class="voice-style-select" aria-label="Choose audio track">
-          <option value="">Loading tracks...</option>
-        </select>
-      </div>
-      <div class="audio-controls" role="group" aria-label="Audio playback controls">
-        <button id="audio-prev" type="button" aria-label="Previous track">⏮</button>
-        <button id="audio-toggle" type="button" aria-label="Play or pause">▶</button>
-        <button id="audio-next" type="button" aria-label="Next track">⏭</button>
-        <button id="moan-mute" type="button" aria-label="Toggle moan sound">🔇 Moan</button>
-      </div>
-    </div>
-    <audio id="moan-audio" preload="auto" aria-label="Moan sound effects">
-      <source src="moan.mp3" type="audio/mpeg">
-    </audio>
-    <audio
-      id="hypnoAudio"
-      preload="auto"
-      aria-label="Hypnosis audio tracks"
-    ></audio>
-  </section>
-
+  <te-audio-panel data-landing-panel hidden></te-audio-panel>
   <script type="module" src="main.js"></script>
 </body>
 </html>

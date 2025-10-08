@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>TagExplorer · Artist Gallery</title>
+  <meta name="description" content="Discover NSFW artists on Danbooru with whispered humiliation-driven tag filters.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body class="relative min-h-screen overflow-x-hidden" data-page="gallery">
+  <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
+  <div class="relative z-10 flex min-h-screen flex-col" data-shell>
+    <header class="top-surface">
+      <div class="top-band">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div class="space-y-4">
+            <a class="tag-explorer-wordmark" href="../" data-router-link>TagExplorer</a>
+            <h1 class="gallery-title text-4xl font-display uppercase tracking-[0.55em] text-white drop-shadow-[0_8px_35px_rgba(102,243,255,0.35)] sm:text-5xl">Artist Gallery</h1>
+            <p id="tagline" class="max-w-xl text-sm uppercase tracking-[0.3em] text-slate-300">Pathetic..~</p>
+          </div>
+          <div class="top-bar-meta">
+            <p class="top-bar-tease max-w-sm text-xs uppercase tracking-[0.35em] text-rose-200/80 lg:text-right">
+              I'll keep the glow pinned above every scroll so you can't pretend you're not begging for more.
+            </p>
+            <nav class="top-nav" aria-label="Primary">
+              <a href="./" class="top-nav-link active" data-router-link>Gallery</a>
+              <a href="../about/" class="top-nav-link" data-router-link>About</a>
+              <a href="../data/" class="top-nav-link" data-router-link>Data</a>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="surface-divider"></div>
+
+    <te-command-bar></te-command-bar>
+
+    <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
+
+    <main class="relative z-10 flex-1">
+      <div class="gallery-shell">
+        <section class="gallery-intro" aria-label="Pinned humiliation briefing">
+          <div class="gallery-intro__header">
+            <h2 class="gallery-intro__title">Pinned filter leash engaged</h2>
+            <p class="gallery-intro__subtitle">The FILTER button above is your only mercy. Tap it when you're ready to admit what you crave.</p>
+          </div>
+          <p class="gallery-intro__copy">Your feed refreshes in cruel 100-artist waves. Scroll to the bottom to beg for the next batch, or clear your shame when you finally give up.</p>
+          <button id="clear-tags" class="browse-btn gallery-intro__reset" type="button" style="display: none;">Clear tags</button>
+        </section>
+
+        <section class="space-y-4">
+          <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
+          <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="tag-filter-popover" class="tag-explorer-sidebar" aria-hidden="true"></div>
+  <te-pinned-sidebar></te-pinned-sidebar>
+  <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
+  <te-audio-panel data-src-prefix="../"></te-audio-panel>
+  <script type="module" src="../main.js"></script>
+</body>
+</html>

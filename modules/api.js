@@ -14,6 +14,15 @@ const fetchFn = fetch;
 
 import { fetchWithCache } from "./fetch-cache.js";
 
+const ARTISTS_DATA_URL = new URL("../artists.json", import.meta.url).href;
+const TOOLTIP_DATA_URL = new URL("../tag-tooltips.json", import.meta.url).href;
+const TAUNTS_DATA_URL = new URL("../taunts.json", import.meta.url).href;
+const TAG_TAUNTS_DATA_URL = new URL("../tag-taunts.json", import.meta.url).href;
+
+const GALLERY_STATE_KEY = "tagexplorer:gallery:state";
+const ARTIST_LOOKUP = new Map();
+let artistsListPromise = null;
+
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
   // Tuned defaults: slightly more aggressive but include jitter to reduce thundering herd
@@ -36,6 +45,34 @@ const requestBatches = new Map(); // batch key -> array of requests
 
 // In-memory API JSON cache to avoid reparsing/rehydration during a session
 const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
+
+function toArtistSlug(name, fallbackIndex = 0) {
+  const base = String(name || "artist").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (base) return base;
+  return `artist-${fallbackIndex}`;
+}
+
+function indexArtists(list = []) {
+  if (!Array.isArray(list)) return;
+  list.forEach((artist, index) => {
+    if (!artist || typeof artist !== "object") return;
+    const slug = toArtistSlug(artist.slug || artist.artistName, index);
+    if (!ARTIST_LOOKUP.has(slug)) {
+      ARTIST_LOOKUP.set(slug, { ...artist, slug });
+    }
+  });
+}
+
+async function ensureArtistsList() {
+  if (!artistsListPromise) {
+    artistsListPromise = fetchWithCache(ARTISTS_DATA_URL).then((list) =>
+      Array.isArray(list) ? list : []
+    );
+  }
+  const artists = await artistsListPromise;
+  indexArtists(artists);
+  return artists;
+}
 
 /**
  * Rate-limited fetch wrapper with exponential backoff and deduplication
@@ -659,10 +696,10 @@ async function loadAppData() {
   try {
     const [artists, tooltips, generalTaunts, tagTaunts] =
       await Promise.all([
-        fetchWithCache("artists.json"),
-        fetchWithCache("tag-tooltips.json"),
-        fetchWithCache("taunts.json"),
-        fetchWithCache("tag-taunts.json"),
+        getArtistsIndex(),
+        fetchWithCache(TOOLTIP_DATA_URL),
+        fetchWithCache(TAUNTS_DATA_URL),
+        fetchWithCache(TAG_TAUNTS_DATA_URL),
       ]);
 
     return {
@@ -674,6 +711,79 @@ async function loadAppData() {
   } catch (error) {
     console.error("Failed to load required data files:", error);
     throw error;
+  }
+}
+
+export async function getArtistsIndex() {
+  const artists = await ensureArtistsList();
+  return artists;
+}
+
+export function getArtistSlug(name) {
+  return toArtistSlug(name);
+}
+
+export async function getArtistBySlug(slug) {
+  if (!slug) return null;
+  const normalized = toArtistSlug(slug);
+  if (ARTIST_LOOKUP.has(normalized)) {
+    return ARTIST_LOOKUP.get(normalized);
+  }
+  const artists = await ensureArtistsList();
+  return ARTIST_LOOKUP.get(normalized) ||
+    artists.find((artist, index) => toArtistSlug(artist.artistName, index) === normalized) ||
+    null;
+}
+
+export async function preloadArtistBySlug(slug) {
+  if (!slug) return null;
+  return getArtistBySlug(slug);
+}
+
+export async function preloadDataset(key) {
+  switch (key) {
+    case 'artists':
+      return ensureArtistsList();
+    case 'tooltips':
+      return fetchWithCache(TOOLTIP_DATA_URL);
+    case 'taunts':
+      return fetchWithCache(TAUNTS_DATA_URL);
+    case 'tag-taunts':
+      return fetchWithCache(TAG_TAUNTS_DATA_URL);
+    default:
+      return null;
+  }
+}
+
+export function persistGalleryState(state = {}) {
+  try {
+    sessionStorage.setItem(
+      GALLERY_STATE_KEY,
+      JSON.stringify({ ...state, timestamp: Date.now() })
+    );
+  } catch (error) {
+    console.warn('[api] Unable to persist gallery state', error);
+  }
+}
+
+export function restoreGalleryState() {
+  try {
+    const raw = sessionStorage.getItem(GALLERY_STATE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch (error) {
+    console.warn('[api] Unable to restore gallery state', error);
+    return null;
+  }
+}
+
+export function clearGalleryState() {
+  try {
+    sessionStorage.removeItem(GALLERY_STATE_KEY);
+  } catch (error) {
+    console.warn('[api] Unable to clear gallery state', error);
   }
 }
 

@@ -6,6 +6,7 @@ import {
   fetchAllArtistImages,
   getArtistImageCount,
   fetchArtistStyleTags,
+  getArtistSlug,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
@@ -1097,6 +1098,10 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     card.className = "artist-card group";
     card.dataset.page = String(pageNumber);
     card.setAttribute("data-artist", artist.artistName);
+    const artistSlug = getArtistSlug(artist.artistName);
+    if (artistSlug) {
+      card.dataset.artistSlug = artistSlug;
+    }
 
     const img = document.createElement("img");
     img.className = "artist-image";
@@ -1144,7 +1149,15 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     if (typeof total === "number") {
       displayName += ` [${total}]`;
     }
-    name.textContent = displayName;
+    const nameLink = document.createElement("a");
+    nameLink.textContent = displayName;
+    nameLink.href = `../artist/[id]/?slug=${encodeURIComponent(artistSlug || '')}`;
+    nameLink.className = "artist-name-link";
+    nameLink.setAttribute('data-router-link', '');
+    nameLink.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+    name.appendChild(nameLink);
 
     const taglist = document.createElement("div");
     taglist.className = "artist-tags";
@@ -1279,7 +1292,15 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     actions.appendChild(copyBtn);
     actions.appendChild(pinBtn);
     actions.appendChild(reloadBtn);
+    const detailLink = document.createElement('a');
+    detailLink.className = 'browse-btn artist-detail-link';
+    detailLink.textContent = 'Profile';
+    detailLink.href = `../artist/[id]/?slug=${encodeURIComponent(artistSlug || '')}`;
+    detailLink.setAttribute('data-router-link', '');
+    detailLink.addEventListener('click', (e) => e.stopPropagation());
+
     actions.appendChild(similarBtn);
+    actions.appendChild(detailLink);
     actions.appendChild(tagsToggle);
 
     const footer = document.createElement("div");
