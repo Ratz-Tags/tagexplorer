@@ -1645,64 +1645,44 @@ function setAllArtists(artists) {
  */
 async function fetchStyleTagsForArtistList(artistList, onProgress = null, shouldCancel = null) {
   if (!artistList || artistList.length === 0) return;
-  
   const total = artistList.length;
-  console.log(`Starting style tag fetch for ${total} artists...`);
-  
-  // Process artists in batches with delays to respect rate limits
-  const BATCH_SIZE = 20;
-  const BATCH_DELAY = 1000; // 1 second between batches (20 artists/sec)
-  
+  console.log(`Starting style tag fetch for ${total} artists (concurrent pool)...`);
+  const CONCURRENCY = 10;
   let processed = 0;
-  
-  for (let i = 0; i < artistList.length; i += BATCH_SIZE) {
-    // Check for cancellation
-    if (shouldCancel && shouldCancel()) {
-      console.log(`Style tag fetch cancelled at ${processed}/${total} artists`);
-      return;
-    }
-    
-    const batch = artistList.slice(i, i + BATCH_SIZE);
-    
-    // Fetch style tags for this batch in parallel
-    const promises = batch.map(async (artist) => {
-      if (!artist || !artist.artistName) return;
-      
+  let index = 0;
+
+  async function worker() {
+    while (index < artistList.length) {
+      // Atomically claim the next artist
+      const myIndex = index++;
+      if (myIndex >= artistList.length) return;
+      const artist = artistList[myIndex];
+      if (!artist || !artist.artistName) continue;
+      if (shouldCancel && shouldCancel()) {
+        console.log(`Style tag fetch cancelled at ${processed}/${total} artists`);
+        return;
+      }
       try {
         const styleTags = await fetchArtistStyleTags(artist.artistName, { limit: 100 });
         if (styleTags && styleTags.length > 0) {
           artist.styleTags = styleTags;
-          console.log(`Fetched ${styleTags.length} style tags for ${artist.artistName}`);
+          //console.log(`Fetched ${styleTags.length} style tags for ${artist.artistName}`);
         }
       } catch (error) {
         console.warn(`Failed to fetch style tags for ${artist.artistName}:`, error);
       }
-    });
-    
-    await Promise.all(promises);
-    
-    processed += batch.length;
-    
-    // Call progress callback if provided
-    if (onProgress) {
-      onProgress(processed, total);
-    }
-    
-    // Update similar artists module with new style tags
-    setSimilarArtists(allArtists);
-    
-    // Wait before next batch (except for the last batch)
-    if (i + BATCH_SIZE < artistList.length) {
-      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+      processed++;
+      if (onProgress) onProgress(processed, total);
+      setSimilarArtists(allArtists);
     }
   }
-  
+
+  // Launch a pool of CONCURRENCY workers
+  const workers = Array.from({ length: CONCURRENCY }, () => worker());
+  await Promise.all(workers);
+
   console.log('Style tag fetch complete');
-  
-  // Final progress update
-  if (onProgress) {
-    onProgress(total, total);
-  }
+  if (onProgress) onProgress(total, total);
 }
 
 /**
