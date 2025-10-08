@@ -463,6 +463,7 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
     const posts = await fetchPosts(query, {
       limit: 40,
       page,
+      order: "approvals",
       useCache: false,
     });
     console.log('[api] fetchPosts returned:', posts.length, 'posts');

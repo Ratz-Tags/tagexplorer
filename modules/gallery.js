@@ -550,12 +550,9 @@ function buildAmbientQuery(weights, intensity = 2) {
   const sorted = Array.from(weights.entries()).sort((a, b) => b[1] - a[1]);
   const primary = sorted[0]?.[0] || selectWeightedTag(weights) || DEFAULT_AMBIENT_TAGS[0];
   
-  // API constraint: single tag + order:approvals only
-  // Remove secondary tags and rating filters
-  const query = `${primary}+order:approvals`;
-  
-  console.log(`[ambience] built query: "${query}" from primary tag: ${primary}`);
-  return query;
+  // Return just the tag - fetchPosts will add the order parameter
+  console.log(`[ambience] built query: "${primary}" from weights`);
+  return primary;
 }
 
 async function ensureMotionModule() {
