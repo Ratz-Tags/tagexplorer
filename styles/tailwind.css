@@ -300,6 +300,9 @@ body[data-fold-mode="fold-cover"] .gallery-shell {
   gap: clamp(1.75rem, 5vw, 2.5rem);
   width: 100%;
 }
+.gallery-layout > main {
+  min-width: 0;
+}
 .gallery-layout > te-pinned-sidebar {
   display: none;
 }
