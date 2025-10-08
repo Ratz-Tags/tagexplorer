@@ -687,9 +687,15 @@ async function applyAmbientLayer(container, url) {
  */
 async function setRandomBackground(options = {}) {
   const blur = document.getElementById('background-blur');
-  if (!blur) return;
+  console.log('[ambience] setRandomBackground called', { options, blur: !!blur });
+  
+  if (!blur) {
+    console.warn('[ambience] #background-blur element not found');
+    return;
+  }
 
   if (document.body?.classList.contains('incognito-theme')) {
+    console.log('[ambience] incognito mode active, clearing background');
     blur.style.backgroundImage = 'none';
     blur.style.backgroundColor = '#111';
     if (ambienceState.activeLayer) {
@@ -710,33 +716,40 @@ async function setRandomBackground(options = {}) {
   const weights = deriveAmbientWeights(tagWeights);
   const query = buildAmbientQuery(weights, ambienceState.intensity);
   ambienceState.lastQuery = query;
+  console.log('[ambience] derived query:', query, 'from weights:', Object.fromEntries(weights || []));
 
   let imageUrl = null;
   try {
     imageUrl = await getRandomBackgroundImage(query);
+    console.log('[ambience] fetched imageUrl:', imageUrl);
   } catch (error) {
     console.warn('[ambience] failed to fetch background', error);
   }
 
   if (!imageUrl && ambienceState.currentUrl) {
+    console.log('[ambience] no new image, reusing current:', ambienceState.currentUrl);
     imageUrl = ambienceState.currentUrl;
   }
 
   if (!imageUrl) {
+    console.warn('[ambience] no image available, using fallback background');
     blur.style.backgroundColor = '#111';
     return;
   }
 
   if (imageUrl === ambienceState.currentUrl && ambienceState.activeLayer) {
+    console.log('[ambience] image unchanged, skipping layer update');
     return;
   }
 
   try {
     const loadedUrl = await preloadImage(imageUrl);
+    console.log('[ambience] preloaded image:', loadedUrl);
     await applyAmbientLayer(blur, loadedUrl);
     ambienceState.currentUrl = loadedUrl;
     blur.style.backgroundImage = 'none';
     blur.style.backgroundColor = 'transparent';
+    console.log('[ambience] ✓ background applied successfully');
   } catch (error) {
     console.warn('[ambience] failed to apply background', error);
   }

@@ -26,11 +26,11 @@ let artistsListPromise = null;
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  // Tuned defaults: slightly more aggressive but include jitter to reduce thundering herd
-  minDelay: 600, // Minimum 600ms between requests (helps throughput)
-  maxDelay: 8000, // Maximum 8s delay for backoff
+  // Optimized for better UX: faster initial requests with reasonable backoff
+  minDelay: 300, // Minimum 300ms between requests (faster throughput)
+  maxDelay: 6000, // Maximum 6s delay for backoff
   maxRetries: 4, // allow an extra retry before failing
-  backoffMultiplier: 1.8, // gentler backoff multiplier
+  backoffMultiplier: 1.6, // moderate backoff multiplier
 };
 
 // Request queue and tracking
@@ -457,6 +457,7 @@ function filterValidImagePosts(posts, tags = []) {
  */
 async function getRandomBackgroundImage(query = "chastity_cage") {
   const page = Math.floor(Math.random() * 5) + 1;
+  console.log('[api] getRandomBackgroundImage query:', query, 'page:', page);
 
   try {
     const posts = await fetchPosts(query, {
@@ -464,28 +465,39 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
       page,
       useCache: false,
     });
+    console.log('[api] fetchPosts returned:', posts.length, 'posts');
 
-    if (posts.length === 0) return null;
+    if (posts.length === 0) {
+      console.warn('[api] no posts found for query:', query);
+      return null;
+    }
 
     const validPosts = posts.filter(
       (post) => post?.large_file_url || post?.file_url
     );
+    console.log('[api] filtered to', validPosts.length, 'valid posts');
 
-    if (validPosts.length === 0) return null;
+    if (validPosts.length === 0) {
+      console.warn('[api] no valid image posts found');
+      return null;
+    }
 
     const randomPost =
       validPosts[Math.floor(Math.random() * validPosts.length)];
     const url = randomPost.large_file_url || randomPost.file_url;
-    return buildImageUrl(url);
+    const finalUrl = buildImageUrl(url);
+    console.log('[api] selected background image:', finalUrl);
+    return finalUrl;
   } catch (error) {
     // Suppress CORS/network spam
     if (error && error.message && error.message.includes('NetworkError')) {
       if (typeof window !== 'undefined') {
         window._danbooruUnavailable = true;
       }
+      console.warn('[api] Danbooru unavailable (network error)');
       return null;
     }
-    console.warn("Failed to get random background:", error);
+    console.warn("[api] Failed to get random background:", error);
     return null;
   }
 }
@@ -556,7 +568,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
  * Batch fetch multiple artist images with staggered requests
  */
 async function fetchArtistImagesBatch(requests, options = {}) {
-  const { batchDelay = 500, maxConcurrent = 3 } = options;
+  const { batchDelay = 250, maxConcurrent = 5 } = options;
   const results = new Map();
   
   // Process requests in smaller concurrent batches
@@ -819,7 +831,7 @@ async function fetchAllArtistImages(
         requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
       }
 
-      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 300, maxConcurrent: options.maxConcurrent || 4 });
+      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 200, maxConcurrent: options.maxConcurrent || 6 });
       for (let p = 1; p <= totalPages; p++) {
         const key = `p${p}`;
         const pagePosts = batchResults.get(key) || [];

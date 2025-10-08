@@ -413,13 +413,46 @@ mix-blend-mode: screen;
 @apply flex items-center justify-between rounded-2xl border border-white/10 bg-black/40 px-5 py-4 text-sm text-slate-200;
 }
 .gallery-grid {
-@apply grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6;
+  @apply grid gap-6;
+  /* Centered grid that adapts to content count */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  justify-content: center;
+  margin: 0 auto;
 }
 
-/* Fold4 inner display: 980px wide should show 4 columns */
+/* Small screens: 3 columns */
+@media (min-width: 640px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Medium screens: 4 columns */
+@media (min-width: 768px) {
+  .gallery-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Large screens: 5 columns */
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+/* XL screens: 6 columns */
+@media (min-width: 1280px) {
+  .gallery-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+/* Fold4 inner display: 4 columns centered */
 @screen fold-inner {
   .gallery-grid {
-    @apply grid-cols-4;
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -905,7 +938,8 @@ body[data-fold-mode="fold-cover"] .tag-explorer-overlay {
   opacity: 1;
   visibility: visible;
 }
-..cover-sheet {
+
+.cover-sheet {
   position: fixed;
   inset: 0;
   z-index: 150;

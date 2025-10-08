@@ -373,51 +373,7 @@ function setupMotionToggle(initialMode) {
   };
 }
 
-function setupCoverSettingsSheet() {
-  const sheet = document.getElementById('cover-settings-sheet');
-  const trigger = document.getElementById('cover-settings-btn');
-  if (!sheet || !trigger) {
-    return { close: () => {} };
-  }
-
-  const closeButtons = Array.from(sheet.querySelectorAll('[data-close]'));
-
-  const openSheet = () => {
-    sheet.classList.add('is-open');
-    sheet.setAttribute('aria-hidden', 'false');
-    trigger.setAttribute('aria-expanded', 'true');
-    document.body.classList.add('settings-sheet-open');
-  };
-
-  const closeSheet = () => {
-    sheet.classList.remove('is-open');
-    sheet.setAttribute('aria-hidden', 'true');
-    trigger.setAttribute('aria-expanded', 'false');
-    document.body.classList.remove('settings-sheet-open');
-  };
-
-  trigger.addEventListener('click', () => {
-    if (sheet.classList.contains('is-open')) {
-      closeSheet();
-    } else {
-      openSheet();
-    }
-  });
-
-  closeButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      closeSheet();
-    });
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && sheet.classList.contains('is-open')) {
-      closeSheet();
-    }
-  });
-
-  return { close: closeSheet, open: openSheet };
-}
+// Settings sheet removed - functionality now only in inner command bar
 
 function updateCommandStatusLabels(mode) {
   const labels = document.querySelectorAll('.command-status__label');
@@ -604,10 +560,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupAudioToggle();
   setupMuteToggle();
   setupMotionToggle(readMotionPreference());
-  const settingsSheet = setupCoverSettingsSheet();
   const foldCleanup = setupFoldModeSync({
     foldAdapter,
-    closeSettings: settingsSheet.close,
   });
 
   setRandomBackground();
@@ -714,9 +668,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     onDispose: () => {
       persistState();
       if (typeof foldCleanup === 'function') foldCleanup();
-      if (settingsSheet && typeof settingsSheet.close === 'function') {
-        settingsSheet.close();
-      }
       if (typeof idleCleanup === 'function') idleCleanup();
     },
   };

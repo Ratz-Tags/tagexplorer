@@ -43,9 +43,24 @@ let playlistSelectEl = null;
 let playlistAutoToggle = null;
 let intensitySyncToggle = null;
 
+// Detect if we're in a subdirectory and need path prefix
+function getPathPrefix() {
+  const audioPanel = document.querySelector('te-audio-panel');
+  if (audioPanel && audioPanel.hasAttribute('data-src-prefix')) {
+    return audioPanel.getAttribute('data-src-prefix');
+  }
+  // Check if current path suggests we're in a subdirectory
+  const path = window.location.pathname;
+  if (path.includes('/gallery/') || path.includes('/artist/') || path.includes('/about/')) {
+    return '../';
+  }
+  return '';
+}
+
 async function loadAudioFileData() {
   try {
-    const response = await fetch('data/audio-files.json');
+    const prefix = getPathPrefix();
+    const response = await fetch(`${prefix}data/audio-files.json`);
     if (!response.ok) {
       throw new Error(`Failed to load audio files: ${response.status}`);
     }
@@ -59,13 +74,14 @@ async function loadAudioFileData() {
     baseAudioFiles = [...FALLBACK_AUDIO_FILES];
     audioFiles = [...FALLBACK_AUDIO_FILES];
     // Create fallback data structure
+    const prefix = getPathPrefix();
     audioFileData = {
       generatedAt: new Date().toISOString(),
       totalFiles: audioFiles.length,
       files: audioFiles.map(filename => ({
         filename,
         title: filename.replace(/\.mp3$/i, '').replace(/_/g, ' '),
-        path: `audio/${filename}`
+        path: `${prefix}audio/${filename}`
       }))
     };
     return audioFileData;
@@ -93,7 +109,8 @@ function normalisePlaylistEntry(entry) {
 
 async function loadPlaylistData() {
   try {
-    const response = await fetch(PLAYLIST_DATA_URL, { cache: 'no-store' });
+    const prefix = getPathPrefix();
+    const response = await fetch(`${prefix}${PLAYLIST_DATA_URL}`, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Failed to load playlists: ${response.status}`);
     }
@@ -501,16 +518,17 @@ function getAudioSrc(index) {
   if (isRemoteTrack(name)) {
     return name;
   }
+  const prefix = getPathPrefix();
   if (name.startsWith("audio/")) {
-    return name;
+    return `${prefix}${name}`;
   }
   if (name.startsWith("./audio/")) {
-    return name.slice(2);
+    return `${prefix}${name.slice(2)}`;
   }
   if (window._customAudioUrls && window._customAudioUrls[name]) {
     return window._customAudioUrls[name];
   }
-  return `audio/${name}`;
+  return `${prefix}audio/${name}`;
 }
 
 /**

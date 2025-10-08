@@ -69,17 +69,6 @@ template.innerHTML = `
           <span class="cover-command-label">Filters</span>
         </button>
         <button
-          id="cover-settings-btn"
-          class="cover-command-btn"
-          type="button"
-          aria-haspopup="true"
-          aria-expanded="false"
-          aria-controls="cover-settings-sheet"
-        >
-          <span aria-hidden="true">⚙</span>
-          <span class="cover-command-label">Settings</span>
-        </button>
-        <button
           id="cover-mute-btn"
           class="cover-command-btn cover-mute-toggle"
           type="button"

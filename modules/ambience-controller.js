@@ -153,8 +153,13 @@ export function initAmbienceController(options = {}) {
     if (state.destroyed) return;
     state.scheduled = null;
     state.lastRun = Date.now();
+    console.log('[ambience-controller] performRefresh triggered by:', reason);
     Promise.resolve()
-      .then(() => state.setBackground(buildPayload(reason)))
+      .then(() => {
+        const payload = buildPayload(reason);
+        console.log('[ambience-controller] calling setBackground with payload:', payload);
+        return state.setBackground(payload);
+      })
       .catch((error) => {
         console.warn('[ambience] background refresh failed', error);
       })
