@@ -22,70 +22,106 @@ function showNoEntriesMsg(element, msg = "No valid entries") {
 /**
  * Sets up infinite scroll functionality
  */
-function setupInfiniteScroll(callback, infoProvider) {
+function setupInfiniteScroll(options, legacyInfoProvider) {
   const gallery = document.getElementById("artist-gallery");
-  if (!gallery || typeof callback !== "function") {
-    return;
+  if (!gallery) return;
+
+  let config = options;
+  if (typeof options === "function") {
+    config = {
+      onForward: options,
+      infoProvider: legacyInfoProvider,
+    };
   }
 
-  let loading = false;
-  let currentSentinel = null;
-  let pendingPage = null;
+  if (!config || typeof config !== "object") return;
+
+  const {
+    onForward,
+    onBackward,
+    infoProvider,
+    rootMargin = "30% 0px",
+  } = config;
+
+  if (typeof onForward !== "function") return;
+
+  let forwardLoading = false;
+  let backwardLoading = false;
+  const activeSentinels = new Set();
+
+  const requestStep = (direction) => {
+    const info = typeof infoProvider === "function" ? infoProvider() : null;
+    if (direction === "backward") {
+      if (
+        typeof onBackward !== "function" ||
+        backwardLoading ||
+        !(info?.hasMoreBackward)
+      ) {
+        return;
+      }
+      backwardLoading = true;
+      Promise.resolve(onBackward())
+        .catch((error) => {
+          console.warn("Infinite scroll backward callback failed", error);
+        })
+        .finally(() => {
+          backwardLoading = false;
+        });
+    } else {
+      if (forwardLoading || !(info?.hasMoreForward ?? info?.hasMore)) {
+        return;
+      }
+      forwardLoading = true;
+      Promise.resolve(onForward())
+        .catch((error) => {
+          console.warn("Infinite scroll forward callback failed", error);
+        })
+        .finally(() => {
+          forwardLoading = false;
+        });
+    }
+  };
 
   const observer = new IntersectionObserver(
     (entries) => {
-      const entry = entries[0];
-      if (!entry || !entry.isIntersecting) return;
-      const info = typeof infoProvider === "function" ? infoProvider() : null;
-      if (!info || !info.hasMore || loading) return;
-      if (pendingPage !== null && info.lastRenderedPage < pendingPage) {
-        return;
-      }
-      pendingPage = info.currentPage + 1;
-      loading = true;
-      Promise.resolve(callback())
-        .catch((error) => {
-          console.warn("Infinite scroll callback failed", error);
-        })
-        .finally(() => {
-          loading = false;
-          const latestInfo = typeof infoProvider === "function" ? infoProvider() : null;
-          if (
-            pendingPage !== null &&
-            (
-              !latestInfo ||
-              latestInfo.lastRenderedPage >= pendingPage ||
-              !latestInfo.hasMore ||
-              latestInfo.currentPage < pendingPage
-            )
-          ) {
-            pendingPage = null;
-          }
-        });
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const direction = entry.target?.dataset?.direction || "forward";
+        requestStep(direction === "backward" ? "backward" : "forward");
+      });
     },
     {
       root: null,
-      rootMargin: "35% 0px",
+      rootMargin,
       threshold: 0.01,
     }
   );
 
-  const connectSentinel = () => {
-    const sentinel = document.getElementById("gallery-end-sentinel");
-    if (currentSentinel && (!sentinel || sentinel !== currentSentinel)) {
-      observer.unobserve(currentSentinel);
-      currentSentinel = null;
-    }
-    if (sentinel && sentinel !== currentSentinel) {
-      currentSentinel = sentinel;
-      observer.observe(currentSentinel);
-    }
+  const connectSentinels = () => {
+    const bottom = document.getElementById("gallery-end-sentinel");
+    const top = document.getElementById("gallery-start-sentinel");
+    const targets = [bottom, top].filter((el) => el instanceof Element);
+
+    // Disconnect any removed sentinels
+    activeSentinels.forEach((node) => {
+      if (!node || !node.isConnected || !targets.includes(node)) {
+        observer.unobserve(node);
+        activeSentinels.delete(node);
+      }
+    });
+
+    targets.forEach((node) => {
+      if (!activeSentinels.has(node)) {
+        observer.observe(node);
+        activeSentinels.add(node);
+      }
+    });
   };
 
-  connectSentinel();
+  connectSentinels();
 
   const mutationObserver = new MutationObserver(() => {
-    connectSentinel();
+    connectSentinels();
   });
 
   mutationObserver.observe(gallery, { childList: true });
@@ -93,6 +129,7 @@ function setupInfiniteScroll(callback, infoProvider) {
   window.addEventListener("beforeunload", () => {
     observer.disconnect();
     mutationObserver.disconnect();
+    activeSentinels.clear();
   });
 }
 
@@ -144,11 +181,45 @@ function setupStickyTopBar() {
 /**
  * Sets up random background changes at intervals
  */
-function setupBackgroundRotation(setBackgroundCallback, intervalMs = 15000) {
-  if (setBackgroundCallback) {
-    setBackgroundCallback(); // Set initial background
-    setInterval(setBackgroundCallback, intervalMs);
+async function setupBackgroundRotation(setBackgroundCallback, options = {}) {
+  if (typeof setBackgroundCallback !== 'function') return null;
+
+  let config = options;
+  if (typeof options === 'number') {
+    config = { interval: options };
   }
+  const controllerOptions = {
+    setBackground: setBackgroundCallback,
+    getActiveTags: config?.getActiveTags,
+    getFilteredArtists: config?.getFilteredArtists,
+    getPaginationInfo: config?.getPaginationInfo,
+    interval: typeof config?.interval === 'number' ? config.interval : 15000,
+  };
+
+  try {
+    const module = await import('./ambience-controller.js');
+    if (module?.initAmbienceController) {
+      return module.initAmbienceController(controllerOptions);
+    }
+  } catch (error) {
+    console.warn('Failed to initialize ambience controller, falling back to timer', error);
+  }
+
+  setBackgroundCallback();
+  const interval = controllerOptions.interval;
+  const timer = setInterval(() => {
+    try {
+      setBackgroundCallback();
+    } catch (err) {
+      console.warn('Background rotation fallback failed', err);
+    }
+  }, interval);
+
+  return {
+    dispose() {
+      clearInterval(timer);
+    },
+  };
 }
 
 /**

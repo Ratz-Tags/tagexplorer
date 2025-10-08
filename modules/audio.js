@@ -9,6 +9,11 @@ let moansMuted = false;
 let moanPlaying = false;
 
 const GLOBAL_MUTE_STORAGE_KEY = 'te.audio.globalMute';
+const PLAYLIST_DATA_URL = 'data/audio-playlists.json';
+const LAST_PLAYLIST_STORAGE_KEY = 'te.audio.playlist';
+const AUTO_PLAYLIST_STORAGE_KEY = 'te.audio.autoPlaylist';
+const INTENSITY_SYNC_STORAGE_KEY = 'te.audio.intensitySync';
+
 let globalMute = false;
 
 // Audio file list
@@ -21,11 +26,22 @@ const FALLBACK_AUDIO_FILES = [
   "Yes.mp3",
 ];
 
+let baseAudioFiles = [...FALLBACK_AUDIO_FILES];
 let audioFiles = [...FALLBACK_AUDIO_FILES];
 let audioFileData = null;
+let playlistData = null;
+let playlists = [];
+let currentPlaylistId = '__all__';
+let autoPlaylistEnabled = true;
+let intensitySyncEnabled = true;
+let motionMode = 'full';
+let currentTTSIntensity = 2;
+let lastKnownTags = [];
 
-let playlistContainer = null;
 let trackSelectEl = null;
+let playlistSelectEl = null;
+let playlistAutoToggle = null;
+let intensitySyncToggle = null;
 
 async function loadAudioFileData() {
   try {
@@ -34,11 +50,13 @@ async function loadAudioFileData() {
       throw new Error(`Failed to load audio files: ${response.status}`);
     }
     audioFileData = await response.json();
-    audioFiles = audioFileData.files.map(file => file.filename);
+    baseAudioFiles = audioFileData.files.map(file => file.filename);
+    audioFiles = baseAudioFiles.slice();
     console.log(`Loaded ${audioFiles.length} audio files from data/audio-files.json`);
     return audioFileData;
   } catch (error) {
     console.warn('Could not load audio file data, using fallback:', error);
+    baseAudioFiles = [...FALLBACK_AUDIO_FILES];
     audioFiles = [...FALLBACK_AUDIO_FILES];
     // Create fallback data structure
     audioFileData = {
@@ -54,6 +72,274 @@ async function loadAudioFileData() {
   }
 }
 
+function normalisePlaylistEntry(entry) {
+  if (!entry || typeof entry !== 'object') return null;
+  const id = String(entry.id || entry.slug || entry.label || '').trim();
+  if (!id) return null;
+  const label = String(entry.label || id).trim();
+  const intensity = Number(entry.intensity);
+  const tags = Array.isArray(entry.tags)
+    ? entry.tags.map((tag) => normalizeTagValue(tag)).filter(Boolean)
+    : [];
+  const tracks = normalizeTrackList(entry.tracks || entry.files || []);
+  return {
+    id,
+    label,
+    intensity: Number.isFinite(intensity) ? intensity : null,
+    tags,
+    tracks,
+  };
+}
+
+async function loadPlaylistData() {
+  try {
+    const response = await fetch(PLAYLIST_DATA_URL, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`Failed to load playlists: ${response.status}`);
+    }
+    const payload = await response.json();
+    playlistData = payload;
+    const source = Array.isArray(payload?.playlists) ? payload.playlists : [];
+    playlists = source
+      .map((entry) => normalisePlaylistEntry(entry))
+      .filter(Boolean);
+    return playlists;
+  } catch (error) {
+    console.info('[audio] playlist data unavailable, continuing with defaults', error);
+    playlists = [];
+    playlistData = null;
+    return playlists;
+  }
+}
+
+function getPlaylistById(id) {
+  if (!id) return null;
+  return playlists.find((playlist) => playlist.id === id) || null;
+}
+
+function computePlaylistScore(playlist, { tags = [], intensity = null } = {}) {
+  let score = 0;
+  const activeTags = new Set((tags || []).map((tag) => normalizeTagValue(tag)));
+  if (playlist.tags && playlist.tags.length) {
+    const matches = playlist.tags.filter((tag) => activeTags.has(tag)).length;
+    score += matches * 4;
+  } else {
+    score += 1; // reward general playlists slightly
+  }
+  if (Number.isFinite(intensity) && Number.isFinite(playlist.intensity)) {
+    const diff = Math.abs(Number(playlist.intensity) - Number(intensity));
+    score -= diff * 1.5;
+  }
+  if (playlist.tracks && playlist.tracks.length) {
+    score += playlist.tracks.length * 0.01;
+  }
+  return score;
+}
+
+function renderPlaylistSelector() {
+  if (!playlistSelectEl) return;
+  playlistSelectEl.innerHTML = '';
+  const autoOption = document.createElement('option');
+  autoOption.value = '__auto__';
+  autoOption.textContent = 'Auto (tags & intensity)';
+  playlistSelectEl.appendChild(autoOption);
+
+  const allOption = document.createElement('option');
+  allOption.value = '__all__';
+  allOption.textContent = 'All tracks';
+  playlistSelectEl.appendChild(allOption);
+
+  playlists.forEach((playlist) => {
+    const option = document.createElement('option');
+    option.value = playlist.id;
+    option.textContent = playlist.label;
+    playlistSelectEl.appendChild(option);
+  });
+
+  if (autoPlaylistEnabled) {
+    playlistSelectEl.value = '__auto__';
+  } else {
+    playlistSelectEl.value = currentPlaylistId || '__all__';
+  }
+}
+
+function updatePlaylistToggles() {
+  if (playlistAutoToggle) {
+    playlistAutoToggle.classList.toggle('is-active', autoPlaylistEnabled);
+    playlistAutoToggle.setAttribute('aria-pressed', autoPlaylistEnabled ? 'true' : 'false');
+  }
+  if (intensitySyncToggle) {
+    intensitySyncToggle.classList.toggle('is-active', intensitySyncEnabled);
+    intensitySyncToggle.setAttribute('aria-pressed', intensitySyncEnabled ? 'true' : 'false');
+  }
+  if (playlistSelectEl) {
+    if (autoPlaylistEnabled) {
+      playlistSelectEl.value = '__auto__';
+    } else if (currentPlaylistId) {
+      playlistSelectEl.value = currentPlaylistId;
+    }
+  }
+}
+
+function persistPlaylistPreferences() {
+  try {
+    localStorage.setItem(AUTO_PLAYLIST_STORAGE_KEY, autoPlaylistEnabled ? '1' : '0');
+    localStorage.setItem(INTENSITY_SYNC_STORAGE_KEY, intensitySyncEnabled ? '1' : '0');
+    if (currentPlaylistId && currentPlaylistId !== '__auto__') {
+      localStorage.setItem(LAST_PLAYLIST_STORAGE_KEY, currentPlaylistId);
+    }
+  } catch (error) {
+    // Ignore storage errors
+  }
+}
+
+function hydratePlaylistPreferences() {
+  try {
+    const savedAuto = localStorage.getItem(AUTO_PLAYLIST_STORAGE_KEY);
+    if (savedAuto === '0' || savedAuto === 'false') {
+      autoPlaylistEnabled = false;
+    }
+    const savedIntensity = localStorage.getItem(INTENSITY_SYNC_STORAGE_KEY);
+    if (savedIntensity === '0' || savedIntensity === 'false') {
+      intensitySyncEnabled = false;
+    }
+    const savedPlaylist = localStorage.getItem(LAST_PLAYLIST_STORAGE_KEY);
+    if (savedPlaylist) {
+      currentPlaylistId = savedPlaylist;
+    }
+  } catch (error) {
+    // Ignore storage errors
+  }
+}
+
+function setAutoPlaylistEnabled(enabled) {
+  autoPlaylistEnabled = Boolean(enabled);
+  if (autoPlaylistEnabled) {
+    playlistSelectEl && (playlistSelectEl.value = '__auto__');
+  } else if (currentPlaylistId === '__auto__') {
+    currentPlaylistId = '__all__';
+  }
+  updatePlaylistToggles();
+  persistPlaylistPreferences();
+}
+
+function setIntensitySyncEnabled(enabled) {
+  intensitySyncEnabled = Boolean(enabled);
+  updatePlaylistToggles();
+  persistPlaylistPreferences();
+  updateAudioIntensityVolume();
+}
+
+function updateAudioIntensityVolume() {
+  if (!hypnoAudio) return;
+  if (globalMute) {
+    hypnoAudio.volume = 0;
+    if (moanAudio) moanAudio.volume = 0;
+    return;
+  }
+  const levels = [0.0, 0.35, 0.55, 0.78];
+  const base = levels[Math.max(0, Math.min(levels.length - 1, Math.floor(currentTTSIntensity)))] || 0.55;
+  const motionFactor = motionMode === 'reduced' ? 0.7 : 1;
+  const targetVolume = intensitySyncEnabled ? Math.max(0, Math.min(1, base * motionFactor)) : hypnoAudio.volume;
+  try {
+    hypnoAudio.volume = targetVolume;
+    if (moanAudio) {
+      moanAudio.volume = moansMuted ? 0 : targetVolume * 0.6;
+    }
+  } catch (error) {
+    console.warn('[audio] failed to update volume', error);
+  }
+}
+
+function applyPlaylist(playlistId, { reason = 'manual', preserveTrack = false } = {}) {
+  let nextId = playlistId || '__all__';
+  if (nextId === '__auto__') {
+    nextId = currentPlaylistId;
+  }
+  let nextFiles = baseAudioFiles.slice();
+  const playlist = getPlaylistById(nextId);
+  if (playlist && playlist.tracks.length) {
+    const normalized = playlist.tracks
+      .map((track) => baseAudioFiles.find((file) => file.toLowerCase() === track.toLowerCase()))
+      .filter(Boolean);
+    if (normalized.length > 0) {
+      nextFiles = normalized;
+      currentPlaylistId = playlist.id;
+    } else {
+      currentPlaylistId = '__all__';
+    }
+  } else {
+    currentPlaylistId = '__all__';
+  }
+
+  const currentTrackName = audioFiles[currentTrack];
+  audioFiles = nextFiles;
+  renderTrackSelector();
+
+  if (preserveTrack && currentTrackName) {
+    const existingIndex = audioFiles.findIndex((file) => file === currentTrackName);
+    if (existingIndex >= 0) {
+      currentTrack = existingIndex;
+    } else {
+      currentTrack = 0;
+    }
+  } else {
+    currentTrack = 0;
+  }
+
+  loadTrack(currentTrack);
+  persistPlaylistPreferences();
+  updatePlaylistToggles();
+
+  if (reason === 'auto' && playlistSelectEl) {
+    playlistSelectEl.value = '__auto__';
+  }
+}
+
+function maybeSelectAutoPlaylist({ tags = [], intensity = null } = {}) {
+  if (!autoPlaylistEnabled || playlists.length === 0) return;
+  const candidates = playlists
+    .map((playlist) => ({ playlist, score: computePlaylistScore(playlist, { tags, intensity }) }))
+    .sort((a, b) => b.score - a.score);
+  const best = candidates[0];
+  if (!best || best.score <= 0) {
+    if (currentPlaylistId !== '__all__') {
+      applyPlaylist('__all__', { reason: 'auto', preserveTrack: true });
+    }
+    return;
+  }
+  if (best.playlist.id !== currentPlaylistId || currentPlaylistId === '__all__') {
+    applyPlaylist(best.playlist.id, { reason: 'auto', preserveTrack: true });
+  }
+}
+
+function handleTagsUpdatedForAudio(event) {
+  const tags = Array.isArray(event?.detail?.activeTags)
+    ? event.detail.activeTags.map((tag) => normalizeTagValue(tag))
+    : [];
+  lastKnownTags = tags;
+  maybeSelectAutoPlaylist({ tags, intensity: currentTTSIntensity });
+}
+
+function handleTTSIntensityChange(event) {
+  const intensity = Number(event?.detail?.intensity);
+  if (Number.isFinite(intensity)) {
+    currentTTSIntensity = Math.max(0, Math.min(3, Math.floor(intensity)));
+    if (intensitySyncEnabled) {
+      updateAudioIntensityVolume();
+    }
+    maybeSelectAutoPlaylist({ tags: lastKnownTags, intensity: currentTTSIntensity });
+  }
+}
+
+function handleMotionPreference(event) {
+  const mode = event?.detail?.mode;
+  if (mode === 'reduced' || mode === 'full') {
+    motionMode = mode;
+    updateAudioIntensityVolume();
+  }
+}
+
 function normalizeTrackList(list) {
   if (!Array.isArray(list)) return [];
   const seen = new Set();
@@ -66,6 +352,11 @@ function normalizeTrackList(list) {
     normalized.push(trimmed);
   });
   return normalized;
+}
+
+function normalizeTagValue(tag) {
+  if (!tag) return '';
+  return String(tag).trim().toLowerCase().replace(/\s+/g, '_');
 }
 
 function parsePlaylistAttribute(raw) {
@@ -399,8 +690,19 @@ async function initAudio() {
   moanToggle = document.getElementById("moan-toggle");
   hypnoAudio = document.getElementById("hypnoAudio");
   moanAudio = document.getElementById("moan-audio");
+  playlistSelectEl = document.getElementById("audio-playlist-select");
+  playlistAutoToggle = document.getElementById("playlist-autopilot");
+  intensitySyncToggle = document.getElementById("audio-intensity-sync");
 
   await loadAudioFileData();
+  await loadPlaylistData();
+  hydratePlaylistPreferences();
+  renderPlaylistSelector();
+  updatePlaylistToggles();
+  if (!autoPlaylistEnabled && currentPlaylistId && currentPlaylistId !== '__auto__') {
+    applyPlaylist(currentPlaylistId, { reason: 'init', preserveTrack: true });
+  }
+  maybeSelectAutoPlaylist({ tags: lastKnownTags, intensity: currentTTSIntensity });
   renderTrackSelector();
   syncAudioPanelLayout();
 
@@ -482,6 +784,7 @@ async function initAudio() {
   }
 
   hydrateGlobalMuteFromStorage();
+  updateAudioIntensityVolume();
 
   // Keyboard shortcuts: Space (play/pause), N (next), P (prev), S (shuffle)
   document.addEventListener("keydown", (e) => {
@@ -503,6 +806,39 @@ async function initAudio() {
       e.preventDefault();
     }
   });
+
+  if (playlistSelectEl) {
+    playlistSelectEl.addEventListener('change', (event) => {
+      const value = event.target.value;
+      if (value === '__auto__') {
+        setAutoPlaylistEnabled(true);
+        maybeSelectAutoPlaylist({ tags: lastKnownTags, intensity: currentTTSIntensity });
+      } else {
+        setAutoPlaylistEnabled(false);
+        applyPlaylist(value, { reason: 'manual' });
+      }
+    });
+  }
+
+  if (playlistAutoToggle) {
+    playlistAutoToggle.addEventListener('click', () => {
+      const next = !autoPlaylistEnabled;
+      setAutoPlaylistEnabled(next);
+      if (next) {
+        maybeSelectAutoPlaylist({ tags: lastKnownTags, intensity: currentTTSIntensity });
+      }
+    });
+  }
+
+  if (intensitySyncToggle) {
+    intensitySyncToggle.addEventListener('click', () => {
+      setIntensitySyncEnabled(!intensitySyncEnabled);
+    });
+  }
+
+  document.addEventListener('tags:updated', handleTagsUpdatedForAudio);
+  document.addEventListener('tts:intensity', handleTTSIntensityChange);
+  document.addEventListener('motion:change', handleMotionPreference);
 }
 
 /**

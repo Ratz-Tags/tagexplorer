@@ -7,6 +7,7 @@ import {
   getArtistImageCount,
   fetchArtistStyleTags,
   getArtistSlug,
+  getRandomBackgroundImage,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
@@ -27,8 +28,12 @@ function getThumbnailUrl(artist) {
  */
 
 // Gallery state
-const DEFAULT_ARTISTS_PER_PAGE = 200;
-const MAX_PAGES_IN_DOM = 6;
+const VIRTUAL_BATCH_SIZE = 48;
+const MAX_VIRTUAL_CHUNKS = 5;
+const VIRTUAL_OVERSCAN_CHUNKS = 1;
+
+const DEFAULT_ARTISTS_PER_PAGE = VIRTUAL_BATCH_SIZE;
+const MAX_PAGES_IN_DOM = MAX_VIRTUAL_CHUNKS + VIRTUAL_OVERSCAN_CHUNKS;
 
 let filtered = [];
 let isFetching = false;
@@ -42,6 +47,32 @@ const pagination = {
   current: 1,
   perPage: DEFAULT_ARTISTS_PER_PAGE,
   total: 0,
+};
+
+const virtualState = {
+  chunks: [], // [{ id, start, end, node }]
+  nextChunkId: 1,
+  recyclePool: [],
+};
+
+const DEFAULT_AMBIENT_TAGS = [
+  'chastity_cage',
+  'femdom',
+  'humiliation',
+  'sissy_training',
+  'pegging',
+  'denial',
+  'foot_worship',
+  'bondage',
+];
+
+const ambienceState = {
+  currentUrl: null,
+  activeLayer: null,
+  motionModulePromise: null,
+  intensity: 2,
+  motionMode: 'full',
+  lastQuery: 'chastity_cage',
 };
 
 const resolvePerPage = (value) => {
@@ -92,6 +123,7 @@ function setCurrentPage(val) {
 let artistGallery = null;
 let backgroundBlur = null;
 let gallerySentinel = null;
+let galleryStartSentinel = null;
 
 // External dependencies
 let allArtists = [];
@@ -160,6 +192,7 @@ function expireAllPostsCaches() {
 
 function resetGallerySentinel() {
   gallerySentinel = null;
+  galleryStartSentinel = null;
 }
 
 function ensureGallerySentinel() {
@@ -169,14 +202,43 @@ function ensureGallerySentinel() {
     gallerySentinel.id = "gallery-end-sentinel";
     gallerySentinel.className = "gallery-sentinel";
     gallerySentinel.setAttribute("aria-hidden", "true");
+    gallerySentinel.dataset.direction = "forward";
     artistGallery.appendChild(gallerySentinel);
   } else if (artistGallery.lastElementChild !== gallerySentinel) {
     artistGallery.appendChild(gallerySentinel);
+    gallerySentinel.dataset.direction = "forward";
   }
   return gallerySentinel;
 }
+
+function ensureGalleryStartSentinel() {
+  if (!artistGallery) return null;
+  if (!galleryStartSentinel || !artistGallery.contains(galleryStartSentinel)) {
+    galleryStartSentinel = document.createElement("div");
+    galleryStartSentinel.id = "gallery-start-sentinel";
+    galleryStartSentinel.className = "gallery-sentinel";
+    galleryStartSentinel.setAttribute("aria-hidden", "true");
+    galleryStartSentinel.dataset.direction = "backward";
+    artistGallery.insertBefore(galleryStartSentinel, artistGallery.firstChild);
+  } else {
+    galleryStartSentinel.dataset.direction = "backward";
+  }
+  return galleryStartSentinel;
+}
 function removePageFromDom(pageNumber) {
   if (!artistGallery) return;
+  const numeric = Number(pageNumber);
+  if (!Number.isNaN(numeric)) {
+    const index = virtualState.chunks.findIndex((chunk) => chunk.id === numeric);
+    if (index >= 0) {
+      const [chunk] = virtualState.chunks.splice(index, 1);
+      if (chunk) {
+        releaseChunkContainer(chunk);
+        renderedPages.delete(chunk.id);
+      }
+      return;
+    }
+  }
   const cards = artistGallery.querySelectorAll(
     `.artist-card[data-page="${pageNumber}"]`
   );
@@ -203,9 +265,188 @@ function showGalleryEmptyState() {
   resetGallerySentinel();
 }
 
+function resetVirtualState() {
+  if (!artistGallery) return;
+  const existingChunks = virtualState.chunks.slice();
+  existingChunks.forEach((chunk) => {
+    if (chunk?.node && chunk.node.parentNode === artistGallery) {
+      chunk.node.remove();
+    }
+  });
+  virtualState.chunks = [];
+  virtualState.nextChunkId = 1;
+  // Keep a small recycle pool so we can reuse chunk containers without
+  // recreating DOM nodes repeatedly.
+  if (virtualState.recyclePool.length > MAX_VIRTUAL_CHUNKS * 2) {
+    virtualState.recyclePool.length = MAX_VIRTUAL_CHUNKS * 2;
+  }
+}
+
+function getVirtualChunkSize() {
+  const size = Number(artistsPerPage);
+  if (Number.isFinite(size) && size > 0) {
+    return Math.max(12, Math.floor(size));
+  }
+  return VIRTUAL_BATCH_SIZE;
+}
+
+function acquireChunkContainer() {
+  const recycled = virtualState.recyclePool.pop();
+  if (recycled) {
+    recycled.innerHTML = "";
+    return recycled;
+  }
+  const section = document.createElement("section");
+  section.className = "gallery-chunk";
+  section.setAttribute("role", "presentation");
+  return section;
+}
+
+function releaseChunkContainer(chunk) {
+  if (!chunk || !chunk.node) return;
+  chunk.node.innerHTML = "";
+  if (chunk.node.parentNode === artistGallery) {
+    chunk.node.remove();
+  }
+  if (virtualState.recyclePool.length < MAX_VIRTUAL_CHUNKS * 2 + 2) {
+    virtualState.recyclePool.push(chunk.node);
+  }
+}
+
+function updateChunkMetadata(node, { id, start, end }) {
+  if (!node) return;
+  node.dataset.chunkId = String(id);
+  node.dataset.startIndex = String(start);
+  node.dataset.endIndex = String(end);
+}
+
+function appendVirtualChunk(startIndex = null) {
+  if (!artistGallery) return false;
+  const start =
+    startIndex !== null && Number.isFinite(Number(startIndex))
+      ? Math.max(0, Math.floor(Number(startIndex)))
+      : virtualState.chunks.length > 0
+      ? virtualState.chunks[virtualState.chunks.length - 1].end
+      : 0;
+  if (start >= filtered.length) {
+    return false;
+  }
+  const chunkSize = getVirtualChunkSize();
+  const end = Math.min(filtered.length, start + chunkSize);
+  const artistsSlice = filtered.slice(start, end);
+  const container = acquireChunkContainer();
+  const chunkId = virtualState.nextChunkId++;
+  updateChunkMetadata(container, { id: chunkId, start, end });
+  renderArtistCards(artistsSlice, undefined, {
+    chunkId,
+    target: container,
+    annotatePage: false,
+    eager: start === 0,
+  });
+  const sentinel = ensureGallerySentinel();
+  if (sentinel) {
+    artistGallery.insertBefore(container, sentinel);
+  } else {
+    artistGallery.appendChild(container);
+  }
+  virtualState.chunks.push({ id: chunkId, start, end, node: container });
+  renderedPages.add(chunkId);
+  return true;
+}
+
+function prependVirtualChunk() {
+  if (!artistGallery) return false;
+  if (virtualState.chunks.length === 0) {
+    return appendVirtualChunk(0);
+  }
+  const firstChunk = virtualState.chunks[0];
+  const chunkSize = getVirtualChunkSize();
+  const start = Math.max(0, firstChunk.start - chunkSize);
+  if (start >= firstChunk.start) {
+    return false;
+  }
+  const end = Math.min(filtered.length, start + chunkSize);
+  const artistsSlice = filtered.slice(start, end);
+  const container = acquireChunkContainer();
+  const chunkId = virtualState.nextChunkId++;
+  updateChunkMetadata(container, { id: chunkId, start, end });
+  renderArtistCards(artistsSlice, undefined, {
+    chunkId,
+    target: container,
+    annotatePage: false,
+    eager: false,
+  });
+  const startSentinel = ensureGalleryStartSentinel();
+  if (startSentinel && startSentinel.parentNode === artistGallery) {
+    artistGallery.insertBefore(container, startSentinel.nextSibling);
+  } else {
+    artistGallery.insertBefore(container, artistGallery.firstChild);
+  }
+  virtualState.chunks.unshift({ id: chunkId, start, end, node: container });
+  renderedPages.add(chunkId);
+  return true;
+}
+
+function trimVirtualChunks(direction = "forward") {
+  const limit = MAX_VIRTUAL_CHUNKS + VIRTUAL_OVERSCAN_CHUNKS;
+  while (virtualState.chunks.length > limit) {
+    const chunk =
+      direction === "backward"
+        ? virtualState.chunks.pop()
+        : virtualState.chunks.shift();
+    if (chunk) {
+      releaseChunkContainer(chunk);
+      renderedPages.delete(chunk.id);
+    }
+  }
+}
+
+function getVirtualRange() {
+  if (virtualState.chunks.length === 0) {
+    return { start: 0, end: 0 };
+  }
+  return {
+    start: virtualState.chunks[0].start,
+    end: virtualState.chunks[virtualState.chunks.length - 1].end,
+  };
+}
+
+function ensureViewportCoverage() {
+  if (!artistGallery) return;
+  const viewportHeight =
+    window.innerHeight || document.documentElement?.clientHeight || 0;
+  const desiredHeight = viewportHeight * 1.2;
+  let totalHeight = artistGallery.scrollHeight;
+  let guard = 0;
+  while (totalHeight < desiredHeight && guard < MAX_VIRTUAL_CHUNKS + 4) {
+    const appended = appendVirtualChunk();
+    if (!appended) break;
+    guard += 1;
+    totalHeight = artistGallery.scrollHeight;
+  }
+}
+
+function updatePaginationSnapshot() {
+  const total = filtered.length;
+  const chunkSize = getVirtualChunkSize();
+  pagination.perPage = chunkSize;
+  pagination.total = Math.ceil(total / pagination.perPage);
+  const range = getVirtualRange();
+  if (range.end > range.start) {
+    const current = Math.floor(range.start / chunkSize) + 1;
+    const last = Math.max(current, Math.ceil(range.end / chunkSize));
+    pagination.current = current;
+    currentPage = last;
+  } else {
+    pagination.current = 1;
+    currentPage = 1;
+  }
+  totalPages = pagination.total;
+}
+
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
-  
+
   if (mode === "count") {
     list.sort(
       (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
@@ -226,41 +467,279 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
   return list;
 }
 
-/**
- * Sets the background image with a random image
- */
-async function setRandomBackground() {
-  const blur = document.getElementById("background-blur");
-  if (!blur) return;
-  blur.style.transition = "background-image 0.7s ease, opacity 0.7s ease";
-  // Fade out current background
-  blur.style.opacity = "0";
-  setTimeout(async () => {
-    try {
-      if (document.body.classList.contains("incognito-theme")) {
-        blur.style.backgroundImage = "none";
-        blur.style.backgroundColor = "#111";
-      } else {
-        const { getRandomBackgroundImage } = await import("./api.js");
-        const imageUrl = await getRandomBackgroundImage();
-        if (imageUrl) {
-          blur.style.backgroundImage = `url(${imageUrl})`;
-          blur.style.backgroundColor = "";
-        } else {
-          blur.style.backgroundImage = "none";
-          blur.style.backgroundColor = "#111";
-        }
-      }
-    } catch (error) {
-      console.warn("Failed to set random background:", error);
-      blur.style.backgroundImage = "none";
-      blur.style.backgroundColor = "#111";
-    } finally {
-      setTimeout(() => {
-        blur.style.opacity = "0.7";
-      }, 100);
+function normaliseAmbientTag(tag) {
+  if (!tag) return "";
+  return String(tag).trim().toLowerCase().replace(/\s+/g, "_");
+}
+
+function toWeightMap(input) {
+  const map = new Map();
+  if (!input) return map;
+  if (input instanceof Map) {
+    input.forEach((value, key) => {
+      const safeKey = normaliseAmbientTag(key);
+      const numeric = Number(value);
+      if (!safeKey || !Number.isFinite(numeric)) return;
+      map.set(safeKey, numeric);
+    });
+    return map;
+  }
+  if (Array.isArray(input)) {
+    input.forEach((key) => {
+      const safeKey = normaliseAmbientTag(key);
+      if (!safeKey) return;
+      const prev = map.get(safeKey) || 0;
+      map.set(safeKey, prev + 1);
+    });
+    return map;
+  }
+  if (typeof input === "object") {
+    Object.entries(input).forEach(([key, value]) => {
+      const safeKey = normaliseAmbientTag(key);
+      const numeric = Number(value);
+      if (!safeKey || !Number.isFinite(numeric)) return;
+      map.set(safeKey, numeric);
+    });
+    return map;
+  }
+  return map;
+}
+
+function deriveAmbientWeights(tagWeights) {
+  const base = toWeightMap(tagWeights);
+  if (base.size === 0) {
+    const sample = filtered.slice(0, 80);
+    sample.forEach((artist, index) => {
+      const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
+      const bias = Math.max(1, sample.length - index);
+      tags.forEach((tag) => {
+        const safeKey = normaliseAmbientTag(tag);
+        if (!safeKey) return;
+        const prev = base.get(safeKey) || 0;
+        base.set(safeKey, prev + 1 * bias);
+      });
+    });
+  }
+  if (base.size === 0) {
+    DEFAULT_AMBIENT_TAGS.forEach((tag, index) => {
+      base.set(tag, DEFAULT_AMBIENT_TAGS.length - index);
+    });
+  }
+  return base;
+}
+
+function selectWeightedTag(weights, excludeTag = null) {
+  const entries = Array.from(weights.entries()).filter(([tag, weight]) => {
+    if (!tag || !Number.isFinite(Number(weight))) return false;
+    if (excludeTag && tag === excludeTag) return false;
+    return Number(weight) > 0;
+  });
+  if (entries.length === 0) return null;
+  const total = entries.reduce((sum, [, value]) => sum + Number(value), 0);
+  let threshold = Math.random() * total;
+  for (const [tag, value] of entries) {
+    threshold -= Number(value);
+    if (threshold <= 0) {
+      return tag;
     }
-  }, 400);
+  }
+  return entries[entries.length - 1][0];
+}
+
+function buildAmbientQuery(weights, intensity = 2) {
+  const sorted = Array.from(weights.entries()).sort((a, b) => b[1] - a[1]);
+  const primary = sorted[0]?.[0] || selectWeightedTag(weights) || DEFAULT_AMBIENT_TAGS[0];
+  const secondaryCandidate = selectWeightedTag(weights, primary);
+  const useSecondary = secondaryCandidate && Math.random() > 0.55;
+  let query = primary;
+  if (useSecondary) {
+    query += `+${secondaryCandidate}`;
+  }
+  const level = Number.isFinite(Number(intensity)) ? Number(intensity) : 2;
+  if (level >= 3) {
+    query += "+rating:explicit";
+  } else if (level <= 1) {
+    query += "+rating:safe";
+  } else {
+    query += "+rating:questionable";
+  }
+  return query;
+}
+
+async function ensureMotionModule() {
+  if (typeof window === "undefined") return null;
+  try {
+    if (
+      window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ) {
+      return null;
+    }
+  } catch (error) {
+    // Ignore matchMedia errors
+  }
+  if (!ambienceState.motionModulePromise) {
+    ambienceState.motionModulePromise = import(
+      "https://cdn.jsdelivr.net/npm/motion@10.16.4/+esm"
+    ).catch((error) => {
+      console.warn("[ambience] Motion One import failed", error);
+      return null;
+    });
+  }
+  try {
+    return await ambienceState.motionModulePromise;
+  } catch (error) {
+    console.warn("[ambience] Motion module failed", error);
+    return null;
+  }
+}
+
+async function preloadImage(url) {
+  return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error("Empty ambient url"));
+      return;
+    }
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => resolve(url);
+    img.onerror = (err) => reject(err);
+    img.src = url;
+  });
+}
+
+function createAmbientLayer(url) {
+  const layer = document.createElement("div");
+  layer.className = "ambient-layer";
+  layer.style.backgroundImage = `url(${url})`;
+  layer.style.opacity = "0";
+  return layer;
+}
+
+async function applyAmbientLayer(container, url) {
+  if (!container || !url) return;
+  const newLayer = createAmbientLayer(url);
+  container.appendChild(newLayer);
+  const previous = ambienceState.activeLayer;
+  let motionModule = null;
+  if (ambienceState.motionMode !== "reduced") {
+    motionModule = await ensureMotionModule();
+  }
+
+  if (motionModule && typeof motionModule.animate === "function") {
+    const animations = [
+      motionModule
+        .animate(
+          newLayer,
+          {
+            opacity: [0, 0.82],
+            transform: ["scale(1.05)", "scale(1)"],
+            filter: ["blur(8px)", "blur(0px)"],
+          },
+          {
+            duration: 1000,
+            easing: "cubic-bezier(.4,-0.2,.2,1.2)",
+            fill: "forwards",
+          }
+        )
+        .finished.catch(() => {}),
+    ];
+    if (previous) {
+      animations.push(
+        motionModule
+          .animate(
+            previous,
+            {
+              opacity: [Number(previous.style.opacity) || 0.75, 0],
+              filter: ["blur(0px)", "blur(18px)"],
+            },
+            {
+              duration: 800,
+              easing: "ease-out",
+              fill: "forwards",
+            }
+          )
+          .finished.catch(() => {})
+      );
+    }
+    await Promise.all(animations);
+  } else {
+    newLayer.style.opacity = "0.8";
+    if (previous) previous.style.opacity = "0";
+  }
+
+  if (previous && previous !== newLayer) {
+    setTimeout(() => {
+      try {
+        previous.remove();
+      } catch (error) {
+        console.warn("[ambience] failed to remove old layer", error);
+      }
+    }, 240);
+  }
+
+  ambienceState.activeLayer = newLayer;
+  container.classList.add("ambient-layer-container");
+}
+
+/**
+ * Sets the background image based on ambient tag weights.
+ */
+async function setRandomBackground(options = {}) {
+  const blur = document.getElementById('background-blur');
+  if (!blur) return;
+
+  if (document.body?.classList.contains('incognito-theme')) {
+    blur.style.backgroundImage = 'none';
+    blur.style.backgroundColor = '#111';
+    if (ambienceState.activeLayer) {
+      try { ambienceState.activeLayer.remove(); } catch {}
+      ambienceState.activeLayer = null;
+    }
+    return;
+  }
+
+  const { tagWeights, intensity, motionMode } = options;
+  if (Number.isFinite(Number(intensity))) {
+    ambienceState.intensity = Number(intensity);
+  }
+  if (motionMode === 'reduced' || motionMode === 'full') {
+    ambienceState.motionMode = motionMode;
+  }
+
+  const weights = deriveAmbientWeights(tagWeights);
+  const query = buildAmbientQuery(weights, ambienceState.intensity);
+  ambienceState.lastQuery = query;
+
+  let imageUrl = null;
+  try {
+    imageUrl = await getRandomBackgroundImage(query);
+  } catch (error) {
+    console.warn('[ambience] failed to fetch background', error);
+  }
+
+  if (!imageUrl && ambienceState.currentUrl) {
+    imageUrl = ambienceState.currentUrl;
+  }
+
+  if (!imageUrl) {
+    blur.style.backgroundColor = '#111';
+    return;
+  }
+
+  if (imageUrl === ambienceState.currentUrl && ambienceState.activeLayer) {
+    return;
+  }
+
+  try {
+    const loadedUrl = await preloadImage(imageUrl);
+    await applyAmbientLayer(blur, loadedUrl);
+    ambienceState.currentUrl = loadedUrl;
+    blur.style.backgroundImage = 'none';
+    blur.style.backgroundColor = 'transparent';
+  } catch (error) {
+    console.warn('[ambience] failed to apply background', error);
+  }
 }
 
 /**
@@ -894,68 +1373,55 @@ function setArtistsPerPage(count) {
  */
 function renderArtistsPage(options = {}) {
   if (!artistGallery) return;
-  const { force = false } = options;
-  const totalPages = updatePaginationTotals();
-  const maxPage = Math.max(1, totalPages || 0);
-  const current = getCurrentPage();
-  const page = Math.min(current, maxPage);
-  if (page !== current) {
-    setCurrentPage(page);
-  }
-  const start = (page - 1) * artistsPerPage;
+  const { force = false, direction = "forward" } = options;
+  const normalizedDirection =
+    direction === "backward" ? "backward" : "forward";
 
-  if (page === 1) {
+  if (force) {
     artistGallery.innerHTML = "";
     resetGallerySentinel();
+    ensureGalleryStartSentinel();
+    resetVirtualState();
     renderedPages.clear();
-  } else if (force) {
-    removePageFromDom(page);
-  } else if (renderedPages.has(page)) {
-    pruneGalleryPages(page);
-    return;
   }
+
+  removeGalleryEmptyState();
 
   if (filtered.length === 0) {
-    const emptyState = document.createElement("div");
-    emptyState.className = "gallery-empty-state";
-
-    const title = document.createElement("p");
-    title.className = "gallery-empty-state__title";
-    title.textContent = "No artists for that combination";
-    emptyState.appendChild(title);
-
-    const body = document.createElement("p");
-    body.className = "gallery-empty-state__body";
-    body.textContent =
-      "Use the FILTER command above or clear your tags to coax new prey back into view.";
-    emptyState.appendChild(body);
-
-    artistGallery.appendChild(emptyState);
+    showGalleryEmptyState();
+    updatePaginationSnapshot();
     return;
   }
 
-  if (start >= filtered.length) {
-    ensureGallerySentinel();
-    pruneGalleryPages(page);
-    return;
-  }
+  ensureGalleryStartSentinel();
+  ensureGallerySentinel();
 
-  const end = Math.min(start + artistsPerPage, filtered.length);
-  const artistsToShow = filtered.slice(start, end);
+  let rendered = false;
 
-  if (artistsToShow.length > 0) {
-    renderArtistCards(artistsToShow, undefined, page);
-    renderedPages.add(page);
+  if (force) {
+    rendered = appendVirtualChunk(0);
+    ensureViewportCoverage();
+  } else if (normalizedDirection === "backward") {
+    rendered = prependVirtualChunk();
+    trimVirtualChunks("forward");
   } else {
-    // No artists for this page; roll back the page counter and sentinel
-    setCurrentPage(page - 1, { persist: true });
-    ensureGallerySentinel();
-    return;
+    rendered = appendVirtualChunk();
+    trimVirtualChunks("backward");
   }
 
-  pruneGalleryPages(getCurrentPage());
-  
-  // Enhance all gallery images to prevent pixelation
+  if (!rendered && virtualState.chunks.length === 0) {
+    rendered = appendVirtualChunk(0);
+  }
+
+  ensureViewportCoverage();
+  updatePaginationSnapshot();
+
+  if (typeof requestAnimationFrame === "function") {
+    requestAnimationFrame(() => primeVisibleArtistImages());
+  } else {
+    primeVisibleArtistImages();
+  }
+
   setTimeout(() => enhanceGalleryImages(), 50);
 }
 
@@ -1080,17 +1546,32 @@ function initImageObserver() {
 }
 
 // Helper to render a list of artists using the normal card structure
-function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
+function renderArtistCards(artists, selectedTagsOverride, options = 1) {
   if (!artistGallery) return;
-  if (pageNumber > 0 && renderedPages.has(pageNumber)) {
-    removePageFromDom(pageNumber);
+  const config =
+    typeof options === "number"
+      ? { chunkId: options }
+      : options && typeof options === "object"
+      ? options
+      : { chunkId: 1 };
+  const rawChunkId = config.chunkId ?? config.pageNumber ?? 1;
+  const chunkId = Number.isFinite(Number(rawChunkId))
+    ? Number(rawChunkId)
+    : 1;
+  const targetElement =
+    config && config.target instanceof Element ? config.target : artistGallery;
+  const annotatePage = config.annotatePage !== false;
+  const eagerRequested = config.eager === true;
+
+  if (chunkId > 0 && renderedPages.has(chunkId) && targetElement === artistGallery) {
+    removePageFromDom(chunkId);
   }
-  
+
   // Inject image quality CSS if not already done
   injectImageQualityCss();
-  
+
   const frag = document.createDocumentFragment();
-  let eagerBudget = pageNumber === 1 ? 6 : 0; // Reduced from 12 to 6 for less initial load
+  let eagerBudget = eagerRequested || chunkId === 1 ? 6 : 0; // Reduced from 12 to 6 for less initial load
   const selectedTags =
     selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
   const observer = initImageObserver();
@@ -1098,7 +1579,16 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card group";
-    card.dataset.page = String(pageNumber);
+    if (annotatePage) {
+      card.dataset.page = String(chunkId);
+    } else {
+      try {
+        card.dataset.page = String(chunkId);
+      } catch (error) {
+        // Ignore dataset assignment errors
+      }
+    }
+    card.dataset.virtualChunk = String(chunkId);
     card.setAttribute("data-artist", artist.artistName);
     const artistSlug = getArtistSlug(artist.artistName);
     if (artistSlug) {
@@ -1316,48 +1806,40 @@ function renderArtistCards(artists, selectedTagsOverride, pageNumber = 1) {
     frag.appendChild(card);
   });
 
-  const sentinel = ensureGallerySentinel();
-  if (sentinel) {
-    artistGallery.insertBefore(frag, sentinel);
+  if (targetElement === artistGallery) {
+    const sentinel = ensureGallerySentinel();
+    if (sentinel) {
+      targetElement.insertBefore(frag, sentinel);
+    } else {
+      targetElement.appendChild(frag);
+    }
+    renderedPages.add(chunkId);
   } else {
-    artistGallery.appendChild(frag);
-  }
-  renderedPages.add(pageNumber);
-  if (typeof requestAnimationFrame === "function") {
-    requestAnimationFrame(() => primeVisibleArtistImages());
-  } else {
-    primeVisibleArtistImages();
+    targetElement.appendChild(frag);
   }
 }
 
 function pruneGalleryPages(currentPage) {
   if (!artistGallery) return;
-  const minimumPage = Math.max(1, currentPage - (MAX_PAGES_IN_DOM - 1));
-  const cards = artistGallery.querySelectorAll(".artist-card[data-page]");
-  const pagesRemoved = new Set();
-  cards.forEach((card) => {
-    const pageValue = parseInt(card.getAttribute("data-page") || "", 10);
-    if (!Number.isNaN(pageValue) && pageValue < minimumPage) {
-      card.remove();
-      pagesRemoved.add(pageValue);
-    }
-  });
-  pagesRemoved.forEach((page) => renderedPages.delete(page));
+  trimVirtualChunks(currentPage && currentPage < pagination.current ? "backward" : "forward");
 }
 
 function getPaginationInfo() {
   const page = getCurrentPage();
   const total = filtered.length;
   const totalPages = getTotalPages();
-  const shown = Math.min(page * pagination.perPage, total);
+  const range = getVirtualRange();
+  const shown = Math.min(range.end, total);
   const lastRenderedPage =
-    renderedPages.size > 0
-      ? Math.max(...renderedPages)
+    virtualState.chunks.length > 0
+      ? virtualState.chunks[virtualState.chunks.length - 1].id
       : Math.max(0, pagination.current);
   return {
     total: total,
     shown: shown,
-    hasMore: totalPages > 0 && page < totalPages,
+    hasMore: totalPages > 0 && range.end < total,
+    hasMoreForward: range.end < total,
+    hasMoreBackward: range.start > 0,
     currentPage: page,
     artistsPerPage: artistsPerPage,
     totalPages,
