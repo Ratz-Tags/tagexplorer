@@ -571,6 +571,13 @@ function openTagExplorer() {
   popoverEl.classList.add("open");
   popoverEl.setAttribute("aria-hidden", "false");
   
+  // Update aria-expanded on all filter buttons
+  const filterButtons = [
+    document.getElementById('filters-btn'),
+    document.getElementById('cover-filters-btn'),
+  ].filter(Boolean);
+  filterButtons.forEach(btn => btn.setAttribute('aria-expanded', 'true'));
+  
   // Show overlay on mobile
   const overlay = document.querySelector("#tag-explorer-overlay");
   const foldMode = document.documentElement?.dataset?.foldMode;
@@ -628,6 +635,13 @@ function closeTagExplorer() {
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
+  
+  // Update aria-expanded on all filter buttons
+  const filterButtons = [
+    document.getElementById('filters-btn'),
+    document.getElementById('cover-filters-btn'),
+  ].filter(Boolean);
+  filterButtons.forEach(btn => btn.setAttribute('aria-expanded', 'false'));
   
   // Hide overlay
   const overlay = document.querySelector("#tag-explorer-overlay");
