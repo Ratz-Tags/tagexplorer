@@ -303,6 +303,14 @@ body[data-fold-mode="fold-cover"] .gallery-shell {
 .gallery-layout > te-pinned-sidebar {
   display: none;
 }
+/* In default/cover modes, sidebar-wrapper should be hidden unless toggled */
+.gallery-layout > te-pinned-sidebar .sidebar-wrapper {
+  display: none;
+}
+body.sidebar-open .gallery-layout > te-pinned-sidebar .sidebar-wrapper,
+.gallery-layout > te-pinned-sidebar .sidebar-wrapper.visible {
+  display: flex;
+}
 body[data-fold-mode="fold-inner"] .gallery-layout {
   flex-direction: row;
   align-items: flex-start;
@@ -311,6 +319,10 @@ body[data-fold-mode="fold-inner"] .gallery-layout {
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar {
   display: block;
   flex: 0 0 clamp(260px, 22vw, 320px);
+}
+/* In fold-inner mode, sidebar-wrapper is always visible as part of layout */
+body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
+  display: block !important;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
   position: sticky;

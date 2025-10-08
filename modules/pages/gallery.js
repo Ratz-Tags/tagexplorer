@@ -261,6 +261,13 @@ function setupSidebarToggle() {
 
   toggleButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
+      // Don't toggle in fold-inner mode - sidebar is always visible as part of layout
+      const foldMode = document.documentElement?.dataset?.foldMode;
+      if (foldMode === 'fold-inner') {
+        console.log('[sidebar] Toggle ignored in fold-inner mode - sidebar is part of layout');
+        return;
+      }
+      
       const willHide = !copiedSidebarEl.classList.contains('sidebar-hidden');
       setSidebarHidden(willHide, { userInitiated: true });
     });
