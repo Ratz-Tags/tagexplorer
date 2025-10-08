@@ -37,6 +37,7 @@ import {
   getCurrentPage,
   setCurrentPage,
   renderArtistsPage,
+  getFilteredArtists,
 } from '../gallery.js';
 import { initUI, setupInfiniteScroll, setupBackgroundRotation } from '../ui.js';
 import {
@@ -658,14 +659,24 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   }
 
   initTagExplorer();
-  setupBackgroundRotation(setRandomBackground, 15000);
-  setupInfiniteScroll(() => {
-    const info = getPaginationInfo();
-    if (info && info.hasMore) {
-      setCurrentPage(getCurrentPage() + 1);
-      renderArtistsPage();
-    }
-  }, getPaginationInfo);
+  setupBackgroundRotation(setRandomBackground, {
+    getActiveTags,
+    getFilteredArtists,
+    getPaginationInfo,
+  });
+  setupInfiniteScroll({
+    onForward: () => {
+      const info = getPaginationInfo();
+      if (!info?.hasMoreForward) return;
+      renderArtistsPage({ direction: 'forward' });
+    },
+    onBackward: () => {
+      const info = getPaginationInfo();
+      if (!info?.hasMoreBackward) return;
+      renderArtistsPage({ direction: 'backward' });
+    },
+    infoProvider: () => getPaginationInfo(),
+  });
 
   setupThemeToggle();
   setupTagSearchModeSelector();

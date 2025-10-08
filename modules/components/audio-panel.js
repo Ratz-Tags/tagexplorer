@@ -6,6 +6,16 @@ template.innerHTML = `
         <span aria-hidden="true">🎧</span>
         <span id="audio-track-name">No track playing</span>
       </div>
+      <div class="audio-playlist-selector" role="group" aria-label="Ambience playlist">
+        <label class="field-label" for="audio-playlist-select">Ambience</label>
+        <select id="audio-playlist-select" class="voice-style-select" aria-label="Choose ambience playlist">
+          <option value="__auto__">Auto (tags & intensity)</option>
+        </select>
+        <div class="audio-toggle-row">
+          <button id="playlist-autopilot" type="button" class="audio-pill" aria-pressed="true">Auto-match</button>
+          <button id="audio-intensity-sync" type="button" class="audio-pill" aria-pressed="true">Sync intensity</button>
+        </div>
+      </div>
       <div class="audio-track-selector" role="group" aria-label="Track selection">
         <label class="field-label" for="audio-track-select">Select track</label>
         <select id="audio-track-select" class="voice-style-select" aria-label="Choose audio track">

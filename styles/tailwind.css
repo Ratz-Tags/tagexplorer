@@ -1263,6 +1263,47 @@ transform: translate(-50%, 2.5rem);
 }
 }
 
+@layer components {
+.ambient-layer-container {
+position: relative;
+overflow: hidden;
+isolation: isolate;
+}
+.ambient-layer {
+position: absolute;
+inset: 0;
+background-size: cover;
+background-position: center;
+filter: blur(14px) saturate(1.2);
+transform: scale(1.08);
+mix-blend-mode: screen;
+pointer-events: none;
+will-change: opacity, transform, filter;
+transition: opacity 0.6s ease;
+}
+body.incognito-theme .ambient-layer {
+display: none;
+}
+.audio-playlist-selector {
+@apply flex flex-col gap-2 mb-3;
+}
+.audio-playlist-selector .field-label {
+@apply text-[0.55rem] uppercase tracking-[0.35em] text-slate-300;
+}
+.audio-playlist-selector .voice-style-select {
+@apply w-full;
+}
+.audio-toggle-row {
+@apply mt-2 flex gap-2 flex-wrap;
+}
+.audio-toggle-row .audio-pill {
+@apply text-[0.55rem] tracking-[0.3em];
+}
+.audio-toggle-row .audio-pill.is-active {
+@apply border-glow bg-glow/20 text-white;
+}
+}
+
 @keyframes screenPulse {
 0% { opacity: 1; }
 50% { opacity: 0.6; }
