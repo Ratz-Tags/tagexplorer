@@ -549,20 +549,12 @@ function selectWeightedTag(weights, excludeTag = null) {
 function buildAmbientQuery(weights, intensity = 2) {
   const sorted = Array.from(weights.entries()).sort((a, b) => b[1] - a[1]);
   const primary = sorted[0]?.[0] || selectWeightedTag(weights) || DEFAULT_AMBIENT_TAGS[0];
-  const secondaryCandidate = selectWeightedTag(weights, primary);
-  const useSecondary = secondaryCandidate && Math.random() > 0.55;
-  let query = primary;
-  if (useSecondary) {
-    query += `+${secondaryCandidate}`;
-  }
-  const level = Number.isFinite(Number(intensity)) ? Number(intensity) : 2;
-  if (level >= 3) {
-    query += "+rating:explicit";
-  } else if (level <= 1) {
-    query += "+rating:safe";
-  } else {
-    query += "+rating:questionable";
-  }
+  
+  // API constraint: single tag + order:approvals only
+  // Remove secondary tags and rating filters
+  const query = `${primary}+order:approvals`;
+  
+  console.log(`[ambience] built query: "${query}" from primary tag: ${primary}`);
   return query;
 }
 
