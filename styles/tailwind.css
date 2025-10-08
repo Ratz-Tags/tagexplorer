@@ -295,31 +295,22 @@ body[data-fold-mode="fold-cover"] .gallery-shell {
   padding-bottom: calc(6rem + var(--safe-area-bottom));
 }
 .gallery-layout {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(1.75rem, 5vw, 2.5rem);
-  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: clamp(1.75rem, 5vw, 2.5rem) !important;
+  width: 100% !important;
 }
-.gallery-layout > te-pinned-sidebar {
-  display: none;
-}
-.gallery-layout > main {
-  flex: 1 1 auto;
-  min-width: 0; /* Allow flex item to shrink below content size */
-  overflow-x: hidden;
+.gallery-layout > * {
+  min-width: 0 !important;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: clamp(2rem, 4vw, 3rem);
-}
-body[data-fold-mode="fold-inner"] .gallery-layout > main {
-  flex: 1 1 0%;
-  min-width: 0;
+  flex-direction: row !important;
+  align-items: flex-start !important;
+  gap: clamp(2rem, 4vw, 3rem) !important;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar {
-  display: block;
-  flex: 0 0 clamp(260px, 22vw, 320px);
+  display: block !important;
+  flex: 0 0 clamp(260px, 22vw, 320px) !important;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
   position: sticky;

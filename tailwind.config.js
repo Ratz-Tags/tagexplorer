@@ -1,8 +1,15 @@
 export default {
   content: [
     './index.html',
+    './gallery/index.html',
+    './about/index.html',
     './main.js',
     './modules/**/*.js',
+  ],
+  safelist: [
+    'gallery-layout',
+    'gallery-shell',
+    'gallery-grid',
   ],
   theme: {
     extend: {
