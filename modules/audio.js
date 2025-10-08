@@ -8,6 +8,9 @@ let currentTrack = 0;
 let moansMuted = false;
 let moanPlaying = false;
 
+const GLOBAL_MUTE_STORAGE_KEY = 'te.audio.globalMute';
+let globalMute = false;
+
 // Audio file list
 const FALLBACK_AUDIO_FILES = [
   "Blank.mp3",
@@ -296,6 +299,59 @@ function toggleMoanPlayback() {
   moanPlaying = !moanPlaying;
 }
 
+function applyGlobalMuteState(muted, { persist = true } = {}) {
+  globalMute = Boolean(muted);
+  if (hypnoAudio) {
+    hypnoAudio.muted = globalMute;
+  }
+  if (moanAudio) {
+    moanAudio.muted = globalMute ? true : moansMuted;
+  }
+  if (typeof document !== 'undefined') {
+    document.body.classList.toggle('audio-muted', globalMute);
+  }
+  if (persist) {
+    try {
+      window.localStorage.setItem(
+        GLOBAL_MUTE_STORAGE_KEY,
+        globalMute ? 'true' : 'false',
+      );
+    } catch {
+      // Ignore storage write failures.
+    }
+  }
+  try {
+    document.dispatchEvent(
+      new CustomEvent('audio:mutechange', { detail: { muted: globalMute } }),
+    );
+  } catch {
+    // Ignore dispatch errors.
+  }
+  return globalMute;
+}
+
+function toggleGlobalMute() {
+  return applyGlobalMuteState(!globalMute);
+}
+
+function getGlobalMuteState() {
+  return globalMute;
+}
+
+function hydrateGlobalMuteFromStorage() {
+  let stored = null;
+  try {
+    stored = window.localStorage.getItem(GLOBAL_MUTE_STORAGE_KEY);
+  } catch {
+    stored = null;
+  }
+  if (stored === 'true') {
+    applyGlobalMuteState(true, { persist: false });
+  } else {
+    applyGlobalMuteState(false, { persist: false });
+  }
+}
+
 function shuffleTracks() {
   if (audioFiles.length < 2) return;
   const currentTrackName = audioFiles[currentTrack];
@@ -424,6 +480,8 @@ async function initAudio() {
   if (moanBtn) {
     moanBtn.textContent = "🔇 Moan";
   }
+
+  hydrateGlobalMuteFromStorage();
 
   // Keyboard shortcuts: Space (play/pause), N (next), P (prev), S (shuffle)
   document.addEventListener("keydown", (e) => {
@@ -706,5 +764,7 @@ export {
   initAudio,
   initAudioUI,
   syncAudioPanelLayout,
+  toggleGlobalMute,
+  getGlobalMuteState,
   // Optionally export other functions if needed elsewhere
 };

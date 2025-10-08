@@ -42,27 +42,46 @@
 
     <button id="back-to-top" class="control-btn command-btn command-btn--ghost" type="button" aria-label="Back to top">TOP</button>
 
-    <main class="relative z-10 flex-1">
-      <div class="gallery-shell">
-        <section class="gallery-intro" aria-label="Pinned humiliation briefing">
-          <div class="gallery-intro__header">
-            <h2 class="gallery-intro__title">Pinned filter leash engaged</h2>
-            <p class="gallery-intro__subtitle">The FILTER button above is your only mercy. Tap it when you're ready to admit what you crave.</p>
-          </div>
-          <p class="gallery-intro__copy">Your feed refreshes in cruel 100-artist waves. Scroll to the bottom to beg for the next batch, or clear your shame when you finally give up.</p>
-          <button id="clear-tags" class="browse-btn gallery-intro__reset" type="button" style="display: none;">Clear tags</button>
-        </section>
+    <div class="gallery-layout" data-gallery-layout>
+      <main class="relative z-10 flex-1" data-gallery-main>
+        <div class="gallery-shell">
+          <section class="gallery-intro" aria-label="Pinned humiliation briefing">
+            <div class="gallery-intro__header">
+              <h2 class="gallery-intro__title">Pinned filter leash engaged</h2>
+              <p class="gallery-intro__subtitle">The FILTER button above is your only mercy. Tap it when you're ready to admit what you crave.</p>
+            </div>
+            <p class="gallery-intro__copy">Your feed refreshes in cruel 100-artist waves. Scroll to the bottom to beg for the next batch, or clear your shame when you finally give up.</p>
+            <button id="clear-tags" class="browse-btn gallery-intro__reset" type="button" style="display: none;">Clear tags</button>
+          </section>
 
-        <section class="space-y-4">
-          <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
-          <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
-        </section>
-      </div>
-    </main>
+          <section class="space-y-4">
+            <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
+            <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
+          </section>
+        </div>
+      </main>
+      <te-pinned-sidebar></te-pinned-sidebar>
+    </div>
   </div>
 
   <div id="tag-filter-popover" class="tag-explorer-sidebar" aria-hidden="true"></div>
-  <te-pinned-sidebar></te-pinned-sidebar>
+  <div id="cover-settings-sheet" class="cover-sheet" aria-hidden="true">
+    <button type="button" class="cover-sheet__scrim" data-close aria-label="Dismiss settings overlay"></button>
+    <section class="cover-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="cover-settings-title">
+      <header class="cover-sheet__header">
+        <h2 id="cover-settings-title" class="cover-sheet__title">Quick settings</h2>
+        <button type="button" class="cover-sheet__close" data-close aria-label="Close settings panel">×</button>
+      </header>
+      <div class="cover-sheet__body">
+        <p class="cover-sheet__copy">Switch the cruelty mix without losing your place.</p>
+        <div class="cover-sheet__actions" role="group" aria-label="Quick settings actions">
+          <button type="button" class="cover-sheet__action theme-toggle">Glow Mode</button>
+          <button type="button" class="cover-sheet__action audio-toggle">Audio Deck</button>
+          <button type="button" class="cover-sheet__action sidebar-toggle">Pinned Artists</button>
+        </div>
+      </div>
+    </section>
+  </div>
   <div id="jrpg-bubbles" aria-live="polite" aria-label="Tag notifications"></div>
   <te-audio-panel data-src-prefix="../"></te-audio-panel>
   <script type="module" src="../main.js"></script>
