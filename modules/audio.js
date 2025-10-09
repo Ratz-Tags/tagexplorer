@@ -180,6 +180,102 @@ let playlistSelectEl = null;
 let playlistAutoToggle = null;
 let intensitySyncToggle = null;
 
+const CUSTOM_TRACK_PREFIX = 'custom-track';
+
+function getCustomAudioRegistry() {
+  if (typeof window === 'undefined') return null;
+  if (!window._customAudioUrls) {
+    window._customAudioUrls = {};
+  }
+  return window._customAudioUrls;
+}
+
+function findCustomTrackKeyByUrl(url) {
+  const registry = getCustomAudioRegistry();
+  if (!registry) return null;
+  const keys = Object.keys(registry);
+  for (let i = 0; i < keys.length; i += 1) {
+    const entry = registry[keys[i]];
+    if (typeof entry === 'string' && entry === url) {
+      return keys[i];
+    }
+    if (entry && typeof entry === 'object' && entry.url === url) {
+      return keys[i];
+    }
+  }
+  return null;
+}
+
+function deriveLabelFromUrl(url) {
+  if (!url) return 'Custom track';
+  try {
+    const sanitizedUrl = url.split('?')[0].split('#')[0];
+    const fileName = sanitizedUrl.split('/').pop();
+    if (!fileName) return 'Custom track';
+    const decoded = decodeURIComponent(fileName);
+    return decoded
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim() || 'Custom track';
+  } catch (error) {
+    console.warn('[audio] failed to derive custom track label', error);
+    return 'Custom track';
+  }
+}
+
+function registerCustomAudioUrl(url) {
+  const normalizedUrl = url.trim();
+  const registry = getCustomAudioRegistry();
+  if (!registry || !normalizedUrl) return null;
+  const existingKey = findCustomTrackKeyByUrl(normalizedUrl);
+  if (existingKey) {
+    return existingKey;
+  }
+  const key = `${CUSTOM_TRACK_PREFIX}-${Date.now().toString(36)}-${Math.random()
+    .toString(36)
+    .slice(2, 6)}`;
+  registry[key] = {
+    url: normalizedUrl,
+    label: deriveLabelFromUrl(normalizedUrl),
+    addedAt: Date.now(),
+  };
+  return key;
+}
+
+function getCustomTrackEntry(key) {
+  if (typeof window === 'undefined') return null;
+  const registry = window._customAudioUrls;
+  if (!registry || !key) return null;
+  const value = registry[key];
+  if (!value) return null;
+  if (typeof value === 'string') {
+    return {
+      key,
+      url: value,
+      label: deriveLabelFromUrl(value),
+    };
+  }
+  if (typeof value === 'object' && value.url) {
+    return {
+      key,
+      url: value.url,
+      label: value.label || deriveLabelFromUrl(value.url),
+    };
+  }
+  return null;
+}
+
+function ensureCustomTracksAppended() {
+  const registry = getCustomAudioRegistry();
+  if (!registry) return;
+  const customKeys = Object.keys(registry);
+  if (!customKeys.length) return;
+  const missingKeys = customKeys.filter((key) => !audioFiles.includes(key));
+  if (!missingKeys.length) return;
+  audioFiles = audioFiles.concat(missingKeys);
+}
+
 // Detect if we're in a subdirectory and need path prefix
 function getPathPrefix() {
   const audioPanel = document.querySelector('te-audio-panel');
@@ -458,6 +554,7 @@ function applyPlaylist(playlistId, { reason = 'manual', preserveTrack = false } 
   if (reason === 'auto' && playlistSelectEl) {
     playlistSelectEl.value = '__auto__';
   }
+  updateAudioHumiliationMeter();
 }
 
 function maybeSelectAutoPlaylist({ tags = [], intensity = null } = {}) {
@@ -728,8 +825,6 @@ function getTrackLabel(name) {
       return buildTitleFromSource(labelSource);
     }
   }
-
-  // Try to find the title from audioFileData as a fallback
   if (audioFileData && audioFileData.files) {
     const fileData = audioFileData.files.find((file) => {
       const fileName = typeof file.filename === 'string' ? file.filename : '';
@@ -1082,6 +1177,7 @@ async function initAudio() {
     applyPlaylist(currentPlaylistId, { reason: 'init', preserveTrack: true });
   }
   maybeSelectAutoPlaylist({ tags: lastKnownTags, intensity: currentTTSIntensity });
+  ensureCustomTracksAppended();
   renderTrackSelector();
   syncAudioPanelLayout();
 
