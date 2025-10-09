@@ -26,8 +26,8 @@ const FALLBACK_AUDIO_FILES = [
   "Yes.mp3",
 ];
 
-let baseAudioFiles = [...FALLBACK_AUDIO_FILES];
-let audioFiles = [...FALLBACK_AUDIO_FILES];
+let baseAudioFiles = [];
+let audioFiles = [];
 let audioFileData = null;
 let playlistData = null;
 let playlists = [];
@@ -37,6 +37,143 @@ let intensitySyncEnabled = true;
 let motionMode = 'full';
 let currentTTSIntensity = 2;
 let lastKnownTags = [];
+let customTrackKeys = [];
+
+let audioLibraryEntries = new Map();
+let audioLibraryLookup = new Map();
+
+function resetAudioLibraryIndex() {
+  audioLibraryEntries = new Map();
+  audioLibraryLookup = new Map();
+}
+
+function buildTitleFromSource(source) {
+  if (!source || typeof source !== 'string') return 'Untitled';
+  const base = source.split('/').pop() || source;
+  return base
+    .replace(/\.[^/.]+$/, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() || 'Untitled';
+}
+
+function normalizeManifestPath(pathValue) {
+  if (!pathValue || typeof pathValue !== 'string') return '';
+  let normalized = pathValue.trim();
+  if (!normalized) return '';
+  if (normalized.startsWith('./')) {
+    normalized = normalized.slice(2);
+  }
+  return normalized;
+}
+
+function registerAudioLibraryEntry(rawEntry) {
+  if (!rawEntry) return null;
+  const filename = typeof rawEntry.filename === 'string' ? rawEntry.filename.trim() : '';
+  const title = typeof rawEntry.title === 'string' ? rawEntry.title.trim() : '';
+  const url = typeof rawEntry.url === 'string' ? rawEntry.url.trim() : '';
+  const path = normalizeManifestPath(rawEntry.path || '');
+  const canonical = path || filename || url;
+  if (!canonical) return null;
+
+  const entry = {
+    key: canonical,
+    filename,
+    path,
+    url,
+    title: title || buildTitleFromSource(filename || path || url),
+  };
+
+  audioLibraryEntries.set(canonical, entry);
+
+  const aliasCandidates = new Set([
+    canonical,
+    filename,
+    path,
+    url,
+  ].filter((value) => typeof value === 'string' && value.trim()));
+
+  const basenameSource = path || filename || canonical;
+  if (basenameSource) {
+    const baseName = basenameSource.split('/').pop();
+    if (baseName) {
+      aliasCandidates.add(baseName);
+    }
+  }
+
+  aliasCandidates.forEach((alias) => {
+    const trimmed = alias.trim();
+    const lower = trimmed.toLowerCase();
+    audioLibraryLookup.set(trimmed, canonical);
+    audioLibraryLookup.set(lower, canonical);
+  });
+
+  return canonical;
+}
+
+function hydrateAudioLibraryFromManifest(fileEntries = []) {
+  resetAudioLibraryIndex();
+  const seen = [];
+  fileEntries.forEach((entry) => {
+    const key = registerAudioLibraryEntry(entry);
+    if (key && !seen.includes(key)) {
+      seen.push(key);
+    }
+  });
+  return seen;
+}
+
+function composeActiveAudioList(baseList = baseAudioFiles) {
+  const composed = Array.isArray(baseList) ? baseList.slice() : [];
+  const activeCustomKeys = syncCustomTrackKeyList();
+  activeCustomKeys.forEach((key) => {
+    if (!composed.includes(key)) {
+      composed.push(key);
+    }
+  });
+  return composed;
+}
+
+function getAudioLibraryEntry(identifier) {
+  if (!identifier || typeof identifier !== 'string') return null;
+  const trimmed = identifier.trim();
+  if (!trimmed) return null;
+  const direct = audioLibraryLookup.get(trimmed) || audioLibraryLookup.get(trimmed.toLowerCase());
+  if (direct && audioLibraryEntries.has(direct)) {
+    return audioLibraryEntries.get(direct);
+  }
+  return null;
+}
+
+function resolvePlaylistTrackKey(identifier) {
+  if (!identifier || typeof identifier !== 'string') return null;
+  const entry = getAudioLibraryEntry(identifier);
+  if (entry) {
+    return entry.key;
+  }
+  const trimmed = identifier.trim();
+  if (!trimmed) return null;
+  if (baseAudioFiles.includes(trimmed)) {
+    return trimmed;
+  }
+  const baseName = trimmed.split('/').pop();
+  if (baseName && baseAudioFiles.includes(baseName)) {
+    return baseName;
+  }
+  return null;
+}
+
+function seedFallbackAudioLibrary() {
+  const fallbackEntries = FALLBACK_AUDIO_FILES.map((filename) => ({
+    filename,
+    title: buildTitleFromSource(filename),
+    path: `audio/${filename}`,
+  }));
+  baseAudioFiles = hydrateAudioLibraryFromManifest(fallbackEntries);
+  audioFiles = composeActiveAudioList(baseAudioFiles);
+}
+
+seedFallbackAudioLibrary();
 
 let trackSelectEl = null;
 let playlistSelectEl = null;
@@ -60,30 +197,39 @@ function getPathPrefix() {
 async function loadAudioFileData() {
   try {
     const prefix = getPathPrefix();
-    const response = await fetch(`${prefix}data/audio-files.json`);
+    const response = await fetch(`${prefix}data/audio-files.json`, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(`Failed to load audio files: ${response.status}`);
     }
     audioFileData = await response.json();
-    baseAudioFiles = audioFileData.files.map(file => file.filename);
-    audioFiles = baseAudioFiles.slice();
-    console.log(`Loaded ${audioFiles.length} audio files from data/audio-files.json`);
+    const manifestEntries = Array.isArray(audioFileData?.files) ? audioFileData.files : [];
+    baseAudioFiles = hydrateAudioLibraryFromManifest(manifestEntries);
+    if (!baseAudioFiles.length) {
+      console.warn('[audio] manifest contained no tracks, reverting to fallback list');
+      const fallbackEntries = FALLBACK_AUDIO_FILES.map((filename) => ({
+        filename,
+        title: buildTitleFromSource(filename),
+        path: `audio/${filename}`,
+      }));
+      baseAudioFiles = hydrateAudioLibraryFromManifest(fallbackEntries);
+    }
+    audioFiles = composeActiveAudioList(baseAudioFiles);
+    console.log(`Loaded ${baseAudioFiles.length} audio files from data/audio-files.json`);
     return audioFileData;
   } catch (error) {
     console.warn('Could not load audio file data, using fallback:', error);
-    baseAudioFiles = [...FALLBACK_AUDIO_FILES];
-    audioFiles = [...FALLBACK_AUDIO_FILES];
-    // Create fallback data structure
-    const prefix = getPathPrefix();
+    const fallbackEntries = FALLBACK_AUDIO_FILES.map((filename) => ({
+      filename,
+      title: buildTitleFromSource(filename),
+      path: `audio/${filename}`,
+    }));
     audioFileData = {
       generatedAt: new Date().toISOString(),
-      totalFiles: audioFiles.length,
-      files: audioFiles.map(filename => ({
-        filename,
-        title: filename.replace(/\.mp3$/i, '').replace(/_/g, ' '),
-        path: `${prefix}audio/${filename}`
-      }))
+      totalFiles: fallbackEntries.length,
+      files: fallbackEntries,
     };
+    baseAudioFiles = hydrateAudioLibraryFromManifest(audioFileData.files);
+    audioFiles = composeActiveAudioList(baseAudioFiles);
     return audioFileData;
   }
 }
@@ -277,7 +423,7 @@ function applyPlaylist(playlistId, { reason = 'manual', preserveTrack = false } 
   const playlist = getPlaylistById(nextId);
   if (playlist && playlist.tracks.length) {
     const normalized = playlist.tracks
-      .map((track) => baseAudioFiles.find((file) => file.toLowerCase() === track.toLowerCase()))
+      .map((track) => resolvePlaylistTrackKey(track))
       .filter(Boolean);
     if (normalized.length > 0) {
       nextFiles = normalized;
@@ -290,7 +436,7 @@ function applyPlaylist(playlistId, { reason = 'manual', preserveTrack = false } 
   }
 
   const currentTrackName = audioFiles[currentTrack];
-  audioFiles = nextFiles;
+  audioFiles = composeActiveAudioList(nextFiles);
   renderTrackSelector();
 
   if (preserveTrack && currentTrackName) {
@@ -307,6 +453,7 @@ function applyPlaylist(playlistId, { reason = 'manual', preserveTrack = false } 
   loadTrack(currentTrack);
   persistPlaylistPreferences();
   updatePlaylistToggles();
+  updateAudioHumiliationMeter();
 
   if (reason === 'auto' && playlistSelectEl) {
     playlistSelectEl.value = '__auto__';
@@ -376,6 +523,165 @@ function normalizeTagValue(tag) {
   return String(tag).trim().toLowerCase().replace(/\s+/g, '_');
 }
 
+function getCustomTrackStore({ createIfMissing = false } = {}) {
+  if (typeof window === 'undefined') return null;
+  const store = window._customAudioUrls;
+  if (!store || typeof store !== 'object') {
+    if (!createIfMissing) return null;
+    window._customAudioUrls = {};
+  }
+  return window._customAudioUrls;
+}
+
+function deriveCustomTrackLabelFromUrl(url) {
+  if (!url || typeof url !== 'string') return 'Custom track';
+  try {
+    const parsed = new URL(url);
+    const lastSegment = parsed.pathname.split('/').filter(Boolean).pop();
+    if (lastSegment) {
+      return lastSegment
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim() || parsed.host;
+    }
+    return parsed.host || 'Custom track';
+  } catch (error) {
+    const fallback = url.split('/').pop();
+    if (fallback) {
+      return fallback
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[_-]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    return 'Custom track';
+  }
+}
+
+function getCustomTrackEntry(key) {
+  const store = getCustomTrackStore();
+  if (!store || !key || !store[key]) return null;
+  const entry = store[key];
+  if (typeof entry === 'string') {
+    return {
+      url: entry,
+      label: deriveCustomTrackLabelFromUrl(entry),
+    };
+  }
+  if (entry && typeof entry === 'object') {
+    const entryUrl = typeof entry.url === 'string' ? entry.url : '';
+    const entryLabel = typeof entry.label === 'string'
+      ? entry.label
+      : deriveCustomTrackLabelFromUrl(entryUrl);
+    return {
+      url: entryUrl,
+      label: entryLabel || deriveCustomTrackLabelFromUrl(entryUrl),
+    };
+  }
+  return null;
+}
+
+function findCustomTrackKeyByUrl(url) {
+  const store = getCustomTrackStore();
+  if (!store || !url) return null;
+  const normalized = url.trim();
+  return (
+    Object.keys(store).find((key) => {
+      const value = store[key];
+      if (typeof value === 'string') return value === normalized;
+      if (value && typeof value.url === 'string') return value.url === normalized;
+      return false;
+    }) || null
+  );
+}
+
+function syncCustomTrackKeyList() {
+  const store = getCustomTrackStore();
+  if (!store) {
+    customTrackKeys = [];
+    return customTrackKeys;
+  }
+  const validKeys = new Set(Object.keys(store));
+  customTrackKeys = customTrackKeys.filter((key, index, arr) => {
+    return validKeys.has(key) && arr.indexOf(key) === index;
+  });
+  validKeys.forEach((key) => {
+    if (!customTrackKeys.includes(key)) {
+      customTrackKeys.push(key);
+    }
+  });
+  return customTrackKeys;
+}
+
+function registerCustomTrack(url, { label } = {}) {
+  const normalizedUrl = typeof url === 'string' ? url.trim() : '';
+  if (!normalizedUrl) return null;
+  const store = getCustomTrackStore({ createIfMissing: true });
+  if (!store) return null;
+  const existingKey = findCustomTrackKeyByUrl(normalizedUrl);
+  if (existingKey) {
+    const existingEntry = getCustomTrackEntry(existingKey);
+    syncCustomTrackKeyList();
+    return {
+      key: existingKey,
+      label: existingEntry?.label || deriveCustomTrackLabelFromUrl(normalizedUrl),
+      isNew: false,
+    };
+  }
+  const baseLabel = label && typeof label === 'string' ? label.trim() : '';
+  const finalLabel = baseLabel || deriveCustomTrackLabelFromUrl(normalizedUrl);
+  const slugBase = finalLabel.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'custom-track';
+  let key = `${slugBase}-${Date.now().toString(36)}`;
+  while (store[key]) {
+    key = `${slugBase}-${Date.now().toString(36)}-${Math.random().toString(16).slice(2, 6)}`;
+  }
+  store[key] = {
+    url: normalizedUrl,
+    label: finalLabel,
+    addedAt: Date.now(),
+  };
+  if (!customTrackKeys.includes(key)) {
+    customTrackKeys.push(key);
+  }
+  syncCustomTrackKeyList();
+  updateAudioHumiliationMeter();
+  return {
+    key,
+    label: finalLabel,
+    isNew: true,
+  };
+}
+
+function removeCustomTrack(key) {
+  const store = getCustomTrackStore();
+  if (!store || !key || !store[key]) return false;
+  delete store[key];
+  const keyIndex = customTrackKeys.indexOf(key);
+  if (keyIndex >= 0) {
+    customTrackKeys.splice(keyIndex, 1);
+  }
+  const audioIndex = audioFiles.indexOf(key);
+  if (audioIndex >= 0) {
+    audioFiles.splice(audioIndex, 1);
+    if (currentTrack >= audioFiles.length) {
+      currentTrack = Math.max(0, audioFiles.length - 1);
+    }
+  }
+  renderTrackSelector();
+  if (audioFiles.length) {
+    loadTrack(currentTrack);
+  }
+  updateAudioHumiliationMeter();
+  return true;
+}
+
+function getCustomTrackCount() {
+  const store = getCustomTrackStore();
+  if (!store) return 0;
+  return Object.keys(store).length;
+}
+
 function parsePlaylistAttribute(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) return normalizeTrackList(raw);
@@ -406,16 +712,40 @@ function isRemoteTrack(name) {
 
 function getTrackLabel(name) {
   if (!name) return "Untitled";
-  
-  // Try to find the title from audioFileData first
+
+  const customEntry = getCustomTrackEntry(name);
+  if (customEntry && customEntry.label) {
+    return customEntry.label;
+  }
+
+  const libraryEntry = getAudioLibraryEntry(name);
+  if (libraryEntry) {
+    if (libraryEntry.title) {
+      return libraryEntry.title;
+    }
+    const labelSource = libraryEntry.filename || libraryEntry.path || libraryEntry.key;
+    if (labelSource) {
+      return buildTitleFromSource(labelSource);
+    }
+  }
+
+  // Try to find the title from audioFileData as a fallback
   if (audioFileData && audioFileData.files) {
-    const fileData = audioFileData.files.find(file => file.filename === name);
+    const fileData = audioFileData.files.find((file) => {
+      const fileName = typeof file.filename === 'string' ? file.filename : '';
+      const filePath = normalizeManifestPath(file.path || '');
+      return fileName === name || filePath === name;
+    });
     if (fileData && fileData.title) {
       return fileData.title;
     }
   }
-  
-  // Fallback to extracting from filename
+
+  if (customEntry && customEntry.url) {
+    return deriveCustomTrackLabelFromUrl(customEntry.url);
+  }
+
+  // Fallback to extracting from filename or URL fragment
   const afterSlash = name.split("/").pop();
   const withoutExt = afterSlash ? afterSlash.replace(/\.[^/.]+$/, "") : name;
   return withoutExt
@@ -515,20 +845,51 @@ function syncAudioPanelLayout() {
 function getAudioSrc(index) {
   const name = audioFiles[index];
   if (!name) return "";
+  const customEntry = getCustomTrackEntry(name);
+  if (customEntry && customEntry.url) {
+    return customEntry.url;
+  }
   if (isRemoteTrack(name)) {
     return name;
   }
   const prefix = getPathPrefix();
-  if (name.startsWith("audio/")) {
-    return `${prefix}${name}`;
+  const libraryEntry = getAudioLibraryEntry(name);
+  if (libraryEntry) {
+    if (libraryEntry.url && isRemoteTrack(libraryEntry.url)) {
+      return libraryEntry.url;
+    }
+    let manifestPath = libraryEntry.path || libraryEntry.filename || libraryEntry.key || '';
+    if (manifestPath) {
+      if (isRemoteTrack(manifestPath)) {
+        return manifestPath;
+      }
+      if (manifestPath.startsWith('/')) {
+        return manifestPath;
+      }
+      if (manifestPath.startsWith('../')) {
+        return manifestPath;
+      }
+      if (manifestPath.startsWith('./')) {
+        manifestPath = manifestPath.slice(2);
+      }
+      manifestPath = manifestPath.replace(/^\/+/g, '');
+      if (!manifestPath.startsWith('audio/')) {
+        manifestPath = `audio/${manifestPath}`;
+      }
+      return `${prefix}${manifestPath}`;
+    }
   }
-  if (name.startsWith("./audio/")) {
-    return `${prefix}${name.slice(2)}`;
+  let normalizedName = name;
+  if (normalizedName.startsWith('./')) {
+    normalizedName = normalizedName.slice(2);
   }
-  if (window._customAudioUrls && window._customAudioUrls[name]) {
-    return window._customAudioUrls[name];
+  if (normalizedName.startsWith('../')) {
+    return normalizedName;
   }
-  return `${prefix}audio/${name}`;
+  if (normalizedName.startsWith('audio/')) {
+    return `${prefix}${normalizedName}`;
+  }
+  return `${prefix}audio/${normalizedName.replace(/^\//, '')}`;
 }
 
 /**
@@ -929,13 +1290,27 @@ function addTrackByUrl(url) {
     return;
   }
 
-  // Add to audioFiles array and update current track
   const normalizedUrl = url.trim();
-  audioFiles.push(normalizedUrl);
-  currentTrack = audioFiles.length - 1;
+  const registration = registerCustomTrack(normalizedUrl);
+  if (!registration) {
+    showAudioToast("Couldn't add that track right now.", "error");
+    return;
+  }
+
+  const { key, label, isNew } = registration;
+  if (!audioFiles.includes(key)) {
+    audioFiles.push(key);
+  }
+  currentTrack = audioFiles.indexOf(key);
   renderTrackSelector();
   loadTrack(currentTrack);
-  showAudioToast(`Track added: ${getTrackLabel(normalizedUrl)}`, "success");
+  const toastLabel = label || getTrackLabel(key);
+  if (isNew) {
+    showAudioToast(`Track added: ${toastLabel}`, "success");
+  } else {
+    showAudioToast(`Already stalking you: ${toastLabel}`, "info");
+  }
+  updateAudioHumiliationMeter();
 }
 
 /**
@@ -1010,7 +1385,18 @@ function setupAudioPanelToggle() {
 
 // --- HUMILIATION BAR LESS OBSTRUCTIVE ---
 let humiliationMeterTimeout = null;
+function getHumiliationTaunt(count) {
+  if (count <= 0) return "Audio dignity: Intact (for now)";
+  if (count === 1) return "One stolen track already? That itch is showing.";
+  if (count <= 3) return `${count} extra tracks? Getting clingy.`;
+  if (count <= 5) return `${count} custom fixes. Silence terrifies you.`;
+  if (count <= 9) return `${count} hijacked moans. Desperation dripping.`;
+  return `${count} pilfered whispers. You're beyond saving.`;
+}
+
 function updateAudioHumiliationMeter() {
+  if (typeof document === 'undefined') return;
+  syncCustomTrackKeyList();
   let meter = document.getElementById("audio-humiliation-meter");
   if (!meter) {
     meter = document.createElement("div");
@@ -1052,22 +1438,14 @@ function updateAudioHumiliationMeter() {
     meter.style.width = "auto";
     meter.style.maxWidth = "320px";
   }
-  const count =
-    (window._customAudioUrls && Object.keys(window._customAudioUrls).length) ||
-    0;
+  const count = getCustomTrackCount();
   const bar = meter.querySelector(".audio-humiliation-bar");
   const taunt = meter.querySelector(".audio-humiliation-taunt");
   const percent = Math.min(100, count * 10);
   bar.style.width = percent + "%";
   bar.style.background =
     percent > 80 ? "#fd7bc5" : percent > 50 ? "#ff63a5" : "#f9badd";
-  let msg = "";
-  if (count === 0) msg = "Audio dignity: Intact (for now)";
-  else if (count < 3) msg = "Mildly desperate for new tracks";
-  else if (count < 6) msg = "Getting needy for variety...";
-  else if (count < 10) msg = "Desperation rising! So many tracks!";
-  else msg = "Utterly shameless audio addict!";
-  taunt.textContent = msg;
+  taunt.textContent = getHumiliationTaunt(count);
   // --- Show/hide logic ---
   meter.style.opacity = "0.95";
   meter.style.visibility = "visible";
@@ -1120,5 +1498,7 @@ export {
   syncAudioPanelLayout,
   toggleGlobalMute,
   getGlobalMuteState,
+  registerCustomTrack,
+  removeCustomTrack,
   // Optionally export other functions if needed elsewhere
 };
