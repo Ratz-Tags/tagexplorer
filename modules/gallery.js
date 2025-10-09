@@ -980,6 +980,7 @@ async function openArtistZoom(artist) {
   dispatchWhisperEvent('artist_open', { minIntensity: 2 });
 
   let grid, zoomContent, backBtn;
+  const LIMIT = 40;
   let posts = [];
   let page = 1;
   let zoomTotalPages = Infinity;
@@ -987,15 +988,25 @@ async function openArtistZoom(artist) {
   let currentIndex = 0;
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
   const allPostsCacheKey = `allPosts-${artist.artistName}`;
+
+  const updatePageFromInitial = (initialCount) => {
+    const hasMore = posts.length > initialCount;
+    if (!initialCount) {
+      page = zoomTotalPages + 1;
+      return;
+    }
+    const pagesRendered = Math.ceil(initialCount / LIMIT);
+    page = hasMore ? pagesRendered + 1 : zoomTotalPages + 1;
+  };
   try {
     const cachedAll = getWithTTL(allPostsCacheKey);
     if (cachedAll && Array.isArray(cachedAll) && cachedAll.length > 0) {
       console.debug(`[gallery] allPosts cache hit for ${artist.artistName}: ${cachedAll.length} posts`);
       posts = cachedAll.slice();
-      zoomTotalPages = Math.max(1, Math.ceil(posts.length / 40));
-      const initial = posts.slice(0, 40);
+      zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
+      const initial = posts.slice(0, LIMIT);
       renderThumbs(initial, 0);
-      page = Math.floor(posts.length / 40) + 1;
+      updatePageFromInitial(initial.length);
     } else {
       // Attempt to reconstruct from per-page session cache (danbooru-api-... keys)
       try {
@@ -1028,10 +1039,10 @@ async function openArtistZoom(artist) {
             console.debug(`[gallery] reconstructed ${reconstructed.length} posts for ${artist.artistName} from per-page session cache`);
             posts = reconstructed;
             setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
-            zoomTotalPages = Math.max(1, Math.ceil(posts.length / 40));
-            const initial = posts.slice(0, 40);
+            zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
+            const initial = posts.slice(0, LIMIT);
             renderThumbs(initial, 0);
-            page = Math.floor(posts.length / 40) + 1;
+            updatePageFromInitial(initial.length);
           } else {
             console.debug(`[gallery] failed to reconstruct posts for ${artist.artistName} from per-page session cache`);
           }
@@ -1088,7 +1099,6 @@ async function openArtistZoom(artist) {
     loading = true;
     try {
       const api = await import("./api.js");
-      const LIMIT = 40;
 
       // If we already have cached posts that include this page, render from them
       const startIdx = (page - 1) * LIMIT;
@@ -1121,7 +1131,7 @@ async function openArtistZoom(artist) {
         zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
         const initial = posts.slice(0, LIMIT);
         renderThumbs(initial, 0);
-        page = Math.floor(posts.length / LIMIT) + 1;
+        updatePageFromInitial(initial.length);
         if (posts.length <= LIMIT) return;
       } else {
         console.debug(`[gallery] network fetchAllArtistImages returned no posts for ${artist.artistName}, falling back to per-page fetch`);
