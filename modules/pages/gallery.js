@@ -272,13 +272,6 @@ function setupSidebarToggle() {
 
   toggleButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
-      // Don't toggle in fold-inner mode - sidebar is always visible as part of layout
-      const foldMode = document.documentElement?.dataset?.foldMode;
-      if (foldMode === 'fold-inner') {
-        console.log('[sidebar] Toggle ignored in fold-inner mode - sidebar is part of layout');
-        return;
-      }
-      
       const willHide = !copiedSidebarEl.classList.contains('sidebar-hidden');
       setSidebarHidden(willHide, { userInitiated: true });
     });
@@ -452,20 +445,20 @@ function updateCommandStatusLabels(mode) {
 function syncSidebarForFold(mode) {
   const sidebar = document.getElementById('copied-sidebar');
   if (!sidebar || typeof sidebar._setSidebarHidden !== 'function') return;
-  if (mode === 'fold-inner') {
-    if (typeof sidebar.dataset.foldPrevHidden === 'undefined') {
-      sidebar.dataset.foldPrevHidden = sidebar.dataset.userHidden || (sidebar.classList.contains('sidebar-hidden') ? 'true' : 'false');
-    }
-    sidebar._setSidebarHidden(false);
-  } else {
-    if (typeof sidebar.dataset.foldPrevHidden !== 'undefined') {
-      const shouldHide = sidebar.dataset.foldPrevHidden === 'true';
-      sidebar._setSidebarHidden(shouldHide);
-      delete sidebar.dataset.foldPrevHidden;
-    } else if (typeof sidebar.dataset.userHidden !== 'undefined') {
-      sidebar._setSidebarHidden(sidebar.dataset.userHidden === 'true');
-    }
+  if (typeof sidebar.dataset.foldPrevHidden !== 'undefined') {
+    delete sidebar.dataset.foldPrevHidden;
   }
+  const userPreference = sidebar.dataset.userHidden;
+  const isCurrentlyHidden = sidebar.classList.contains('sidebar-hidden');
+  let shouldHide;
+  if (userPreference === 'true') {
+    shouldHide = true;
+  } else if (userPreference === 'false') {
+    shouldHide = false;
+  } else {
+    shouldHide = isCurrentlyHidden;
+  }
+  sidebar._setSidebarHidden(shouldHide);
 }
 
 function setupFoldModeSync({ foldAdapter, closeSettings }) {
