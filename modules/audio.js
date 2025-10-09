@@ -243,28 +243,7 @@ function registerCustomAudioUrl(url) {
   return key;
 }
 
-function getCustomTrackEntry(key) {
-  if (typeof window === 'undefined') return null;
-  const registry = window._customAudioUrls;
-  if (!registry || !key) return null;
-  const value = registry[key];
-  if (!value) return null;
-  if (typeof value === 'string') {
-    return {
-      key,
-      url: value,
-      label: deriveLabelFromUrl(value),
-    };
-  }
-  if (typeof value === 'object' && value.url) {
-    return {
-      key,
-      url: value.url,
-      label: value.label || deriveLabelFromUrl(value.url),
-    };
-  }
-  return null;
-}
+// Note: getCustomTrackEntry is defined later in the file (line ~659) using getCustomTrackStore()
 
 function ensureCustomTracksAppended() {
   const registry = getCustomAudioRegistry();
