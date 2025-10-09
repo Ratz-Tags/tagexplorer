@@ -39,7 +39,12 @@ import {
   renderArtistsPage,
   getFilteredArtists,
 } from '../gallery.js';
-import { initUI, setupInfiniteScroll, setupBackgroundRotation } from '../ui.js';
+import {
+  initUI,
+  setupInfiniteScroll,
+  setupBackgroundRotation,
+  showToast,
+} from '../ui.js';
 import {
   loadAppData,
   persistGalleryState,
@@ -179,7 +184,13 @@ async function setupFavoritesButton() {
     const { getFavoritesCount } = await import('../favorites.js');
 
     if (getFavoritesCount() === 0) {
-      alert('No favorite artists yet. Star some artists first!');
+      showToast('No trophies on your wall yet. Go star someone before begging.', 4200);
+      // Ensure the command bar button keeps focus for keyboard users
+      requestAnimationFrame(() => {
+        if (typeof favoritesBtn.focus === 'function') {
+          favoritesBtn.focus({ preventScroll: true });
+        }
+      });
       return;
     }
 
