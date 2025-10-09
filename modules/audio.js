@@ -243,7 +243,7 @@ function registerCustomAudioUrl(url) {
   return key;
 }
 
-// Note: getCustomTrackEntry is defined later in the file (line ~659) using getCustomTrackStore()
+// Note: getCustomTrackEntry is defined below (line ~659) using the newer getCustomTrackStore() API
 
 function ensureCustomTracksAppended() {
   const registry = getCustomAudioRegistry();
