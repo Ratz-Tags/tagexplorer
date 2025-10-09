@@ -557,6 +557,17 @@ function unbindEscapeListener() {
   escapeListener = null;
 }
 
+function toggleTagExplorer(event) {
+  if (event && typeof event.preventDefault === "function") {
+    event.preventDefault();
+  }
+  if (isOpen) {
+    closeTagExplorer();
+  } else {
+    openTagExplorer();
+  }
+}
+
 function openTagExplorer() {
   if (!isInitialized) initTagExplorer();
   if (!filtersButtonEl && typeof document !== "undefined") {
@@ -683,16 +694,6 @@ function initTagExplorer() {
       wrapper.appendChild(filtersButtonEl);
       filterTriggerEl = wrapper;
     }
-    
-    // Bind filter button click event
-    filtersButtonEl.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (isOpen) {
-        closeTagExplorer();
-      } else {
-        openTagExplorer();
-      }
-    });
   }
 
   popoverEl = document.getElementById("tag-filter-popover");
@@ -774,4 +775,4 @@ function initTagExplorer() {
   isInitialized = true;
 }
 
-export { openTagExplorer, initTagExplorer, setAllArtists, getFilteredCounts };
+export { openTagExplorer, initTagExplorer, toggleTagExplorer, setAllArtists, getFilteredCounts };

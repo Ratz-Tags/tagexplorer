@@ -49,7 +49,7 @@ import { startTauntTicker } from '../humiliation.js';
 import { createTTSToggleButton, createTTSIntensityControl } from '../tts-toggle.js';
 import {
   initTagExplorer,
-  openTagExplorer,
+  toggleTagExplorer,
   setAllArtists as setExplorerArtists,
 } from '../tag-explorer.js';
 import { showAzureVoiceSelector } from '../azure-tts.js';
@@ -531,13 +531,10 @@ async function setupFiltersButton() {
   ].filter(Boolean);
   if (!filterButtons.length) return;
 
-  const handleToggle = (event) => {
-    event.preventDefault();
-    openTagExplorer();
-  };
-
   filterButtons.forEach((btn) => {
-    btn.addEventListener('click', handleToggle);
+    if (btn.dataset.tagExplorerToggleBound === 'true') return;
+    btn.addEventListener('click', toggleTagExplorer, { once: false });
+    btn.dataset.tagExplorerToggleBound = 'true';
     btn.setAttribute('aria-expanded', 'false');
   });
 
