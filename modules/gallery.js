@@ -125,6 +125,18 @@ let backgroundBlur = null;
 let gallerySentinel = null;
 let galleryStartSentinel = null;
 
+function triggerGalleryHumiliationPatch() {
+  if (typeof window === "undefined") return;
+  const patch = window._galleryHumiliationPatch;
+  if (typeof patch === "function") {
+    try {
+      patch();
+    } catch (error) {
+      // Swallow errors to avoid breaking gallery rendering if the helper fails
+    }
+  }
+}
+
 // External dependencies
 let allArtists = [];
 let getActiveTags = null;
@@ -265,6 +277,7 @@ function showGalleryEmptyState() {
   artistGallery.appendChild(empty);
   renderedPages.clear();
   resetGallerySentinel();
+  triggerGalleryHumiliationPatch();
 }
 
 function resetVirtualState() {
@@ -1416,6 +1429,10 @@ function renderArtistsPage(options = {}) {
 
   if (!rendered && virtualState.chunks.length === 0) {
     rendered = appendVirtualChunk(0);
+  }
+
+  if (rendered) {
+    triggerGalleryHumiliationPatch();
   }
 
   ensureViewportCoverage();
