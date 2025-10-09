@@ -182,68 +182,9 @@ let intensitySyncToggle = null;
 
 const CUSTOM_TRACK_PREFIX = 'custom-track';
 
-function getCustomAudioRegistry() {
-  if (typeof window === 'undefined') return null;
-  if (!window._customAudioUrls) {
-    window._customAudioUrls = {};
-  }
-  return window._customAudioUrls;
-}
-
-function findCustomTrackKeyByUrl(url) {
-  const registry = getCustomAudioRegistry();
-  if (!registry) return null;
-  const keys = Object.keys(registry);
-  for (let i = 0; i < keys.length; i += 1) {
-    const entry = registry[keys[i]];
-    if (typeof entry === 'string' && entry === url) {
-      return keys[i];
-    }
-    if (entry && typeof entry === 'object' && entry.url === url) {
-      return keys[i];
-    }
-  }
-  return null;
-}
-
-function deriveLabelFromUrl(url) {
-  if (!url) return 'Custom track';
-  try {
-    const sanitizedUrl = url.split('?')[0].split('#')[0];
-    const fileName = sanitizedUrl.split('/').pop();
-    if (!fileName) return 'Custom track';
-    const decoded = decodeURIComponent(fileName);
-    return decoded
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() || 'Custom track';
-  } catch (error) {
-    console.warn('[audio] failed to derive custom track label', error);
-    return 'Custom track';
-  }
-}
-
-function registerCustomAudioUrl(url) {
-  const normalizedUrl = url.trim();
-  const registry = getCustomAudioRegistry();
-  if (!registry || !normalizedUrl) return null;
-  const existingKey = findCustomTrackKeyByUrl(normalizedUrl);
-  if (existingKey) {
-    return existingKey;
-  }
-  const key = `${CUSTOM_TRACK_PREFIX}-${Date.now().toString(36)}-${Math.random()
-    .toString(36)
-    .slice(2, 6)}`;
-  registry[key] = {
-    url: normalizedUrl,
-    label: deriveLabelFromUrl(normalizedUrl),
-    addedAt: Date.now(),
-  };
-  return key;
-}
-
-// Note: getCustomTrackEntry is defined below (line ~659) using the newer getCustomTrackStore() API
+// Note: Custom track functions (getCustomTrackStore, findCustomTrackKeyByUrl, 
+// deriveCustomTrackLabelFromUrl, getCustomTrackEntry, registerCustomTrack, etc.) 
+// are defined below (lines ~600-750) using the newer getCustomTrackStore() API
 
 function ensureCustomTracksAppended() {
   const registry = getCustomAudioRegistry();
