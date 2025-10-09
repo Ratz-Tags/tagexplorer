@@ -612,6 +612,12 @@ function syncAudioPanelLayout() {
   panel.setAttribute("aria-hidden", isVisible ? "false" : "true");
 }
 
+function updatePlaybackToggleState(isPlaying) {
+  if (!toggleBtn) return;
+  toggleBtn.textContent = isPlaying ? "⏸️" : "▶️";
+  toggleBtn.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+}
+
 /**
  * Gets the audio source path for a given track index (supports custom URLs).
  */
@@ -638,7 +644,7 @@ function getAudioSrc(index) {
 /**
  * Loads and plays a specific track
  */
-function loadTrack(index) {
+function loadTrack(index, { autoplay } = {}) {
   if (!hypnoAudio || !trackName || !audioFiles.length) return;
   const trackCount = audioFiles.length;
   const normalizedIndex = ((index % trackCount) + trackCount) % trackCount;
@@ -650,7 +656,21 @@ function loadTrack(index) {
   }
   trackName.textContent = getTrackLabel(audioFiles[currentTrack]);
   highlightActiveTrack();
-  safePlay(hypnoAudio);
+  const shouldAutoplay =
+    typeof autoplay === "boolean"
+      ? autoplay
+      : Boolean(hypnoAudio && !hypnoAudio.paused && !hypnoAudio.ended);
+  if (shouldAutoplay) {
+    safePlay(hypnoAudio);
+    updatePlaybackToggleState(true);
+  } else {
+    try {
+      hypnoAudio.pause();
+    } catch {
+      // Ignore pause errors when audio has not loaded yet.
+    }
+    updatePlaybackToggleState(false);
+  }
 }
 
 /**
@@ -660,11 +680,11 @@ function togglePlayback() {
   if (!hypnoAudio || !toggleBtn) return;
 
   if (hypnoAudio.paused) {
-    hypnoAudio.play();
-    toggleBtn.textContent = "⏸️";
+    safePlay(hypnoAudio);
+    updatePlaybackToggleState(true);
   } else {
     hypnoAudio.pause();
-    toggleBtn.textContent = "▶️";
+    updatePlaybackToggleState(false);
   }
 }
 
@@ -794,7 +814,7 @@ function togglePanel() {
  */
 function onTrackEnded() {
   if (!audioFiles.length) return;
-  loadTrack(currentTrack + 1);
+  loadTrack(currentTrack + 1, { autoplay: true });
 }
 
 /**

@@ -317,17 +317,19 @@ body[data-fold-mode="fold-inner"] .gallery-layout {
   gap: clamp(2rem, 4vw, 3rem);
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar {
-  display: block;
   flex: 0 0 clamp(260px, 22vw, 320px);
 }
-/* In fold-inner mode, sidebar-wrapper is always visible as part of layout */
+
+body.sidebar-open .gallery-layout > te-pinned-sidebar {
+  display: block;
+}
+/* In fold-inner mode, keep sidebar aligned when it is shown */
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper {
   position: sticky;
   top: calc(1.25rem + var(--safe-area-top));
   right: auto;
   bottom: auto;
   left: auto;
-  display: block !important;
   width: 100%;
   max-height: calc(100vh - var(--safe-area-top) - 2rem);
   pointer-events: auto;
@@ -1485,4 +1487,43 @@ animation: pulseGlow 1.8s ease-in-out infinite;
   .landing-cta:hover {
     transform: none;
   }
+}
+
+.landing-actions {
+  @apply mt-10 flex flex-col items-center gap-4;
+  @apply sm:flex-row sm:justify-center;
+}
+
+.landing-enter {
+  border-color: transparent;
+  background-image: linear-gradient(
+    135deg,
+    oklch(80% 0.14 205),
+    oklch(80% 0.18 350)
+  );
+  color: oklch(12% 0.03 260);
+  box-shadow:
+    0 0 22px oklch(80% 0.14 205 / 0.35),
+    0 0 40px oklch(80% 0.18 350 / 0.25);
+  text-decoration: none;
+}
+
+.landing-enter:hover {
+  box-shadow:
+    0 0 28px oklch(80% 0.14 205 / 0.45),
+    0 0 55px oklch(80% 0.18 350 / 0.35);
+  transform: translateY(-3px);
+}
+
+.landing-audio {
+  border-color: rgba(102, 243, 255, 0.45);
+  background-color: rgba(12, 11, 22, 0.65);
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+}
+
+.landing-audio:hover {
+  border-color: rgba(102, 243, 255, 0.7);
+  background-color: rgba(12, 11, 22, 0.8);
+  box-shadow: 0 0 24px rgba(102, 243, 255, 0.2);
 }
