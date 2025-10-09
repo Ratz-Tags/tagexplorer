@@ -129,6 +129,8 @@ let galleryStartSentinel = null;
 let allArtists = [];
 let getActiveTags = null;
 let getArtistNameFilter = null;
+let getActiveTagsCallbackFn = null;
+let getArtistNameFilterCallbackFn = null;
 
 // TTL-backed session cache defaults and helpers (module scope so multiple functions can reuse)
 let DEFAULT_ALLPOSTS_TTL_MS = 1000 * 60 * 60; // 1 hour (mutable for tests)
@@ -2254,6 +2256,7 @@ export async function forceFetchStyleTags() {
 
 function setGetActiveTagsCallback(callback) {
   getActiveTags = callback;
+  getActiveTagsCallbackFn = callback;
 }
 
 /**
@@ -2261,6 +2264,7 @@ function setGetActiveTagsCallback(callback) {
  */
 function setGetArtistNameFilterCallback(callback) {
   getArtistNameFilter = callback;
+  getArtistNameFilterCallbackFn = callback;
 }
 
 function setSortPreference(preference) {
@@ -2316,9 +2320,12 @@ async function filterGalleryToFavorites() {
  */
 async function clearGalleryFilters() {
   // Re-run the normal filter logic to restore the filtered state
-  if (getActiveTagsCallback) {
-    const activeTags = getActiveTagsCallback();
-    const nameFilter = getArtistNameFilterCallback ? getArtistNameFilterCallback() : '';
+  const activeTagsFn = getActiveTagsCallbackFn || getActiveTags;
+  const artistNameFilterFn = getArtistNameFilterCallbackFn || getArtistNameFilter;
+
+  if (typeof activeTagsFn === 'function' || typeof artistNameFilterFn === 'function') {
+    const activeTags = typeof activeTagsFn === 'function' ? activeTagsFn() : [];
+    const nameFilter = typeof artistNameFilterFn === 'function' ? artistNameFilterFn() : '';
     filterArtists(activeTags, nameFilter);
   } else {
     // Fallback: show all artists
@@ -2330,7 +2337,7 @@ async function clearGalleryFilters() {
     pagination.total = totalPages;
     renderArtistsPage({ force: true });
   }
-  
+
   console.log('Cleared favorites filter');
 }
 
