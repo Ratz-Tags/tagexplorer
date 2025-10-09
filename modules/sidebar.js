@@ -4,10 +4,8 @@
 
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
-import { azureSpeak } from "./azure-tts.js";
 import { getActiveTags } from "./tags.js";
-import { isTTSEnabled, createTTSToggleButton } from "./tts-toggle.js";
-import { dispatchWhisperEvent } from "./tts-dispatcher.js";
+import { createTTSToggleButton } from "./tts-toggle.js";
 
 if (typeof window !== "undefined") {
   window.addEventListener("DOMContentLoaded", () => {
@@ -43,18 +41,8 @@ function getCopiedCount() {
  * Shows a toast notification message
  */
 
-async function speakToast(text) {
-  if (!isTTSEnabled()) return;
-  try {
-    // Don't pass empty overrides - let azureSpeak use the current whisper configuration
-    const url = await azureSpeak(text);
-    if (url) {
-      const audio = new Audio(url);
-      audio.play().catch(() => {});
-    }
-  } catch (e) {
-    // Swallow errors to avoid UI spam
-  }
+function speakToast() {
+  // Toast notifications remain visual-only to avoid Azure whisper overlap.
 }
 
 function showToast(message) {
@@ -103,9 +91,6 @@ function handleArtistCopy(artist, imgSrc) {
       showToast(
         added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`
       );
-      if (added && copiedArtists.size > 5) {
-        dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
-      }
       // --- INCREASE HUMILIATION METER ---
       if (typeof window.incrementDesperationMeter === "function") {
         window.incrementDesperationMeter(1);
