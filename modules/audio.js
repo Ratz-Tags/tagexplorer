@@ -187,9 +187,9 @@ const CUSTOM_TRACK_PREFIX = 'custom-track';
 // are defined below (lines ~600-750) using the newer getCustomTrackStore() API
 
 function ensureCustomTracksAppended() {
-  const registry = getCustomAudioRegistry();
-  if (!registry) return;
-  const customKeys = Object.keys(registry);
+  const store = getCustomTrackStore();
+  if (!store) return;
+  const customKeys = Object.keys(store);
   if (!customKeys.length) return;
   const missingKeys = customKeys.filter((key) => !audioFiles.includes(key));
   if (!missingKeys.length) return;
