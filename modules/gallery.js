@@ -55,6 +55,12 @@ const virtualState = {
   recyclePool: [],
 };
 
+const IMAGE_OBSERVER_ROOT_MARGIN = "260px";
+const IMAGE_OBSERVER_THRESHOLD = 0.02;
+const DEFAULT_EAGER_IMAGE_COUNT = 9;
+const IDLE_FALLBACK_TIMEOUT = 2500;
+const PRIME_VISIBLE_BUFFER = 260;
+
 const DEFAULT_AMBIENT_TAGS = [
   'chastity_cage',
   'femdom',
@@ -928,8 +934,43 @@ function lazyLoadBestImage(artist, img) {
   }
 
   const observer = initImageObserver();
-  observer.observe(img);
-  img._lazyObserver = observer;
+  if (observer) {
+    try {
+      observer.observe(img);
+      img._lazyObserver = observer;
+    } catch (error) {
+      // Fall back to immediate load if observation fails
+      setBestImage(artist, img);
+      return;
+    }
+  }
+
+  const idleLoad = () => {
+    if (!img || img._loadingImage || img.getAttribute("src")) {
+      return;
+    }
+    setBestImage(artist, img);
+  };
+
+  if (typeof requestIdleCallback === "function") {
+    const handle = requestIdleCallback(() => {
+      img._idleCleanup = null;
+      idleLoad();
+    }, { timeout: IDLE_FALLBACK_TIMEOUT });
+    img._idleCleanup = () => {
+      try {
+        cancelIdleCallback(handle);
+      } catch (error) {
+        // Ignore cancel failures
+      }
+    };
+  } else {
+    const timeout = setTimeout(() => {
+      img._idleCleanup = null;
+      idleLoad();
+    }, IDLE_FALLBACK_TIMEOUT);
+    img._idleCleanup = () => clearTimeout(timeout);
+  }
 
   // Also observe for face detection/persistence
   const fobs = initFaceObserver();
@@ -941,14 +982,23 @@ function lazyLoadBestImage(artist, img) {
 // Function called by the intersection observer
 function loadArtistImage(img) {
   if (!img || img._loadingImage) return;
-  
+
+  if (typeof img._idleCleanup === "function") {
+    try {
+      img._idleCleanup();
+    } catch (error) {
+      // Ignore cleanup errors
+    }
+    img._idleCleanup = null;
+  }
+
   const artistData = img.__artistData;
   if (!artistData) return;
-  
+
   setBestImage(artistData, img);
 }
 
-function primeVisibleArtistImages(buffer = 180) {
+function primeVisibleArtistImages(buffer = PRIME_VISIBLE_BUFFER) {
   if (!artistGallery || typeof window === "undefined") return;
   const viewportHeight =
     window.innerHeight || document.documentElement?.clientHeight || 0;
@@ -1556,7 +1606,7 @@ function initFaceObserver() {
 
 function initImageObserver() {
   if (imageObserver) return imageObserver;
-  
+
   imageObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -1569,11 +1619,11 @@ function initImageObserver() {
     },
     {
       root: null,
-      rootMargin: '100px', // Start loading 100px before the image is visible
-      threshold: 0.01
+      rootMargin: IMAGE_OBSERVER_ROOT_MARGIN,
+      threshold: IMAGE_OBSERVER_THRESHOLD,
     }
   );
-  
+
   return imageObserver;
 }
 
@@ -1603,10 +1653,11 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
   injectImageQualityCss();
 
   const frag = document.createDocumentFragment();
-  let eagerBudget = eagerRequested || chunkId === 1 ? 6 : 0; // Reduced from 12 to 6 for less initial load
+  const eagerBudget = (eagerRequested || chunkId === 1) ? DEFAULT_EAGER_IMAGE_COUNT : 0;
+  let eagerTokens = eagerBudget;
   const selectedTags =
     selectedTagsOverride || (getActiveTags ? Array.from(getActiveTags()) : []);
-  const observer = initImageObserver();
+  initImageObserver();
   
   artists.forEach((artist) => {
     const card = document.createElement("div");
@@ -1630,6 +1681,18 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     const img = document.createElement("img");
     img.className = "artist-image";
     img.loading = "lazy";
+    try {
+      img.decoding = "async";
+    } catch (error) {
+      // Ignore decoding hint failures
+    }
+    if ("fetchPriority" in img) {
+      try {
+        img.fetchPriority = chunkId === 1 ? "high" : "auto";
+      } catch (error) {
+        // Ignore browsers that reject fetchPriority assignment
+      }
+    }
     img.alt = `${artist.artistName.replace(/_/g, " ")} preview`;
     img.__artistData = artist;
     img.style.backgroundColor = "#1a1825"; // Placeholder color
@@ -1646,8 +1709,8 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       };
     } else {
       // Use intersection observer for lazy loading
-      if (eagerBudget > 0) {
-        eagerBudget -= 1;
+      if (eagerTokens > 0) {
+        eagerTokens -= 1;
         setBestImage(artist, img);
       } else {
         lazyLoadBestImage(artist, img);
