@@ -257,6 +257,20 @@ opacity: 0;
   box-shadow: 0 0 24px rgba(102, 243, 255, 0.35);
 }
 
+/* Web component wrappers should not participate in document flow */
+te-shame-dossier,
+te-pinned-sidebar[data-mode="overlay"] {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+te-shame-dossier > *,
+te-pinned-sidebar[data-mode="overlay"] > * {
+  pointer-events: auto;
+}
+
 .shame-dossier-overlay {
   position: fixed;
   inset: 0;
