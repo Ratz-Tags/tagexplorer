@@ -13,6 +13,16 @@ template.innerHTML = `
           <button class="control-btn command-btn audio-toggle" type="button">AUDIO</button>
           <button class="control-btn command-btn theme-toggle" type="button">GLOW</button>
           <button
+            id="dossier-btn"
+            class="control-btn command-btn dossier-toggle"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="shame-dossier-overlay"
+            aria-label="Open shame dossier overlay"
+          >
+            DOSSIER
+          </button>
+          <button
             id="filters-btn"
             class="control-btn command-btn"
             type="button"
@@ -57,6 +67,17 @@ template.innerHTML = `
           <span aria-hidden="true">⌂</span>
           <span class="cover-command-label">Home</span>
         </a>
+        <button
+          id="cover-dossier-btn"
+          class="cover-command-btn dossier-toggle"
+          type="button"
+          aria-haspopup="dialog"
+          aria-controls="shame-dossier-overlay"
+          aria-label="Open shame dossier overlay"
+        >
+          <span aria-hidden="true">🗒</span>
+          <span class="cover-command-label">Dossier</span>
+        </button>
         <button
           id="cover-filters-btn"
           class="cover-command-btn"

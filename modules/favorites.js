@@ -49,7 +49,7 @@ export function addFavorite(artistName) {
   
   if (wasAdded) {
     saveFavorites();
-    dispatchFavoritesChanged();
+    dispatchFavoritesChanged('added', artistName);
   }
   
   return wasAdded;
@@ -66,7 +66,7 @@ export function removeFavorite(artistName) {
   
   if (wasRemoved) {
     saveFavorites();
-    dispatchFavoritesChanged();
+    dispatchFavoritesChanged('removed', artistName);
   }
   
   return wasRemoved;
@@ -117,7 +117,7 @@ export function clearAllFavorites() {
   const count = favoriteArtists.size;
   favoriteArtists.clear();
   saveFavorites();
-  dispatchFavoritesChanged();
+  dispatchFavoritesChanged('cleared');
   return count;
 }
 
@@ -137,7 +137,7 @@ export function importFavorites(jsonString) {
     if (Array.isArray(parsed)) {
       favoriteArtists = new Set(parsed);
       saveFavorites();
-      dispatchFavoritesChanged();
+      dispatchFavoritesChanged('imported');
       return true;
     }
   } catch (error) {
@@ -149,14 +149,24 @@ export function importFavorites(jsonString) {
 /**
  * Dispatch event when favorites change
  */
-function dispatchFavoritesChanged() {
-  const event = new CustomEvent('favorites:changed', {
-    detail: {
-      count: favoriteArtists.size,
-      favorites: Array.from(favoriteArtists)
-    }
+function dispatchFavoritesChanged(action = 'updated', artistName = '') {
+  const detail = {
+    action,
+    artist: artistName || undefined,
+    subject: artistName || undefined,
+    count: favoriteArtists.size,
+    favorites: Array.from(favoriteArtists),
+    dedupeKey: `${action}:${artistName}:${favoriteArtists.size}`,
+  };
+  const legacyEvent = new CustomEvent('favorites:changed', {
+    detail,
   });
-  document.dispatchEvent(event);
+  document.dispatchEvent(legacyEvent);
+  try {
+    document.dispatchEvent(new CustomEvent('favorites:change', { detail }));
+  } catch (error) {
+    console.warn('Failed to dispatch favorites:change dossier event', error);
+  }
 }
 
 /**

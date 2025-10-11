@@ -11,6 +11,12 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 - **Responsive Design**: Works on desktop and mobile, with adaptive layouts and touch-friendly controls.
 - **Fun Interactions**: Includes taunt banners, shame badges, and playful iconography.
 
+## Shame Dossier
+
+- Open the dossier from the **DOSSIER** controls in the command bar (inner layout) or the cover toolbar to review a glassmorphic timeline of every tag edit, gallery crawl milestone, favorite toggle, and taunt.
+- Use the **Wipe log** action inside the overlay (or clear `localStorage['te.dossier.entries']` in the console) to purge local history instantly.
+- Dossier whispers respect the TTS intensity slider: higher intensities surface harsher `dossier_open` / `dossier_revisit` lines, while disabled TTS falls back to a soft on-screen caption inside the panel.
+
 ## Project Structure
 
 - `index.html` – Main entry point with inline Tailwind Play config and component layers (no build step required)

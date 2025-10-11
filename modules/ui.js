@@ -48,6 +48,37 @@ function setupInfiniteScroll(options, legacyInfoProvider) {
   let forwardLoading = false;
   let backwardLoading = false;
   const activeSentinels = new Set();
+  let lastProgressSignature = null;
+
+  const emitProgress = (direction) => {
+    if (typeof document === "undefined") return;
+    if (typeof infoProvider !== "function") return;
+    const info = infoProvider();
+    if (!info) return;
+    const signature = `${info.lastRenderedPage}:${info.shown}:${direction}`;
+    if (signature && signature === lastProgressSignature) {
+      return;
+    }
+    lastProgressSignature = signature;
+    const detail = {
+      shown: info.shown,
+      total: info.total,
+      direction,
+      page: info.lastRenderedPage,
+      signature,
+    };
+    try {
+      document.dispatchEvent(new CustomEvent("goal:progress", { detail }));
+    } catch (error) {
+      try {
+        const evt = document.createEvent("CustomEvent");
+        evt.initCustomEvent("goal:progress", false, false, detail);
+        document.dispatchEvent(evt);
+      } catch (fallbackError) {
+        console.warn("[ui] Failed to dispatch goal progress", fallbackError || error);
+      }
+    }
+  };
 
   const requestStep = (direction) => {
     const info = typeof infoProvider === "function" ? infoProvider() : null;
@@ -64,6 +95,7 @@ function setupInfiniteScroll(options, legacyInfoProvider) {
         .catch((error) => {
           console.warn("Infinite scroll backward callback failed", error);
         })
+        .then(() => emitProgress("backward"))
         .finally(() => {
           backwardLoading = false;
         });
@@ -76,6 +108,7 @@ function setupInfiniteScroll(options, legacyInfoProvider) {
         .catch((error) => {
           console.warn("Infinite scroll forward callback failed", error);
         })
+        .then(() => emitProgress("forward"))
         .finally(() => {
           forwardLoading = false;
         });
@@ -119,6 +152,7 @@ function setupInfiniteScroll(options, legacyInfoProvider) {
   };
 
   connectSentinels();
+  requestAnimationFrame(() => emitProgress("init"));
 
   const mutationObserver = new MutationObserver(() => {
     connectSentinels();
