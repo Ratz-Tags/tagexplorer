@@ -1122,7 +1122,7 @@ async function openArtistZoom(artist) {
         }
       }
 
-      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 4, batchDelay: 300 });
+      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 4, batchDelay: 150 });
 
       if (Array.isArray(newPosts) && newPosts.length > 0) {
         console.debug(`[gallery] network fetchAllArtistImages loaded ${newPosts.length} posts for ${artist.artistName}`);
@@ -2030,8 +2030,8 @@ async function filterArtists(reset = true, force = false) {
     // Always fetch counts for the current filtered artists (in background)
     async function fetchInBatches(
       artists,
-      batchSize = 10,
-      delayMs = 500,
+      batchSize = 20,
+      delayMs = 250,
       gen,
       spin
     ) {
@@ -2040,7 +2040,7 @@ async function filterArtists(reset = true, force = false) {
         if (gen !== filterGeneration) return;
         const batch = artists.slice(i, i + batchSize);
         
-        // Process batch in parallel (10 artists at once)
+        // Process batch in parallel (20 artists at once)
         await Promise.all(
           batch.map(async (artist) => {
             if (gen !== filterGeneration) return;
@@ -2090,7 +2090,7 @@ async function filterArtists(reset = true, force = false) {
 
     // Initial render already happened above, start fetching counts in background
     if (reset) {
-      await fetchInBatches(filtered, 10, 500, generation, spinner).catch(
+      await fetchInBatches(filtered, 20, 250, generation, spinner).catch(
         (e) => {
           console.error("Batch fetch failed:", e);
         }
@@ -2101,7 +2101,7 @@ async function filterArtists(reset = true, force = false) {
       renderArtistsPage({ force: true });
       window.scrollTo({ top: resetScrollY, behavior: 'instant' });
     } else if (force) {
-      fetchInBatches(filtered, 10, 500, generation, spinner).then(() => {
+      fetchInBatches(filtered, 20, 250, generation, spinner).then(() => {
         if (generation !== filterGeneration) return;
         const forceScrollY = window.scrollY;
         sortCurrentArtists();

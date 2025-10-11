@@ -27,7 +27,7 @@ let artistsListPromise = null;
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
   // Ultra-fast for maximum responsiveness
-  minDelay: 50, // Minimum 50ms between requests (very fast throughput)
+  minDelay: 35, // Minimum 35ms between requests (even faster throughput)
   maxDelay: 5000, // Maximum 5s delay for backoff
   maxRetries: 4, // allow an extra retry before failing
   backoffMultiplier: 1.5, // moderate backoff multiplier
@@ -569,7 +569,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
  * Batch fetch multiple artist images with staggered requests
  */
 async function fetchArtistImagesBatch(requests, options = {}) {
-  const { batchDelay = 150, maxConcurrent = 6 } = options;
+  const { batchDelay = 90, maxConcurrent = 6 } = options;
   const results = new Map();
   
   // Process requests in smaller concurrent batches
@@ -832,7 +832,7 @@ async function fetchAllArtistImages(
         requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
       }
 
-      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 100, maxConcurrent: options.maxConcurrent || 8 });
+      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 75, maxConcurrent: options.maxConcurrent || 8 });
       for (let p = 1; p <= totalPages; p++) {
         const key = `p${p}`;
         const pagePosts = batchResults.get(key) || [];
