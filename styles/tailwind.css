@@ -1843,30 +1843,33 @@ dialog[data-landing-ritual]::backdrop {
 }
 
 .landing-ritual__panel {
-  @apply relative mx-auto flex w-full max-w-[min(560px,92vw)] flex-col gap-6 rounded-[2rem] border border-white/12 bg-panel/95 p-8 text-base shadow-[0_28px_80px_rgba(255,118,214,0.28)] backdrop-blur-[32px];
-  @apply fold-cover:max-w-[min(460px,94vw)] fold-cover:p-6 fold-inner:max-w-[620px];
+  @apply relative mx-auto flex w-full max-w-[min(620px,92vw)] flex-col gap-8 rounded-[2rem] border border-white/10 bg-panel/95 p-10 text-base shadow-[0_28px_80px_rgba(255,118,214,0.28)] backdrop-blur-[32px];
+  @apply fold-cover:max-w-[min(520px,94vw)] fold-cover:p-7 fold-cover:gap-6 fold-inner:max-w-[680px];
   @apply transition-all duration-500 ease-kink;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow:
     0 0 0 1px rgba(102, 243, 255, 0.08),
     0 32px 68px -28px rgba(102, 243, 255, 0.45);
 }
 
 .landing-ritual__header {
-  @apply flex flex-col gap-2 text-xs uppercase tracking-[0.4em] text-slate-300;
+  @apply flex flex-col gap-3 text-xs uppercase tracking-[0.4em] text-slate-300;
 }
 
 .landing-ritual__eyebrow {
-  @apply text-[0.55rem] font-semibold text-glow/70;
+  @apply text-[0.6rem] font-semibold text-glow/70;
   letter-spacing: 0.42em;
 }
 
 .landing-ritual__title {
-  @apply text-2xl font-semibold uppercase tracking-[0.45em] text-white;
+  @apply text-3xl font-semibold uppercase tracking-[0.4em] text-white;
   letter-spacing: 0.35em;
+  line-height: 1.2;
 }
 
 .landing-ritual__body {
-  @apply flex flex-col gap-6 text-sm leading-relaxed text-slate-200;
+  @apply flex flex-col gap-7 text-sm leading-relaxed text-slate-200;
 }
 
 .landing-ritual__stage {
@@ -1884,16 +1887,18 @@ dialog[data-landing-ritual]::backdrop {
 
 .landing-ritual__lead {
   @apply text-base leading-relaxed text-slate-100;
+  line-height: 1.7;
 }
 
 .landing-ritual__options {
-  @apply grid gap-3;
+  @apply grid gap-4;
 }
 
 .landing-ritual__option {
-  @apply group flex w-full flex-col gap-2 rounded-2xl border border-white/10 bg-black/50 px-5 py-4 text-left transition-all duration-300 ease-kink;
+  @apply flex w-full flex-col gap-3 rounded-2xl border border-white/10 bg-black/50 px-6 py-5 text-left transition-all duration-300 ease-kink;
   @apply focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-glow;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  min-height: auto;
 }
 
 .landing-ritual__option:hover {
@@ -1901,14 +1906,18 @@ dialog[data-landing-ritual]::backdrop {
   box-shadow:
     inset 0 0 0 1px rgba(102, 243, 255, 0.3),
     0 22px 45px -32px rgba(102, 243, 255, 0.55);
+  transform: translateY(-2px);
 }
 
 .landing-ritual__option-title {
-  @apply text-sm font-semibold uppercase tracking-[0.4em] text-white;
+  @apply text-base font-semibold uppercase tracking-[0.38em] text-white;
+  line-height: 1.3;
 }
 
 .landing-ritual__option-copy {
-  @apply text-xs uppercase tracking-[0.3em] text-slate-300;
+  @apply text-sm uppercase tracking-[0.25em] text-slate-300;
+  line-height: 1.6;
+  opacity: 0.9;
 }
 
 .landing-ritual__bullet-list {
@@ -1940,7 +1949,7 @@ dialog[data-landing-ritual]::backdrop {
 }
 
 .landing-ritual__secondary {
-  @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/18 bg-black/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.4em] text-slate-200 transition-all duration-300 ease-kink;
+  @apply inline-flex items-center justify-center gap-2 rounded-full border border-white/20 bg-black/40 px-6 py-3 text-xs font-semibold uppercase tracking-[0.4em] text-slate-200 transition-all duration-300 ease-kink;
 }
 
 .landing-ritual__secondary:hover {
