@@ -31,6 +31,13 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 2. Open `index.html` in your browser
 3. Explore artists, tags, and sidebar features
 
+## Landing Ritual & Mission Storage
+
+- The landing page now opens with a whisper ritual that locks the **Enter Gallery** call-to-action until you pick a mission profile, consent to local logging, and confirm the choice.
+- Once confirmed, TagExplorer stores the mission metadata in `localStorage` under the key `te.mission.profile` with the mission id, display label, description copy, and a UNIX timestamp.
+- A `landing:mission-set` `CustomEvent` is dispatched on `document` after the ritual resolves so other modules can react (e.g., updating UI states or scheduling whispers). Azure TTS also emits a `mission_confirm` whisper when available.
+- The data never leaves your machine. To reset the ritual, clear that key via the browser console (`localStorage.removeItem('te.mission.profile')`) or delete the entry from Application Storage tools, then refresh the page.
+
 ## Customization
 
 - Add new tags or artists by editing the JSON files
