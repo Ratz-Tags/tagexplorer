@@ -89,19 +89,34 @@
       "Door swings shut behind you. You're staying."
     ]
   ],
-  "mission_confirm": [
+  "dossier_open": [
     [],
     [
-      "Mission logged. The whispers will remind you why you came.",
-      "Profile sealed. Every visit echoes that choice."
+      "Opening the dossier? Hope you're ready to read the receipts.",
+      "Cracking the dossier whisper-quiet, like anyone isn't watching."
     ],
     [
-      "Consider it notarised. Your mission glows in our private ledger now.",
-      "Stamp applied. Expect the gallery to purr your title back at you."
+      "Every tag, every favorite—it's all in ink now.",
+      "You asked for the dossier, so stare at the mess you made."
     ],
     [
-      "The ritual brands you. From now on the site greets you by that hunger.",
-      "Confession saved. I'll recite your mission every time you crawl home."
+      "Unsealing your dossier. Take a breath before it devours you.",
+      "Flip through every crime slowly. I'll narrate the fall."
+    ]
+  ],
+  "dossier_revisit": [
+    [],
+    [
+      "Back to your dossier already? You love the sting.",
+      "Peeking again? Still sure you can handle the truth?"
+    ],
+    [
+      "Couldn't resist revisiting the evidence, huh?",
+      "You keep re-reading the same confessions. Masochist."
+    ],
+    [
+      "Running your fingers over every slip again. Delicious.",
+      "You live here now—inside the dossier, inside the shame."
     ]
   ]
 }

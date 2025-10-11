@@ -59,6 +59,11 @@ import {
 } from '../tag-explorer.js';
 import { showAzureVoiceSelector } from '../azure-tts.js';
 import { configureWhisperCatalog, dispatchWhisperEvent } from '../tts-dispatcher.js';
+import {
+  initShameDossier,
+  openShameDossier,
+  getDossierEntries,
+} from '../shame-dossier.js';
 
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
@@ -172,7 +177,7 @@ function setupTagSearchModeSelector() {
 async function setupFavoritesButton() {
   await customElements.whenDefined('te-command-bar');
   await new Promise(resolve => setTimeout(resolve, 0));
-  
+
   const favoritesBtn = document.getElementById('favorites-btn');
   const favoritesCount = document.getElementById('favorites-count');
   if (!favoritesBtn) return;
@@ -376,6 +381,62 @@ function setupMuteToggle() {
   document.addEventListener('audio:mutechange', (event) => {
     if (!event?.detail || typeof event.detail.muted === 'undefined') return;
     updateButtonState(Boolean(event.detail.muted));
+  });
+}
+
+async function setupDossierButton() {
+  await customElements.whenDefined('te-command-bar');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  const entries = [
+    { el: document.getElementById('dossier-btn'), source: 'inner' },
+    { el: document.getElementById('cover-dossier-btn'), source: 'cover' },
+  ].filter(({ el }) => el instanceof HTMLElement);
+
+  if (!entries.length) {
+    initShameDossier();
+    return;
+  }
+
+  const setExpanded = (isOpen) => {
+    entries.forEach(({ el }) => {
+      if (!el) return;
+      el.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      el.classList.toggle('is-active', Boolean(isOpen));
+    });
+  };
+
+  const setHasEntries = (hasEntries) => {
+    entries.forEach(({ el }) => {
+      if (!el) return;
+      if (hasEntries) {
+        el.dataset.hasEntries = 'true';
+      } else {
+        delete el.dataset.hasEntries;
+      }
+    });
+  };
+
+  setHasEntries(false);
+  setExpanded(false);
+
+  entries.forEach(({ el, source }) => {
+    el.addEventListener('click', () => {
+      openShameDossier({ source });
+    });
+  });
+
+  document.addEventListener('dossier:toggle', (event) => {
+    setExpanded(Boolean(event?.detail?.open));
+  });
+
+  document.addEventListener('dossier:append', () => setHasEntries(true));
+  document.addEventListener('dossier:cleared', () => setHasEntries(false));
+
+  initShameDossier().then(() => {
+    const hasAny = (getDossierEntries() || []).length > 0;
+    setHasEntries(hasAny);
+    setExpanded(false);
   });
 }
 
@@ -628,6 +689,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
 
   // Don't call setRandomBackground() here - let the controller handle it after initialization
 
+  await initShameDossier();
   await initTags();
   initGallery();
 
@@ -701,6 +763,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupFiltersButton();
   setupForceFetch();
   setupFavoritesButton();
+  setupDossierButton();
 
   const idleCleanup = setupIdleWhispers();
 

@@ -85,6 +85,21 @@ const tagIcons = {
 
 let tagSearchMode = "contains"; // "contains", "starts", "ends"
 
+function dispatchTagDossierEvent(name, detail = {}) {
+  if (typeof document === "undefined") return;
+  try {
+    document.dispatchEvent(new CustomEvent(name, { detail }));
+  } catch (error) {
+    try {
+      const evt = document.createEvent("CustomEvent");
+      evt.initCustomEvent(name, false, false, detail);
+      document.dispatchEvent(evt);
+    } catch (fallbackError) {
+      console.warn(`[tags] Failed to dispatch ${name} dossier event`, fallbackError || error);
+    }
+  }
+}
+
 function emitTagUpdate() {
   if (typeof document === "undefined" || typeof document.dispatchEvent !== "function") {
     return;
@@ -251,6 +266,12 @@ function renderTagButtons() {
       button.onclick = () => {
         if (activeTags.has(tag)) {
           activeTags.delete(tag);
+          dispatchTagDossierEvent("tags:remove", {
+            tag,
+            totalActive: activeTags.size,
+            source: "group-button",
+            dedupeKey: `remove:${tag}:${activeTags.size}`,
+          });
         } else {
           activeTags.add(tag);
           spawnBubble(tag);
@@ -258,6 +279,12 @@ function renderTagButtons() {
           if (activeTags.size > 5) {
             dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
           }
+          dispatchTagDossierEvent("tags:add", {
+            tag,
+            totalActive: activeTags.size,
+            source: "group-button",
+            dedupeKey: `add:${tag}:${activeTags.size}`,
+          });
         }
         button.setAttribute(
           "aria-pressed",
@@ -286,6 +313,12 @@ function renderTagButtons() {
     button.onclick = () => {
       if (activeTags.has(filter)) {
         activeTags.delete(filter);
+        dispatchTagDossierEvent("tags:remove", {
+          tag: filter,
+          totalActive: activeTags.size,
+          source: "search-button",
+          dedupeKey: `remove:${filter}:${activeTags.size}`,
+        });
       } else {
         activeTags.add(filter);
         spawnBubble(filter);
@@ -293,6 +326,12 @@ function renderTagButtons() {
         if (activeTags.size > 5) {
           dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
         }
+        dispatchTagDossierEvent("tags:add", {
+          tag: filter,
+          totalActive: activeTags.size,
+          source: "search-button",
+          dedupeKey: `add:${filter}:${activeTags.size}`,
+        });
       }
       renderTagButtons();
       if (renderArtists) renderArtists(true);
@@ -308,6 +347,7 @@ function renderTagButtons() {
  */
 function clearAllTags() {
   const hadTags = activeTags.size > 0;
+  const previousCount = activeTags.size;
   activeTags.clear();
   renderTagButtons();
   if (navigator.vibrate) navigator.vibrate(50);
@@ -316,6 +356,11 @@ function clearAllTags() {
   emitTagUpdate();
   if (hadTags) {
     dispatchWhisperEvent('tag_clear', { maxIntensity: 2 });
+    dispatchTagDossierEvent("tags:clear", {
+      previousCount,
+      source: "clear-all",
+      dedupeKey: `clear:${previousCount}`,
+    });
   }
 }
 
@@ -346,6 +391,19 @@ function toggleTag(tag) {
     if (activeTags.size > 5) {
       dispatchWhisperEvent('stack_overflow', { minIntensity: 2 });
     }
+    dispatchTagDossierEvent("tags:add", {
+      tag,
+      totalActive: activeTags.size,
+      source: "toggle",
+      dedupeKey: `add:${tag}:${activeTags.size}`,
+    });
+  } else {
+    dispatchTagDossierEvent("tags:remove", {
+      tag,
+      totalActive: activeTags.size,
+      source: "toggle",
+      dedupeKey: `remove:${tag}:${activeTags.size}`,
+    });
   }
 }
 
