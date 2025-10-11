@@ -47,6 +47,17 @@ const requestBatches = new Map(); // batch key -> array of requests
 // In-memory API JSON cache to avoid reparsing/rehydration during a session
 const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
 
+const DEFAULT_BATCH_DELAY_MS = 16;
+const DEFAULT_MAX_CONCURRENT_REQUESTS = (() => {
+  if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
+    const hw = Number(navigator.hardwareConcurrency) || 0;
+    if (hw > 0) {
+      return Math.min(16, Math.max(8, Math.ceil(hw * 1.5)));
+    }
+  }
+  return 12;
+})();
+
 function toArtistSlug(name, fallbackIndex = 0) {
   const base = String(name || "artist").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   if (base) return base;
@@ -569,7 +580,10 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
  * Batch fetch multiple artist images with staggered requests
  */
 async function fetchArtistImagesBatch(requests, options = {}) {
-  const { batchDelay = 40, maxConcurrent = 8 } = options;
+  const {
+    batchDelay = DEFAULT_BATCH_DELAY_MS,
+    maxConcurrent = DEFAULT_MAX_CONCURRENT_REQUESTS,
+  } = options;
   const results = new Map();
   
   // Process requests in smaller concurrent batches
@@ -832,7 +846,11 @@ async function fetchAllArtistImages(
         requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
       }
 
-      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 40, maxConcurrent: options.maxConcurrent || 10 });
+      const parallelOptions = {
+        batchDelay: options.batchDelay ?? DEFAULT_BATCH_DELAY_MS,
+        maxConcurrent: options.maxConcurrent ?? DEFAULT_MAX_CONCURRENT_REQUESTS,
+      };
+      const batchResults = await fetchArtistImagesBatch(requests, parallelOptions);
       for (let p = 1; p <= totalPages; p++) {
         const key = `p${p}`;
         const pagePosts = batchResults.get(key) || [];
