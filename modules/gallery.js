@@ -825,7 +825,7 @@ function setBestImage(artist, img) {
     if (validPosts.length === 0) {
       if (!isFallback && selectedTags.length > 0) {
         // Wait briefly to allow any rate-limited requests to complete before giving up
-        const WAIT_MS = 700; // small grace period
+        const WAIT_MS = 300; // small grace period (reduced from 700ms)
         setTimeout(() => {
           fetchArtistImages(artistData.artistName)
             .then((fallbackData) => {
@@ -1122,7 +1122,7 @@ async function openArtistZoom(artist) {
         }
       }
 
-      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 4, batchDelay: 150 });
+      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 10, batchDelay: 40 });
 
       if (Array.isArray(newPosts) && newPosts.length > 0) {
         console.debug(`[gallery] network fetchAllArtistImages loaded ${newPosts.length} posts for ${artist.artistName}`);
@@ -1230,7 +1230,7 @@ async function openArtistZoom(artist) {
       } catch (e) {}
 
       // Schedule non-blocking detection after insertion so it doesn't stall rendering
-      setTimeout(() => { void runFaceDetection(); }, 30);
+      setTimeout(() => { void runFaceDetection(); }, 10);
 
       // Ensure the faceObserver will observe this thumbnail to persist results
       try {
