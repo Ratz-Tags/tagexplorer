@@ -19,6 +19,7 @@ const EVENT_COOLDOWNS = {
   stack_overflow: 6200,
   tag_add: 2600,
   tag_clear: 4200,
+  mission_confirm: 7200,
 };
 
 let eventCatalog = {};

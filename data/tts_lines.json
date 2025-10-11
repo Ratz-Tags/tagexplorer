@@ -88,5 +88,20 @@
       "Tried to escape. Came crawling back. I knew you would.",
       "Door swings shut behind you. You're staying."
     ]
+  ],
+  "mission_confirm": [
+    [],
+    [
+      "Mission logged. The whispers will remind you why you came.",
+      "Profile sealed. Every visit echoes that choice."
+    ],
+    [
+      "Consider it notarised. Your mission glows in our private ledger now.",
+      "Stamp applied. Expect the gallery to purr your title back at you."
+    ],
+    [
+      "The ritual brands you. From now on the site greets you by that hunger.",
+      "Confession saved. I'll recite your mission every time you crawl home."
+    ]
   ]
 }
