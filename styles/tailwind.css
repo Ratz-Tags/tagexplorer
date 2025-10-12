@@ -1979,6 +1979,162 @@ dialog[data-landing-ritual]::backdrop {
   pointer-events: auto;
 }
 
+/* Landing ritual contract refinements */
+.landing-contract {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: clamp(1.5rem, 4vw, 2.4rem);
+  border-radius: 1.75rem;
+  border: 1px solid rgba(102, 243, 255, 0.25);
+  background: linear-gradient(145deg, rgba(12, 11, 22, 0.95), rgba(26, 24, 44, 0.82));
+  box-shadow:
+    0 24px 68px -36px rgba(102, 243, 255, 0.45),
+    0 0 0 1px rgba(255, 118, 214, 0.22);
+  overflow: hidden;
+}
+
+.landing-contract::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(102, 243, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 85% 90%, rgba(255, 118, 214, 0.18), transparent 50%);
+  opacity: 0.85;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.landing-contract__lead {
+  margin: 0;
+  font-size: clamp(0.95rem, calc(1.2vw + 0.9rem), 1.15rem);
+  line-height: 1.7;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(244, 247, 255, 0.92);
+}
+
+.landing-contract__body {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-contract__body li {
+  position: relative;
+  padding-left: 1.5rem;
+  line-height: 1.6;
+}
+
+.landing-contract__body li::before {
+  content: "✶";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  font-size: 0.9rem;
+  color: rgba(255, 118, 214, 0.8);
+}
+
+.landing-contract__body code {
+  color: rgba(102, 243, 255, 0.85);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+}
+
+.landing-contract__options {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.landing-ritual__option {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-ritual__option::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(102, 243, 255, 0.25), rgba(255, 118, 214, 0.2));
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scale(0.98);
+  pointer-events: none;
+}
+
+.landing-ritual__option:hover::after,
+.landing-ritual__option:focus-visible::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.landing-ritual__actions--stack {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.landing-ritual__actions--stack .landing-ritual__primary,
+.landing-ritual__actions--stack .landing-ritual__secondary {
+  min-width: 0;
+  flex: 1 1 0%;
+  text-align: center;
+}
+
+.landing-ritual__actions--stack .landing-ritual__secondary span[aria-hidden="true"] {
+  font-size: 1.05rem;
+  letter-spacing: normal;
+}
+
+@media (max-width: 640px) {
+  .landing-ritual__actions--stack {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing-contract {
+    padding: clamp(1.25rem, 5vw, 1.75rem);
+    border-radius: 1.5rem;
+  }
+
+  .landing-contract__lead {
+    letter-spacing: 0.28em;
+  }
+
+  .landing-contract__body li {
+    line-height: 1.5;
+  }
+
+  .landing-contract::before {
+    mix-blend-mode: normal;
+    opacity: 0.65;
+  }
+}
+
+/* Ensure landing contract visuals render above blended backgrounds on mobile */
+.landing-contract {
+  isolation: isolate;
+}
+
+.landing-contract::before {
+  z-index: 0;
+}
+
+.landing-contract > * {
+  position: relative;
+  z-index: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   dialog[data-landing-ritual]::backdrop {
     @apply backdrop-blur-none;
