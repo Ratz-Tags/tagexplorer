@@ -17,6 +17,20 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 - Use the **Wipe log** action inside the overlay (or clear `localStorage['te.dossier.entries']` in the console) to purge local history instantly.
 - Dossier whispers respect the TTS intensity slider: higher intensities surface harsher `dossier_open` / `dossier_revisit` lines, while disabled TTS falls back to a soft on-screen caption inside the panel.
 
+## Command Deck
+
+- **KNEEL / CONFESS / SIREN / ESCAPE** sit in the inner command bar and the Fold cover navigation. Each preset rewrites the active tag filters, applies coordinated lighting/glow classes, and adjusts the humiliation audio slider:
+  - **Kneel** stacks `leash`, `viewer_on_leash`, and `restraints`, bumps ASMR intensity to 2, and nudges the pressure meter upward.
+  - **Confess** pushes `humiliation`, `body_writing`, and `public_nudity`, keeps the indulgence low (lane 1), and sustains a softer glow.
+  - **Siren** floods `hypnosis`, `mind_break`, and `orgasm_denial`, maxes indulgence (lane 3), and fires a brighter alarm pulse plus a bass hit.
+  - **Escape** restores the last manual tag snapshot, drops indulgence to 0, and bleeds off pressure.
+- Button presses trigger patterned vibrations via `modules/ui.js` and dispatch bespoke whisper lines through the TTS dispatcher; the current preset, baseline tag snapshot, and indulgence lane persist in `localStorage['tx:haze:v1']` under the `commandDeck` key.
+- Keyboard shortcuts mirror the UI: **Shift+K** (Kneel), **Shift+C** (Confess), **Shift+S** (Siren), and **Shift+E** (Escape). Cover and inner layouts share the same state, so switching fold modes keeps the active preset.
+- **QA scenarios**:
+  - Confirm presets on both Fold cover and inner layouts (the cover deck collapses to a 2×2 grid and the inner buttons hide when `data-fold-mode="fold-cover"`).
+  - Enable `prefers-reduced-motion` (or the in-app motion toggle) to ensure the deck falls back to the CSS pulse instead of Motion One timelines.
+  - Reload after engaging a preset to verify the command deck, indulgence slider, and glow state hydrate from `tx:haze:v1`.
+
 ## Shame Pressure Meter
 
 - The landing hero now replaces its CTA stack with a persistent **Shame Pressure** meter. It fills from the `tx:haze:v1` namespace in `localStorage`, mirroring the current `pressureMeterLevel` whenever you return to the site.
