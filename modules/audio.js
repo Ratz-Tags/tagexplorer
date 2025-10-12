@@ -42,6 +42,10 @@ let customTrackKeys = [];
 let audioLibraryEntries = new Map();
 let audioLibraryLookup = new Map();
 
+let bassContext = null;
+let bassContextState = 'suspended';
+let bassFaultLogged = false;
+
 function resetAudioLibraryIndex() {
   audioLibraryEntries = new Map();
   audioLibraryLookup = new Map();
@@ -182,8 +186,8 @@ let intensitySyncToggle = null;
 
 const CUSTOM_TRACK_PREFIX = 'custom-track';
 
-// Note: Custom track functions (getCustomTrackStore, findCustomTrackKeyByUrl, 
-// deriveCustomTrackLabelFromUrl, getCustomTrackEntry, registerCustomTrack, etc.) 
+// Note: Custom track functions (getCustomTrackStore, findCustomTrackKeyByUrl,
+// deriveCustomTrackLabelFromUrl, getCustomTrackEntry, registerCustomTrack, etc.)
 // are defined below (lines ~600-750) using the newer getCustomTrackStore() API
 
 function ensureCustomTracksAppended() {
@@ -1507,6 +1511,93 @@ initAudio = function () {
   updateAudioHumiliationMeter();
 };
 
+function ensureBassContext() {
+  if (typeof window === 'undefined') return null;
+  const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextCtor) {
+    if (!bassFaultLogged) {
+      console.warn('[audio] Web Audio API unavailable for bass pulses');
+      bassFaultLogged = true;
+    }
+    return null;
+  }
+  if (!bassContext) {
+    try {
+      bassContext = new AudioContextCtor();
+    } catch (error) {
+      if (!bassFaultLogged) {
+        console.warn('[audio] Failed to create bass context', error);
+        bassFaultLogged = true;
+      }
+      return null;
+    }
+  }
+  if (bassContext && bassContext.state === 'suspended') {
+    bassContext.resume().catch((error) => {
+      if (!bassFaultLogged) {
+        console.warn('[audio] Failed to resume bass context', error);
+        bassFaultLogged = true;
+      }
+    });
+  }
+  if (bassContext) {
+    bassContextState = bassContext.state;
+  }
+  return bassContext;
+}
+
+function triggerBassPulse({ intensity = 0.6, durationMs = 480, allowWhileMuted = false, allowInCover = false } = {}) {
+  const normalizedIntensity = Math.max(0.05, Math.min(1, Number(intensity) || 0.6));
+  const duration = Math.max(120, Number(durationMs) || 480);
+  const foldMode = typeof document !== 'undefined' ? document.body?.dataset?.foldMode : null;
+  if (!allowInCover && foldMode === 'fold-cover') {
+    return { skipped: true, reason: 'cover-mode' };
+  }
+  if (!allowWhileMuted && getGlobalMuteState()) {
+    return { skipped: true, reason: 'muted' };
+  }
+  const context = ensureBassContext();
+  if (!context) {
+    return { skipped: true, reason: 'no-context' };
+  }
+  const start = context.currentTime + 0.01;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  try {
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(58, start);
+    oscillator.frequency.exponentialRampToValueAtTime(32, start + duration / 1000);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.28 * normalizedIntensity, start + 0.045);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration / 1000);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + duration / 1000 + 0.05);
+    oscillator.addEventListener('ended', () => {
+      try {
+        oscillator.disconnect();
+      } catch {}
+      try {
+        gain.disconnect();
+      } catch {}
+    });
+    return { triggered: true, state: bassContextState };
+  } catch (error) {
+    if (!bassFaultLogged) {
+      console.warn('[audio] Bass pulse failed', error);
+      bassFaultLogged = true;
+    }
+    try {
+      oscillator.disconnect();
+    } catch {}
+    try {
+      gain.disconnect();
+    } catch {}
+    return { skipped: true, reason: 'error', error };
+  }
+}
+
 
 // All functions in this file are defined and used as follows:
 
@@ -1536,5 +1627,6 @@ export {
   getGlobalMuteState,
   registerCustomTrack,
   removeCustomTrack,
+  triggerBassPulse,
   // Optionally export other functions if needed elsewhere
 };

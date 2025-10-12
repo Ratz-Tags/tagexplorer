@@ -8,6 +8,7 @@ import {
   syncAudioPanelLayout,
   toggleGlobalMute,
   getGlobalMuteState,
+  triggerBassPulse,
 } from '../audio.js';
 import {
   initTags,
@@ -60,6 +61,14 @@ import {
 import { showAzureVoiceSelector } from '../azure-tts.js';
 import { configureWhisperCatalog, dispatchWhisperEvent } from '../tts-dispatcher.js';
 import {
+  evaluateRitualTriggers,
+  getRitualCatalog,
+  getStateSnapshot as getRitualStateSnapshot,
+  registerCompletion as registerRitualCompletion,
+  registerDismissal as registerRitualDismissal,
+  registerReset as registerRitualReset,
+} from '../rituals/gallery-rituals.js';
+import {
   initShameDossier,
   openShameDossier,
   getDossierEntries,
@@ -69,6 +78,16 @@ import { incrementPressure } from '../progression/pressure-meter.js';
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
 const IDLE_THRESHOLD_MS = 60000;
+const scheduleMicrotask = typeof queueMicrotask === 'function'
+  ? (callback) => queueMicrotask(callback)
+  : (callback) => Promise.resolve().then(callback);
+
+let ritualHost = null;
+let ritualQueue = [];
+let currentRitualActivation = null;
+let currentRitualElement = null;
+let ritualElementCleanup = [];
+let ritualFoldMode = 'default';
 
 function readMotionPreference() {
   if (typeof window === 'undefined') return MOTION_DEFAULT;
@@ -152,6 +171,194 @@ function setupPressureProgression() {
     trackDepth,
     resetBaseline,
     dispose() {},
+  };
+}
+
+function ensureRitualHost() {
+  if (ritualHost && document.body && document.body.contains(ritualHost)) {
+    return ritualHost;
+  }
+  if (typeof document === 'undefined') return null;
+  const existing = document.getElementById('ritual-overlay-host');
+  if (existing) {
+    ritualHost = existing;
+    return ritualHost;
+  }
+  ritualHost = document.createElement('div');
+  ritualHost.id = 'ritual-overlay-host';
+  ritualHost.className = 'ritual-overlay-host';
+  ritualHost.setAttribute('aria-live', 'polite');
+  ritualHost.setAttribute('aria-relevant', 'additions removals');
+  document.body.appendChild(ritualHost);
+  return ritualHost;
+}
+
+function disposeRitualElement() {
+  if (ritualElementCleanup.length) {
+    ritualElementCleanup.forEach((cleanup) => {
+      try {
+        cleanup();
+      } catch (error) {
+        console.warn('[gallery-page] ritual cleanup failed', error);
+      }
+    });
+    ritualElementCleanup = [];
+  }
+  if (currentRitualElement && currentRitualElement.remove) {
+    try {
+      currentRitualElement.remove();
+    } catch {
+      if (currentRitualElement.parentElement) {
+        currentRitualElement.parentElement.removeChild(currentRitualElement);
+      }
+    }
+  }
+  currentRitualElement = null;
+  currentRitualActivation = null;
+  if (ritualHost) {
+    delete ritualHost.dataset.active;
+  }
+}
+
+function updateRitualFoldMode(mode) {
+  ritualFoldMode = mode || 'default';
+  if (currentRitualElement && typeof currentRitualElement.setFoldMode === 'function') {
+    currentRitualElement.setFoldMode(ritualFoldMode);
+  }
+}
+
+function attachRitualListeners(element) {
+  if (!element) return;
+  const handleComplete = (event) => {
+    const ritualId = event?.detail?.id || currentRitualActivation?.id;
+    if (ritualId) {
+      registerRitualCompletion(ritualId);
+    }
+    const whisper = currentRitualActivation?.ritual?.whispers?.complete;
+    if (whisper) {
+      dispatchWhisperEvent('ritual_complete', {
+        text: whisper,
+        minIntensity: 2,
+      });
+    }
+    disposeRitualElement();
+    processRitualQueue();
+  };
+  const handleDismiss = (event) => {
+    const ritualId = event?.detail?.id || currentRitualActivation?.id;
+    if (ritualId) {
+      registerRitualDismissal(ritualId);
+    }
+    const whisper = currentRitualActivation?.ritual?.whispers?.dismiss;
+    if (whisper) {
+      dispatchWhisperEvent('ritual_dismiss', {
+        text: whisper,
+        minIntensity: 1,
+      });
+    }
+    disposeRitualElement();
+    processRitualQueue();
+  };
+  const handleReset = (event) => {
+    const ritualId = event?.detail?.id || currentRitualActivation?.id;
+    if (ritualId) {
+      registerRitualReset(ritualId);
+    }
+    dispatchWhisperEvent('ritual_reset', {
+      text: 'Fine. Resetting ritual progress. Try stacking the glow again.',
+      minIntensity: 1,
+      force: true,
+    });
+  };
+
+  const listeners = [
+    ['ritual:complete', handleComplete],
+    ['ritual:dismiss', handleDismiss],
+    ['ritual:reset', handleReset],
+  ];
+
+  listeners.forEach(([eventName, handler]) => {
+    element.addEventListener(eventName, handler);
+    ritualElementCleanup.push(() => element.removeEventListener(eventName, handler));
+  });
+}
+
+function openRitualOverlay(activation) {
+  if (!activation || !activation.ritual) return;
+  const host = ensureRitualHost();
+  if (!host) return;
+  disposeRitualElement();
+  currentRitualActivation = activation;
+  const element = document.createElement('te-gallery-ritual');
+  currentRitualElement = element;
+  host.innerHTML = '';
+  host.appendChild(element);
+  host.dataset.active = 'true';
+  attachRitualListeners(element);
+  if (typeof element.setFoldMode === 'function') {
+    element.setFoldMode(ritualFoldMode);
+  }
+  if (typeof element.configure === 'function') {
+    element.configure({ ritual: activation.ritual, foldMode: ritualFoldMode });
+  }
+  const whisper = activation.ritual?.whispers?.unlock;
+  if (whisper) {
+    dispatchWhisperEvent('ritual_unlock', {
+      text: whisper,
+      cooldownMs: activation.ritual.cooldownMs,
+      minIntensity: 2,
+      forceGlobal: true,
+    });
+  }
+  const audioCue = activation.ritual?.audio || {};
+  triggerBassPulse({
+    intensity: audioCue.pulseIntensity,
+    durationMs: audioCue.durationMs,
+    allowWhileMuted: false,
+    allowInCover: false,
+  });
+}
+
+function processRitualQueue() {
+  if (currentRitualElement) return;
+  if (!ritualQueue.length) return;
+  const next = ritualQueue.shift();
+  openRitualOverlay(next);
+}
+
+function queueRitualActivations(activations = []) {
+  activations.forEach((activation) => {
+    if (!activation?.id) return;
+    if (currentRitualActivation?.id === activation.id) return;
+    const alreadyQueued = ritualQueue.some((entry) => entry.id === activation.id);
+    if (!alreadyQueued) {
+      ritualQueue.push(activation);
+    }
+  });
+  processRitualQueue();
+}
+
+function setupRitualObserver() {
+  if (typeof document === 'undefined') {
+    return () => {};
+  }
+  ensureRitualHost();
+  const handleUpdate = () => {
+    const activations = evaluateRitualTriggers();
+    if (Array.isArray(activations) && activations.length) {
+      queueRitualActivations(activations);
+    }
+  };
+  document.addEventListener('tags:updated', handleUpdate);
+  // Evaluate once for hydrated state
+  scheduleMicrotask(() => handleUpdate());
+  return () => {
+    document.removeEventListener('tags:updated', handleUpdate);
+    ritualQueue = [];
+    disposeRitualElement();
+    if (ritualHost) {
+      ritualHost.innerHTML = '';
+    }
   };
 }
 
@@ -586,6 +793,7 @@ function setupFoldModeSync({ foldAdapter, closeSettings }) {
         shellRoot.dataset.foldMode = normalized;
       }
     }
+    updateRitualFoldMode(normalized);
     updateCommandStatusLabels(normalized);
     if (normalized !== 'fold-cover' && typeof closeSettings === 'function') {
       closeSettings();
@@ -820,6 +1028,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     infoProvider: () => getPaginationInfo(),
   });
 
+  const ritualCleanup = setupRitualObserver();
+
   setupThemeToggle();
   setupTagSearchModeSelector();
   setupSidebarToggle();
@@ -837,6 +1047,16 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     getActiveTags,
     renderTagButtons,
   };
+
+  if (typeof window !== 'undefined') {
+    window.txRituals = {
+      list: () => getRitualCatalog(),
+      state: () => getRitualStateSnapshot(),
+      reset: (id) => registerRitualReset(id),
+      dismiss: (id) => registerRitualDismissal(id),
+      complete: (id) => registerRitualCompletion(id),
+    };
+  }
 
   if (typeof savedState?.scrollY === 'number') {
     requestAnimationFrame(() => {
@@ -860,6 +1080,9 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       if (typeof idleCleanup === 'function') idleCleanup();
       if (pressureProgression && typeof pressureProgression.dispose === 'function') {
         pressureProgression.dispose();
+      }
+      if (typeof ritualCleanup === 'function') {
+        ritualCleanup();
       }
     },
   };
