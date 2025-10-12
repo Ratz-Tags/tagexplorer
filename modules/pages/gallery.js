@@ -51,7 +51,7 @@ import {
   persistGalleryState,
   restoreGalleryState,
 } from '../api.js';
-import { startTauntTicker } from '../humiliation.js';
+import { startTauntTicker, setHumiliationArtists } from '../humiliation.js';
 import { createTTSToggleButton, createTTSIntensityControl } from '../tts-toggle.js';
 import {
   initTagExplorer,
@@ -74,6 +74,15 @@ import {
   getDossierEntries,
 } from '../shame-dossier.js';
 import { incrementPressure } from '../progression/pressure-meter.js';
+import {
+  recordVisit as recordStreakVisit,
+  getStreakState as getStreakSnapshot,
+  getStreakTier as getCurrentStreakTier,
+  getStreakTierInfo,
+  isStreakTrackingEnabled,
+  setStreakTrackingEnabled,
+  onStreakChange as onStreakUpdate,
+} from '../progression/streaks.js';
 
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
@@ -750,6 +759,199 @@ function setupMotionToggle(initialMode) {
   };
 }
 
+function formatArtistTags(artist, { limit = 2 } = {}) {
+  if (!artist || !Array.isArray(artist.kinkTags) || artist.kinkTags.length === 0) {
+    return '';
+  }
+  const safeLimit = Math.max(1, Math.min(limit, artist.kinkTags.length));
+  return artist.kinkTags
+    .slice(0, safeLimit)
+    .map((tag) => tag.replace(/_/g, ' '))
+    .join(', ');
+}
+
+function selectSpotlightForWhisper(artists = [], tier = 0) {
+  if (!Array.isArray(artists) || artists.length === 0) {
+    return null;
+  }
+  const threshold = tier >= 3 ? 180 : tier >= 2 ? 120 : 60;
+  const preferred = artists.filter((artist) => Number(artist.postCount) >= threshold);
+  const pool = preferred.length ? preferred : artists;
+  if (!pool.length) return null;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function createStreakWhisperLine(detail, artists = []) {
+  if (!detail || !detail.trackingEnabled || !detail.didIncrement) return null;
+  const count = Number(detail.state?.count) || 0;
+  const info = getStreakTierInfo(count);
+  let baseLine;
+  if (detail.wasReset && count === 1) {
+    baseLine = 'Chain snapped and you crawled back anyway. Day one is already logged again.';
+  } else if (count === 1) {
+    baseLine = 'Day one recorded. You barely hesitated before indulging again.';
+  } else {
+    baseLine = `Day ${count}. ${info.label} tier acknowledged.`;
+  }
+  if ((detail.tier || 0) < 2) {
+    return baseLine;
+  }
+  const spotlight = selectSpotlightForWhisper(artists, detail.tier || 0);
+  if (!spotlight) return baseLine;
+  const tagLine = formatArtistTags(spotlight, { limit: detail.tier >= 3 ? 3 : 2 });
+  if (tagLine) {
+    return `${baseLine} Spotlight ${spotlight.artistName} drowning in ${tagLine}.`;
+  }
+  return `${baseLine} Spotlight ${spotlight.artistName}.`;
+}
+
+function formatStreakToast(detail) {
+  if (!detail) return null;
+  if (detail.reason === 'toggle') {
+    return detail.trackingEnabled
+      ? 'Streak tracking resumed. Every visit counts again.'
+      : 'Streak tracking paused. Ghost mode engaged.';
+  }
+  if (!detail.trackingEnabled) return null;
+  if (detail.reason === 'opted-out' || detail.reason === 'invalid') return null;
+  const count = Number(detail.state?.count) || 0;
+  if (detail.wasReset && detail.didIncrement && count === 1) {
+    return 'Chain snapped. Back to day one.';
+  }
+  if (!detail.didIncrement) return null;
+  const info = getStreakTierInfo(count);
+  let message = `Day ${count}: ${info.label} tier engaged.`;
+  if (info.nextThreshold && info.nextThreshold > count) {
+    const remaining = info.nextThreshold - count;
+    const nextInfo = getStreakTierInfo(info.nextThreshold);
+    message += ` ${remaining} more day${remaining === 1 ? '' : 's'} to ${nextInfo.label}.`;
+  }
+  return message;
+}
+
+function setupStreakBadges({ initialDetail } = {}) {
+  const innerChip = document.getElementById('streak-chip');
+  const coverChip = document.getElementById('cover-streak-btn');
+  if (!innerChip && !coverChip) {
+    return () => {};
+  }
+
+  const announcers = Array.from(document.querySelectorAll('[data-streak-announcer]'));
+  const innerValue = innerChip?.querySelector('[data-streak-count]');
+  const innerTier = innerChip?.querySelector('[data-streak-tier]');
+  const innerLabel = innerChip?.querySelector('[data-streak-label]');
+  const coverValue = coverChip?.querySelector('[data-streak-count]');
+
+  const applyDetail = (detail) => {
+    const trackingEnabled = detail?.trackingEnabled !== false && isStreakTrackingEnabled();
+    const count = trackingEnabled ? Math.max(0, Number(detail?.state?.count) || 0) : 0;
+    const tierInfo = trackingEnabled ? getStreakTierInfo(count) : getStreakTierInfo(0);
+    const tierLabel = tierInfo?.label || 'Dormant';
+    const summary = trackingEnabled
+      ? `Day ${count} streak. ${tierLabel}.`
+      : 'Streak tracking paused.';
+
+    announcers.forEach((node) => {
+      if (node) node.textContent = summary;
+    });
+
+    if (innerChip) {
+      innerChip.setAttribute('aria-pressed', trackingEnabled ? 'true' : 'false');
+      innerChip.setAttribute(
+        'aria-label',
+        trackingEnabled
+          ? `Disable streak tracking. Day ${count} — ${tierLabel}.`
+          : 'Enable streak tracking. Ghost mode active.',
+      );
+      if (trackingEnabled && tierInfo?.id) {
+        innerChip.dataset.tier = tierInfo.id;
+      } else {
+        delete innerChip.dataset.tier;
+      }
+      if (innerValue) innerValue.textContent = trackingEnabled ? String(count) : '—';
+      if (innerTier) innerTier.textContent = trackingEnabled ? tierLabel.toUpperCase() : 'GHOST MODE';
+      if (innerLabel) innerLabel.textContent = count === 1 ? 'DAY CAPTURED' : 'DAY STREAK';
+    }
+
+    if (coverChip) {
+      coverChip.setAttribute('aria-pressed', trackingEnabled ? 'true' : 'false');
+      coverChip.setAttribute(
+        'aria-label',
+        trackingEnabled
+          ? `Toggle streak tracking off. ${count} day chain, ${tierLabel}.`
+          : 'Toggle streak tracking on. Streak tracking paused.',
+      );
+      if (trackingEnabled && tierInfo?.id) {
+        coverChip.dataset.tier = tierInfo.id;
+      } else {
+        delete coverChip.dataset.tier;
+      }
+      if (coverValue) coverValue.textContent = trackingEnabled ? String(count) : '—';
+    }
+  };
+
+  const handleClick = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setStreakTrackingEnabled(!isStreakTrackingEnabled());
+  };
+
+  if (innerChip) innerChip.addEventListener('click', handleClick);
+  if (coverChip) coverChip.addEventListener('click', handleClick);
+
+  const unsubscribe = onStreakUpdate((detail) => applyDetail(detail));
+
+  applyDetail(
+    initialDetail || {
+      state: getStreakSnapshot(),
+      trackingEnabled: isStreakTrackingEnabled(),
+      tier: getCurrentStreakTier(),
+    },
+  );
+
+  return () => {
+    if (innerChip) innerChip.removeEventListener('click', handleClick);
+    if (coverChip) coverChip.removeEventListener('click', handleClick);
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
+function setupStreakSystem({ artists }) {
+  const visitDetail = recordStreakVisit({ reason: 'gallery:init', emit: true });
+  const badgeCleanup = setupStreakBadges({ initialDetail: visitDetail });
+
+  const handleDetail = (detail) => {
+    if (!detail) return;
+    const toast = formatStreakToast(detail);
+    if (toast) {
+      showToast(toast);
+    }
+    if (detail.trackingEnabled && detail.didIncrement) {
+      triggerBassPulse(Math.min(1, 0.35 + (detail.tier || 0) * 0.18));
+      const whisperLine = createStreakWhisperLine(detail, artists);
+      if (whisperLine) {
+        dispatchWhisperEvent('streak_increment', {
+          text: whisperLine,
+          minIntensity: Math.max(1, detail.tier || 1),
+          maxIntensity: 3,
+          cooldownMs: 4600,
+        });
+      }
+    }
+  };
+
+  if (visitDetail) {
+    handleDetail(visitDetail);
+  }
+
+  const unsubscribe = onStreakUpdate((detail) => handleDetail(detail));
+
+  return () => {
+    if (typeof badgeCleanup === 'function') badgeCleanup();
+    if (typeof unsubscribe === 'function') unsubscribe();
+  };
+}
+
 // Settings sheet removed - functionality now only in inner command bar
 
 function updateCommandStatusLabels(mode) {
@@ -968,12 +1170,14 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setTagTooltips(tooltips);
   setTagTaunts(tagTaunts);
   setTaunts(generalTaunts);
+  setHumiliationArtists(artists);
   configureWhisperCatalog({
     events: ttsLines,
     tags: tagTaunts,
     generalTaunts,
   });
   startTauntTicker(generalTaunts, 30000);
+  const streakCleanup = setupStreakSystem({ artists });
 
   const quotes = Object.values(tooltips || {}).filter(Boolean);
   if (quotes.length > 0) {
@@ -1083,6 +1287,9 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       }
       if (typeof ritualCleanup === 'function') {
         ritualCleanup();
+      }
+      if (typeof streakCleanup === 'function') {
+        streakCleanup();
       }
     },
   };
