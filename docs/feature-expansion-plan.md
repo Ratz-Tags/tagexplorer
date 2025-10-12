@@ -25,10 +25,10 @@
 - Use local timestamps only; expose a privacy toggle in Settings to disable tracking.
 
 ### 4. ASMR Moan Escalation Layer
-- Add an **optional ASMR moan ambience** that rides atop existing TTS. A new "Indulgence" slider in Settings controls intensity levels (Off → Sighs → Soft Moans → Desperate).
-- Implement a **volume/frequency ramp** tied to the Obedience Pressure Meter: as the meter climbs, the looped ASMR samples crossfade to denser layers and the playback rate subtly increases.
-- Ensure samples are short, non-explicit breaths/moans sourced as pre-rendered audio (`audio/asmr/*.webm`). Respect `prefers-reduced-motion` and `reduced-volume` custom setting by muting automatically.
-- Provide on-screen captions such as "ragged breathing intensifies" for accessibility; default the feature to Off and require explicit opt-in.
+- The humiliation audio panel now ships with an **Indulgence** slider (Off → Desperate) that drives the layered ASMR ambience without leaving the current screen.
+- Crossfades, playback-rate ramps, and caption updates are driven by the Obedience Pressure Meter; Azure whispers temporarily duck the layers so lines stay intelligible.
+- Samples must remain short, non-explicit breaths or whimpers (`audio/asmr/*.webm`). The slider hard-disables when `prefers-reduced-motion`, reduced-volume, cover mode, or privacy toggles are active.
+- Captions such as "Muted for cover mode" accompany the slider, and the manifest in `data/asmr-layers.json` regenerates via `npm run update:audio` for deployment.
 
 ### 5. Shame Command Deck
 - Expand the existing command ribbon with **context-sensitive buttons**: `KNEEL`, `CONFESS`, `SIREN`, `ESCAPE`.

@@ -19,6 +19,12 @@ export default {
         glow: '#66f3ff',
         blush: '#ff64d4',
         ember: '#ff8257',
+        indulgence: {
+          0: '#1b1830',
+          1: '#2d1f45',
+          2: '#4a1f52',
+          3: '#741f4b',
+        },
         pressure: {
           idle: '#2a2a40',
           low: '#66f3ff',

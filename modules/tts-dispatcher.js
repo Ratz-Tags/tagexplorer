@@ -293,6 +293,42 @@ async function playLineThroughAzure(text, eventKey, lane) {
     audio.currentTime = 0;
     audio.src = url;
     audio.play().catch(() => {});
+    try {
+      document.dispatchEvent(
+        new CustomEvent('humiliationAudio:tts', {
+          detail: { state: 'start', event: eventKey, lane, intensity },
+        }),
+      );
+    } catch (error) {
+      console.warn('[tts-dispatcher] failed to dispatch humiliation start', error);
+    }
+
+    const cleanup = (reason = 'ended') => {
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('error', onError);
+      try {
+        document.dispatchEvent(
+          new CustomEvent('humiliationAudio:tts', {
+            detail: { state: 'stop', reason, event: eventKey, lane, intensity },
+          }),
+        );
+      } catch (error) {
+        console.warn('[tts-dispatcher] failed to dispatch humiliation stop', error);
+      }
+    };
+
+    const onEnded = () => cleanup('ended');
+    const onPause = () => {
+      if (!audio.ended && audio.currentTime > 0) {
+        cleanup('pause');
+      }
+    };
+    const onError = () => cleanup('error');
+
+    audio.addEventListener('ended', onEnded, { once: true });
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError, { once: true });
     return true;
   } catch (error) {
     console.warn('[tts-dispatcher] Failed to play whisper', error);

@@ -24,6 +24,15 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 - A "Reset pressure" control sits in the landing meter for quick purges. Clearing the namespace manually (`localStorage.removeItem('tx:haze:v1')`) also wipes the counter if you prefer using dev tools.
 - Motion is throttled automatically when `prefers-reduced-motion` is active or when the in-app motion toggle is set to Reduced, keeping the glow collapse gentle on the Fold cover screen.
 
+## Humiliation Audio Stack
+
+- The audio panel now includes an **Indulgence** slider (Off → Desperate) that crossfades whisper-moans sourced from `audio/asmr/*.webm` on top of the ambience playlist.
+- Slider output mirrors the shame pressure meter—higher levels increase playback rate and volume until Azure TTS fires, at which point the layers duck automatically so captions remain legible.
+- Cover mode, ghost/privacy toggles, and reduced-motion/volume preferences all hard-mute the slider and surface a caption explaining why it is disabled.
+- Captions are rendered inline next to the slider for screen readers, and the current intensity is also exposed via `document.body.dataset.indulgence` so HUD elements can react.
+- Drop seamless mono Opus loops into `audio/asmr/` (see [`audio/asmr/README.md`](audio/asmr/README.md) for curation and consent guidance) and run `npm run update:audio` to refresh `data/asmr-layers.json` for deployment.
+- Consent matters: only ingest ASMR layers you personally recorded or are licensed to share. The README banner in `audio/asmr/` highlights the expectation for explicit opt-in.
+
 ## Captive Archive Streaks
 
 - Every day you open the gallery is logged in the shared `tx:haze:v1` namespace under `streakState`. The tracker keeps the current count, the longest chain, and a capped history of day-start timestamps—never more than 32 entries.
