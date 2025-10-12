@@ -22,14 +22,14 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
 
-      - name: Prepare back branch
+      - name: Prepare Holding branch
         run: |
-          git fetch origin back || true
-          if git show-ref --quiet refs/remotes/origin/back; then
-            git checkout back
-            git reset --hard origin/back
+          git fetch origin Holding || true
+          if git show-ref --quiet refs/remotes/origin/Holding; then
+            git checkout Holding
+            git reset --hard origin/Holding
           else
-            git checkout -b back
+            git checkout -b Holding
           fi
 
       - name: Setup Node.js
@@ -52,4 +52,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "chore: update kink-tags.json [skip ci]"
-          git push origin HEAD:back
+          git push origin HEAD:Holding
