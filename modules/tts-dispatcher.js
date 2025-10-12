@@ -6,6 +6,11 @@ import {
   isTTSEnabled,
   getTTSIntensity,
 } from './tts-toggle.js';
+import {
+  incrementPressure,
+  getPressureTier,
+  onPressureChange as onPressureStateChange,
+} from './progression/pressure-meter.js';
 
 const LANE_MIN = 1;
 const LANE_MAX = 3;
@@ -22,6 +27,11 @@ const EVENT_COOLDOWNS = {
   dossier_open: 12000,
   dossier_revisit: 9000,
 };
+const PRESSURE_REWARDS = {
+  tag_add: (options = {}) => (options.tag ? 4 : 2),
+  stack_overflow: () => 3,
+  artist_open: () => 6,
+};
 
 let eventCatalog = {};
 let tagCatalog = {};
@@ -37,6 +47,19 @@ let globalCooldownUntil = 0;
 let scrollSuppressedUntil = 0;
 let lastScrollY = null;
 let lastScrollEvent = 0;
+let pressureTier = 0;
+
+try {
+  pressureTier = getPressureTier();
+} catch {}
+
+onPressureStateChange((detail) => {
+  if (!detail || typeof detail.tier === 'undefined') return;
+  const nextTier = Number(detail.tier);
+  if (Number.isFinite(nextTier)) {
+    pressureTier = Math.max(0, nextTier);
+  }
+});
 
 function clampLane(value) {
   const numeric = Number(value);
@@ -159,24 +182,41 @@ function pickFromMatrix(matrix, lane) {
 function resolveLane(userLane, { intensity, minIntensity, maxIntensity } = {}) {
   const userCap = clampLane(userLane);
   if (userCap === 0) return 0;
+  const pressureFloor =
+    pressureTier > 0 ? Math.min(LANE_MAX, clampLane(pressureTier)) : LANE_MIN;
   if (typeof intensity === 'number') {
     const forced = clampLane(intensity);
     if (forced === 0) return 0;
-    return Math.min(userCap, forced);
+    const enforcedFloor = Math.max(pressureFloor, forced);
+    if (userCap < enforcedFloor) {
+      return userCap;
+    }
+    return Math.min(userCap, enforcedFloor);
   }
-  const minLane = typeof minIntensity === 'number' ? clampLane(minIntensity) : LANE_MIN;
-  const maxLane = typeof maxIntensity === 'number' ? clampLane(maxIntensity) : LANE_MAX;
-  const allowedMax = Math.min(userCap, maxLane || LANE_MAX);
-  if (allowedMax === 0) return 0;
-  if (userCap < minLane) {
-    return userCap;
+  const requestedMin = typeof minIntensity === 'number' ? clampLane(minIntensity) : LANE_MIN;
+  const requestedMax = typeof maxIntensity === 'number' ? clampLane(maxIntensity) : LANE_MAX;
+  const floor = Math.max(requestedMin, pressureFloor);
+  const ceiling = Math.min(userCap, requestedMax || LANE_MAX);
+  if (ceiling === 0) return 0;
+  if (ceiling < floor) {
+    return ceiling;
   }
-  return Math.max(minLane || LANE_MIN, allowedMax || userCap);
+  return Math.max(floor || LANE_MIN, ceiling || userCap);
 }
 
 function getEventCooldown(eventKey) {
   const normalized = String(eventKey || '').toLowerCase();
   return EVENT_COOLDOWNS[normalized] ?? DEFAULT_EVENT_COOLDOWN_MS;
+}
+
+function rewardPressure(eventKey, options) {
+  const key = String(eventKey || '').toLowerCase();
+  const entry = PRESSURE_REWARDS[key];
+  if (!entry) return;
+  const value = typeof entry === 'function' ? entry(options || {}) : entry;
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  incrementPressure(amount, { source: `whisper:${key}` });
 }
 
 function configureWhisperCatalog({ events, tags, generalTaunts } = {}) {
@@ -315,6 +355,7 @@ function dispatchWhisperEvent(eventKey, options = {}) {
   updateCaption(line, { muted: !enabled });
   lastTriggerTimes.set(key, now);
   globalCooldownUntil = now + GLOBAL_COOLDOWN_MS;
+  rewardPressure(key, options);
 
   if (!enabled) {
     return { skipped: true, text: line, reason: 'tts-disabled' };

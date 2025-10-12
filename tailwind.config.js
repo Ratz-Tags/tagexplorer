@@ -19,6 +19,13 @@ export default {
         glow: '#66f3ff',
         blush: '#ff64d4',
         ember: '#ff8257',
+        pressure: {
+          idle: '#2a2a40',
+          low: '#66f3ff',
+          mid: '#ff64d4',
+          high: '#ff8257',
+          max: '#ff2f64',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -28,6 +35,10 @@ export default {
       boxShadow: {
         neon: '0 25px 60px -15px rgba(102, 243, 255, 0.35)',
         pulse: '0 0 0 2px rgba(255, 100, 212, 0.25)',
+        'pressure-low': '0 0 28px rgba(102, 243, 255, 0.4)',
+        'pressure-mid': '0 0 36px rgba(255, 100, 212, 0.38)',
+        'pressure-high': '0 0 42px rgba(255, 130, 87, 0.45)',
+        'pressure-max': '0 0 48px rgba(255, 47, 100, 0.55)',
       },
       screens: {
         'fold-cover': {'raw': '(max-width: 520px) and (orientation: portrait)'},
