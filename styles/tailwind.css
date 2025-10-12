@@ -184,6 +184,113 @@ box-shadow: 0 18px 45px -25px rgba(255, 118, 214, 0.5);
 .command-group {
 @apply flex flex-wrap items-center justify-center gap-3;
 }
+.command-streak {
+@apply flex flex-wrap items-center justify-center gap-4;
+}
+.streak-chip {
+@apply relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-full border border-cyan-400/40 bg-gradient-to-r from-cyan-500/10 via-fuchsia-400/10 to-sky-400/10 px-4 py-2 text-[0.55rem] font-semibold uppercase tracking-[0.4em] text-cyan-100 shadow-[0_0_25px_rgba(56,189,248,0.35)] transition-all duration-500 ease-kink;
+  min-height: 2.5rem;
+  letter-spacing: 0.35em;
+}
+.streak-chip::after {
+  content: '';
+  position: absolute;
+  inset: -120%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(56, 189, 248, 0.15),
+    rgba(236, 72, 153, 0.2),
+    rgba(129, 140, 248, 0.18),
+    rgba(56, 189, 248, 0.15)
+  );
+  transform: rotate(0deg);
+  animation: streakSpin 12s linear infinite;
+}
+.streak-chip__halo,
+.streak-chip__core {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.streak-chip__halo {
+  background: radial-gradient(circle at 50% 50%, rgba(236, 72, 153, 0.4), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0.55;
+  animation: streakPulse 2800ms cubic-bezier(.4,-0.2,.2,1.2) infinite;
+}
+.streak-chip__core {
+  background: linear-gradient(120deg, rgba(59, 130, 246, 0.25), rgba(244, 114, 182, 0.08));
+  opacity: 0.7;
+}
+.streak-chip__label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.streak-chip__value {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+}
+.streak-chip__suffix {
+  font-size: 0.55rem;
+  letter-spacing: 0.45em;
+  opacity: 0.8;
+}
+.streak-chip__tier {
+  font-size: 0.5rem;
+  letter-spacing: 0.5em;
+  opacity: 0.7;
+}
+.streak-chip[aria-pressed="false"] {
+@apply border-white/15 bg-black/40 text-slate-300 shadow-none;
+}
+.streak-chip[aria-pressed="false"]::after,
+.streak-chip[aria-pressed="false"] .streak-chip__halo {
+  opacity: 0;
+  animation: none;
+}
+.streak-chip[data-tier='ember'] {
+  box-shadow: 0 0 32px rgba(251, 191, 36, 0.35);
+}
+.streak-chip[data-tier='glow'] {
+  box-shadow: 0 0 36px rgba(59, 130, 246, 0.45);
+}
+.streak-chip[data-tier='inferno'] {
+  box-shadow: 0 0 38px rgba(239, 68, 68, 0.5);
+}
+.streak-chip[data-tier='void'] {
+  box-shadow: 0 0 45px rgba(244, 114, 182, 0.55);
+}
+@keyframes streakSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes streakPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.08);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .streak-chip::after,
+  .streak-chip__halo {
+    animation: none;
+  }
+}
+body[data-motion='reduced'] .streak-chip::after,
+body[data-motion='reduced'] .streak-chip__halo {
+  animation: none;
+}
 .command-status {
 @apply flex flex-wrap items-center justify-center gap-3 text-[0.55rem] tracking-[0.4em] text-slate-300;
 }
@@ -224,6 +331,58 @@ body[data-fold-mode="fold-cover"] .command-bar-safe-area--top {
 .cover-command-btn span[aria-hidden="true"] {
   font-size: 1rem;
   line-height: 1;
+}
+.cover-streak-btn {
+@apply relative overflow-hidden;
+  min-width: 4.75rem;
+}
+.cover-streak-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 20%, rgba(56, 189, 248, 0.38), transparent 65%);
+  opacity: 0.65;
+  pointer-events: none;
+  animation: coverStreakGlow 3600ms cubic-bezier(.4,-0.2,.2,1.2) infinite;
+}
+.cover-streak-orb {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.8), rgba(236, 72, 153, 0.3));
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.6);
+}
+.cover-streak-count {
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2em;
+}
+.cover-streak-btn[aria-pressed="false"]::before,
+.cover-streak-btn[aria-pressed="false"] .cover-streak-orb {
+  animation: none;
+  opacity: 0.35;
+  box-shadow: none;
+  background: rgba(148, 163, 184, 0.25);
+}
+@keyframes coverStreakGlow {
+  0%,
+  100% {
+    transform: translateY(4%);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-4%);
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cover-streak-btn::before {
+    animation: none;
+  }
+}
+body[data-motion='reduced'] .cover-streak-btn::before {
+  animation: none;
 }
 
 .cover-command-label {

@@ -11,6 +11,11 @@ import {
   getPressureTier,
   onPressureChange as onPressureStateChange,
 } from './progression/pressure-meter.js';
+import {
+  getStreakTier,
+  onStreakChange as onStreakUpdate,
+  isStreakTrackingEnabled,
+} from './progression/streaks.js';
 
 const LANE_MIN = 1;
 const LANE_MAX = 3;
@@ -48,9 +53,14 @@ let scrollSuppressedUntil = 0;
 let lastScrollY = null;
 let lastScrollEvent = 0;
 let pressureTier = 0;
+let streakTier = 0;
 
 try {
   pressureTier = getPressureTier();
+} catch {}
+
+try {
+  streakTier = isStreakTrackingEnabled() ? getStreakTier() : 0;
 } catch {}
 
 onPressureStateChange((detail) => {
@@ -59,6 +69,11 @@ onPressureStateChange((detail) => {
   if (Number.isFinite(nextTier)) {
     pressureTier = Math.max(0, nextTier);
   }
+});
+
+onStreakUpdate((detail) => {
+  if (!detail || typeof detail.tier === 'undefined') return;
+  streakTier = detail.trackingEnabled ? Math.max(0, Number(detail.tier) || 0) : 0;
 });
 
 function clampLane(value) {
@@ -184,10 +199,13 @@ function resolveLane(userLane, { intensity, minIntensity, maxIntensity } = {}) {
   if (userCap === 0) return 0;
   const pressureFloor =
     pressureTier > 0 ? Math.min(LANE_MAX, clampLane(pressureTier)) : LANE_MIN;
+  const streakFloor =
+    streakTier > 0 ? Math.min(LANE_MAX, clampLane(streakTier)) : LANE_MIN;
+  const combinedFloor = Math.max(pressureFloor, streakFloor);
   if (typeof intensity === 'number') {
     const forced = clampLane(intensity);
     if (forced === 0) return 0;
-    const enforcedFloor = Math.max(pressureFloor, forced);
+    const enforcedFloor = Math.max(combinedFloor, forced);
     if (userCap < enforcedFloor) {
       return userCap;
     }
@@ -195,7 +213,7 @@ function resolveLane(userLane, { intensity, minIntensity, maxIntensity } = {}) {
   }
   const requestedMin = typeof minIntensity === 'number' ? clampLane(minIntensity) : LANE_MIN;
   const requestedMax = typeof maxIntensity === 'number' ? clampLane(maxIntensity) : LANE_MAX;
-  const floor = Math.max(requestedMin, pressureFloor);
+  const floor = Math.max(requestedMin, combinedFloor);
   const ceiling = Math.min(userCap, requestedMax || LANE_MAX);
   if (ceiling === 0) return 0;
   if (ceiling < floor) {

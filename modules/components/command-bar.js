@@ -50,6 +50,25 @@ template.innerHTML = `
             FETCH
           </button>
         </div>
+        <div class="command-streak" role="group" aria-label="Return streak tracker">
+          <button
+            id="streak-chip"
+            class="control-btn command-btn streak-chip"
+            type="button"
+            aria-pressed="true"
+            aria-describedby="streak-announcement"
+            aria-label="Disable streak tracking"
+          >
+            <span class="streak-chip__halo" aria-hidden="true"></span>
+            <span class="streak-chip__core" aria-hidden="true"></span>
+            <span class="streak-chip__label" aria-hidden="true">
+              <span class="streak-chip__value" data-streak-count>0</span>
+              <span class="streak-chip__suffix" data-streak-label>DAY STREAK</span>
+              <span class="streak-chip__tier" data-streak-tier>—</span>
+            </span>
+          </button>
+          <span class="sr-only" id="streak-announcement" data-streak-announcer aria-live="polite"></span>
+        </div>
         <div class="command-status" aria-live="polite">
           <span class="command-status__label" data-mode="cover">COVER MODE</span>
           <span class="command-status__label" data-mode="inner">INNER MODE</span>
@@ -89,6 +108,23 @@ template.innerHTML = `
           <span aria-hidden="true">⛓</span>
           <span class="cover-command-label">Filters</span>
         </button>
+        <button
+          id="cover-streak-btn"
+          class="cover-command-btn cover-streak-btn"
+          type="button"
+          aria-pressed="true"
+          aria-describedby="cover-streak-announcement"
+        >
+          <span class="cover-streak-orb" aria-hidden="true"></span>
+          <span class="cover-streak-count" data-streak-count>0</span>
+          <span class="cover-command-label">Streak</span>
+        </button>
+        <span
+          class="sr-only"
+          id="cover-streak-announcement"
+          data-streak-announcer
+          aria-live="polite"
+        ></span>
         <button
           id="cover-mute-btn"
           class="cover-command-btn cover-mute-toggle"

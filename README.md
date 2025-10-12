@@ -24,6 +24,14 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 - A "Reset pressure" control sits in the landing meter for quick purges. Clearing the namespace manually (`localStorage.removeItem('tx:haze:v1')`) also wipes the counter if you prefer using dev tools.
 - Motion is throttled automatically when `prefers-reduced-motion` is active or when the in-app motion toggle is set to Reduced, keeping the glow collapse gentle on the Fold cover screen.
 
+## Captive Archive Streaks
+
+- Every day you open the gallery is logged in the shared `tx:haze:v1` namespace under `streakState`. The tracker keeps the current count, the longest chain, and a capped history of day-start timestamps—never more than 32 entries.
+- The command bar now surfaces an animated holographic streak badge. Click or tap it (or the matching Cover screen button) to opt into or out of tracking. When disabled the UI drops into **Ghost mode** and no new visits are persisted.
+- Streak tiers (Dormant → Ember Drift → Glass Glow → Infra Inferno → Void Crown) unlock harsher taunts and rare artist spotlights. They also raise the floor for Azure whisper intensity, so the audio digs deeper the longer you return.
+- QA shortcuts live in the console: `window.txStreaks.recordVisit(daysAgo)` simulates a visit offset, `window.txStreaks.setEnabled(false)` flips ghost mode, and `window.txStreaks.getState()` surfaces the raw persisted payload for time-travel debugging.
+- Streak data is strictly local. Delete it by clearing the namespace (`localStorage.removeItem('tx:haze:v1')`) or by toggling Ghost mode before you browse.
+
 ## Project Structure
 
 - `index.html` – Main entry point with inline Tailwind Play config and component layers (no build step required)
