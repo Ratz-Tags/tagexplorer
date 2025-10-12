@@ -565,6 +565,13 @@ function vibrate(ms = 30) {
   }
 }
 
+function vibratePattern(pattern = [20, 35, 20]) {
+  if (window.navigator && typeof window.navigator.vibrate === "function") {
+    const sequence = Array.isArray(pattern) ? pattern : [pattern];
+    window.navigator.vibrate(sequence);
+  }
+}
+
 /**
  * Triggers a screen pulse effect (CSS + accessibility)
  */
@@ -618,5 +625,6 @@ export {
   scrollToTop,
   createConfirmationModal,
   vibrate,
+  vibratePattern,
   pulseScreen,
 };

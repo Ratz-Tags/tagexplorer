@@ -45,6 +45,8 @@ import {
   setupInfiniteScroll,
   setupBackgroundRotation,
   showToast,
+  vibrate,
+  vibratePattern,
 } from '../ui.js';
 import {
   loadAppData,
@@ -74,6 +76,7 @@ import {
   getDossierEntries,
 } from '../shame-dossier.js';
 import { incrementPressure } from '../progression/pressure-meter.js';
+import { setIndulgenceLevel } from '../audio/humiliation-audio.js';
 import {
   recordVisit as recordStreakVisit,
   getStreakState as getStreakSnapshot,
@@ -91,12 +94,581 @@ const scheduleMicrotask = typeof queueMicrotask === 'function'
   ? (callback) => queueMicrotask(callback)
   : (callback) => Promise.resolve().then(callback);
 
+const COMMAND_STORAGE_NAMESPACE = 'tx:haze:v1';
+const COMMAND_STORAGE_KEY = 'commandDeck';
+
+const COMMAND_KEYBOARD_BINDINGS = {
+  KeyK: 'kneel',
+  KeyC: 'confess',
+  KeyS: 'siren',
+  KeyE: 'escape',
+};
+
+const COMMAND_PRESETS = {
+  kneel: {
+    id: 'kneel',
+    label: 'KNEEL',
+    tagsAdd: ['leash', 'viewer_on_leash', 'restraints'],
+    tagsRemove: ['humiliation', 'body_writing', 'public_nudity', 'mind_break', 'hypnosis', 'orgasm_denial'],
+    asmrLevel: 2,
+    pressureDelta: 8,
+    minIntensity: 2,
+    maxIntensity: 3,
+    whisper: 'Down. Knees on the glass and leash tags locked.',
+    announcement: 'Command deck engaged: Kneel preset stacked restraints and leash filters.',
+    haptic: [20, 26, 20],
+    bass: { intensity: 0.64, durationMs: 480 },
+  },
+  confess: {
+    id: 'confess',
+    label: 'CONFESS',
+    tagsAdd: ['humiliation', 'body_writing', 'public_nudity'],
+    tagsRemove: ['leash', 'viewer_on_leash', 'restraints', 'hypnosis', 'mind_break', 'orgasm_denial'],
+    asmrLevel: 1,
+    pressureDelta: 6,
+    minIntensity: 1,
+    maxIntensity: 3,
+    whisper: 'Confess everything. Let the gallery read every humiliating detail.',
+    announcement: 'Command deck engaged: Confess preset broadcasting humiliation filters.',
+    haptic: [18, 18, 32],
+    bass: { intensity: 0.52, durationMs: 420 },
+  },
+  siren: {
+    id: 'siren',
+    label: 'SIREN',
+    tagsAdd: ['hypnosis', 'mind_break', 'orgasm_denial'],
+    tagsRemove: ['humiliation', 'body_writing', 'public_nudity', 'leash', 'viewer_on_leash', 'restraints'],
+    asmrLevel: 3,
+    pressureDelta: 10,
+    minIntensity: 2,
+    maxIntensity: 3,
+    whisper: 'Siren triggered. Hypnosis, denial, and mind-break queued on repeat.',
+    announcement: 'Command deck engaged: Siren preset floods trance and denial filters.',
+    haptic: [24, 18, 24, 18, 32],
+    bass: { intensity: 0.82, durationMs: 640, allowInCover: true },
+  },
+  escape: {
+    id: 'escape',
+    label: 'ESCAPE',
+    tagsAdd: [],
+    tagsRemove: [],
+    asmrLevel: 0,
+    pressureDelta: -12,
+    minIntensity: 1,
+    maxIntensity: 2,
+    whisper: 'Run then. Your shame log stays warm for when you crawl back.',
+    announcement: 'Command deck cleared. Restored your saved filters and muted indulgence.',
+    haptic: [18, 32, 22, 48],
+    bass: { intensity: 0.42, durationMs: 420 },
+  },
+};
+
+const COMMAND_DEFAULT_STATE = {
+  active: null,
+  baselineTags: [],
+  lastManualTags: [],
+  lastAppliedAt: 0,
+  asmrLevel: 0,
+};
+
+let commandDeckState = { ...COMMAND_DEFAULT_STATE };
+let commandButtons = new Map();
+let commandAnnouncer = null;
+let commandMotionPromise = null;
+let commandPulseTimer = null;
+let commandStorageFaultLogged = false;
+
 let ritualHost = null;
 let ritualQueue = [];
 let currentRitualActivation = null;
 let currentRitualElement = null;
 let ritualElementCleanup = [];
 let ritualFoldMode = 'default';
+
+
+function sanitizeTagList(tags) {
+  if (!Array.isArray(tags)) return [];
+  const seen = new Set();
+  const cleaned = [];
+  tags.forEach((tag) => {
+    if (typeof tag !== 'string') {
+      if (tag == null) return;
+      tag = String(tag);
+    }
+    const normalized = tag.trim().toLowerCase().replace(/\s+/g, '_');
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    cleaned.push(normalized);
+  });
+  return cleaned.slice(0, 32);
+}
+
+function readCommandNamespace() {
+  if (typeof window === 'undefined' || !window.localStorage) return {};
+  try {
+    const raw = window.localStorage.getItem(COMMAND_STORAGE_NAMESPACE);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed;
+  } catch (error) {
+    if (!commandStorageFaultLogged) {
+      console.warn('[gallery] command deck storage read failed', error);
+      commandStorageFaultLogged = true;
+    }
+    return {};
+  }
+}
+
+function loadCommandDeckState() {
+  const namespace = readCommandNamespace();
+  const stored = namespace?.[COMMAND_STORAGE_KEY];
+  if (!stored || typeof stored !== 'object') {
+    commandDeckState = { ...COMMAND_DEFAULT_STATE };
+    return commandDeckState;
+  }
+  const activeKey = typeof stored.active === 'string' && COMMAND_PRESETS[stored.active]
+    ? stored.active
+    : null;
+  commandDeckState = {
+    active: activeKey,
+    baselineTags: sanitizeTagList(stored.baselineTags),
+    lastManualTags: sanitizeTagList(stored.lastManualTags),
+    lastAppliedAt: Number(stored.lastAppliedAt) || 0,
+    asmrLevel: Number(stored.asmrLevel) || 0,
+  };
+  if (!commandDeckState.baselineTags.length && commandDeckState.lastManualTags.length) {
+    commandDeckState.baselineTags = commandDeckState.lastManualTags.slice();
+  }
+  return commandDeckState;
+}
+
+function persistCommandDeckState() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  const payload = readCommandNamespace();
+  payload[COMMAND_STORAGE_KEY] = {
+    active: typeof commandDeckState.active === 'string' ? commandDeckState.active : null,
+    baselineTags: sanitizeTagList(commandDeckState.baselineTags),
+    lastManualTags: sanitizeTagList(commandDeckState.lastManualTags),
+    lastAppliedAt: Number(commandDeckState.lastAppliedAt) || Date.now(),
+    asmrLevel: Number(commandDeckState.asmrLevel) || 0,
+  };
+  try {
+    window.localStorage.setItem(COMMAND_STORAGE_NAMESPACE, JSON.stringify(payload));
+  } catch (error) {
+    if (!commandStorageFaultLogged) {
+      console.warn('[gallery] command deck storage write failed', error);
+      commandStorageFaultLogged = true;
+    }
+  }
+}
+
+function applyCommandVisualState(commandId) {
+  const normalized = typeof commandId === 'string' && commandId ? commandId : null;
+  const assign = (node) => {
+    if (!node || !node.dataset) return;
+    if (normalized) {
+      node.dataset.commandState = normalized;
+    } else {
+      delete node.dataset.commandState;
+    }
+  };
+  assign(document.documentElement);
+  assign(document.body);
+  assign(document.querySelector('.command-bar-shell'));
+  assign(document.querySelector('.cover-command-bar'));
+  assign(document.querySelector('.command-deck'));
+  assign(document.querySelector('.cover-command-deck'));
+}
+
+function updateCommandDeckButtons() {
+  const active = typeof commandDeckState.active === 'string' ? commandDeckState.active : null;
+  commandButtons.forEach((buttonSet, commandId) => {
+    buttonSet.forEach((btn) => {
+      if (!(btn instanceof HTMLElement)) return;
+      const isActive = active === commandId;
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      btn.classList.toggle('is-active', isActive);
+    });
+  });
+}
+
+function announceCommand(message) {
+  if (!commandAnnouncer) return;
+  commandAnnouncer.textContent = message || '';
+}
+
+function shouldReduceMotionForCommands() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return true;
+  const motionDataset = document.body?.dataset?.motion || document.documentElement?.dataset?.motion;
+  if (motionDataset === 'reduced') return true;
+  try {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  } catch (error) {
+    return false;
+  }
+}
+
+async function loadCommandMotionModule() {
+  if (shouldReduceMotionForCommands()) return null;
+  if (!commandMotionPromise) {
+    commandMotionPromise = import('https://cdn.jsdelivr.net/npm/motion@10.16.4/+esm')
+      .catch((error) => {
+        console.warn('[gallery] command motion import failed', error);
+        return null;
+      });
+  }
+  try {
+    return await commandMotionPromise;
+  } catch (error) {
+    console.warn('[gallery] command motion load failed', error);
+    return null;
+  }
+}
+
+function hexToRGBA(value, alpha = 1) {
+  const hex = String(value || '').trim();
+  const match = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex);
+  if (!match) return `rgba(102, 243, 255, ${alpha})`;
+  let hexValue = match[1];
+  if (hexValue.length === 3) {
+    hexValue = hexValue.split('').map((ch) => ch + ch).join('');
+  }
+  const num = parseInt(hexValue, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function getCommandAccentColor() {
+  if (typeof document === 'undefined') return '#66f3ff';
+  try {
+    const computed = getComputedStyle(document.body);
+    const value = computed.getPropertyValue('--command-accent');
+    return value ? value.trim() || '#66f3ff' : '#66f3ff';
+  } catch (error) {
+    return '#66f3ff';
+  }
+}
+
+function buildCommandAnimationSteps(commandId) {
+  const steps = [];
+  if (typeof document === 'undefined') return steps;
+  const shell = document.querySelector('.command-bar-shell');
+  const background = document.querySelector('.background-lattice');
+  const deck = document.querySelector('.command-deck');
+  const coverDeck = document.querySelector('.cover-command-deck');
+  const isCover = document.body?.dataset?.foldMode === 'fold-cover';
+  const deckTarget = isCover && coverDeck ? coverDeck : deck;
+  const accent = getCommandAccentColor();
+  const accentGlow = hexToRGBA(accent, 0.55);
+  const accentSoft = hexToRGBA(accent, 0.28);
+
+  if (deckTarget) {
+    steps.push([
+      deckTarget,
+      {
+        transform: ['scale(0.96)', 'scale(1.06)', 'scale(1)'],
+        boxShadow: ['0 0 0 rgba(0,0,0,0)', `0 26px 58px -26px ${accentGlow}`, `0 16px 32px -28px ${accentSoft}`],
+      },
+      { duration: 0.72, easing: 'cubic-bezier(.4,-0.2,.2,1.2)' },
+    ]);
+  }
+  if (shell) {
+    steps.push([
+      shell,
+      {
+        transform: ['translateY(-10px)', 'translateY(0)'],
+        filter: ['drop-shadow(0 0 0 rgba(0,0,0,0))', `drop-shadow(0 18px 42px ${accentGlow})`],
+      },
+      { duration: 0.78, easing: 'cubic-bezier(.4,-0.2,.2,1.2)', at: '<' },
+    ]);
+  }
+  if (background) {
+    const filters = {
+      kneel: ['saturate(0.95) brightness(0.92)', 'saturate(1.22) brightness(1.12)'],
+      confess: ['saturate(0.9) brightness(0.9)', 'saturate(1.28) brightness(1.1)'],
+      siren: ['saturate(1) brightness(0.9)', 'saturate(1.38) brightness(1.16)'],
+      escape: ['saturate(0.9) brightness(0.88)', 'saturate(1) brightness(0.96)'],
+    };
+    const filterFrames = filters[commandId] || ['saturate(0.95)', 'saturate(1.1)'];
+    steps.push([
+      background,
+      { filter: filterFrames },
+      { duration: 1.1, easing: 'ease-out', at: '<' },
+    ]);
+  }
+  if (commandId === 'siren' && deckTarget) {
+    steps.push([
+      deckTarget,
+      {
+        opacity: [1, 0.82, 1],
+        filter: ['drop-shadow(0 0 0 rgba(0,0,0,0))', `drop-shadow(0 0 22px ${accentGlow})`, `drop-shadow(0 0 10px ${accentSoft})`],
+      },
+      { duration: 1.4, easing: 'ease-out', at: 0.08 },
+    ]);
+  }
+  return steps;
+}
+
+function applyCommandFallbackPulse() {
+  if (typeof document === 'undefined') return;
+  const deck = document.querySelector('.command-deck');
+  const coverDeck = document.querySelector('.cover-command-deck');
+  [deck, coverDeck].forEach((node) => {
+    if (!node) return;
+    node.classList.add('command-deck--pulse');
+  });
+  if (commandPulseTimer) clearTimeout(commandPulseTimer);
+  commandPulseTimer = setTimeout(() => {
+    [deck, coverDeck].forEach((node) => node && node.classList.remove('command-deck--pulse'));
+  }, 420);
+}
+
+async function runCommandAnimation(commandId, { silent = false } = {}) {
+  if (silent) {
+    applyCommandFallbackPulse();
+    return;
+  }
+  if (!commandId || shouldReduceMotionForCommands()) {
+    applyCommandFallbackPulse();
+    return;
+  }
+  const motion = await loadCommandMotionModule();
+  if (!motion || typeof motion.timeline !== 'function') {
+    applyCommandFallbackPulse();
+    return;
+  }
+  const steps = buildCommandAnimationSteps(commandId);
+  if (!steps.length) {
+    applyCommandFallbackPulse();
+    return;
+  }
+  try {
+    motion.timeline(steps, {
+      defaultOptions: {
+        duration: 0.86,
+        easing: 'cubic-bezier(.4,-0.2,.2,1.2)',
+        fill: 'forwards',
+      },
+    });
+  } catch (error) {
+    console.warn('[gallery] command animation failed', error);
+    applyCommandFallbackPulse();
+  }
+}
+
+function handleCommandEscape({ silent = false, source = 'button' } = {}) {
+  const preset = COMMAND_PRESETS.escape;
+  let baseline = commandDeckState.baselineTags.length
+    ? commandDeckState.baselineTags.slice()
+    : commandDeckState.lastManualTags.length
+    ? commandDeckState.lastManualTags.slice()
+    : sanitizeTagList(Array.from((typeof getActiveTags === 'function' ? getActiveTags() : []) || []));
+  if (!baseline.length) {
+    baseline = [];
+  }
+  hydrateTagState(baseline);
+  if (typeof setRandomBackground === 'function') {
+    setRandomBackground();
+  }
+  try {
+    setIndulgenceLevel(preset.asmrLevel ?? 0, { source: 'command-deck' });
+    commandDeckState.asmrLevel = preset.asmrLevel ?? 0;
+  } catch (error) {
+    if (!commandStorageFaultLogged) {
+      console.warn('[gallery] command deck indulgence reset failed', error);
+    }
+  }
+  if (!silent && Number.isFinite(preset.pressureDelta) && preset.pressureDelta !== 0) {
+    incrementPressure(preset.pressureDelta, { source: 'command:escape' });
+  }
+  if (!silent && preset.bass) {
+    try {
+      triggerBassPulse({ ...preset.bass });
+    } catch (error) {
+      console.warn('[gallery] bass pulse failed for escape command', error);
+    }
+  }
+  if (!silent && preset.whisper) {
+    dispatchWhisperEvent('command_escape', {
+      text: preset.whisper,
+      minIntensity: preset.minIntensity ?? 1,
+      maxIntensity: preset.maxIntensity ?? 2,
+    });
+  }
+  if (!silent) {
+    if (Array.isArray(preset.haptic)) {
+      vibratePattern(preset.haptic);
+    } else {
+      vibrate(32);
+    }
+  }
+  commandDeckState.active = null;
+  commandDeckState.baselineTags = sanitizeTagList(baseline);
+  commandDeckState.lastManualTags = commandDeckState.baselineTags.slice();
+  commandDeckState.lastAppliedAt = Date.now();
+  applyCommandVisualState(null);
+  updateCommandDeckButtons();
+  if (!silent) {
+    announceCommand(preset.announcement || 'Command deck cleared.');
+  }
+  runCommandAnimation('escape', { silent });
+  persistCommandDeckState();
+}
+
+function handleCommandAction(commandId, { silent = false, source = 'button', preserveBaseline = false } = {}) {
+  const normalized = String(commandId || '').toLowerCase();
+  if (!normalized) return;
+  if (normalized === 'escape') {
+    handleCommandEscape({ silent, source });
+    return;
+  }
+  const preset = COMMAND_PRESETS[normalized];
+  if (!preset) return;
+  if (!preserveBaseline && !commandDeckState.active) {
+    try {
+      const snapshot = sanitizeTagList(Array.from(getActiveTags()));
+      if (snapshot.length) {
+        commandDeckState.baselineTags = snapshot;
+        commandDeckState.lastManualTags = snapshot.slice();
+      }
+    } catch (error) {
+      commandDeckState.baselineTags = [];
+    }
+  }
+  const baseline = commandDeckState.baselineTags.length
+    ? commandDeckState.baselineTags.slice()
+    : sanitizeTagList(Array.from((typeof getActiveTags === 'function' ? getActiveTags() : []) || []));
+  const nextTagsSet = new Set(baseline);
+  (preset.tagsRemove || []).forEach((tag) => nextTagsSet.delete(tag));
+  (preset.tagsAdd || []).forEach((tag) => nextTagsSet.add(tag));
+  const nextTags = Array.from(nextTagsSet);
+  hydrateTagState(nextTags);
+  if (typeof setRandomBackground === 'function') {
+    setRandomBackground();
+  }
+  try {
+    const nextLevel = Number(preset.asmrLevel ?? commandDeckState.asmrLevel ?? 0);
+    setIndulgenceLevel(nextLevel, { source: 'command-deck' });
+    commandDeckState.asmrLevel = nextLevel;
+  } catch (error) {
+    if (!commandStorageFaultLogged) {
+      console.warn('[gallery] command deck indulgence sync failed', error);
+    }
+  }
+  if (!silent && Number.isFinite(preset.pressureDelta) && preset.pressureDelta !== 0) {
+    incrementPressure(preset.pressureDelta, { source: `command:${normalized}` });
+  }
+  if (!silent && preset.bass) {
+    try {
+      triggerBassPulse({ ...preset.bass });
+    } catch (error) {
+      console.warn('[gallery] bass pulse failed for command', error);
+    }
+  }
+  if (!silent && preset.whisper) {
+    dispatchWhisperEvent(`command_${normalized}`, {
+      text: preset.whisper,
+      minIntensity: preset.minIntensity ?? 1,
+      maxIntensity: preset.maxIntensity ?? 3,
+    });
+  }
+  commandDeckState.active = normalized;
+  commandDeckState.lastAppliedAt = Date.now();
+  applyCommandVisualState(normalized);
+  updateCommandDeckButtons();
+  if (!silent) {
+    announceCommand(preset.announcement || `${preset.label || normalized} preset engaged.`);
+  }
+  runCommandAnimation(normalized, { silent });
+  if (!silent) {
+    if (Array.isArray(preset.haptic)) {
+      vibratePattern(preset.haptic);
+    } else {
+      vibrate(36);
+    }
+  }
+  persistCommandDeckState();
+}
+
+async function setupCommandDeck() {
+  if (typeof document === 'undefined') return () => {};
+  await customElements.whenDefined('te-command-bar');
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  commandAnnouncer = document.getElementById('command-deck-announcement') || null;
+  commandButtons = new Map();
+  const buttonCleanups = [];
+  const buttonNodes = Array.from(document.querySelectorAll('[data-command-action]'));
+  buttonNodes.forEach((btn) => {
+    if (!(btn instanceof HTMLElement)) return;
+    const commandId = String(btn.dataset.commandAction || '').toLowerCase();
+    if (!commandId) return;
+    if (!commandButtons.has(commandId)) {
+      commandButtons.set(commandId, new Set());
+    }
+    commandButtons.get(commandId).add(btn);
+    const onClick = () => handleCommandAction(commandId, { source: 'button' });
+    btn.addEventListener('click', onClick);
+    buttonCleanups.push(() => btn.removeEventListener('click', onClick));
+  });
+  loadCommandDeckState();
+  if (!commandDeckState.lastManualTags.length) {
+    try {
+      const snapshot = sanitizeTagList(Array.from(getActiveTags()));
+      commandDeckState.lastManualTags = snapshot;
+      commandDeckState.baselineTags = snapshot.slice();
+    } catch (error) {
+      commandDeckState.lastManualTags = [];
+      commandDeckState.baselineTags = [];
+    }
+  }
+  if (commandDeckState.active && COMMAND_PRESETS[commandDeckState.active]) {
+    applyCommandVisualState(commandDeckState.active);
+    handleCommandAction(commandDeckState.active, { silent: true, source: 'hydrate', preserveBaseline: true });
+  } else {
+    applyCommandVisualState(null);
+    updateCommandDeckButtons();
+  }
+  if (commandAnnouncer) {
+    announceCommand('Command deck ready. Shift+K kneels, Shift+C confesses, Shift+S triggers the siren, Shift+E escapes.');
+  }
+  persistCommandDeckState();
+  const handleTagsUpdate = (event) => {
+    if (commandDeckState.active) return;
+    const nextTags = Array.isArray(event?.detail?.activeTags)
+      ? sanitizeTagList(event.detail.activeTags)
+      : sanitizeTagList(Array.from((typeof getActiveTags === 'function' ? getActiveTags() : []) || []));
+    commandDeckState.lastManualTags = nextTags;
+    commandDeckState.baselineTags = nextTags.slice();
+    persistCommandDeckState();
+  };
+  document.addEventListener('tags:updated', handleTagsUpdate);
+  const handleKeydown = (event) => {
+    if (!event || event.defaultPrevented) return;
+    if (!event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+    const target = event.target;
+    const tagName = target?.tagName;
+    if (tagName) {
+      const normalized = tagName.toLowerCase();
+      if (['input', 'textarea', 'select'].includes(normalized)) return;
+    }
+    if (target?.isContentEditable) return;
+    const commandId = COMMAND_KEYBOARD_BINDINGS[event.code];
+    if (!commandId) return;
+    event.preventDefault();
+    handleCommandAction(commandId, { source: 'keyboard' });
+  };
+  document.addEventListener('keydown', handleKeydown);
+  return () => {
+    buttonCleanups.forEach((cleanup) => cleanup());
+    document.removeEventListener('tags:updated', handleTagsUpdate);
+    document.removeEventListener('keydown', handleKeydown);
+    commandButtons.clear();
+    commandAnnouncer = null;
+  };
+}
 
 function readMotionPreference() {
   if (typeof window === 'undefined') return MOTION_DEFAULT;
@@ -1243,6 +1815,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupFavoritesButton();
   setupDossierButton();
 
+  const commandDeckCleanup = await setupCommandDeck();
+
   const idleCleanup = setupIdleWhispers();
 
   window.kexplorer = {
@@ -1284,6 +1858,9 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       if (typeof idleCleanup === 'function') idleCleanup();
       if (pressureProgression && typeof pressureProgression.dispose === 'function') {
         pressureProgression.dispose();
+      }
+      if (typeof commandDeckCleanup === 'function') {
+        commandDeckCleanup();
       }
       if (typeof ritualCleanup === 'function') {
         ritualCleanup();

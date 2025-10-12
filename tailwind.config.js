@@ -19,6 +19,12 @@ export default {
         glow: '#66f3ff',
         blush: '#ff64d4',
         ember: '#ff8257',
+        command: {
+          kneel: '#4ee3f5',
+          confess: '#ff86d6',
+          siren: '#ff4a6d',
+          escape: '#7f8cff',
+        },
         indulgence: {
           0: '#1b1830',
           1: '#2d1f45',
@@ -46,6 +52,10 @@ export default {
         'pressure-high': '0 0 42px rgba(255, 130, 87, 0.45)',
         'pressure-max': '0 0 48px rgba(255, 47, 100, 0.55)',
         'ritual-panel': '0 45px 95px -35px rgba(255, 99, 200, 0.52)',
+        'command-kneel': '0 22px 56px -28px rgba(78, 227, 245, 0.6)',
+        'command-confess': '0 24px 58px -30px rgba(255, 134, 214, 0.55)',
+        'command-siren': '0 26px 62px -28px rgba(255, 74, 109, 0.58)',
+        'command-escape': '0 22px 54px -28px rgba(127, 140, 255, 0.52)',
       },
       dropShadow: {
         ritual: '0 0 1.8rem rgba(255, 100, 212, 0.55)',
