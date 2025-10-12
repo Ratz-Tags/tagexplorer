@@ -3,10 +3,26 @@
  */
 
 import { vibrate } from "./ui.js";
+import {
+  initHumiliationAudio,
+  setGlobalMuteState as setHumiliationGlobalMute,
+  setCoverSuppressedState as setHumiliationCover,
+  setPrivacySuppressedState as setHumiliationPrivacy,
+  setReducedVolumeState as setHumiliationReducedVolume,
+  setMotionMode as setHumiliationMotion,
+  syncTTSIntensity as syncHumiliationIntensity,
+} from "./audio/humiliation-audio.js";
 
 let currentTrack = 0;
-let moansMuted = false;
-let moanPlaying = false;
+
+let humiliationController = null;
+let indulgenceSlider = null;
+let indulgenceCaption = null;
+let indulgenceAnnounce = null;
+let coverModeSuppressed = false;
+let privacySuppressed = false;
+let reducedVolumePref = false;
+let privacyEventsBound = false;
 
 const GLOBAL_MUTE_STORAGE_KEY = 'te.audio.globalMute';
 const PLAYLIST_DATA_URL = 'data/audio-playlists.json';
@@ -417,7 +433,6 @@ function updateAudioIntensityVolume() {
   if (!hypnoAudio) return;
   if (globalMute) {
     hypnoAudio.volume = 0;
-    if (moanAudio) moanAudio.volume = 0;
     return;
   }
   const levels = [0.0, 0.35, 0.55, 0.78];
@@ -426,9 +441,6 @@ function updateAudioIntensityVolume() {
   const targetVolume = intensitySyncEnabled ? Math.max(0, Math.min(1, base * motionFactor)) : hypnoAudio.volume;
   try {
     hypnoAudio.volume = targetVolume;
-    if (moanAudio) {
-      moanAudio.volume = moansMuted ? 0 : targetVolume * 0.6;
-    }
   } catch (error) {
     console.warn('[audio] failed to update volume', error);
   }
@@ -510,6 +522,7 @@ function handleTTSIntensityChange(event) {
   const intensity = Number(event?.detail?.intensity);
   if (Number.isFinite(intensity)) {
     currentTTSIntensity = Math.max(0, Math.min(3, Math.floor(intensity)));
+    syncHumiliationIntensity(intensity);
     if (intensitySyncEnabled) {
       updateAudioIntensityVolume();
     }
@@ -522,6 +535,128 @@ function handleMotionPreference(event) {
   if (mode === 'reduced' || mode === 'full') {
     motionMode = mode;
     updateAudioIntensityVolume();
+    setHumiliationMotion(mode);
+  }
+}
+
+function handleVolumePreference(event) {
+  const detail = event?.detail || {};
+  const raw = detail.mode || detail.volume || detail.state || detail.value;
+  if (typeof raw !== 'string') return;
+  const normalized = raw.toLowerCase();
+  const shouldReduce = ['reduced', 'muted', 'silent', 'privacy'].includes(normalized);
+  reducedVolumePref = shouldReduce;
+  setHumiliationReducedVolume(reducedVolumePref);
+}
+
+function evaluateCoverSuppression() {
+  if (typeof document === 'undefined') return;
+  const mode = document.body?.dataset?.foldMode || '';
+  const suppressed = mode === 'fold-cover';
+  if (suppressed === coverModeSuppressed) return;
+  coverModeSuppressed = suppressed;
+  setHumiliationCover(coverModeSuppressed);
+}
+
+function bindCoverModeObserver() {
+  if (typeof document === 'undefined' || typeof MutationObserver === 'undefined') {
+    evaluateCoverSuppression();
+    return;
+  }
+  if (coverObserver) {
+    evaluateCoverSuppression();
+    return;
+  }
+  const body = document.body;
+  if (!body) return;
+  coverObserver = new MutationObserver(() => {
+    evaluateCoverSuppression();
+  });
+  coverObserver.observe(body, { attributes: true, attributeFilter: ['data-fold-mode'] });
+  evaluateCoverSuppression();
+}
+
+function setPrivacySuppression(next) {
+  const suppressed = Boolean(next);
+  if (suppressed === privacySuppressed) return;
+  privacySuppressed = suppressed;
+  setHumiliationPrivacy(privacySuppressed);
+}
+
+function handlePrivacyEvent(event) {
+  const detail = event?.detail || {};
+  if (typeof detail.silenced !== 'undefined') {
+    setPrivacySuppression(detail.silenced);
+    return;
+  }
+  if (typeof detail.muted !== 'undefined') {
+    setPrivacySuppression(detail.muted);
+    return;
+  }
+  if (typeof detail.suppressed !== 'undefined') {
+    setPrivacySuppression(detail.suppressed);
+    return;
+  }
+  if (typeof detail.mode === 'string') {
+    const mode = detail.mode.toLowerCase();
+    const suppressedModes = ['ghost', 'stealth', 'privacy', 'silent'];
+    setPrivacySuppression(suppressedModes.includes(mode));
+  }
+}
+
+function evaluatePrivacyDataset() {
+  if (typeof document === 'undefined') return;
+  const mode =
+    document.documentElement?.dataset?.privacy || document.body?.dataset?.privacy || '';
+  if (!mode) {
+    setPrivacySuppression(false);
+    return;
+  }
+  const suppressedModes = ['ghost', 'stealth', 'privacy', 'silent'];
+  setPrivacySuppression(suppressedModes.includes(mode.toLowerCase()));
+}
+
+function evaluateVolumeDataset() {
+  if (typeof document === 'undefined') return;
+  const mode =
+    document.documentElement?.dataset?.volume || document.body?.dataset?.volume || '';
+  if (!mode) {
+    reducedVolumePref = false;
+    setHumiliationReducedVolume(false);
+    return;
+  }
+  const normalized = mode.toLowerCase();
+  const shouldReduce = ['reduced', 'muted', 'silent', 'privacy'].includes(normalized);
+  reducedVolumePref = shouldReduce;
+  setHumiliationReducedVolume(reducedVolumePref);
+}
+
+function bindPrivacyEvents() {
+  if (privacyEventsBound) return;
+  privacyEventsBound = true;
+  if (typeof document !== 'undefined') {
+    document.addEventListener('privacy:audio', handlePrivacyEvent);
+    document.addEventListener('privacy:mode', handlePrivacyEvent);
+    document.addEventListener('privacy:silence', handlePrivacyEvent);
+    document.addEventListener('volume:change', handleVolumePreference);
+    document.addEventListener('humiliationAudio:level', (event) => {
+      if (!event?.detail) return;
+      const { level, label } = event.detail;
+      if (typeof document !== 'undefined') {
+        document.body?.style?.setProperty('--indulgence-level', String(level ?? 0));
+        document.body?.dataset && (document.body.dataset.indulgence = String(level ?? 0));
+      }
+      if (indulgenceSlider) {
+        indulgenceSlider.dataset.levelLabel = label;
+      }
+    });
+  }
+  if (typeof window !== 'undefined') {
+    window.addEventListener('streaks:change', (event) => {
+      if (!event?.detail) return;
+      const suppressed = event.detail.trackingEnabled === false || event.detail.optedOut === true;
+      setPrivacySuppression(suppressed);
+    });
   }
 }
 
@@ -841,10 +976,7 @@ let trackName = null;
 let toggleBtn = null;
 let nextBtn = null;
 let prevBtn = null;
-let moanBtn = null;
-let moanToggle = null;
 let hypnoAudio = null;
-let moanAudio = null;
 
 function syncAudioPanelLayout() {
   if (typeof document === "undefined") return;
@@ -980,42 +1112,12 @@ function previousTrack() {
   loadTrack(currentTrack - 1);
 }
 
-/**
- * Toggles moan audio mute state
- */
-function toggleMoan() {
-  if (!moanAudio || !moanBtn) return;
-
-  moansMuted = !moansMuted;
-  moanAudio.muted = moansMuted;
-  moanBtn.textContent = moansMuted ? "🔇 Moan" : "🔊 Moan";
-}
-
-/**
- * Toggles the alternative moan audio playback
- */
-function toggleMoanPlayback() {
-  if (!moanAudio || !moanToggle) return;
-
-  if (moanPlaying) {
-    moanAudio.pause();
-    moanAudio.currentTime = 0;
-    moanToggle.textContent = "🔊 Moan";
-  } else {
-    moanAudio.play();
-    moanToggle.textContent = "🔇 Moan";
-  }
-  moanPlaying = !moanPlaying;
-}
-
 function applyGlobalMuteState(muted, { persist = true } = {}) {
   globalMute = Boolean(muted);
   if (hypnoAudio) {
     hypnoAudio.muted = globalMute;
   }
-  if (moanAudio) {
-    moanAudio.muted = globalMute ? true : moansMuted;
-  }
+  setHumiliationGlobalMute(globalMute);
   if (typeof document !== 'undefined') {
     document.body.classList.toggle('audio-muted', globalMute);
   }
@@ -1104,10 +1206,10 @@ async function initAudio() {
   toggleBtn = document.getElementById("audio-toggle");
   nextBtn = document.getElementById("audio-next");
   prevBtn = document.getElementById("audio-prev");
-  moanBtn = document.getElementById("moan-mute");
-  moanToggle = document.getElementById("moan-toggle");
   hypnoAudio = document.getElementById("hypnoAudio");
-  moanAudio = document.getElementById("moan-audio");
+  indulgenceSlider = document.getElementById("indulgence-slider");
+  indulgenceCaption = document.getElementById("indulgence-caption");
+  indulgenceAnnounce = document.getElementById("indulgence-announcement");
   playlistSelectEl = document.getElementById("audio-playlist-select");
   playlistAutoToggle = document.getElementById("playlist-autopilot");
   intensitySyncToggle = document.getElementById("audio-intensity-sync");
@@ -1124,6 +1226,29 @@ async function initAudio() {
   ensureCustomTracksAppended();
   renderTrackSelector();
   syncAudioPanelLayout();
+
+  evaluateVolumeDataset();
+
+  humiliationController = initHumiliationAudio({
+    slider: indulgenceSlider,
+    caption: indulgenceCaption,
+    announce: indulgenceAnnounce,
+    reducedMotion: motionMode === 'reduced',
+    reducedVolume: reducedVolumePref,
+  });
+
+  setHumiliationMotion(motionMode);
+
+  if (humiliationController && typeof humiliationController.getLevel === 'function') {
+    const level = Number(humiliationController.getLevel()) || 0;
+    if (typeof document !== 'undefined' && document.body?.dataset) {
+      document.body.dataset.indulgence = String(level);
+    }
+  }
+
+  bindCoverModeObserver();
+  evaluatePrivacyDataset();
+  bindPrivacyEvents();
 
   // ARIA and feedback improvements for audio controls
   const audioPlayer = document.getElementById("audio-player");
@@ -1164,20 +1289,6 @@ async function initAudio() {
     });
   }
 
-  if (moanBtn) {
-    moanBtn.addEventListener("click", (e) => {
-      vibrate();
-      toggleMoan(e);
-    });
-  }
-
-  if (moanToggle && moanAudio) {
-    moanToggle.addEventListener("click", (e) => {
-      vibrate();
-      toggleMoanPlayback(e);
-    });
-  }
-
   if (panelToggle) {
     panelToggle.addEventListener("click", (e) => {
       vibrate();
@@ -1193,14 +1304,6 @@ async function initAudio() {
   loadLastTrack();
   // Load initial track
   loadTrack(currentTrack);
-
-  moansMuted = true;
-  if (moanAudio) {
-    moanAudio.muted = true;
-  }
-  if (moanBtn) {
-    moanBtn.textContent = "🔇 Moan";
-  }
 
   hydrateGlobalMuteFromStorage();
   updateAudioIntensityVolume();
@@ -1430,7 +1533,7 @@ function getHumiliationTaunt(count) {
   if (count === 1) return "One stolen track already? That itch is showing.";
   if (count <= 3) return `${count} extra tracks? Getting clingy.`;
   if (count <= 5) return `${count} custom fixes. Silence terrifies you.`;
-  if (count <= 9) return `${count} hijacked moans. Desperation dripping.`;
+  if (count <= 9) return `${count} hijacked layers. Desperation dripping.`;
   return `${count} pilfered whispers. You're beyond saving.`;
 }
 

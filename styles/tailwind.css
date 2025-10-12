@@ -1798,6 +1798,94 @@ display: none;
 .audio-playlist-selector {
 @apply flex flex-col gap-2 mb-3;
 }
+.audio-indulgence {
+@apply mt-1 flex flex-col gap-3 rounded-3xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm;
+box-shadow: inset 0 0 0 1px rgba(255, 100, 212, 0.08);
+transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+.audio-indulgence:hover {
+box-shadow: inset 0 0 0 1px rgba(102, 243, 255, 0.22);
+border-color: rgba(102, 243, 255, 0.18);
+}
+.audio-indulgence[data-suppressed="true"] {
+border-color: rgba(255, 100, 212, 0.28);
+box-shadow: inset 0 0 0 1px rgba(255, 100, 212, 0.2);
+background: linear-gradient(135deg, rgba(27, 24, 48, 0.8), rgba(74, 31, 82, 0.55));
+}
+.indulgence-label-row {
+@apply flex items-baseline justify-between gap-3;
+}
+.indulgence-caption {
+@apply text-[0.55rem] uppercase tracking-[0.35em] text-slate-400;
+}
+.audio-indulgence[data-suppressed="true"] .indulgence-caption {
+@apply text-amber-200/80;
+}
+.indulgence-scale {
+@apply grid grid-cols-4 gap-1 text-[0.5rem] uppercase tracking-[0.25em] text-slate-500;
+}
+.indulgence-scale span {
+@apply text-center;
+}
+.indulgence-slider {
+@apply relative mt-2 h-2 w-full appearance-none rounded-full bg-white/10;
+background-image: linear-gradient(
+  90deg,
+  theme('colors.indulgence.1'),
+  theme('colors.indulgence.2'),
+  theme('colors.blush')
+);
+background-size: 100% 100%;
+background-repeat: no-repeat;
+cursor: pointer;
+transition: box-shadow 0.3s ease, background 0.3s ease;
+}
+.indulgence-slider:focus {
+outline: none;
+box-shadow: 0 0 0 3px rgba(255, 100, 212, 0.25);
+}
+.indulgence-slider::-webkit-slider-thumb {
+appearance: none;
+height: 1.5rem;
+width: 1.5rem;
+border-radius: 9999px;
+border: 2px solid rgba(255, 255, 255, 0.8);
+background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 100, 212, 0.7));
+box-shadow: 0 0 20px rgba(255, 100, 212, 0.4);
+cursor: pointer;
+transition: transform 0.2s ease;
+}
+.indulgence-slider::-webkit-slider-thumb:hover {
+transform: scale(1.05);
+}
+.indulgence-slider::-moz-range-thumb {
+height: 1.5rem;
+width: 1.5rem;
+border-radius: 9999px;
+border: 2px solid rgba(255, 255, 255, 0.8);
+background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 100, 212, 0.7));
+box-shadow: 0 0 20px rgba(255, 100, 212, 0.4);
+cursor: pointer;
+transition: transform 0.2s ease;
+}
+.indulgence-slider::-moz-range-thumb:hover {
+transform: scale(1.05);
+}
+.indulgence-slider--disabled,
+.indulgence-slider:disabled {
+@apply cursor-not-allowed opacity-60;
+background-image: linear-gradient(90deg, rgba(102, 243, 255, 0.25), rgba(27, 24, 48, 0.4));
+}
+.indulgence-slider--disabled::-webkit-slider-thumb,
+.indulgence-slider:disabled::-webkit-slider-thumb {
+background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), rgba(102, 243, 255, 0.35));
+box-shadow: none;
+}
+.indulgence-slider--disabled::-moz-range-thumb,
+.indulgence-slider:disabled::-moz-range-thumb {
+background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.6), rgba(102, 243, 255, 0.35));
+box-shadow: none;
+}
 .audio-playlist-selector .field-label {
 @apply text-[0.55rem] uppercase tracking-[0.35em] text-slate-300;
 }
