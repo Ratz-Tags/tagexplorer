@@ -39,6 +39,15 @@ export default {
         'pressure-mid': '0 0 36px rgba(255, 100, 212, 0.38)',
         'pressure-high': '0 0 42px rgba(255, 130, 87, 0.45)',
         'pressure-max': '0 0 48px rgba(255, 47, 100, 0.55)',
+        'ritual-panel': '0 45px 95px -35px rgba(255, 99, 200, 0.52)',
+      },
+      dropShadow: {
+        ritual: '0 0 1.8rem rgba(255, 100, 212, 0.55)',
+        'ritual-cyan': '0 0 2.2rem rgba(102, 243, 255, 0.5)',
+      },
+      outlineOffset: {
+        3: '0.75rem',
+        ritual: '0.375rem',
       },
       screens: {
         'fold-cover': {'raw': '(max-width: 520px) and (orientation: portrait)'},

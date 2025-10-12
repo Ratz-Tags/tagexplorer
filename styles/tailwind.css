@@ -154,6 +154,19 @@ pointer-events: none;
 .command-bar-safe-area--bottom > .cover-command-bar {
   pointer-events: auto;
 }
+.ritual-overlay-host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 160;
+}
+.ritual-overlay-host[data-active='true'] {
+  pointer-events: auto;
+}
+.ritual-overlay-host:focus-within {
+  outline: 2px solid rgba(255, 100, 212, 0.35);
+  outline-offset: 0.75rem;
+}
 .command-bar {
 @apply mx-auto flex w-full flex-col items-center justify-center gap-4 rounded-full border border-white/10 bg-black/40 px-6 py-4
 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon transition-all duration-500 ease-kink sm:flex-row sm:flex-wrap;
@@ -2336,5 +2349,15 @@ dialog[data-landing-ritual]::backdrop {
   }
   .landing-ritual__stage--active {
     transform: none;
+  }
+}
+
+@layer utilities {
+  .focus-trap-ring:focus-visible {
+    outline: 2px solid rgba(102, 243, 255, 0.75);
+    outline-offset: 0.375rem;
+  }
+  .ritual-glow-border {
+    box-shadow: 0 0 0 1px rgba(255, 100, 212, 0.35), 0 0 38px rgba(102, 243, 255, 0.45);
   }
 }
