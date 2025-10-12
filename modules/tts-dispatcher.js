@@ -419,7 +419,10 @@ function dispatchWhisperEvent(eventKey, options = {}) {
   return { text: line, intensity: lane };
 }
 
-if (typeof document !== 'undefined') {
+if (
+  typeof document !== 'undefined' &&
+  typeof document.addEventListener === 'function'
+) {
   document.addEventListener('tts:toggle', (event) => {
     const enabled = Boolean(event?.detail?.enabled);
     if (!enabled) {
