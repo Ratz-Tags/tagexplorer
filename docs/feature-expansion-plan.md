@@ -11,6 +11,8 @@
 - Replace the static hero CTA on `/` with a **pressure meter** that fills as users explore deeper sections. Meter state persists via `localStorage` so teasing resumes when they return.
 - Progress unlocks more aggressive **whispered Azure TTS lines** and injects short glitch overlays (`FEATURE_GLITCH_EFFECTS`) that momentarily freeze the gallery, reinforcing loss of control.
 - **Accessibility:** provide visible captions, allow manual reset in the Settings modal, and throttle animations for `prefers-reduced-motion`.
+- The live build stores `pressureMeterLevel` inside `localStorage['tx:haze:v1']`, dispatches `pressure:level-change` / `pressure:reset` events for observers, and exposes a reset button directly in the landing meter.
+- Gallery depth, tag-add whispers, and artist-open whispers each call into the progression controller so the meter and TTS intensity climb together without waiting on future ritual work.
 
 ### 2. Gallery Ritual Events
 - Introduce **tag-based rituals** on `/gallery/` that trigger when users stack specific tag combinations (e.g., `shame_mark`, `crying`, `obedience_training`).

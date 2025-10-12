@@ -64,6 +64,7 @@ import {
   openShameDossier,
   getDossierEntries,
 } from '../shame-dossier.js';
+import { incrementPressure } from '../progression/pressure-meter.js';
 
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
@@ -100,6 +101,58 @@ function applyMotionPreference(mode) {
     // Ignore custom event dispatch failures.
   }
   return normalized;
+}
+
+function setupPressureProgression() {
+  if (typeof document === 'undefined') {
+    return {
+      trackDepth() {},
+      resetBaseline() {},
+      dispose() {},
+    };
+  }
+
+  let deepestPageSeen = 0;
+
+  const computePageMarker = (info) => {
+    if (!info || typeof info !== 'object') return 0;
+    const candidates = [info.lastRenderedPage, info.currentPage];
+    for (let i = 0; i < candidates.length; i += 1) {
+      const candidate = candidates[i];
+      if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+        return candidate;
+      }
+    }
+    return 0;
+  };
+
+  const resetBaseline = () => {
+    const info = getPaginationInfo();
+    if (!info) return;
+    const marker = computePageMarker(info);
+    if (typeof marker === 'number' && Number.isFinite(marker) && marker > deepestPageSeen) {
+      deepestPageSeen = marker;
+    }
+  };
+
+  const trackDepth = () => {
+    const info = getPaginationInfo();
+    if (!info) return;
+    const marker = computePageMarker(info);
+    if (!Number.isFinite(marker) || marker <= deepestPageSeen) return;
+    const delta = marker - deepestPageSeen;
+    deepestPageSeen = marker;
+    const amount = Math.min(12, Math.max(3, 2 + delta * 2));
+    incrementPressure(amount, { source: 'gallery-depth' });
+  };
+
+  resetBaseline();
+
+  return {
+    trackDepth,
+    resetBaseline,
+    dispose() {},
+  };
 }
 
 function setupVoiceSelectorButton() {
@@ -683,6 +736,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupAudioToggle();
   setupMuteToggle();
   setupMotionToggle(readMotionPreference());
+  const pressureProgression = setupPressureProgression();
   const foldCleanup = setupFoldModeSync({
     foldAdapter,
   });
@@ -736,6 +790,10 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     filterArtists();
   }
 
+  if (pressureProgression && typeof pressureProgression.resetBaseline === 'function') {
+    pressureProgression.resetBaseline();
+  }
+
   initTagExplorer();
   setupBackgroundRotation(setRandomBackground, {
     getActiveTags,
@@ -747,11 +805,17 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       const info = getPaginationInfo();
       if (!info?.hasMoreForward) return;
       renderArtistsPage({ direction: 'forward' });
+      if (pressureProgression && typeof pressureProgression.trackDepth === 'function') {
+        pressureProgression.trackDepth();
+      }
     },
     onBackward: () => {
       const info = getPaginationInfo();
       if (!info?.hasMoreBackward) return;
       renderArtistsPage({ direction: 'backward' });
+      if (pressureProgression && typeof pressureProgression.resetBaseline === 'function') {
+        pressureProgression.resetBaseline();
+      }
     },
     infoProvider: () => getPaginationInfo(),
   });
@@ -794,6 +858,9 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       persistState();
       if (typeof foldCleanup === 'function') foldCleanup();
       if (typeof idleCleanup === 'function') idleCleanup();
+      if (pressureProgression && typeof pressureProgression.dispose === 'function') {
+        pressureProgression.dispose();
+      }
     },
   };
 }

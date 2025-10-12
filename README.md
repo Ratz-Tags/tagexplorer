@@ -17,6 +17,13 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 - Use the **Wipe log** action inside the overlay (or clear `localStorage['te.dossier.entries']` in the console) to purge local history instantly.
 - Dossier whispers respect the TTS intensity slider: higher intensities surface harsher `dossier_open` / `dossier_revisit` lines, while disabled TTS falls back to a soft on-screen caption inside the panel.
 
+## Shame Pressure Meter
+
+- The landing hero now replaces its CTA stack with a persistent **Shame Pressure** meter. It fills from the `tx:haze:v1` namespace in `localStorage`, mirroring the current `pressureMeterLevel` whenever you return to the site.
+- Adding tags, triggering stack-overflow taunts, or opening artists in the gallery nudges the level upward; endless-scroll depth adds even more heat. The meter modulates TTS intensity so higher tiers unlock harsher whisper lanes automatically.
+- A "Reset pressure" control sits in the landing meter for quick purges. Clearing the namespace manually (`localStorage.removeItem('tx:haze:v1')`) also wipes the counter if you prefer using dev tools.
+- Motion is throttled automatically when `prefers-reduced-motion` is active or when the in-app motion toggle is set to Reduced, keeping the glow collapse gentle on the Fold cover screen.
+
 ## Project Structure
 
 - `index.html` – Main entry point with inline Tailwind Play config and component layers (no build step required)

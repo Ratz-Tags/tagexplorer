@@ -32,16 +32,72 @@
     <main class="landing-main" aria-labelledby="landing-title">
       <h1 id="landing-title" class="landing-title" data-shadow="Whisper Protocol Engaged">Whisper Protocol Engaged</h1>
       <p class="landing-intro">Each tap leaves a trace. Every filter, every tag — archived, mocked, replayed in soft hisses. Step through if the shame-glow is what you wanted.</p>
-      <div class="landing-actions">
-        <a
-          class="landing-cta landing-enter"
-          href="./gallery/"
-          data-router-link
-          data-glitch-trigger
-          data-landing-enter
-        >Enter Gallery</a>
-        <button class="landing-cta landing-audio" data-landing-audio type="button">Unmute the whispers</button>
-      </div>
+      <section
+        class="landing-meter"
+        data-pressure-meter
+        data-pressure-tier="0"
+        data-pressure-level="0"
+        aria-labelledby="pressure-meter-label"
+      >
+        <header class="landing-meter__header">
+          <span id="pressure-meter-label" class="landing-meter__eyebrow">Shame pressure</span>
+          <button
+            type="button"
+            class="landing-meter__reset"
+            data-pressure-reset
+            aria-disabled="true"
+            disabled
+          >
+            Reset pressure
+          </button>
+        </header>
+        <div class="landing-meter__body">
+          <div
+            class="landing-meter__gauge"
+            role="meter"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-describedby="pressure-meter-caption"
+            data-pressure-gauge
+          >
+            <div class="landing-meter__track">
+              <div class="landing-meter__fill" data-pressure-fill></div>
+            </div>
+            <div class="landing-meter__value" data-pressure-value>00%</div>
+            <span class="landing-meter__status" data-pressure-label>Dormant</span>
+          </div>
+          <p
+            id="pressure-meter-caption"
+            class="landing-meter__caption"
+            data-pressure-caption
+            aria-live="polite"
+          >
+            Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
+          </p>
+          <div class="landing-meter__actions">
+            <a
+              class="landing-meter__control landing-meter__enter landing-cta landing-enter"
+              href="./gallery/"
+              data-router-link
+              data-glitch-trigger
+              data-landing-enter
+            >
+              Enter under watch
+            </a>
+            <button
+              class="landing-meter__control landing-meter__control--ghost landing-audio"
+              data-landing-audio
+              type="button"
+            >
+              Unmute the whispers
+            </button>
+          </div>
+        </div>
+        <span class="landing-meter__sr" data-pressure-caption-live aria-live="polite">
+          Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
+        </span>
+      </section>
       <div class="landing-disclaimer" role="note">
         <p>18+. Explicit Danbooru content. Azure whisper TTS. Motion-heavy. Switch on <span>reduce motion</span> if you bruise easy.</p>
       </div>
