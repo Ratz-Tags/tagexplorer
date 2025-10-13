@@ -833,9 +833,8 @@ function initTagExplorer() {
     renderCategories();
   };
 
-  ensureHeightSyncListeners();
-  renderExplorer();
-  isInitialized = true; document.createElement("div");
+  // Create mobile overlay
+  const mobileOverlay = document.createElement("div");
   mobileOverlay.className = "tag-explorer-overlay";
   mobileOverlay.id = "tag-explorer-overlay";
   document.body.appendChild(mobileOverlay);
