@@ -32,16 +32,72 @@
     <main class="landing-main" aria-labelledby="landing-title">
       <h1 id="landing-title" class="landing-title" data-shadow="Whisper Protocol Engaged">Whisper Protocol Engaged</h1>
       <p class="landing-intro">Each tap leaves a trace. Every filter, every tag — archived, mocked, replayed in soft hisses. Step through if the shame-glow is what you wanted.</p>
-      <div class="landing-actions">
-        <a
-          class="landing-cta landing-enter"
-          href="./gallery/"
-          data-router-link
-          data-glitch-trigger
-          data-landing-enter
-        >Enter Gallery</a>
-        <button class="landing-cta landing-audio" data-landing-audio type="button">Unmute the whispers</button>
-      </div>
+      <section
+        class="landing-meter"
+        data-pressure-meter
+        data-pressure-tier="0"
+        data-pressure-level="0"
+        aria-labelledby="pressure-meter-label"
+      >
+        <header class="landing-meter__header">
+          <span id="pressure-meter-label" class="landing-meter__eyebrow">Shame pressure</span>
+          <button
+            type="button"
+            class="landing-meter__reset"
+            data-pressure-reset
+            aria-disabled="true"
+            disabled
+          >
+            Reset pressure
+          </button>
+        </header>
+        <div class="landing-meter__body">
+          <div
+            class="landing-meter__gauge"
+            role="meter"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-valuenow="0"
+            aria-describedby="pressure-meter-caption"
+            data-pressure-gauge
+          >
+            <div class="landing-meter__track">
+              <div class="landing-meter__fill" data-pressure-fill></div>
+            </div>
+            <div class="landing-meter__value" data-pressure-value>00%</div>
+            <span class="landing-meter__status" data-pressure-label>Dormant</span>
+          </div>
+          <p
+            id="pressure-meter-caption"
+            class="landing-meter__caption"
+            data-pressure-caption
+            aria-live="polite"
+          >
+            Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
+          </p>
+          <div class="landing-meter__actions">
+            <a
+              class="landing-meter__control landing-meter__enter landing-cta landing-enter"
+              href="./gallery/"
+              data-router-link
+              data-glitch-trigger
+              data-landing-enter
+            >
+              Enter under watch
+            </a>
+            <button
+              class="landing-meter__control landing-meter__control--ghost landing-audio"
+              data-landing-audio
+              type="button"
+            >
+              Unmute the whispers
+            </button>
+          </div>
+        </div>
+        <span class="landing-meter__sr" data-pressure-caption-live aria-live="polite">
+          Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
+        </span>
+      </section>
       <div class="landing-disclaimer" role="note">
         <p>18+. Explicit Danbooru content. Azure whisper TTS. Motion-heavy. Switch on <span>reduce motion</span> if you bruise easy.</p>
       </div>
@@ -64,70 +120,86 @@
       </div>
       <div class="landing-ritual__body">
         <section data-ritual-step="mission" class="landing-ritual__stage">
-          <p id="landing-ritual-copy" class="landing-ritual__lead">
-            Pick the profile you want logged before we let you back inside. Choose carefully – it brands every visit.
-          </p>
-          <ul class="landing-ritual__options" role="list">
-            <li>
-              <button
-                type="button"
-                data-mission-option="cataloguer"
-                data-mission-label="Cataloguer"
-                data-mission-copy="You index every indulgence. A librarian of lust."
-                class="landing-ritual__option"
-              >
-                <span class="landing-ritual__option-title">Cataloguer</span>
-                <span class="landing-ritual__option-copy">You index every indulgence. A librarian of lust.</span>
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                data-mission-option="scout"
-                data-mission-label="Scout"
-                data-mission-copy="Always just checking the feed. Never innocent."
-                class="landing-ritual__option"
-              >
-                <span class="landing-ritual__option-title">Scout</span>
-                <span class="landing-ritual__option-copy">Always "just checking" the feed. Never innocent.</span>
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                data-mission-option="supplicant"
-                data-mission-label="Supplicant"
-                data-mission-copy="You arrive needy, ready to be read aloud."
-                class="landing-ritual__option"
-              >
-                <span class="landing-ritual__option-title">Supplicant</span>
-                <span class="landing-ritual__option-copy">You arrive needy, ready to be read aloud.</span>
-              </button>
-            </li>
-          </ul>
+          <div class="landing-contract" aria-describedby="landing-ritual-copy">
+            <p id="landing-ritual-copy" class="landing-ritual__lead landing-contract__lead">
+              Pick the profile you want logged before we let you back inside. Choose carefully – it brands every visit.
+            </p>
+            <ul class="landing-ritual__options landing-contract__options" role="list">
+              <li>
+                <button
+                  type="button"
+                  data-mission-option="cataloguer"
+                  data-mission-label="Cataloguer"
+                  data-mission-copy="You index every indulgence. A librarian of lust."
+                  class="landing-ritual__option"
+                >
+                  <span class="landing-ritual__option-title">Cataloguer</span>
+                  <span class="landing-ritual__option-copy">You index every indulgence. A librarian of lust.</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-mission-option="scout"
+                  data-mission-label="Scout"
+                  data-mission-copy="Always just checking the feed. Never innocent."
+                  class="landing-ritual__option"
+                >
+                  <span class="landing-ritual__option-title">Scout</span>
+                  <span class="landing-ritual__option-copy">Always "just checking" the feed. Never innocent.</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  data-mission-option="supplicant"
+                  data-mission-label="Supplicant"
+                  data-mission-copy="You arrive needy, ready to be read aloud."
+                  class="landing-ritual__option"
+                >
+                  <span class="landing-ritual__option-title">Supplicant</span>
+                  <span class="landing-ritual__option-copy">You arrive needy, ready to be read aloud.</span>
+                </button>
+              </li>
+            </ul>
+          </div>
         </section>
         <section data-ritual-step="consent" class="landing-ritual__stage" hidden>
-          <p class="landing-ritual__lead">
-            We cache your choice locally. No servers. No mercy if you forget it&apos;s there.
-          </p>
-          <ul class="landing-ritual__bullet-list">
-            <li>Mission + timestamp live in your browser only.</li>
-            <li>Clearing storage resets the ritual and our whispers.</li>
-            <li>Back out now and the door stays sealed.</li>
-          </ul>
-          <div class="landing-ritual__actions">
-            <button type="button" data-ritual-back class="landing-ritual__secondary">Change mission</button>
-            <button type="button" data-ritual-consent class="landing-ritual__primary">Swear me in</button>
+          <div class="landing-contract" aria-live="polite">
+            <p class="landing-ritual__lead landing-contract__lead">
+              We cache your choice locally. No servers. No mercy if you forget it&apos;s there.
+            </p>
+            <ul class="landing-ritual__bullet-list landing-contract__body">
+              <li>Mission + timestamp live in your browser only.</li>
+              <li>Clearing storage resets the ritual and our whispers.</li>
+              <li>Back out now and the door stays sealed.</li>
+            </ul>
+          </div>
+          <div class="landing-ritual__actions landing-ritual__actions--stack">
+            <button type="button" data-ritual-back class="landing-ritual__secondary">
+              <span aria-hidden="true">↩</span>
+              <span>Change mission</span>
+            </button>
+            <button type="button" data-ritual-consent class="landing-ritual__primary">
+              <span>Sign the contract</span>
+            </button>
           </div>
         </section>
         <section data-ritual-step="confirm" class="landing-ritual__stage" hidden>
-          <p class="landing-ritual__lead" data-ritual-summary>
-            Mission ready. Confirm to let the gallery whisper about it every time you return.
-          </p>
-          <p class="landing-ritual__disclosure">Your consent is recorded in localStorage as <code>te.mission.profile</code>.</p>
-          <div class="landing-ritual__actions">
-            <button type="button" data-ritual-back class="landing-ritual__secondary">Second thoughts</button>
-            <button type="button" data-ritual-confirm class="landing-ritual__primary">Enter under watch</button>
+          <div class="landing-contract" aria-live="polite">
+            <p class="landing-ritual__lead landing-contract__lead" data-ritual-summary>
+              Mission ready. Confirm to let the gallery whisper about it every time you return.
+            </p>
+            <p class="landing-ritual__disclosure landing-contract__body">Your consent is recorded in localStorage as <code>te.mission.profile</code>.</p>
+          </div>
+          <div class="landing-ritual__actions landing-ritual__actions--stack">
+            <button type="button" data-ritual-back class="landing-ritual__secondary">
+              <span aria-hidden="true">…</span>
+              <span>Second thoughts</span>
+            </button>
+            <button type="button" data-ritual-confirm class="landing-ritual__primary">
+              <span>Enter under watch</span>
+            </button>
           </div>
         </section>
       </div>

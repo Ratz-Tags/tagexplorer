@@ -27,17 +27,19 @@ let artistsListPromise = null;
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
   // Ultra-fast for maximum responsiveness
-  minDelay: 15, // Minimum 15ms between requests (maximum speed)
-  maxDelay: 3000, // Maximum 3s delay for backoff (reduced from 5s)
-  maxRetries: 4, // allow an extra retry before failing
-  backoffMultiplier: 1.4, // moderate backoff multiplier (reduced from 1.5)
+  minDelay: 8, // Minimum spacing between queued requests
+  maxDelay: 2500, // Maximum delay for aggressive backoff recovery
+  maxRetries: 5, // allow a couple more retries before failing
+  backoffMultiplier: 1.35, // quick recovery while respecting limits
 };
 
 // Request queue and tracking
 let requestQueue = [];
-let isProcessingQueue = false;
+let activeQueuedRequests = 0;
+let queueProcessingScheduled = false;
 let lastRequestTime = 0;
 let currentDelay = RATE_LIMIT_CONFIG.minDelay;
+let rateLimiterCursor = Promise.resolve();
 
 // Request deduplication
 const pendingRequests = new Map(); // url -> Promise
@@ -46,6 +48,51 @@ const requestBatches = new Map(); // batch key -> array of requests
 
 // In-memory API JSON cache to avoid reparsing/rehydration during a session
 const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
+
+const DEFAULT_BATCH_DELAY_MS = 16;
+const DEFAULT_MAX_CONCURRENT_REQUESTS = (() => {
+  if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
+    const hw = Number(navigator.hardwareConcurrency) || 0;
+    if (hw > 0) {
+      return Math.min(16, Math.max(8, Math.ceil(hw * 1.5)));
+    }
+  }
+  return 12;
+})();
+
+const MAX_PARALLEL_FETCHES = (() => {
+  if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
+    const hw = Number(navigator.hardwareConcurrency) || 0;
+    if (hw > 0) {
+      return Math.min(12, Math.max(4, Math.round(hw * 0.75)));
+    }
+  }
+  return 6;
+})();
+
+const scheduleMicrotask =
+  typeof queueMicrotask === 'function'
+    ? (cb) => queueMicrotask(cb)
+    : (cb) => Promise.resolve().then(cb);
+
+function delay(ms) {
+  return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
+async function waitForRateSlot() {
+  const previous = rateLimiterCursor;
+  rateLimiterCursor = previous
+    .catch(() => {})
+    .then(async () => {
+      const now = Date.now();
+      const elapsed = now - lastRequestTime;
+      if (elapsed < currentDelay) {
+        await delay(currentDelay - elapsed);
+      }
+      lastRequestTime = Date.now();
+    });
+  await rateLimiterCursor;
+}
 
 function toArtistSlug(name, fallbackIndex = 0) {
   const base = String(name || "artist").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -90,7 +137,7 @@ async function rateLimitedFetch(url, options = {}) {
   const promise = new Promise((resolve, reject) => {
     requestQueue.push({ url, options, resolve, reject, retries: 0 });
     console.debug && console.debug('[api] enqueued', url, 'queueLen=', requestQueue.length);
-    processQueue();
+    scheduleQueueProcessing();
   });
   
   // Store the promise for deduplication
@@ -107,68 +154,75 @@ async function rateLimitedFetch(url, options = {}) {
 /**
  * Process the request queue with rate limiting
  */
-async function processQueue() {
-  if (isProcessingQueue || requestQueue.length === 0) return;
-  
-  isProcessingQueue = true;
-  
-  while (requestQueue.length > 0) {
+function processQueue() {
+  queueProcessingScheduled = false;
+  if (!requestQueue.length) {
+    return;
+  }
+
+  const availableSlots = Math.max(1, MAX_PARALLEL_FETCHES - activeQueuedRequests);
+  for (let i = 0; i < availableSlots && requestQueue.length; i++) {
     const request = requestQueue.shift();
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    
-    // Wait if we need to respect rate limits
-    if (timeSinceLastRequest < currentDelay) {
-      await new Promise(resolve => setTimeout(resolve, currentDelay - timeSinceLastRequest));
-    }
-    
+    activeQueuedRequests++;
+    handleQueuedRequest(request)
+      .catch((error) => {
+        console.error('[api] queued request failed', error);
+        request.reject(error);
+      })
+      .finally(() => {
+        activeQueuedRequests = Math.max(0, activeQueuedRequests - 1);
+        scheduleQueueProcessing();
+      });
+  }
+}
+
+function scheduleQueueProcessing() {
+  if (queueProcessingScheduled) return;
+  queueProcessingScheduled = true;
+  scheduleMicrotask(processQueue);
+}
+
+async function handleQueuedRequest(request) {
+  while (true) {
     try {
-      lastRequestTime = Date.now();
+      await waitForRateSlot();
       const response = await fetchFn(request.url, request.options);
-      
+
       if (response.status === 429) {
-        // Rate limited - implement exponential backoff
-        request.retries++;
+        request.retries += 1;
         if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
-          // Increase delay with multiplier, clamp to maxDelay, and add small random jitter
           const next = Math.min(
             Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
             RATE_LIMIT_CONFIG.maxDelay
           );
-          const jitter = Math.floor(Math.random() * Math.max(100, Math.floor(next * 0.12))); // up to ~12% jitter
+          const jitter = Math.floor(Math.random() * Math.max(100, Math.floor(next * 0.12)));
           currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
-          console.warn(`Rate limited, backing off to ${currentDelay}ms delay (retry ${request.retries}/${RATE_LIMIT_CONFIG.maxRetries})`);
-          
-          // Show user feedback on first rate limit hit
           if (request.retries === 1) {
             showRateLimitWarning();
           }
-          
-          requestQueue.unshift(request); // Put back at front
-          continue;
-        } else {
-          console.error('Danbooru rate limit exceeded, max retries reached');
-          showRateLimitError();
-          request.reject(new Error('Rate limit exceeded, max retries reached'));
+          await delay(currentDelay);
           continue;
         }
-      } else if (response.ok) {
-        // Success - reduce delay gradually
-        // Reduce currentDelay gradually toward minDelay
-        currentDelay = Math.max(Math.floor(currentDelay * 0.88), RATE_LIMIT_CONFIG.minDelay);
+        console.error('Danbooru rate limit exceeded, max retries reached');
+        showRateLimitError();
+        request.reject(new Error('Rate limit exceeded, max retries reached'));
+        return;
+      }
+
+      if (response.ok) {
+        currentDelay = Math.max(Math.floor(currentDelay * 0.8), RATE_LIMIT_CONFIG.minDelay);
         hideRateLimitWarning();
       } else {
-        // Other HTTP errors
         console.warn(`API request failed with status ${response.status}: ${request.url}`);
       }
+
       request.resolve(response);
-      
+      return;
     } catch (error) {
       request.reject(error);
+      return;
     }
   }
-  
-  isProcessingQueue = false;
 }
 
 
@@ -569,7 +623,10 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
  * Batch fetch multiple artist images with staggered requests
  */
 async function fetchArtistImagesBatch(requests, options = {}) {
-  const { batchDelay = 40, maxConcurrent = 8 } = options;
+  const {
+    batchDelay = DEFAULT_BATCH_DELAY_MS,
+    maxConcurrent = DEFAULT_MAX_CONCURRENT_REQUESTS,
+  } = options;
   const results = new Map();
   
   // Process requests in smaller concurrent batches
@@ -832,7 +889,11 @@ async function fetchAllArtistImages(
         requests.push({ artistName, selectedTags, options: { limit: LIMIT, page: p, order: ORDER }, key: `p${p}` });
       }
 
-      const batchResults = await fetchArtistImagesBatch(requests, { batchDelay: options.batchDelay || 40, maxConcurrent: options.maxConcurrent || 10 });
+      const parallelOptions = {
+        batchDelay: options.batchDelay ?? DEFAULT_BATCH_DELAY_MS,
+        maxConcurrent: options.maxConcurrent ?? DEFAULT_MAX_CONCURRENT_REQUESTS,
+      };
+      const batchResults = await fetchArtistImagesBatch(requests, parallelOptions);
       for (let p = 1; p <= totalPages; p++) {
         const key = `p${p}`;
         const pagePosts = batchResults.get(key) || [];

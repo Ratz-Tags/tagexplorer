@@ -1,6 +1,7 @@
 import './command-bar.js';
 import './sidebar.js';
 import './audio-panel.js';
+import './gallery-ritual.js';
 
 export function defineShellComponents() {
   // importing the modules registers the custom elements
@@ -8,5 +9,6 @@ export function defineShellComponents() {
     hasCommandBar: Boolean(customElements.get('te-command-bar')),
     hasSidebar: Boolean(customElements.get('te-pinned-sidebar')),
     hasAudioPanel: Boolean(customElements.get('te-audio-panel')),
+    hasGalleryRitual: Boolean(customElements.get('te-gallery-ritual')),
   };
 }

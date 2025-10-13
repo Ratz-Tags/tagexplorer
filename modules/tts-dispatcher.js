@@ -6,6 +6,16 @@ import {
   isTTSEnabled,
   getTTSIntensity,
 } from './tts-toggle.js';
+import {
+  incrementPressure,
+  getPressureTier,
+  onPressureChange as onPressureStateChange,
+} from './progression/pressure-meter.js';
+import {
+  getStreakTier,
+  onStreakChange as onStreakUpdate,
+  isStreakTrackingEnabled,
+} from './progression/streaks.js';
 
 const LANE_MIN = 1;
 const LANE_MAX = 3;
@@ -22,6 +32,11 @@ const EVENT_COOLDOWNS = {
   dossier_open: 12000,
   dossier_revisit: 9000,
 };
+const PRESSURE_REWARDS = {
+  tag_add: (options = {}) => (options.tag ? 4 : 2),
+  stack_overflow: () => 3,
+  artist_open: () => 6,
+};
 
 let eventCatalog = {};
 let tagCatalog = {};
@@ -37,6 +52,29 @@ let globalCooldownUntil = 0;
 let scrollSuppressedUntil = 0;
 let lastScrollY = null;
 let lastScrollEvent = 0;
+let pressureTier = 0;
+let streakTier = 0;
+
+try {
+  pressureTier = getPressureTier();
+} catch {}
+
+try {
+  streakTier = isStreakTrackingEnabled() ? getStreakTier() : 0;
+} catch {}
+
+onPressureStateChange((detail) => {
+  if (!detail || typeof detail.tier === 'undefined') return;
+  const nextTier = Number(detail.tier);
+  if (Number.isFinite(nextTier)) {
+    pressureTier = Math.max(0, nextTier);
+  }
+});
+
+onStreakUpdate((detail) => {
+  if (!detail || typeof detail.tier === 'undefined') return;
+  streakTier = detail.trackingEnabled ? Math.max(0, Number(detail.tier) || 0) : 0;
+});
 
 function clampLane(value) {
   const numeric = Number(value);
@@ -159,24 +197,44 @@ function pickFromMatrix(matrix, lane) {
 function resolveLane(userLane, { intensity, minIntensity, maxIntensity } = {}) {
   const userCap = clampLane(userLane);
   if (userCap === 0) return 0;
+  const pressureFloor =
+    pressureTier > 0 ? Math.min(LANE_MAX, clampLane(pressureTier)) : LANE_MIN;
+  const streakFloor =
+    streakTier > 0 ? Math.min(LANE_MAX, clampLane(streakTier)) : LANE_MIN;
+  const combinedFloor = Math.max(pressureFloor, streakFloor);
   if (typeof intensity === 'number') {
     const forced = clampLane(intensity);
     if (forced === 0) return 0;
-    return Math.min(userCap, forced);
+    const enforcedFloor = Math.max(combinedFloor, forced);
+    if (userCap < enforcedFloor) {
+      return userCap;
+    }
+    return Math.min(userCap, enforcedFloor);
   }
-  const minLane = typeof minIntensity === 'number' ? clampLane(minIntensity) : LANE_MIN;
-  const maxLane = typeof maxIntensity === 'number' ? clampLane(maxIntensity) : LANE_MAX;
-  const allowedMax = Math.min(userCap, maxLane || LANE_MAX);
-  if (allowedMax === 0) return 0;
-  if (userCap < minLane) {
-    return userCap;
+  const requestedMin = typeof minIntensity === 'number' ? clampLane(minIntensity) : LANE_MIN;
+  const requestedMax = typeof maxIntensity === 'number' ? clampLane(maxIntensity) : LANE_MAX;
+  const floor = Math.max(requestedMin, combinedFloor);
+  const ceiling = Math.min(userCap, requestedMax || LANE_MAX);
+  if (ceiling === 0) return 0;
+  if (ceiling < floor) {
+    return ceiling;
   }
-  return Math.max(minLane || LANE_MIN, allowedMax || userCap);
+  return Math.max(floor || LANE_MIN, ceiling || userCap);
 }
 
 function getEventCooldown(eventKey) {
   const normalized = String(eventKey || '').toLowerCase();
   return EVENT_COOLDOWNS[normalized] ?? DEFAULT_EVENT_COOLDOWN_MS;
+}
+
+function rewardPressure(eventKey, options) {
+  const key = String(eventKey || '').toLowerCase();
+  const entry = PRESSURE_REWARDS[key];
+  if (!entry) return;
+  const value = typeof entry === 'function' ? entry(options || {}) : entry;
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return;
+  incrementPressure(amount, { source: `whisper:${key}` });
 }
 
 function configureWhisperCatalog({ events, tags, generalTaunts } = {}) {
@@ -235,6 +293,42 @@ async function playLineThroughAzure(text, eventKey, lane) {
     audio.currentTime = 0;
     audio.src = url;
     audio.play().catch(() => {});
+    try {
+      document.dispatchEvent(
+        new CustomEvent('humiliationAudio:tts', {
+          detail: { state: 'start', event: eventKey, lane, intensity },
+        }),
+      );
+    } catch (error) {
+      console.warn('[tts-dispatcher] failed to dispatch humiliation start', error);
+    }
+
+    const cleanup = (reason = 'ended') => {
+      audio.removeEventListener('ended', onEnded);
+      audio.removeEventListener('pause', onPause);
+      audio.removeEventListener('error', onError);
+      try {
+        document.dispatchEvent(
+          new CustomEvent('humiliationAudio:tts', {
+            detail: { state: 'stop', reason, event: eventKey, lane, intensity },
+          }),
+        );
+      } catch (error) {
+        console.warn('[tts-dispatcher] failed to dispatch humiliation stop', error);
+      }
+    };
+
+    const onEnded = () => cleanup('ended');
+    const onPause = () => {
+      if (!audio.ended && audio.currentTime > 0) {
+        cleanup('pause');
+      }
+    };
+    const onError = () => cleanup('error');
+
+    audio.addEventListener('ended', onEnded, { once: true });
+    audio.addEventListener('pause', onPause);
+    audio.addEventListener('error', onError, { once: true });
     return true;
   } catch (error) {
     console.warn('[tts-dispatcher] Failed to play whisper', error);
@@ -315,6 +409,7 @@ function dispatchWhisperEvent(eventKey, options = {}) {
   updateCaption(line, { muted: !enabled });
   lastTriggerTimes.set(key, now);
   globalCooldownUntil = now + GLOBAL_COOLDOWN_MS;
+  rewardPressure(key, options);
 
   if (!enabled) {
     return { skipped: true, text: line, reason: 'tts-disabled' };
@@ -324,7 +419,10 @@ function dispatchWhisperEvent(eventKey, options = {}) {
   return { text: line, intensity: lane };
 }
 
-if (typeof document !== 'undefined') {
+if (
+  typeof document !== 'undefined' &&
+  typeof document.addEventListener === 'function'
+) {
   document.addEventListener('tts:toggle', (event) => {
     const enabled = Boolean(event?.detail?.enabled);
     if (!enabled) {

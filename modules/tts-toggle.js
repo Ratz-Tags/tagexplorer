@@ -252,7 +252,11 @@ function updateIntensityControl() {
   btn.setAttribute("aria-label", `Whisper intensity ${label}${ariaSuffix}`);
   btn.setAttribute("data-intensity", String(intensity));
   btn.setAttribute("title", `Whisper intensity: ${label}`);
-  btn.classList.toggle("is-muted", !enabled || intensity === 0);
+  if (btn.classList && typeof btn.classList.toggle === "function") {
+    btn.classList.toggle("is-muted", !enabled || intensity === 0);
+  } else if (typeof btn.setAttribute === "function") {
+    btn.setAttribute("data-muted", (!enabled || intensity === 0) ? "true" : "false");
+  }
 }
 
 function updateTTSToggleButton() {

@@ -1,12 +1,31 @@
 import { setRandomBackground } from '../gallery.js';
 import { setupBackgroundRotation } from '../ui.js';
 import { dispatchWhisperEvent } from '../tts-dispatcher.js';
+import {
+  getPressureState,
+  onPressureChange,
+  resetPressure,
+} from '../progression/pressure-meter.js';
 
 const MOTION_STORAGE_KEY = 'te.motion.preference';
 const MOTION_DEFAULT = 'full';
 const THEME_STORAGE_KEY = 'theme';
 const MISSION_STORAGE_KEY = 'te.mission.profile';
 const CTA_LOCKED_CLASS = 'landing-enter--locked';
+const PRESSURE_MAX_LEVEL = 100;
+const PRESSURE_CAPTIONS = [
+  (levelText, numeric) =>
+    numeric <= 0
+      ? 'Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.'
+      : `Dormant sensors flicker at ${levelText}%. Reset is the only lie you can tell yourself.`,
+  (levelText) =>
+    `Needle pricks intensify at ${levelText}%. Every filter you tap pushes the glow harder. Reset if you dare.`,
+  (levelText) =>
+    `Archive crackle at ${levelText}%. The log is savouring every indulgence. Reset only delays the bite.`,
+  (levelText) =>
+    `Critical overload at ${levelText}%. Whispers stop pretending to be gentle. Reset while you can still breathe.`,
+];
+const PRESSURE_TIER_LABELS = ['Dormant', 'Needling', 'Fixated', 'Overload'];
 
 function parseMissionProfile(raw) {
   if (!raw || typeof raw !== 'string') return null;
@@ -48,6 +67,127 @@ function persistMissionProfile(profile) {
   } catch (error) {
     console.warn('[landing] failed to persist mission profile', error);
   }
+}
+
+function formatPressureLevel(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) {
+    return { numeric: 0, text: '00' };
+  }
+  const clamped = Math.max(0, Math.min(PRESSURE_MAX_LEVEL, Math.round(numericValue)));
+  return { numeric: clamped, text: clamped.toString().padStart(2, '0') };
+}
+
+function resolvePressureTier(value) {
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue) || numericValue < 0) return 0;
+  const maxTier = PRESSURE_TIER_LABELS.length - 1;
+  return Math.max(0, Math.min(maxTier, Math.round(numericValue)));
+}
+
+function describePressureState(level, tier) {
+  const { numeric, text } = formatPressureLevel(level);
+  const safeTier = resolvePressureTier(tier);
+  const generator = PRESSURE_CAPTIONS[safeTier] || PRESSURE_CAPTIONS[0];
+  let description = '';
+  try {
+    description = generator(text, numeric);
+  } catch (error) {
+    console.warn('[landing] failed to build pressure caption', error);
+    description = 'Sensors hum impatiently. Reset keeps them quiet—for now.';
+  }
+  const label = PRESSURE_TIER_LABELS[safeTier] || PRESSURE_TIER_LABELS[0];
+  return { numeric, text, tier: safeTier, label, description };
+}
+
+function setupPressureMeter() {
+  if (typeof document === 'undefined') return () => {};
+  const meter = document.querySelector('[data-pressure-meter]');
+  if (!meter) return () => {};
+
+  const gauge = meter.querySelector('[data-pressure-gauge]');
+  const valueEl = meter.querySelector('[data-pressure-value]');
+  const labelEl = meter.querySelector('[data-pressure-label]');
+  const captionEl = meter.querySelector('[data-pressure-caption]');
+  const srCaptionEl = meter.querySelector('[data-pressure-caption-live]');
+  const resetButton = meter.querySelector('[data-pressure-reset]');
+
+  const reduceQuery =
+    typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+      ? window.matchMedia('(prefers-reduced-motion: reduce)')
+      : null;
+
+  const syncReduced = () => {
+    const docMotion = document.body?.dataset?.motion;
+    const prefersReduced = Boolean(reduceQuery?.matches);
+    const reduced = docMotion === 'reduced' || prefersReduced;
+    meter.classList.toggle('landing-meter--reduced', reduced);
+  };
+
+  const applyState = (payload) => {
+    const { description, numeric, text, tier, label } = describePressureState(
+      payload?.level,
+      payload?.tier,
+    );
+    meter.dataset.pressureTier = String(tier);
+    meter.dataset.pressureLevel = String(numeric);
+    const progress = Math.max(0, Math.min(1, numeric / PRESSURE_MAX_LEVEL));
+    meter.style.setProperty('--pressure-meter-progress', progress.toFixed(3));
+    if (gauge) {
+      gauge.setAttribute('aria-valuemin', '0');
+      gauge.setAttribute('aria-valuemax', String(PRESSURE_MAX_LEVEL));
+      gauge.setAttribute('aria-valuenow', String(numeric));
+      gauge.setAttribute('aria-valuetext', `${numeric}% shame pressure — ${label}`);
+    }
+    if (valueEl) {
+      valueEl.textContent = `${text}%`;
+    }
+    if (labelEl) {
+      labelEl.textContent = label;
+    }
+    if (captionEl) {
+      captionEl.textContent = description;
+    }
+    if (srCaptionEl) {
+      srCaptionEl.textContent = description;
+    }
+    if (resetButton) {
+      const disabled = numeric === 0;
+      resetButton.disabled = disabled;
+      resetButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    }
+  };
+
+  syncReduced();
+  if (reduceQuery) {
+    reduceQuery.addEventListener('change', syncReduced);
+  }
+  const handleMotionChange = () => syncReduced();
+  document.addEventListener('motion:change', handleMotionChange);
+
+  applyState(getPressureState());
+  const unsubscribe =
+    onPressureChange((detail) => {
+      applyState(detail || getPressureState());
+    }) || (() => {});
+
+  const handleReset = () => {
+    resetPressure({ source: 'landing-reset' });
+  };
+  if (resetButton) {
+    resetButton.addEventListener('click', handleReset);
+  }
+
+  return () => {
+    unsubscribe();
+    if (resetButton) {
+      resetButton.removeEventListener('click', handleReset);
+    }
+    if (reduceQuery) {
+      reduceQuery.removeEventListener('change', syncReduced);
+    }
+    document.removeEventListener('motion:change', handleMotionChange);
+  };
 }
 
 function trapFocusWithin(container) {
@@ -324,6 +464,19 @@ function setupMissionRitual() {
   if (storedProfile) {
     ritualComplete = true;
     unlockCTA(storedProfile);
+    dialog.classList.remove('landing-ritual--open');
+    try {
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
+    } catch {
+      dialog.removeAttribute('open');
+    }
+    dialog.dataset.ritualState = 'complete';
+    dialog.setAttribute('hidden', '');
+    dialog.setAttribute('aria-hidden', 'true');
     return storedProfile;
   }
 
@@ -514,6 +667,7 @@ export async function initLandingPage({ shell, foldAdapter }) {
   motionMode = applyMotionPreference(motionMode);
 
   setupThemeToggles();
+  const disposePressureMeter = setupPressureMeter();
   setupMissionRitual();
 
   function revealAudioPanel() {
@@ -563,6 +717,13 @@ export async function initLandingPage({ shell, foldAdapter }) {
           }
         } catch (error) {
           console.warn('[landing] failed to dispose ambience controller', error);
+        }
+      }
+      if (typeof disposePressureMeter === 'function') {
+        try {
+          disposePressureMeter();
+        } catch (error) {
+          console.warn('[landing] failed to dispose pressure meter', error);
         }
       }
     },
