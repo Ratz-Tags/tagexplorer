@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clear Storage & Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    button {
+      background: #333;
+      color: #fff;
+      border: 1px solid #666;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #444;
+    }
+    .info {
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>TagExplorer Storage Manager</h1>
+  
+  <div class="info">
+    <h3>Current Storage:</h3>
+    <div id="storage-info"></div>
+  </div>
+  
+  <div>
+    <button onclick="checkStorage()">Check Storage</button>
+    <button onclick="clearMissionProfile()">Clear Mission Profile</button>
+    <button onclick="clearAllStorage()">Clear All Storage</button>
+    <button onclick="testLandingPage()">Test Landing Page</button>
+  </div>
+  
+  <div class="info">
+    <h3>Actions:</h3>
+    <div id="action-log"></div>
+  </div>
+
+  <script>
+    function log(message) {
+      const logEl = document.getElementById('action-log');
+      logEl.innerHTML += '<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>';
+    }
+
+    function checkStorage() {
+      const info = document.getElementById('storage-info');
+      let content = '';
+      
+      try {
+        const missionProfile = localStorage.getItem('te.mission.profile');
+        const motionPref = localStorage.getItem('te.motion.preference');
+        const theme = localStorage.getItem('theme');
+        
+        content += '<p><strong>Mission Profile:</strong> ' + (missionProfile ? JSON.stringify(JSON.parse(missionProfile), null, 2) : 'None') + '</p>';
+        content += '<p><strong>Motion Preference:</strong> ' + (motionPref || 'None') + '</p>';
+        content += '<p><strong>Theme:</strong> ' + (theme || 'None') + '</p>';
+        
+        // Show all localStorage keys
+        content += '<p><strong>All Storage Keys:</strong></p><ul>';
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          content += '<li>' + key + ': ' + localStorage.getItem(key) + '</li>';
+        }
+        content += '</ul>';
+        
+      } catch (error) {
+        content += '<p style="color: red;">Error: ' + error.message + '</p>';
+      }
+      
+      info.innerHTML = content;
+      log('Storage checked');
+    }
+
+    function clearMissionProfile() {
+      try {
+        localStorage.removeItem('te.mission.profile');
+        log('Mission profile cleared');
+        checkStorage();
+      } catch (error) {
+        log('Error clearing mission profile: ' + error.message);
+      }
+    }
+
+    function clearAllStorage() {
+      try {
+        localStorage.clear();
+        log('All storage cleared');
+        checkStorage();
+      } catch (error) {
+        log('Error clearing storage: ' + error.message);
+      }
+    }
+
+    function testLandingPage() {
+      window.open('/', '_blank');
+      log('Opening landing page in new tab');
+    }
+
+    // Auto-check on load
+    checkStorage();
+  </script>
+</body>
+</html>
