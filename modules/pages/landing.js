@@ -271,15 +271,27 @@ function setupMissionRitual() {
   };
 
   function setStep(step) {
+    console.log('[landing] Setting ritual step:', step);
     activeStep = step;
     const stages = Array.from(dialog.querySelectorAll('[data-ritual-step]'));
+    console.log('[landing] Found stages:', stages.length);
+    
     stages.forEach((stage) => {
       const key = stage.getAttribute('data-ritual-step');
       const isActive = key === step;
-      stage.toggleAttribute('hidden', !isActive);
+      console.log(`[landing] Stage "${key}": active=${isActive}`);
+      
+      // Use removeAttribute/setAttribute instead of toggleAttribute for better compatibility
+      if (isActive) {
+        stage.removeAttribute('hidden');
+      } else {
+        stage.setAttribute('hidden', '');
+      }
       stage.classList.toggle('landing-ritual__stage--active', isActive);
     });
+    
     dialog.setAttribute('data-ritual-stage', step);
+    console.log('[landing] Dialog stage set to:', step);
     queueMicrotask(() => focusCurrentStep());
   }
 
@@ -312,11 +324,19 @@ function setupMissionRitual() {
   }
 
   function openRitual(initialStep = 'mission') {
-    if (ritualComplete) return;
+    console.log('[landing] Opening ritual with step:', initialStep);
+    if (ritualComplete) {
+      console.log('[landing] Ritual already complete, not opening');
+      return;
+    }
+    
     const alreadyOpen = Boolean(dialog.open);
+    console.log('[landing] Dialog already open:', alreadyOpen);
+    
     try {
       dialog.removeAttribute('hidden');
     } catch {}
+    
     setStep(initialStep);
     if (!alreadyOpen) {
       if (typeof dialog.showModal === 'function') {

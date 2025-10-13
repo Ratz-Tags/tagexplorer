@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritual Dialog Debug - TagExplorer</title>
+    <style>
+        body {
+            background: oklch(10% 0.02 260);
+            color: white;
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .debug-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .debug-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .debug-button {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            border: 1px solid rgba(102, 243, 255, 0.3);
+            border-radius: 0.5rem;
+            background: rgba(102, 243, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .debug-button:hover {
+            border-color: rgba(102, 243, 255, 0.6);
+            background: rgba(102, 243, 255, 0.2);
+        }
+        
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .warning { color: #fbbf24; }
+        
+        .code-block {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.25rem;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔮 Ritual Dialog Debug Tool</h1>
+        <p>Use this tool to diagnose issues with the mission ritual dialog.</p>
+        
+        <div class="debug-section">
+            <h3>Quick Actions</h3>
+            <button class="debug-button" onclick="runFullDiagnostic()">🔍 Full Diagnostic</button>
+            <button class="debug-button" onclick="checkDialogStructure()">📋 Check Dialog Structure</button>
+            <button class="debug-button" onclick="simulateRitualFlow()">▶️ Simulate Ritual Flow</button>
+            <button class="debug-button" onclick="clearStorage()">🗑️ Clear Mission Data</button>
+            <a class="debug-button" href="/">🏠 Go to Landing Page</a>
+        </div>
+        
+        <div class="debug-section">
+            <h3>Diagnostic Results</h3>
+            <div id="results" class="code-block"></div>
+        </div>
+    </div>
+
+    <script>
+        const resultsEl = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f87171' : type === 'success' ? '#4ade80' : type === 'warning' ? '#fbbf24' : '#ffffff';
+            resultsEl.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span>\n`;
+            resultsEl.scrollTop = resultsEl.scrollHeight;
+        }
+        
+        function runFullDiagnostic() {
+            log('=== FULL DIAGNOSTIC STARTING ===', 'info');
+            resultsEl.innerHTML = '';
+            
+            // Check if we're on the right page
+            if (window.location.pathname === '/') {
+                log('✓ On landing page', 'success');
+            } else {
+                log('⚠ Not on landing page - navigate to / to test ritual dialog', 'warning');
+                return;
+            }
+            
+            // Check for dialog element
+            const dialog = document.querySelector('[data-landing-ritual]');
+            if (dialog) {
+                log('✓ Found ritual dialog element', 'success');
+                log(`  - ID: ${dialog.id || 'none'}`, 'info');
+                log(`  - Open: ${dialog.hasAttribute('open')}`, 'info');
+                log(`  - Hidden: ${dialog.hasAttribute('hidden')}`, 'info');
+                log(`  - Ritual state: ${dialog.dataset.ritualState || 'none'}`, 'info');
+                log(`  - Aria hidden: ${dialog.getAttribute('aria-hidden')}`, 'info');
+                log(`  - Display: ${window.getComputedStyle(dialog).display}`, 'info');
+            } else {
+                log('✗ Ritual dialog not found!', 'error');
+                return;
+            }
+            
+            checkDialogStructure();
+            checkButtonsAndListeners();
+            checkJavaScriptExecution();
+        }
+        
+        function checkDialogStructure() {
+            log('=== CHECKING DIALOG STRUCTURE ===', 'info');
+            
+            const dialog = document.querySelector('[data-landing-ritual]');
+            if (!dialog) {
+                log('✗ No dialog found', 'error');
+                return;
+            }
+            
+            // Check for stages
+            const stages = dialog.querySelectorAll('[data-ritual-step]');
+            log(`Found ${stages.length} ritual stages:`, 'info');
+            stages.forEach(stage => {
+                const step = stage.getAttribute('data-ritual-step');
+                const isHidden = stage.hasAttribute('hidden');
+                const isActive = stage.classList.contains('landing-ritual__stage--active');
+                log(`  - Stage "${step}": hidden=${isHidden}, active=${isActive}`, 'info');
+            });
+            
+            // Check for mission buttons
+            const missionButtons = dialog.querySelectorAll('[data-mission-option]');
+            log(`Found ${missionButtons.length} mission buttons:`, 'info');
+            missionButtons.forEach((button, i) => {
+                const option = button.dataset.missionOption;
+                const label = button.dataset.missionLabel;
+                log(`  - Button ${i+1}: ${option} (${label})`, 'info');
+            });
+            
+            // Check for other buttons
+            const backButtons = dialog.querySelectorAll('[data-ritual-back]');
+            const consentButton = dialog.querySelector('[data-ritual-consent]');
+            const confirmButton = dialog.querySelector('[data-ritual-confirm]');
+            
+            log(`Found ${backButtons.length} back buttons`, 'info');
+            log(`Consent button: ${consentButton ? 'found' : 'not found'}`, consentButton ? 'success' : 'error');
+            log(`Confirm button: ${confirmButton ? 'found' : 'not found'}`, confirmButton ? 'success' : 'error');
+        }
+        
+        function checkButtonsAndListeners() {
+            log('=== CHECKING BUTTON LISTENERS ===', 'info');
+            
+            const dialog = document.querySelector('[data-landing-ritual]');
+            if (!dialog) return;
+            
+            // Test mission buttons
+            const missionButtons = dialog.querySelectorAll('[data-mission-option]');
+            missionButtons.forEach((button, i) => {
+                const hasListeners = button.onclick || getEventListeners?.(button)?.click?.length > 0;
+                log(`Mission button ${i+1}: ${hasListeners ? 'has listeners' : 'no listeners detected'}`, hasListeners ? 'success' : 'warning');
+                
+                // Try to click and see what happens
+                try {
+                    button.addEventListener('click', function testClick() {
+                        log(`Mission button ${i+1} clicked successfully!`, 'success');
+                        button.removeEventListener('click', testClick);
+                    }, { once: true });
+                } catch (error) {
+                    log(`Error setting up test listener: ${error.message}`, 'error');
+                }
+            });
+        }
+        
+        function checkJavaScriptExecution() {
+            log('=== CHECKING JAVASCRIPT EXECUTION ===', 'info');
+            
+            // Check if landing.js module is loaded
+            if (window.setupMissionRitual) {
+                log('✓ setupMissionRitual function found in global scope', 'success');
+            } else {
+                log('⚠ setupMissionRitual not found in global scope (may be in module)', 'warning');
+            }
+            
+            // Check for localStorage mission profile
+            try {
+                const missionData = localStorage.getItem('te.mission.profile');
+                if (missionData) {
+                    const profile = JSON.parse(missionData);
+                    log(`✓ Mission profile exists: ${profile.mission}`, 'success');
+                    log('This explains why dialog might not show - mission already completed!', 'warning');
+                } else {
+                    log('✓ No mission profile - dialog should be showing', 'info');
+                }
+            } catch (error) {
+                log(`Error checking localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulateRitualFlow() {
+            log('=== SIMULATING RITUAL FLOW ===', 'info');
+            
+            const dialog = document.querySelector('[data-landing-ritual]');
+            if (!dialog) {
+                log('✗ No dialog found to test', 'error');
+                return;
+            }
+            
+            // Try to click first mission button
+            const firstMissionBtn = dialog.querySelector('[data-mission-option]');
+            if (firstMissionBtn) {
+                log('Clicking first mission button...', 'info');
+                firstMissionBtn.click();
+                
+                setTimeout(() => {
+                    // Check if we moved to consent stage
+                    const consentStage = dialog.querySelector('[data-ritual-step="consent"]');
+                    const isConsentVisible = consentStage && !consentStage.hasAttribute('hidden');
+                    log(`Consent stage visible: ${isConsentVisible}`, isConsentVisible ? 'success' : 'error');
+                    
+                    if (isConsentVisible) {
+                        // Try consent button
+                        const consentBtn = dialog.querySelector('[data-ritual-consent]');
+                        if (consentBtn) {
+                            log('Clicking consent button...', 'info');
+                            consentBtn.click();
+                            
+                            setTimeout(() => {
+                                // Check if we moved to confirm stage
+                                const confirmStage = dialog.querySelector('[data-ritual-step="confirm"]');
+                                const isConfirmVisible = confirmStage && !confirmStage.hasAttribute('hidden');
+                                log(`Confirm stage visible: ${isConfirmVisible}`, isConfirmVisible ? 'success' : 'error');
+                            }, 100);
+                        }
+                    }
+                }, 100);
+            } else {
+                log('✗ No mission buttons found', 'error');
+            }
+        }
+        
+        function clearStorage() {
+            try {
+                localStorage.removeItem('te.mission.profile');
+                log('✓ Mission profile cleared - refresh page to see ritual', 'success');
+            } catch (error) {
+                log(`Error clearing storage: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-run diagnostic when on landing page
+        if (window.location.pathname === '/') {
+            setTimeout(runFullDiagnostic, 1000);
+        } else {
+            log('Navigate to the landing page (/) to run diagnostics', 'info');
+        }
+    </script>
+</body>
+</html>

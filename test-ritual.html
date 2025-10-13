@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ritual Dialog Test - TagExplorer</title>
+    <style>
+        body {
+            background: oklch(10% 0.02 260);
+            color: white;
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .test-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            margin: 0.5rem;
+            border: 1px solid rgba(102, 243, 255, 0.3);
+            border-radius: 0.5rem;
+            background: rgba(102, 243, 255, 0.1);
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            border-color: rgba(102, 243, 255, 0.6);
+            background: rgba(102, 243, 255, 0.2);
+        }
+        
+        .info-box {
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 0.5rem;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .success { border-color: rgba(76, 175, 80, 0.5); background: rgba(76, 175, 80, 0.1); }
+        .warning { border-color: rgba(255, 193, 7, 0.5); background: rgba(255, 193, 7, 0.1); }
+        .error { border-color: rgba(244, 67, 54, 0.5); background: rgba(244, 67, 54, 0.1); }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔮 Ritual Dialog Test</h1>
+        <p>Use these tools to test and debug the ritual dialog behavior.</p>
+        
+        <div class="info-box">
+            <h3>Current State</h3>
+            <div id="status"></div>
+        </div>
+        
+        <div>
+            <h3>Test Actions</h3>
+            <button class="test-button" onclick="checkStorage()">📋 Check LocalStorage</button>
+            <button class="test-button" onclick="clearStorage()">🗑️ Clear Mission Data</button>
+            <button class="test-button" onclick="checkDialogState()">🔍 Check Dialog State</button>
+            <button class="test-button" onclick="forceCloseDialog()">❌ Force Close Dialog</button>
+        </div>
+        
+        <div>
+            <h3>Navigation</h3>
+            <a class="test-button" href="/">🏠 Go to Landing Page</a>
+            <a class="test-button" href="/gallery/">🖼️ Go to Gallery</a>
+        </div>
+        
+        <div class="info-box" id="results"></div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const resultsEl = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'warning';
+            resultsEl.innerHTML += `<div class="${className}" style="margin: 0.5rem 0; padding: 0.5rem; border-radius: 0.25rem;">[${timestamp}] ${message}</div>`;
+            updateStatus();
+        }
+        
+        function updateStatus() {
+            try {
+                const missionData = localStorage.getItem('te.mission.profile');
+                const hasMission = !!missionData;
+                const dialogExists = !!document.querySelector('[data-landing-ritual]');
+                
+                statusEl.innerHTML = `
+                    <p><strong>Mission Profile:</strong> ${hasMission ? '✅ Exists' : '❌ None'}</p>
+                    <p><strong>Dialog on Page:</strong> ${dialogExists ? '✅ Found' : '❌ Not Found'}</p>
+                    <p><strong>Mission Data:</strong> <code>${missionData || 'null'}</code></p>
+                `;
+            } catch (error) {
+                statusEl.innerHTML = `<p class="error">Error checking status: ${error.message}</p>`;
+            }
+        }
+        
+        function checkStorage() {
+            try {
+                const missionData = localStorage.getItem('te.mission.profile');
+                if (missionData) {
+                    const parsed = JSON.parse(missionData);
+                    log(`Mission found: ${parsed.mission} (${parsed.label})`, 'success');
+                    log(`Timestamp: ${new Date(parsed.timestamp).toLocaleString()}`, 'info');
+                } else {
+                    log('No mission profile found in localStorage', 'warning');
+                }
+                
+                // Check other related storage
+                const motionPref = localStorage.getItem('te.motion.preference');
+                const theme = localStorage.getItem('theme');
+                log(`Motion preference: ${motionPref || 'default'}`, 'info');
+                log(`Theme: ${theme || 'default'}`, 'info');
+                
+            } catch (error) {
+                log(`Error reading localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function clearStorage() {
+            try {
+                localStorage.removeItem('te.mission.profile');
+                log('Mission profile cleared from localStorage', 'success');
+                log('Refresh the landing page to see the ritual dialog again', 'info');
+                updateStatus();
+            } catch (error) {
+                log(`Error clearing localStorage: ${error.message}`, 'error');
+            }
+        }
+        
+        function checkDialogState() {
+            try {
+                const dialog = document.querySelector('[data-landing-ritual]');
+                if (dialog) {
+                    log('Dialog found on this page:', 'info');
+                    log(`- open attribute: ${dialog.hasAttribute('open')}`, 'info');
+                    log(`- data-ritual-state: ${dialog.dataset.ritualState || 'not set'}`, 'info');
+                    log(`- aria-hidden: ${dialog.getAttribute('aria-hidden')}`, 'info');
+                    log(`- hidden attribute: ${dialog.hasAttribute('hidden')}`, 'info');
+                    log(`- display style: ${window.getComputedStyle(dialog).display}`, 'info');
+                } else {
+                    log('No ritual dialog found on this page', 'warning');
+                    log('This test page doesn\'t have the dialog - use the landing page', 'info');
+                }
+            } catch (error) {
+                log(`Error checking dialog: ${error.message}`, 'error');
+            }
+        }
+        
+        function forceCloseDialog() {
+            try {
+                const dialog = document.querySelector('[data-landing-ritual]');
+                if (dialog) {
+                    // Apply the same logic as the fixed closeRitual function
+                    dialog.removeAttribute('open');
+                    dialog.classList.remove('landing-ritual--open');
+                    dialog.setAttribute('aria-hidden', 'true');
+                    dialog.dataset.ritualState = 'complete';
+                    dialog.setAttribute('hidden', '');
+                    
+                    if (typeof dialog.close === 'function') {
+                        dialog.close();
+                    }
+                    
+                    log('Dialog force-closed using fixed logic', 'success');
+                    checkDialogState();
+                } else {
+                    log('No dialog to close on this page', 'warning');
+                }
+            } catch (error) {
+                log(`Error force-closing dialog: ${error.message}`, 'error');
+            }
+        }
+        
+        // Initial status update
+        updateStatus();
+        log('Ritual dialog test page loaded', 'success');
+    </script>
+</body>
+</html>
