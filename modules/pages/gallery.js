@@ -1726,7 +1726,12 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   // Don't call setRandomBackground() here - let the controller handle it after initialization
 
   await initShameDossier();
+  
+  // Initialize tags first and ensure they're loaded before proceeding
+  console.log('[gallery] Initializing tags...');
   await initTags();
+  console.log('[gallery] Tags initialized, setting up gallery...');
+  
   initGallery();
 
   setSidebarArtists(artists);
@@ -1778,7 +1783,14 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     pressureProgression.resetBaseline();
   }
 
-  initTagExplorer();
+  // Initialize tag explorer after tags are confirmed to be loaded
+  console.log('[gallery] Initializing tag explorer...');
+  try {
+    initTagExplorer();
+    console.log('[gallery] Tag explorer initialized successfully');
+  } catch (error) {
+    console.error('[gallery] Failed to initialize tag explorer:', error);
+  }
   setupBackgroundRotation(setRandomBackground, {
     getActiveTags,
     getFilteredArtists,

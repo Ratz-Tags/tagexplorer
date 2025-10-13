@@ -492,9 +492,76 @@ async function initTags(
   }
 
   // Load kink tags from file (already categorized in production, but we can fall back to categorizing flat arrays)
-  const loadedTags = await fetchWithCache("kink-tags.json");
-  if (Array.isArray(loadedTags)) {
-    setKinkTags(loadedTags);
+  try {
+    console.log('[tags] Loading kink tags from kink-tags.json...');
+    const loadedTags = await fetchWithCache("kink-tags.json");
+    console.log('[tags] Raw loaded tags:', loadedTags);
+    
+    if (Array.isArray(loadedTags) && loadedTags.length > 0) {
+      setKinkTags(loadedTags);
+      console.log('[tags] Successfully loaded', kinkTags.length, 'tags in', kinkTagsByCategory.length, 'categories');
+      
+      // Notify any waiting components that tags are now available
+      if (window.tagExplorer?.onTagsLoaded) {
+        window.tagExplorer.onTagsLoaded();
+      }
+      
+      // Dispatch custom event for tag loading completion
+      window.dispatchEvent(new CustomEvent('tagsLoaded', { 
+        detail: { categories: kinkTagsByCategory.length, totalTags: kinkTags.length }
+      }));
+    } else {
+      console.error('[tags] Loaded data is not a valid array:', typeof loadedTags, loadedTags);
+      throw new Error('Invalid tag data format');
+    }
+  } catch (error) {
+    console.error('[tags] Failed to load kink tags:', error);
+    
+    // Fallback: create empty structure to prevent crashes
+    kinkTagsByCategory = [];
+    kinkTags = [];
+    
+    // Dispatch error event
+    window.dispatchEvent(new CustomEvent('tagsLoadError', { 
+      detail: { error: error.message }
+    }));
+    
+    // Try alternative loading approaches
+    console.log('[tags] Attempting fallback tag loading methods...');
+    
+    // Retry with different URL patterns
+    const fallbackUrls = [
+      './kink-tags.json',
+      '/kink-tags.json',
+      'data/kink-tags.json'
+    ];
+    
+    for (const url of fallbackUrls) {
+      try {
+        console.log(`[tags] Trying fallback URL: ${url}`);
+        const fallbackTags = await fetchWithCache(url);
+        if (Array.isArray(fallbackTags) && fallbackTags.length > 0) {
+          setKinkTags(fallbackTags);
+          console.log(`[tags] Fallback successful with ${url}:`, kinkTags.length, 'tags loaded');
+          
+          // Notify success
+          if (window.tagExplorer?.onTagsLoaded) {
+            window.tagExplorer.onTagsLoaded();
+          }
+          window.dispatchEvent(new CustomEvent('tagsLoaded', { 
+            detail: { categories: kinkTagsByCategory.length, totalTags: kinkTags.length, source: url }
+          }));
+          break;
+        }
+      } catch (fallbackError) {
+        console.warn(`[tags] Fallback URL ${url} failed:`, fallbackError.message);
+      }
+    }
+    
+    // If all attempts failed, log final error
+    if (kinkTagsByCategory.length === 0) {
+      console.error('[tags] All tag loading attempts failed. Application may not function properly.');
+    }
   }
 }
 
@@ -507,9 +574,19 @@ function setAllArtists(artists) {
 
 /**
  * Sets the render artists callback function
+/**
+ * Gets the available kink tags
  */
-function setRenderArtistsCallback(callback) {
-  renderArtists = callback;
+function getKinkTags() {
+  if (!Array.isArray(kinkTagsByCategory) || kinkTagsByCategory.length === 0) {
+    console.warn('[tags] getKinkTags called but no categories available');
+    return [];
+  }
+  
+  return kinkTagsByCategory.map(cat => ({ 
+    category: cat.category, 
+    tags: Array.isArray(cat.tags) ? [...cat.tags] : []
+  }));
 }
 
 /**
@@ -517,6 +594,13 @@ function setRenderArtistsCallback(callback) {
  */
 function setRandomBackgroundCallback(callback) {
   setRandomBackground = callback;
+}
+
+/**
+ * Sets the render artists callback function
+ */
+function setRenderArtistsCallback(callback) {
+  renderArtists = callback;
 }
 
 /**
@@ -561,12 +645,7 @@ function getArtistNameFilter() {
   return artistNameFilter;
 }
 
-/**
- * Gets the available kink tags
- */
-function getKinkTags() {
-  return kinkTagsByCategory.map(cat => ({ category: cat.category, tags: [...cat.tags] }));
-}
+
 
 // Export functions for ES modules
 export {

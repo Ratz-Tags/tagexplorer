@@ -439,11 +439,96 @@ function formatTagLabel(tag) {
 }
 
 function renderCategories() {
-  if (!groupsContainerEl) return;
+  if (!groupsContainerEl) {
+    console.warn('[tag-explorer] groupsContainerEl not found, skipping render');
+    return;
+  }
+  
   groupsContainerEl.innerHTML = "";
   const active = getActiveTags();
   const counts = getFilteredCounts(active);
   const categories = getKinkTags();
+  
+  console.log('[tag-explorer] Rendering categories:', categories.length, 'categories available');
+  
+  if (!categories || categories.length === 0) {
+    console.warn('[tag-explorer] No categories found, showing error state and attempting reload');
+    
+    const errorEl = document.createElement("div");
+    errorEl.className = "tag-loading-error";
+    errorEl.innerHTML = `
+      <div class="tag-loading-error__title">Tags Not Available</div>
+      <div class="tag-loading-error__message">Unable to load tag categories. Attempting to reload...</div>
+      <button class="tag-loading-error__retry" onclick="this.disabled=true; this.textContent='Retrying...'; window.tagExplorer?.forceReload?.();">
+        🔄 Retry Now
+      </button>
+    `;
+    groupsContainerEl.appendChild(errorEl);
+    
+    // Store a reference for manual retry
+    window.tagExplorer = window.tagExplorer || {};
+    window.tagExplorer.forceReload = () => {
+      console.log('[tag-explorer] Manual reload triggered');
+      // Clear existing error state
+      groupsContainerEl.innerHTML = `
+        <div class="tag-loading-spinner">
+          <div class="tag-loading-spinner__icon">⟳</div>
+          <div class="tag-loading-spinner__text">Reloading Tags...</div>
+        </div>
+      `;
+      
+      // Attempt reload with increased delay
+      setTimeout(async () => {
+        try {
+          // Force fresh import of tags module
+          const timestamp = Date.now();
+          const module = await import(`./tags.js?t=${timestamp}`);
+          console.log('[tag-explorer] Fresh tags module imported');
+          
+          if (module.getKinkTags) {
+            const retryCategories = module.getKinkTags();
+            console.log('[tag-explorer] Retry found', retryCategories.length, 'categories');
+            
+            if (retryCategories && retryCategories.length > 0) {
+              renderCategories();
+            } else {
+              // Still no categories, show persistent error
+              groupsContainerEl.innerHTML = `
+                <div class="tag-loading-error">
+                  <div class="tag-loading-error__title">Load Failed</div>
+                  <div class="tag-loading-error__message">Tag data could not be loaded. Check console for errors.</div>
+                  <button class="tag-loading-error__retry" onclick="window.location.reload();">
+                    🔄 Reload Page
+                  </button>
+                </div>
+              `;
+            }
+          }
+        } catch (error) {
+          console.error('[tag-explorer] Failed to reload tags:', error);
+          groupsContainerEl.innerHTML = `
+            <div class="tag-loading-error">
+              <div class="tag-loading-error__title">Reload Failed</div>
+              <div class="tag-loading-error__message">Error: ${error.message}</div>
+              <button class="tag-loading-error__retry" onclick="window.location.reload();">
+                🔄 Reload Page
+              </button>
+            </div>
+          `;
+        }
+      }, 1500);
+    };
+    
+    // Auto-retry once after a delay
+    setTimeout(() => {
+      if (window.tagExplorer?.forceReload) {
+        window.tagExplorer.forceReload();
+      }
+    }, 2000);
+    
+    return;
+  }
+  
   let renderedAny = false;
 
   categories.forEach(({ category, tags }, index) => {
@@ -720,9 +805,37 @@ function initTagExplorer() {
       <div class="tag-explorer-categories" id="tag-explorer-categories"></div>
     </div>
   `;
+  // Listen for tag loading events
+  window.addEventListener('tagsLoaded', (event) => {
+    console.log('[tag-explorer] Tags loaded event received:', event.detail);
+    renderCategories();
+  });
   
-  // Create overlay for mobile
-  const mobileOverlay = document.createElement("div");
+  window.addEventListener('tagsLoadError', (event) => {
+    console.error('[tag-explorer] Tags load error event received:', event.detail);
+    if (groupsContainerEl) {
+      groupsContainerEl.innerHTML = `
+        <div class="tag-loading-error">
+          <div class="tag-loading-error__title">Tag Loading Failed</div>
+          <div class="tag-loading-error__message">Unable to load tag data: ${event.detail.error}</div>
+          <button class="tag-loading-error__retry" onclick="window.location.reload();">
+            🔄 Reload Page
+          </button>
+        </div>
+      `;
+    }
+  });
+  
+  // Set up manual reload callback for tag-explorer
+  window.tagExplorer = window.tagExplorer || {};
+  window.tagExplorer.onTagsLoaded = () => {
+    console.log('[tag-explorer] Manual tags loaded callback triggered');
+    renderCategories();
+  };
+
+  ensureHeightSyncListeners();
+  renderExplorer();
+  isInitialized = true; document.createElement("div");
   mobileOverlay.className = "tag-explorer-overlay";
   mobileOverlay.id = "tag-explorer-overlay";
   document.body.appendChild(mobileOverlay);

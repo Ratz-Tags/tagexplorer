@@ -577,6 +577,35 @@ transition: opacity 0.5s cubic-bezier(.4,-0.2,.2,1.2), height 0.5s cubic-bezier(
 @apply h-0;
 opacity: 0;
 }
+/* Error and Loading States */
+.tag-loading-error {
+  @apply flex flex-col items-center gap-3 rounded-2xl border border-rose-400/40 bg-rose-950/20 p-6 text-center;
+}
+
+.tag-loading-error__title {
+  @apply text-sm font-semibold uppercase tracking-[0.3em] text-rose-200;
+}
+
+.tag-loading-error__message {
+  @apply text-xs uppercase tracking-[0.25em] text-rose-300/80;
+}
+
+.tag-loading-error__retry {
+  @apply inline-flex items-center gap-2 rounded-full border border-rose-400/50 bg-rose-500/20 px-4 py-2 text-[0.6rem] font-semibold uppercase tracking-[0.35em] text-rose-100 transition-all duration-300 hover:border-rose-300 hover:bg-rose-500/30;
+}
+
+.tag-loading-spinner {
+  @apply flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-black/40 p-6;
+}
+
+.tag-loading-spinner__icon {
+  @apply h-6 w-6 animate-spin text-glow;
+}
+
+.tag-loading-spinner__text {
+  @apply text-xs uppercase tracking-[0.35em] text-slate-300;
+}
+
 /* Remove conflicting sticky positioning - let command-bar-shell handle its own stickiness */
 .brand-chip {
 @apply inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.4em] text-slate-300;

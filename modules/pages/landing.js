@@ -371,6 +371,8 @@ function setupMissionRitual() {
     }
     dialog.classList.remove('landing-ritual--open');
     dialog.setAttribute('aria-hidden', 'true');
+    dialog.dataset.ritualState = 'complete';
+    dialog.setAttribute('hidden', '');
     
     // Restore background scrolling on mobile
     if (typeof document !== 'undefined') {
@@ -651,24 +653,59 @@ export async function initLandingPage({ shell, foldAdapter }) {
   // Setup fold mode detection for mobile/desktop layouts
   setupLandingFoldModeSync({ foldAdapter });
 
-  try {
-    await setRandomBackground({ motionMode });
-  } catch (error) {
-    console.warn('[landing] failed to apply initial ambience', error);
-  }
-
-  try {
-    ambienceHandle = await setupBackgroundRotation(setRandomBackground);
-  } catch (error) {
-    console.warn('[landing] failed to initialise ambience rotation', error);
-  }
-
-  // Ensure listeners created inside ambience controller receive the current mode.
-  motionMode = applyMotionPreference(motionMode);
-
+  // Critical path: Setup mission ritual first (this is what users see immediately)
   setupThemeToggles();
   const disposePressureMeter = setupPressureMeter();
   setupMissionRitual();
+
+  // Non-critical path: Background operations (defer to avoid blocking UI)
+  // Use requestIdleCallback or setTimeout to defer heavy operations
+  const deferBackgroundSetup = () => {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(async () => {
+        try {
+          await setRandomBackground({ motionMode });
+        } catch (error) {
+          console.warn('[landing] failed to apply initial ambience', error);
+        }
+      });
+    } else {
+      setTimeout(async () => {
+        try {
+          await setRandomBackground({ motionMode });
+        } catch (error) {
+          console.warn('[landing] failed to apply initial ambience', error);
+        }
+      }, 100);
+    }
+  };
+
+  const deferAmbienceSetup = () => {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(async () => {
+        try {
+          ambienceHandle = await setupBackgroundRotation(setRandomBackground);
+        } catch (error) {
+          console.warn('[landing] failed to initialise ambience rotation', error);
+        }
+      });
+    } else {
+      setTimeout(async () => {
+        try {
+          ambienceHandle = await setupBackgroundRotation(setRandomBackground);
+        } catch (error) {
+          console.warn('[landing] failed to initialise ambience rotation', error);
+        }
+      }, 200);
+    }
+  };
+
+  // Start background operations without blocking
+  deferBackgroundSetup();
+  deferAmbienceSetup();
+
+  // Ensure listeners created inside ambience controller receive the current mode.
+  motionMode = applyMotionPreference(motionMode);
 
   function revealAudioPanel() {
     if (!shell?.audioPanel) return;
