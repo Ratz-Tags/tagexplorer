@@ -191,6 +191,15 @@ function setupMissionRitual() {
       }
       dialog.classList.add('landing-ritual--open');
       dialog.setAttribute('aria-hidden', 'false');
+      
+      // Prevent background scrolling on mobile
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+      }
+      
       if (focusTrapDisposer) {
         focusTrapDisposer();
       }
@@ -222,6 +231,15 @@ function setupMissionRitual() {
     }
     dialog.classList.remove('landing-ritual--open');
     dialog.setAttribute('aria-hidden', 'true');
+    
+    // Restore background scrolling on mobile
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+    
     enterLink.focus({ preventScroll: true });
   }
 
@@ -421,13 +439,64 @@ function setupThemeToggles() {
   });
 }
 
-export async function initLandingPage({ shell }) {
+function setupLandingFoldModeSync({ foldAdapter }) {
+  const applyMode = (mode) => {
+    const normalized = mode || 'default';
+    console.log('[landing] Applying fold mode:', normalized);
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.foldMode = normalized;
+      document.body.dataset.foldMode = normalized;
+      const shellRoot = document.querySelector('[data-shell]');
+      if (shellRoot) {
+        shellRoot.dataset.foldMode = normalized;
+      }
+      console.log('[landing] Fold mode applied to body:', document.body.dataset.foldMode);
+    }
+    updateLandingCommandStatusLabels(normalized);
+  };
+
+  const currentMode =
+    (foldAdapter && typeof foldAdapter.getMode === 'function' && foldAdapter.getMode()) ||
+    document.body.dataset.foldMode ||
+    'default';
+  applyMode(currentMode);
+
+  if (!foldAdapter || typeof foldAdapter.subscribe !== 'function') {
+    return () => {};
+  }
+
+  const unsubscribe = foldAdapter.subscribe((mode) => {
+    applyMode(mode || 'default');
+  });
+
+  return () => {
+    if (typeof unsubscribe === 'function') {
+      unsubscribe();
+    }
+  };
+}
+
+function updateLandingCommandStatusLabels(mode) {
+  const labels = document.querySelectorAll('.command-status__label');
+  const normalized = mode || 'default';
+  labels.forEach((label) => {
+    const target = label?.dataset?.mode ? `fold-${label.dataset.mode}` : null;
+    const isActive = target && target === normalized;
+    label.classList.toggle('is-active', Boolean(isActive));
+    label.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
+}
+
+export async function initLandingPage({ shell, foldAdapter }) {
   const audioButton = document.querySelector('[data-landing-audio]');
   let setupPromise = null;
   let ambienceHandle = null;
 
   applySavedTheme();
   let motionMode = applyMotionPreference(readMotionPreference());
+
+  // Setup fold mode detection for mobile/desktop layouts
+  setupLandingFoldModeSync({ foldAdapter });
 
   try {
     await setRandomBackground({ motionMode });

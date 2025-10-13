@@ -1862,6 +1862,10 @@ dialog[data-landing-ritual]::backdrop {
   @apply transition-all duration-500 ease-kink;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: hidden;
+  /* Improve scrolling performance */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   box-shadow:
     0 0 0 1px rgba(102, 243, 255, 0.08),
     0 32px 68px -28px rgba(102, 243, 255, 0.45);
@@ -1977,6 +1981,155 @@ dialog[data-landing-ritual]::backdrop {
 .landing-enter--locked {
   @apply cursor-not-allowed opacity-60;
   pointer-events: auto;
+}
+
+/* Mobile-specific landing page styles */
+body[data-fold-mode="fold-cover"] .landing-shell {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
+  padding: env(safe-area-inset-top, 1rem) env(safe-area-inset-right, 1rem) env(safe-area-inset-bottom, 1rem) env(safe-area-inset-left, 1rem);
+}
+
+body[data-fold-mode="fold-cover"] .landing-content {
+  padding: 2rem 1rem;
+  gap: 1.5rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+body[data-fold-mode="fold-cover"] .landing-header {
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+body[data-fold-mode="fold-cover"] .landing-nav {
+  gap: 0.75rem;
+}
+
+body[data-fold-mode="fold-cover"] .landing-title {
+  font-size: clamp(1.5rem, 6vw, 2.5rem);
+  line-height: 1.1;
+}
+
+body[data-fold-mode="fold-cover"] .landing-intro {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+body[data-fold-mode="fold-cover"] .landing-actions {
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+body[data-fold-mode="fold-cover"] .landing-cta {
+  width: 100%;
+  justify-content: center;
+  padding: 1rem 1.5rem;
+}
+
+body[data-fold-mode="fold-cover"] .landing-disclaimer {
+  font-size: 0.7rem;
+  padding: 0.875rem 1rem;
+  line-height: 1.4;
+}
+
+body[data-fold-mode="fold-cover"] .landing-footer {
+  position: static;
+  margin-top: 2rem;
+  padding: 1rem;
+  font-size: 0.6rem;
+}
+
+/* Ensure ritual dialog is mobile-friendly */
+body[data-fold-mode="fold-cover"] dialog[data-landing-ritual] .landing-ritual__panel {
+  margin: 0.5rem;
+  padding: 1.5rem;
+  max-width: calc(100vw - 1rem);
+  max-height: calc(100vh - 1rem);
+  max-height: calc(100dvh - 1rem); /* Use dynamic viewport height on mobile */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+body[data-fold-mode="fold-cover"] .landing-ritual__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body[data-fold-mode="fold-cover"]:has(dialog[data-landing-ritual][open]) {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fallback mobile styles for dialog (in case fold mode detection fails) */
+@media (max-width: 520px) and (orientation: portrait) {
+  dialog[data-landing-ritual] .landing-ritual__panel {
+    margin: 0.5rem;
+    padding: 1.5rem;
+    max-width: calc(100vw - 1rem);
+    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem); /* Use dynamic viewport height on mobile */
+    overflow-y: auto;
+    overflow-x: hidden;
+    /* Improve scrolling on mobile */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  .landing-ritual__title {
+    font-size: 1.5rem;
+  }
+  
+  .landing-ritual__actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .landing-ritual__primary,
+  .landing-ritual__secondary {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  /* Ensure dialog body can scroll properly */
+  .landing-ritual__body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent body scroll when dialog is open */
+  body:has(dialog[data-landing-ritual][open]) {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+body[data-fold-mode="fold-cover"] .landing-ritual__title {
+  font-size: 1.5rem;
+}
+
+body[data-fold-mode="fold-cover"] .landing-ritual__actions {
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+body[data-fold-mode="fold-cover"] .landing-ritual__primary,
+body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
+  width: 100%;
+  justify-content: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
