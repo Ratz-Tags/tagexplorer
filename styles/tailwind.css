@@ -2456,6 +2456,10 @@ dialog[data-landing-ritual] {
   border: none;
 }
 
+dialog[data-landing-ritual][data-ritual-state='complete'] {
+  display: none !important;
+}
+
 dialog[data-landing-ritual]::backdrop {
   @apply bg-night/90 backdrop-blur-[28px];
   background-image: radial-gradient(circle at 22% 12%, rgba(255, 118, 214, 0.22), transparent 55%),

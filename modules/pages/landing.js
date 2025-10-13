@@ -446,6 +446,19 @@ function setupMissionRitual() {
   if (storedProfile) {
     ritualComplete = true;
     unlockCTA(storedProfile);
+    dialog.classList.remove('landing-ritual--open');
+    try {
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
+    } catch {
+      dialog.removeAttribute('open');
+    }
+    dialog.dataset.ritualState = 'complete';
+    dialog.setAttribute('hidden', '');
+    dialog.setAttribute('aria-hidden', 'true');
     return storedProfile;
   }
 
