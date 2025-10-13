@@ -250,6 +250,13 @@ function setupMissionRitual() {
   const backButtons = Array.from(dialog.querySelectorAll('[data-ritual-back]'));
   const consentButton = dialog.querySelector('[data-ritual-consent]');
   const confirmButton = dialog.querySelector('[data-ritual-confirm]');
+  
+  console.log('[landing] Ritual elements found:');
+  console.log('  - Mission buttons:', missionButtons.length);
+  console.log('  - Back buttons:', backButtons.length);
+  console.log('  - Consent button:', !!consentButton);
+  console.log('  - Confirm button:', !!confirmButton);
+  console.log('  - Summary element:', !!summaryEl);
   const handleCancel = (event) => {
     if (ritualComplete) return;
     event.preventDefault();
@@ -432,8 +439,10 @@ function setupMissionRitual() {
     }
   }
 
-  missionButtons.forEach((button) => {
+  missionButtons.forEach((button, index) => {
+    console.log(`[landing] Setting up mission button ${index + 1}:`, button.dataset.missionOption);
     button.addEventListener('click', () => {
+      console.log(`[landing] Mission button clicked:`, button.dataset.missionOption);
       selectedMission = button.dataset.missionOption || '';
       selectedLabel = button.dataset.missionLabel || selectedMission;
       selectedCopy = button.dataset.missionCopy || '';
