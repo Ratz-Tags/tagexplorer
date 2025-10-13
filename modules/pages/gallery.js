@@ -1729,7 +1729,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   
   // Initialize tags first and ensure they're loaded before proceeding
   console.log('[gallery] Initializing tags...');
-  await initTags();
+  await initTags(artists, filterArtists, setRandomBackground);
   console.log('[gallery] Tags initialized, setting up gallery...');
   
   initGallery();

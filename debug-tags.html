@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tag Loading Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #0f0f23;
+      color: #fff;
+      line-height: 1.6;
+    }
+    
+    .test-section {
+      background: #1a1a2e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .test-result {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    
+    .success {
+      background: #2d5016;
+      border: 1px solid #4caf50;
+    }
+    
+    .error {
+      background: #5d1f1f;
+      border: 1px solid #f44336;
+    }
+    
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #16a085;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #1abc9c;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Tag Loading Diagnostics</h1>
+  
+  <div class="test-section">
+    <h2>Test 1: Direct Fetch kink-tags.json</h2>
+    <button onclick="testDirectFetch()">Test Direct Fetch</button>
+    <div id="direct-fetch-result" class="test-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 2: Different URL Patterns</h2>
+    <button onclick="testUrlPatterns()">Test URL Patterns</button>
+    <div id="url-patterns-result" class="test-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 3: Import Tags Module</h2>
+    <button onclick="testTagsModule()">Test Tags Module</button>
+    <div id="tags-module-result" class="test-result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test 4: Check Tag Categories</h2>
+    <button onclick="testTagCategories()">Test Tag Categories</button>
+    <div id="tag-categories-result" class="test-result"></div>
+  </div>
+  
+  <script type="module">
+    window.testDirectFetch = async function() {
+      const resultEl = document.getElementById('direct-fetch-result');
+      resultEl.textContent = 'Testing...';
+      
+      try {
+        const response = await fetch('kink-tags.json');
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        resultEl.className = 'test-result success';
+        resultEl.textContent = `✅ SUCCESS
+Status: ${response.status}
+Data type: ${Array.isArray(data) ? 'Array' : typeof data}
+Length: ${Array.isArray(data) ? data.length : 'N/A'}
+First item: ${JSON.stringify(data[0], null, 2)}`;
+        
+      } catch (error) {
+        resultEl.className = 'test-result error';
+        resultEl.textContent = `❌ ERROR: ${error.message}`;
+      }
+    };
+    
+    window.testUrlPatterns = async function() {
+      const resultEl = document.getElementById('url-patterns-result');
+      resultEl.textContent = 'Testing multiple URL patterns...';
+      
+      const urls = [
+        'kink-tags.json',
+        './kink-tags.json',
+        '/kink-tags.json',
+        'data/kink-tags.json',
+        '../kink-tags.json'
+      ];
+      
+      let results = [];
+      
+      for (const url of urls) {
+        try {
+          const response = await fetch(url);
+          if (response.ok) {
+            const data = await response.json();
+            results.push(`✅ ${url}: SUCCESS (${Array.isArray(data) ? data.length : 'invalid'} items)`);
+          } else {
+            results.push(`❌ ${url}: HTTP ${response.status}`);
+          }
+        } catch (error) {
+          results.push(`❌ ${url}: ${error.message}`);
+        }
+      }
+      
+      resultEl.className = 'test-result ' + (results.some(r => r.includes('✅')) ? 'success' : 'error');
+      resultEl.textContent = results.join('\n');
+    };
+    
+    window.testTagsModule = async function() {
+      const resultEl = document.getElementById('tags-module-result');
+      resultEl.textContent = 'Importing tags module...';
+      
+      try {
+        const module = await import('./modules/tags.js');
+        
+        const info = [];
+        if (module.getKinkTags) {
+          const tags = module.getKinkTags();
+          info.push(`✅ getKinkTags function exists`);
+          info.push(`Tags returned: ${Array.isArray(tags) ? tags.length : 'not an array'} categories`);
+          
+          if (Array.isArray(tags) && tags.length > 0) {
+            info.push(`First category: ${JSON.stringify(tags[0], null, 2)}`);
+          }
+        } else {
+          info.push(`❌ getKinkTags function not found`);
+        }
+        
+        if (module.initTags) {
+          info.push(`✅ initTags function exists`);
+        } else {
+          info.push(`❌ initTags function not found`);
+        }
+        
+        resultEl.className = 'test-result ' + (info.some(i => i.includes('❌')) ? 'error' : 'success');
+        resultEl.textContent = info.join('\n');
+        
+      } catch (error) {
+        resultEl.className = 'test-result error';
+        resultEl.textContent = `❌ ERROR importing module: ${error.message}`;
+      }
+    };
+    
+    window.testTagCategories = async function() {
+      const resultEl = document.getElementById('tag-categories-result');
+      resultEl.textContent = 'Testing tag category rendering...';
+      
+      try {
+        // Import tag-explorer module
+        const explorerModule = await import('./modules/tag-explorer.js');
+        
+        const info = [];
+        
+        // Check if functions exist
+        const functions = ['initTagExplorer', 'openTagExplorer', 'toggleTagExplorer'];
+        functions.forEach(fn => {
+          if (explorerModule[fn]) {
+            info.push(`✅ ${fn} function exists`);
+          } else {
+            info.push(`❌ ${fn} function missing`);
+          }
+        });
+        
+        // Check DOM elements
+        const categoryEl = document.querySelector('#tag-explorer-categories');
+        if (categoryEl) {
+          info.push(`✅ #tag-explorer-categories element found`);
+          info.push(`Element content: "${categoryEl.innerHTML}"`);
+          info.push(`Element parent: ${categoryEl.parentElement?.tagName || 'none'}`);
+        } else {
+          info.push(`❌ #tag-explorer-categories element not found`);
+        }
+        
+        resultEl.className = 'test-result ' + (info.some(i => i.includes('❌')) ? 'error' : 'success');
+        resultEl.textContent = info.join('\n');
+        
+      } catch (error) {
+        resultEl.className = 'test-result error';
+        resultEl.textContent = `❌ ERROR: ${error.message}`;
+      }
+    };
+  </script>
+</body>
+</html>

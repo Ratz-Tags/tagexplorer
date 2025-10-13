@@ -35,11 +35,19 @@ let kinkTags = [];
 let kinkTagsByCategory = [];
 
 function setKinkTags(tagsByCategory) {
-  if (!Array.isArray(tagsByCategory)) return;
+  console.log('[tags] setKinkTags called with:', tagsByCategory);
+  console.log('[tags] Input type:', typeof tagsByCategory, 'Array:', Array.isArray(tagsByCategory));
+  
+  if (!Array.isArray(tagsByCategory)) {
+    console.warn('[tags] setKinkTags received non-array:', tagsByCategory);
+    return;
+  }
 
   if (tagsByCategory.length > 0 && typeof tagsByCategory[0] === "string") {
+    console.log('[tags] Treating as flat string array, categorizing...');
     kinkTagsByCategory = categorizeTags(tagsByCategory);
   } else {
+    console.log('[tags] Treating as categorized array, processing', tagsByCategory.length, 'categories');
     const normalized = [];
     for (const cat of tagsByCategory) {
       if (!cat || typeof cat.category !== "string" || !Array.isArray(cat.tags)) {
@@ -64,6 +72,8 @@ function setKinkTags(tagsByCategory) {
   }
 
   kinkTags = flattenCategorizedTags(kinkTagsByCategory);
+  console.log('[tags] setKinkTags complete - kinkTagsByCategory:', kinkTagsByCategory.length);
+  console.log('[tags] setKinkTags complete - kinkTags flat:', kinkTags.length);
 }
 
 // Tag icons mapping
@@ -493,12 +503,18 @@ async function initTags(
 
   // Load kink tags from file (already categorized in production, but we can fall back to categorizing flat arrays)
   try {
-    console.log('[tags] Loading kink tags from kink-tags.json...');
-    const loadedTags = await fetchWithCache("kink-tags.json");
+    console.log('[tags] ===== STARTING TAG LOAD =====');
+    console.log('[tags] Current working directory:', window.location.href);
+    console.log('[tags] Loading kink tags from ../kink-tags.json...');
+    const loadedTags = await fetchWithCache("../kink-tags.json");
     console.log('[tags] Raw loaded tags:', loadedTags);
+    console.log('[tags] Type:', typeof loadedTags, 'Array:', Array.isArray(loadedTags));
     
     if (Array.isArray(loadedTags) && loadedTags.length > 0) {
+      console.log('[tags] Calling setKinkTags with', loadedTags.length, 'items');
       setKinkTags(loadedTags);
+      console.log('[tags] After setKinkTags - flat tags:', kinkTags.length, 'categories:', kinkTagsByCategory.length);
+      console.log('[tags] kinkTagsByCategory content:', kinkTagsByCategory);
       console.log('[tags] Successfully loaded', kinkTags.length, 'tags in', kinkTagsByCategory.length, 'categories');
       
       // Notify any waiting components that tags are now available
@@ -531,8 +547,9 @@ async function initTags(
     
     // Retry with different URL patterns
     const fallbackUrls = [
-      './kink-tags.json',
+      '../kink-tags.json',
       '/kink-tags.json',
+      './kink-tags.json',
       'data/kink-tags.json'
     ];
     

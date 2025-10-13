@@ -83,15 +83,7 @@
               data-glitch-trigger
               data-landing-enter
             >
-              Enter under watch
-            </a>
-            <!-- Mobile bypass button - shows only on fold-cover mode -->
-            <a
-              class="landing-meter__control landing-meter__mobile-bypass"
-              href="./gallery/"
-              data-router-link
-            >
-              Quick Gallery Access
+              Enter Gallery
             </a>
             <button
               class="landing-meter__control landing-meter__control--ghost landing-audio"
@@ -114,107 +106,7 @@
       <p>Galaxy Z Fold4 tuned. Local storage captures your filter guilt. Proceeding implies consent to gentle torment.</p>
     </footer>
   </div>
-  <dialog
-    data-landing-ritual
-    aria-labelledby="landing-ritual-title"
-    aria-describedby="landing-ritual-copy"
-    aria-modal="true"
-    tabindex="-1"
-  >
-    <div class="landing-ritual__panel" role="document">
-      <div class="landing-ritual__header">
-        <p class="landing-ritual__eyebrow" aria-live="polite">Initiation sequence</p>
-        <h2 id="landing-ritual-title" class="landing-ritual__title">Mission ritual</h2>
-      </div>
-      <div class="landing-ritual__body">
-        <section data-ritual-step="mission" class="landing-ritual__stage">
-          <div class="landing-contract" aria-describedby="landing-ritual-copy">
-            <p id="landing-ritual-copy" class="landing-ritual__lead landing-contract__lead">
-              Pick the profile you want logged before we let you back inside. Choose carefully – it brands every visit.
-            </p>
-            <ul class="landing-ritual__options landing-contract__options" role="list">
-              <li>
-                <button
-                  type="button"
-                  data-mission-option="cataloguer"
-                  data-mission-label="Cataloguer"
-                  data-mission-copy="You index every indulgence. A librarian of lust."
-                  class="landing-ritual__option"
-                >
-                  <span class="landing-ritual__option-title">Cataloguer</span>
-                  <span class="landing-ritual__option-copy">You index every indulgence. A librarian of lust.</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  data-mission-option="scout"
-                  data-mission-label="Scout"
-                  data-mission-copy="Always just checking the feed. Never innocent."
-                  class="landing-ritual__option"
-                >
-                  <span class="landing-ritual__option-title">Scout</span>
-                  <span class="landing-ritual__option-copy">Always "just checking" the feed. Never innocent.</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  data-mission-option="supplicant"
-                  data-mission-label="Supplicant"
-                  data-mission-copy="You arrive needy, ready to be read aloud."
-                  class="landing-ritual__option"
-                >
-                  <span class="landing-ritual__option-title">Supplicant</span>
-                  <span class="landing-ritual__option-copy">You arrive needy, ready to be read aloud.</span>
-                </button>
-              </li>
-            </ul>
-          </div>
-        </section>
-        <section data-ritual-step="consent" class="landing-ritual__stage" hidden>
-          <div class="landing-contract" aria-live="polite">
-            <p class="landing-ritual__lead landing-contract__lead">
-              We cache your choice locally. No servers. No mercy if you forget it&apos;s there.
-            </p>
-            <ul class="landing-ritual__bullet-list landing-contract__body">
-              <li>Mission + timestamp live in your browser only.</li>
-              <li>Clearing storage resets the ritual and our whispers.</li>
-              <li>Back out now and the door stays sealed.</li>
-            </ul>
-          </div>
-          <div class="landing-ritual__actions landing-ritual__actions--stack">
-            <button type="button" data-ritual-back class="landing-ritual__secondary">
-              <span aria-hidden="true">↩</span>
-              <span>Change mission</span>
-            </button>
-            <button type="button" data-ritual-consent class="landing-ritual__primary">
-              <span>Sign the contract</span>
-            </button>
-          </div>
-        </section>
-        <section data-ritual-step="confirm" class="landing-ritual__stage" hidden>
-          <div class="landing-contract" aria-live="polite">
-            <p class="landing-ritual__lead landing-contract__lead" data-ritual-summary>
-              Mission ready. Confirm to let the gallery whisper about it every time you return.
-            </p>
-            <p class="landing-ritual__disclosure landing-contract__body">Your consent is recorded in localStorage as <code>te.mission.profile</code>.</p>
-          </div>
-          <div class="landing-ritual__actions landing-ritual__actions--stack">
-            <button type="button" data-ritual-back class="landing-ritual__secondary">
-              <span aria-hidden="true">…</span>
-              <span>Second thoughts</span>
-            </button>
-            <button type="button" data-ritual-confirm class="landing-ritual__primary">
-              <span>Enter under watch</span>
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
-  </dialog>
   <te-audio-panel data-landing-panel hidden></te-audio-panel>
   <script type="module" src="main.js"></script>
-  <script src="ritual-debug.js"></script>
 </body>
 </html>

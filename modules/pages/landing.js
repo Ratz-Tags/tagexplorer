@@ -682,10 +682,10 @@ export async function initLandingPage({ shell, foldAdapter }) {
   // Setup fold mode detection for mobile/desktop layouts
   setupLandingFoldModeSync({ foldAdapter });
 
-  // Critical path: Setup mission ritual first (this is what users see immediately)
+  // Critical path: Setup basic UI components
   setupThemeToggles();
   const disposePressureMeter = setupPressureMeter();
-  setupMissionRitual();
+  // setupMissionRitual(); // Removed - no more ritual dialog
 
   // Non-critical path: Background operations (defer to avoid blocking UI)
   // Use requestIdleCallback or setTimeout to defer heavy operations
