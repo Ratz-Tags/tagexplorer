@@ -559,19 +559,18 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  // Send all selected tags to the API (no artificial client-side two-tag limit)
+  // Always query Danbooru with only the artist tag. Gallery filtering happens client-side.
   const page = Math.max(1, options.page || 1);
   const limit = options.limit || 200;
   const order = options.order || "approvals";
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
-  const tagSignature = Array.isArray(selectedTags) && selectedTags.length ? selectedTags.join(",") : "_all";
-  const apiCacheKey = `danbooru-api-${artistName}-${tagSignature}-${cacheSignature}`;
+  const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
+
+  // Create deduplication key for this specific artist + paging request
+  const artistRequestKey = `${artistName}-${cacheSignature}`;
   
-  // Create deduplication key for this specific artist+tags API call
-  const artistRequestKey = `${artistName}-${tagSignature}-${cacheSignature}`;
-  
-  // Check if this exact artist+tags API call is already pending
+  // Check if this exact artist request is already pending
   if (pendingArtistRequests.has(artistRequestKey)) {
     const posts = await pendingArtistRequests.get(artistRequestKey);
     return filterValidImagePosts(posts, selectedTags);
@@ -596,8 +595,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // Create the API call promise - include artistName + all selectedTags
-  const apiPromise = fetchPosts([artistName, ...(Array.isArray(selectedTags) ? selectedTags : [])], {
+  // Create the API call promise using only the artist tag
+  const apiPromise = fetchPosts([artistName], {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
     limit,

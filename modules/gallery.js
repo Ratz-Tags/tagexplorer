@@ -793,8 +793,7 @@ function setBestImage(artist, img) {
   const _cache_limit = 200;
   const _cache_order = 'approvals';
   const cacheSignature = [`p${_cache_page}`, `l${_cache_limit}`, `o${_cache_order}`].join('');
-  const tagSignature = selectedTags.length ? selectedTags.join(',') : '_all';
-  const apiCacheKey = `danbooru-api-${artistData.artistName}-${tagSignature}-${cacheSignature}`;
+  const apiCacheKey = `danbooru-api-${artistData.artistName}-${cacheSignature}`;
 
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
