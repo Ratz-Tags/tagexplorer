@@ -42,11 +42,11 @@ let artistsListPromise = null;
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  // Ultra-fast for maximum responsiveness
-  minDelay: 8, // Minimum spacing between queued requests
-  maxDelay: 2500, // Maximum delay for aggressive backoff recovery
+  // Slow the baseline to avoid hammering Danbooru during parallel fetches
+  minDelay: 120, // Minimum spacing between queued requests
+  maxDelay: 8000, // Maximum delay for aggressive backoff recovery
   maxRetries: 5, // allow a couple more retries before failing
-  backoffMultiplier: 1.35, // quick recovery while respecting limits
+  backoffMultiplier: 1.65, // quick recovery while respecting limits
 };
 
 // Request queue and tracking
@@ -86,6 +86,8 @@ const MAX_PARALLEL_FETCHES = (() => {
   return 6;
 })();
 
+let dynamicMaxParallelFetches = MAX_PARALLEL_FETCHES;
+
 const scheduleMicrotask =
   typeof queueMicrotask === 'function'
     ? (cb) => queueMicrotask(cb)
@@ -93,6 +95,20 @@ const scheduleMicrotask =
 
 function delay(ms) {
   return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
+function parseRetryAfter(value) {
+  if (!value) return 0;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    return Math.round(numeric * 1000);
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isNaN(parsed)) {
+    const diff = parsed - Date.now();
+    return diff > 0 ? diff : 0;
+  }
+  return 0;
 }
 
 async function waitForRateSlot() {
@@ -176,7 +192,7 @@ function processQueue() {
     return;
   }
 
-  const availableSlots = Math.max(1, MAX_PARALLEL_FETCHES - activeQueuedRequests);
+  const availableSlots = Math.max(1, dynamicMaxParallelFetches - activeQueuedRequests);
   for (let i = 0; i < availableSlots && requestQueue.length; i++) {
     const request = requestQueue.shift();
     activeQueuedRequests++;
@@ -207,16 +223,27 @@ async function handleQueuedRequest(request) {
       if (response.status === 429) {
         request.retries += 1;
         if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
-          const next = Math.min(
-            Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
-            RATE_LIMIT_CONFIG.maxDelay
-          );
-          const jitter = Math.floor(Math.random() * Math.max(100, Math.floor(next * 0.12)));
-          currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
+          const retryAfterHeader = response.headers?.get('retry-after');
+          const retryAfterMs = parseRetryAfter(retryAfterHeader);
+          if (dynamicMaxParallelFetches > 1) {
+            dynamicMaxParallelFetches = Math.max(1, Math.floor(dynamicMaxParallelFetches * 0.66));
+          }
+          let waitMs = retryAfterMs;
+          if (!waitMs) {
+            const next = Math.min(
+              Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
+              RATE_LIMIT_CONFIG.maxDelay
+            );
+            const jitter = Math.floor(Math.random() * Math.max(150, Math.floor(next * 0.2)));
+            currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
+            waitMs = currentDelay;
+          } else {
+            currentDelay = Math.max(waitMs, RATE_LIMIT_CONFIG.minDelay);
+          }
           if (request.retries === 1) {
             showRateLimitWarning();
           }
-          await delay(currentDelay);
+          await delay(waitMs);
           continue;
         }
         console.error('Danbooru rate limit exceeded, max retries reached');
@@ -227,6 +254,12 @@ async function handleQueuedRequest(request) {
 
       if (response.ok) {
         currentDelay = Math.max(Math.floor(currentDelay * 0.8), RATE_LIMIT_CONFIG.minDelay);
+        if (dynamicMaxParallelFetches < MAX_PARALLEL_FETCHES) {
+          dynamicMaxParallelFetches = Math.min(
+            MAX_PARALLEL_FETCHES,
+            dynamicMaxParallelFetches + 1
+          );
+        }
         hideRateLimitWarning();
       } else {
         console.warn(`API request failed with status ${response.status}: ${request.url}`);

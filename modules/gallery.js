@@ -151,6 +151,10 @@ let getArtistNameFilter = null;
 let getActiveTagsCallbackFn = null;
 let getArtistNameFilterCallbackFn = null;
 
+let countsReadyForActiveFilter = false;
+let pendingMostCommonTag = null;
+let requestedCountSortMode = null;
+
 // TTL-backed session cache defaults and helpers (module scope so multiple functions can reuse)
 let DEFAULT_ALLPOSTS_TTL_MS = 1000 * 60 * 60; // 1 hour (mutable for tests)
 
@@ -487,6 +491,108 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
     );
   }
   return list;
+}
+
+function requiresCountBasedData(mode = sortMode) {
+  return mode === "count" || mode === "tag-frequency";
+}
+
+function clearArtistCountState(list = []) {
+  if (!Array.isArray(list)) return;
+  list.forEach((artist) => {
+    if (!artist || typeof artist !== "object") return;
+    artist._totalImageCount = undefined;
+    artist._imageCount = undefined;
+    artist._mostCommonTagCount = undefined;
+  });
+}
+
+function computeMostCommonActiveTag(activeTags, artists) {
+  if (!activeTags || activeTags.size === 0) return null;
+  const tagCounts = new Map();
+  const source = Array.isArray(artists) ? artists : [];
+  activeTags.forEach((tag) => {
+    const normalized = String(tag || "").trim();
+    if (!normalized) return;
+    const count = source.reduce((total, artist) => {
+      const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
+      return total + (tags.includes(tag) ? 1 : 0);
+    }, 0);
+    tagCounts.set(tag, count);
+  });
+  let bestTag = null;
+  let bestScore = -1;
+  tagCounts.forEach((count, tag) => {
+    if (count > bestScore) {
+      bestScore = count;
+      bestTag = tag;
+    }
+  });
+  return bestScore > 0 ? bestTag : null;
+}
+
+async function populateArtistCounts({
+  artists,
+  mostCommonTag,
+  generation,
+  spinner,
+  batchSize = 20,
+  delayMs = 250,
+}) {
+  if (!Array.isArray(artists) || artists.length === 0) return;
+  let fetchPostCountForTagsFn = null;
+  if (mostCommonTag) {
+    try {
+      const apiModule = await import("./api.js");
+      fetchPostCountForTagsFn = apiModule.fetchPostCountForTags;
+    } catch (error) {
+      console.warn("Failed to load fetchPostCountForTags:", error);
+    }
+  }
+
+  let processed = 0;
+  for (let i = 0; i < artists.length; i += batchSize) {
+    if (generation !== filterGeneration) return;
+    const batch = artists.slice(i, i + batchSize);
+    await Promise.all(
+      batch.map(async (artist) => {
+        if (!artist || generation !== filterGeneration) return;
+        try {
+          const totalCount =
+            typeof artist.postCount === "number"
+              ? artist.postCount
+              : await getArtistImageCount(artist.artistName);
+          artist._totalImageCount = totalCount;
+          artist._imageCount = totalCount;
+          if (mostCommonTag && typeof fetchPostCountForTagsFn === "function") {
+            const tagCount = await fetchPostCountForTagsFn([
+              artist.artistName,
+              mostCommonTag,
+            ]);
+            artist._mostCommonTagCount = Number(tagCount) || 0;
+          } else {
+            artist._mostCommonTagCount = 0;
+          }
+        } catch (error) {
+          artist._totalImageCount = artist.postCount || 0;
+          artist._imageCount = artist.postCount || 0;
+          if (typeof artist._mostCommonTagCount !== "number") {
+            artist._mostCommonTagCount = 0;
+          }
+        }
+      })
+    );
+
+    processed += batch.length;
+    if (spinner && typeof spinner.updateProgress === "function") {
+      spinner.updateProgress(processed);
+    }
+
+    if (generation !== filterGeneration) return;
+    if (i + batchSize < artists.length) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
 }
 
 function normaliseAmbientTag(tag) {
@@ -1994,7 +2100,6 @@ async function filterArtists(reset = true, force = false) {
 
   let spinner;
   try {
-    // Only reset currentPage if this is a true filter/search reset, not just paginating
     if (reset) {
       resetPaginationState();
       artistGallery.innerHTML = "";
@@ -2014,51 +2119,41 @@ async function filterArtists(reset = true, force = false) {
 
     isFetching = true;
 
-    // Get active tags and filters
     const activeTags = getActiveTags ? getActiveTags() : new Set();
-    const artistNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+    const rawNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
+    const artistNameFilter =
+      typeof rawNameFilter === "string" ? rawNameFilter.toLowerCase() : "";
 
-    // Determine the most common tag from active tags (for sorting)
-    let mostCommonTag = null;
-    if (activeTags.size > 0) {
-      const tagCounts = {};
-      const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
-      
-      // Count how many artists have each active tag
-      activeTags.forEach(tag => {
-        tagCounts[tag] = sourceArtists.filter(artist => 
-          (artist.kinkTags || []).includes(tag)
-        ).length;
-      });
-      
-      // Find the most common tag
-      let maxCount = 0;
-      for (const [tag, count] of Object.entries(tagCounts)) {
-        if (count > maxCount) {
-          maxCount = count;
-          mostCommonTag = tag;
-        }
-      }
+    const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
+    pendingMostCommonTag = computeMostCommonActiveTag(activeTags, sourceArtists);
+
+    if (!force) {
+      countsReadyForActiveFilter = false;
+      requestedCountSortMode = requiresCountBasedData(sortMode) ? sortMode : null;
     }
 
-    // Filter artists
-    const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
-
     if (activeTags.size === 0) {
-      filtered = sourceArtists.filter((artist) =>
-        artist.artistName.toLowerCase().includes(artistNameFilter) ||
-        artistNameFilter === ""
-      );
+      filtered = sourceArtists.filter((artist) => {
+        if (!artist) return false;
+        const name = artist.artistName || "";
+        return (
+          artistNameFilter === "" ||
+          name.toLowerCase().includes(artistNameFilter)
+        );
+      });
     } else {
       filtered = sourceArtists.filter((artist) => {
-        const tags = artist.kinkTags || [];
-        // Use AND logic (all tags must match) for main gallery filtering
+        if (!artist) return false;
+        const tags = Array.isArray(artist.kinkTags) ? artist.kinkTags : [];
         const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
-        return (
-          tagMatch &&
-          (artist.artistName.toLowerCase().includes(artistNameFilter) ||
-            artistNameFilter === "")
-        );
+        if (!tagMatch) return false;
+        if (
+          artistNameFilter &&
+          !(artist.artistName || "").toLowerCase().includes(artistNameFilter)
+        ) {
+          return false;
+        }
+        return true;
       });
     }
 
@@ -2068,106 +2163,64 @@ async function filterArtists(reset = true, force = false) {
       setCurrentPage(maxPage);
     }
 
-    if (spinner.setTotal) spinner.setTotal(filtered.length);
-    if (spinner.updateProgress) spinner.updateProgress(0);
-
-    // Auto-switch to tag-frequency sorting if we have a most common tag
-    if (mostCommonTag && sortMode !== "tag-frequency") {
-      console.log(`Auto-switching to tag-frequency sort (most common: ${mostCommonTag})`);
-      sortMode = "tag-frequency";
-    } else if (!mostCommonTag && sortMode === "tag-frequency") {
-      // Switch back to default if no tags active
-      sortMode = "name";
+    if (spinner && typeof spinner.setTotal === "function") {
+      spinner.setTotal(filtered.length);
+    }
+    if (spinner && typeof spinner.updateProgress === "function") {
+      spinner.updateProgress(0);
     }
 
-    // Sort immediately with available data (no waiting for API)
-    sortCurrentArtists();
-    
-    // Render immediately to show results fast
-    renderArtistsPage({ force: true });
+    clearArtistCountState(filtered);
+    countsReadyForActiveFilter = false;
 
-    // Always fetch counts for the current filtered artists (in background)
-    async function fetchInBatches(
-      artists,
-      batchSize = 20,
-      delayMs = 250,
-      gen,
-      spin
-    ) {
-      let done = 0;
-      for (let i = 0; i < artists.length; i += batchSize) {
-        if (gen !== filterGeneration) return;
-        const batch = artists.slice(i, i + batchSize);
-        
-        // Process batch in parallel (20 artists at once)
-        await Promise.all(
-          batch.map(async (artist) => {
-            if (gen !== filterGeneration) return;
-            try {
-              // Use existing postCount if available, otherwise fetch from API
-              const totalCount = artist.postCount || await getArtistImageCount(artist.artistName);
-              artist._totalImageCount = totalCount;
-              
-              // If we have a most common tag, fetch the count for artist+tag combo
-              if (mostCommonTag) {
-                const { fetchPostCountForTags } = await import("./api.js");
-                const tagCount = await fetchPostCountForTags([artist.artistName, mostCommonTag]);
-                artist._mostCommonTagCount = tagCount || 0;
-              } else {
-                artist._mostCommonTagCount = 0;
-              }
-              artist._imageCount = totalCount;
-            } catch (e) {
-              // If API fails, use fallback count
-              artist._totalImageCount = artist.postCount || 0;
-              artist._imageCount = artist.postCount || 0;
-            }
-          })
-        );
-
-        done += batch.length;
-        if (spin && spin.updateProgress) spin.updateProgress(done);
-
-        // Don't re-sort during batch processing to avoid jumps
-        // Just update the progress indicator
-
-        // Short delay between batches
-        if (i + batchSize < artists.length) {
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-
-      if (gen !== filterGeneration) return;
-
-      // Only sort and render once at the end (silently, without jumping)
-      const finalScrollY = window.scrollY;
-      sortCurrentArtists();
+    if (!force) {
+      const fallbackMode = requiresCountBasedData(sortMode) ? "name" : sortMode;
+      sortCurrentArtists(filtered, fallbackMode);
       renderArtistsPage({ force: true });
-      // Use behavior: instant to prevent smooth scrolling
-      window.scrollTo({ top: finalScrollY, behavior: 'instant' });
+      return;
     }
 
-    // Initial render already happened above, start fetching counts in background
-    if (reset) {
-      await fetchInBatches(filtered, 20, 250, generation, spinner).catch(
-        (e) => {
-          console.error("Batch fetch failed:", e);
-        }
-      );
-      if (generation !== filterGeneration) return;
-      const resetScrollY = window.scrollY;
-      sortCurrentArtists();
-      renderArtistsPage({ force: true });
-      window.scrollTo({ top: resetScrollY, behavior: 'instant' });
-    } else if (force) {
-      fetchInBatches(filtered, 20, 250, generation, spinner).then(() => {
-        if (generation !== filterGeneration) return;
-        const forceScrollY = window.scrollY;
-        sortCurrentArtists();
-        renderArtistsPage({ force: true });
-        window.scrollTo({ top: forceScrollY, behavior: 'instant' });
+    const finalScrollY = window.scrollY;
+    const countsLoaded = await populateArtistCounts({
+      artists: filtered,
+      mostCommonTag: pendingMostCommonTag,
+      generation,
+      spinner,
+    })
+      .then(() => true)
+      .catch((error) => {
+        console.error("Batch fetch failed:", error);
+        return false;
       });
+
+    if (generation !== filterGeneration) return;
+
+    if (!countsLoaded) {
+      countsReadyForActiveFilter = false;
+      sortCurrentArtists(filtered, "name");
+      renderArtistsPage({ force: true });
+      window.scrollTo({ top: finalScrollY, behavior: "instant" });
+      return;
     }
+
+    countsReadyForActiveFilter = true;
+
+    if (pendingMostCommonTag && sortMode === "name") {
+      console.log(
+        `Auto-switching to tag-frequency sort (most common: ${pendingMostCommonTag})`
+      );
+      sortMode = "tag-frequency";
+      lastSortMode = "tag-frequency";
+    } else if (!pendingMostCommonTag && sortMode === "tag-frequency") {
+      sortMode = "name";
+      lastSortMode = "name";
+    }
+
+    requestedCountSortMode = null;
+
+    sortCurrentArtists(filtered, sortMode);
+    renderArtistsPage({ force: true });
+    window.scrollTo({ top: finalScrollY, behavior: "instant" });
   } catch (error) {
     console.warn("filterArtists failed", error);
   } finally {
@@ -2203,7 +2256,21 @@ function setSortMode(mode, options = {}) {
   const { preservePage = false, deferRender = false } = options;
   sortMode = mode;
   lastSortMode = mode;
-  sortCurrentArtists();
+  const needsCounts = requiresCountBasedData(mode);
+  if (needsCounts && !countsReadyForActiveFilter) {
+    requestedCountSortMode = mode;
+    if (!preservePage) {
+      setCurrentPage(1);
+    }
+    sortCurrentArtists(filtered, "name");
+    if (!deferRender) {
+      renderArtistsPage({ force: true });
+    }
+    return;
+  }
+
+  requestedCountSortMode = null;
+  sortCurrentArtists(filtered, mode);
   if (!preservePage) {
     setCurrentPage(1);
   }
