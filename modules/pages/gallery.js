@@ -1654,6 +1654,11 @@ async function setupForceFetch() {
   const forceFetchBtn = document.getElementById('force-fetch-btn');
   if (!forceFetchBtn) return;
   forceFetchBtn.addEventListener('click', async () => {
+    try {
+      await filterArtists(false, true);
+    } catch (error) {
+      console.warn('Failed to refresh counts before force fetch:', error);
+    }
     const { forceFetchStyleTags } = await import('../gallery.js');
     await forceFetchStyleTags();
   });
