@@ -8,6 +8,7 @@ import {
   fetchArtistStyleTags,
   getArtistSlug,
   getRandomBackgroundImage,
+  filterValidImagePosts,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
@@ -792,8 +793,7 @@ function setBestImage(artist, img) {
   const _cache_limit = 200;
   const _cache_order = 'approvals';
   const cacheSignature = [`p${_cache_page}`, `l${_cache_limit}`, `o${_cache_order}`].join('');
-  const tagSignature = selectedTags.length ? selectedTags.join(',') : '_all';
-  const apiCacheKey = `danbooru-api-${artistData.artistName}-${tagSignature}-${cacheSignature}`;
+  const apiCacheKey = `danbooru-api-${artistData.artistName}-${cacheSignature}`;
 
   function getApiCache() {
     const cached = sessionStorage.getItem(apiCacheKey);
@@ -820,13 +820,9 @@ function setBestImage(artist, img) {
   }
 
   function processApiData(data, isFallback = false) {
-    const validPosts = Array.isArray(data)
-      ? data.filter((post) => {
-          const url = post?.large_file_url || post?.file_url;
-          const isImage = url && /\.(jpg|jpeg|png|gif)$/i.test(url);
-          return isImage && !post.is_banned;
-        })
-      : [];
+    const postsArray = Array.isArray(data) ? data : [];
+    const tagsForFilter = isFallback ? [] : selectedTags;
+    const validPosts = filterValidImagePosts(postsArray, tagsForFilter);
 
     if (validPosts.length === 0) {
       if (!isFallback && selectedTags.length > 0) {
