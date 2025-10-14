@@ -14,6 +14,22 @@ const fetchFn = fetch;
 
 import { fetchWithCache } from "./fetch-cache.js";
 
+// Environment detection for better error handling
+function isGitHubPages() {
+  return typeof window !== 'undefined' && 
+         (window.location.hostname.includes('github.io') || 
+          window.location.hostname.includes('github.dev'));
+}
+
+function isCorsError(error) {
+  return error && (
+    (error.name === 'TypeError' && error.message.includes('Failed to fetch')) ||
+    error.message.includes('CORS') ||
+    error.message.includes('Cross-Origin') ||
+    error.message.includes('blocked')
+  );
+}
+
 const ARTISTS_DATA_URL = new URL("../artists.json", import.meta.url).href;
 const TOOLTIP_DATA_URL = new URL("../tag-tooltips.json", import.meta.url).href;
 const TAUNTS_DATA_URL = new URL("../taunts.json", import.meta.url).href;
@@ -166,8 +182,8 @@ function processQueue() {
     activeQueuedRequests++;
     handleQueuedRequest(request)
       .catch((error) => {
-        console.error('[api] queued request failed', error);
-        request.reject(error);
+        // The error has already been logged and rejected in handleQueuedRequest
+        // This catch is just to ensure the promise chain doesn't break
       })
       .finally(() => {
         activeQueuedRequests = Math.max(0, activeQueuedRequests - 1);
@@ -219,7 +235,22 @@ async function handleQueuedRequest(request) {
       request.resolve(response);
       return;
     } catch (error) {
-      request.reject(error);
+      // Handle network errors, CORS errors, and other fetch failures
+      if (isCorsError(error)) {
+        if (isGitHubPages()) {
+          console.warn(`CORS error on GitHub Pages for ${request.url}: Cross-origin requests may be blocked by browser policy`);
+        } else {
+          console.warn(`CORS error for ${request.url}: API may not allow cross-origin requests`);
+        }
+      } else {
+        console.warn(`Fetch error for ${request.url}:`, error.message || error);
+      }
+      
+      // Reject with a more descriptive error that won't cause unhandled rejections
+      const friendlyError = new Error(`API request failed: ${error.message || 'Network error'}`);
+      friendlyError.name = 'APIError'; // Specific error type for filtering
+      friendlyError.originalError = error;
+      request.reject(friendlyError);
       return;
     }
   }
@@ -432,23 +463,47 @@ async function fetchPosts(tags, options = {}) {
     }
 
     const response = await rateLimitedFetch(url);
-    const data = await response.json();
+    
+    // Check if the response is ok before trying to parse JSON
+    if (!response.ok) {
+      console.warn(`Danbooru API returned ${response.status} ${response.statusText} for: ${url}`);
+      return [];
+    }
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.warn(`Failed to parse JSON response from Danbooru API: ${parseError.message}`);
+      return [];
+    }
 
     // Populate in-memory cache for this session (even if useCache is false)
     if (Array.isArray(data) && data.length > 0) {
       try { apiMemoryCache.set(memoryKey, data); } catch (e) {}
     }
 
-  // Cache the result if enabled and non-empty (don't cache empty results)
-  if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch {
-      // Cache quota exceeded, ignore
+    // Cache the result if enabled and non-empty (don't cache empty results)
+    if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch {
+        // Cache quota exceeded, ignore
+      }
     }
-  }    return Array.isArray(data) ? data : [];
+    
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.warn("Danbooru API fetch failed:", error);
+    // More specific error logging
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      console.warn("Danbooru API network error: likely CORS or connectivity issue");
+    } else if (error.message && error.message.includes('CORS')) {
+      console.warn("Danbooru API CORS error: cross-origin request blocked");
+    } else if (error.message && error.message.includes('Rate limit')) {
+      console.warn("Danbooru API rate limit error:", error.message);
+    } else {
+      console.warn("Danbooru API fetch failed:", error.message || error);
+    }
     return [];
   }
 }

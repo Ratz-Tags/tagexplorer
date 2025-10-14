@@ -80,5 +80,29 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   if (event.reason && event.reason.name === 'DOMException') return;
   if (event.reason && event.reason.message && event.reason.message.includes('NetworkError')) return;
+  
+  // Handle API-related errors gracefully
+  if (event.reason) {
+    // Check for our specific APIError type
+    if (event.reason.name === 'APIError') {
+      console.warn('API error handled:', event.reason.message);
+      event.preventDefault(); // Prevent the error from being logged as unhandled
+      return;
+    }
+    
+    // Check for common API error messages
+    if (event.reason.message) {
+      const message = event.reason.message;
+      if (message.includes('API request failed') || 
+          message.includes('Rate limit exceeded') || 
+          message.includes('CORS') ||
+          message.includes('Failed to fetch')) {
+        console.warn('API error handled:', message);
+        event.preventDefault(); // Prevent the error from being logged as unhandled
+        return;
+      }
+    }
+  }
+  
   console.error('Unhandled promise rejection:', event.reason);
 });
