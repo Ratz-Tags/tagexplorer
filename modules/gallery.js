@@ -66,38 +66,16 @@ const DEFAULT_AMBIENT_TAGS = [
   'chastity_cage',
   'femdom',
   'humiliation',
-  'sissy_training',
   'pegging',
-  'denial',
-  'foot_worship',
   'bondage',
   'crossdressing',
-  'genderswap',
   'feminization',
   'collar',
   'leash',
   'orgasm_denial',
-  'ruined_orgasm',
-  'edging',
-  'tease_and_denial',
-  'anal',
-  'strap-on',
   'spanking',
   'bdsm',
-  'domination',
-  'submission',
-  'rope_bondage',
-  'gag',
-  'blindfold',
-  'cbt',
-  'chastity',
-  'forced_feminization',
-  'mind_control',
-  'hypnosis',
-  'body_writing',
-  'pet_play',
   'latex',
-  'pov_dom',
 ];
 
 const ambienceState = {
@@ -2363,7 +2341,7 @@ async function fetchStyleTagsForArtistList(artistList, onProgress = null, should
       }
       processed++;
       if (onProgress) onProgress(processed, total);
-      setSimilarArtists(allArtists);
+      // Don't call setSimilarArtists here - it's called once at the end
     }
   }
 
@@ -2371,6 +2349,9 @@ async function fetchStyleTagsForArtistList(artistList, onProgress = null, should
   const workers = Array.from({ length: CONCURRENCY }, () => worker());
   await Promise.all(workers);
 
+  // Update similar artists once after all fetching is complete
+  setSimilarArtists(allArtists);
+  
   console.log('Style tag fetch complete');
   if (onProgress) onProgress(total, total);
 }
@@ -2438,8 +2419,8 @@ export async function forceFetchStyleTags() {
       // Give UI time to update before sorting
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      // Update similar artists and trigger re-sort if needed
-      setSimilarArtists(allArtists);
+      // setSimilarArtists is already called at the end of fetchStyleTagsForArtistList
+      // No need to call it again here
       
       // Re-render if we're on a sort mode that benefits from style tags
       if (sortMode === 'tag-frequency' || sortMode === 'count') {
