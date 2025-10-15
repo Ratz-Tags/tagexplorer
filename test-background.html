@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Background Test - TagExplorer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0c0b16;
+      color: #e2e8f0;
+      font-family: system-ui, sans-serif;
+    }
+    #background-blur {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+    }
+    .ambient-layer {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(14px) saturate(1.2);
+      transform: scale(1.08);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      transition: opacity 0.6s ease;
+    }
+    #log {
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 8px;
+      max-height: 80vh;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .log-entry { margin: 4px 0; }
+    .log-error { color: #f87171; }
+    .log-success { color: #4ade80; }
+    .log-info { color: #60a5fa; }
+    button {
+      background: rgba(102, 243, 255, 0.2);
+      border: 1px solid rgba(102, 243, 255, 0.4);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: rgba(102, 243, 255, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div id="background-blur"></div>
+  
+  <h1>Background Loading Test</h1>
+  <div>
+    <button onclick="testBackground()">Test Background Load</button>
+    <button onclick="clearLog()">Clear Log</button>
+  </div>
+  
+  <div id="log"></div>
+
+  <script type="module">
+    import { getRandomBackgroundImage } from './modules/api.js';
+    
+    const logEl = document.getElementById('log');
+    
+    function log(message, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(entry);
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+    
+    window.clearLog = () => {
+      logEl.innerHTML = '';
+    };
+    
+    window.testBackground = async () => {
+      const testTags = [
+        'chastity_cage',
+        'femdom',
+        'humiliation',
+        'bondage',
+        'pegging'
+      ];
+      
+      const tag = testTags[Math.floor(Math.random() * testTags.length)];
+      log(`Testing with tag: "${tag}"`, 'info');
+      
+      try {
+        log('Calling getRandomBackgroundImage...', 'info');
+        const imageUrl = await getRandomBackgroundImage(tag);
+        
+        if (!imageUrl) {
+          log('No image URL returned (check CORS or API issues)', 'error');
+          return;
+        }
+        
+        log(`Got image URL: ${imageUrl}`, 'success');
+        
+        // Try to preload the image
+        log('Attempting to preload image...', 'info');
+        const img = new Image();
+        img.decoding = 'async';
+        
+        img.onload = () => {
+          log('✓ Image loaded successfully!', 'success');
+          log(`Image dimensions: ${img.naturalWidth}x${img.naturalHeight}`, 'info');
+          
+          // Apply to background
+          const blur = document.getElementById('background-blur');
+          const layer = document.createElement('div');
+          layer.className = 'ambient-layer';
+          layer.style.backgroundImage = `url(${imageUrl})`;
+          layer.style.opacity = '0.8';
+          blur.innerHTML = '';
+          blur.appendChild(layer);
+          log('✓ Applied to background element', 'success');
+        };
+        
+        img.onerror = (err) => {
+          log('✗ Failed to load image: ' + err, 'error');
+          log('This could be a CORS issue or invalid URL', 'error');
+        };
+        
+        img.src = imageUrl;
+        
+      } catch (error) {
+        log('✗ Error: ' + error.message, 'error');
+        log('Stack: ' + error.stack, 'error');
+      }
+    };
+    
+    // Auto-run test on load
+    log('Page loaded. Click "Test Background Load" to test.', 'info');
+    log('Default tags: chastity_cage, femdom, humiliation, bondage, pegging', 'info');
+  </script>
+</body>
+</html>
