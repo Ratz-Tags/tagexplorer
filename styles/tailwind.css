@@ -642,7 +642,7 @@ te-pinned-sidebar[data-mode="overlay"] > * {
 .shame-dossier-overlay {
   position: fixed;
   inset: 0;
-  z-index: 240;
+  z-index: 10000;
   display: none;
   align-items: flex-start;
   justify-content: center;
@@ -667,10 +667,12 @@ te-pinned-sidebar[data-mode="overlay"] > * {
   inset: 0;
   background: rgba(5, 5, 12, 0.65);
   backdrop-filter: blur(34px) saturate(140%);
+  z-index: 1;
 }
 
 .shame-dossier-panel {
   position: relative;
+  z-index: 2;
   width: min(960px, 100%);
   max-height: min(90vh, 1080px);
   display: flex;
@@ -701,6 +703,25 @@ body[data-fold-mode="fold-cover"] .shame-dossier-panel {
 
 body[data-fold-mode="fold-inner"] .shame-dossier-panel {
   max-width: min(860px, 78vw);
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  .shame-dossier-overlay {
+    z-index: 10000;
+    padding: 0.75rem;
+  }
+  
+  .shame-dossier-backdrop {
+    /* Ensure backdrop stays visible on mobile */
+    background: rgba(5, 5, 12, 0.85);
+    backdrop-filter: blur(24px) saturate(120%);
+  }
+  
+  .shame-dossier-panel {
+    max-height: calc(100vh - 1.5rem);
+    border-radius: 1.5rem;
+  }
 }
 
 .shame-dossier-header {
@@ -1986,6 +2007,25 @@ transition: opacity 0.6s ease;
 }
 body.incognito-theme .ambient-layer {
 display: none;
+}
+
+/* Ensure ambient layer stays visible when dossier is open */
+body.shame-dossier-open .ambient-layer {
+  display: block;
+  opacity: 0.8;
+}
+
+/* Mobile-specific ambient layer handling */
+@media (max-width: 768px) {
+  .ambient-layer {
+    /* Keep ambient layer visible on mobile */
+    z-index: 1;
+  }
+  
+  body.shame-dossier-open .ambient-layer {
+    /* Reduce opacity on mobile when dossier is open for better readability */
+    opacity: 0.5;
+  }
 }
 .audio-playlist-selector {
 @apply flex flex-col gap-2 mb-3;

@@ -71,6 +71,33 @@ const DEFAULT_AMBIENT_TAGS = [
   'denial',
   'foot_worship',
   'bondage',
+  'crossdressing',
+  'genderswap',
+  'feminization',
+  'collar',
+  'leash',
+  'orgasm_denial',
+  'ruined_orgasm',
+  'edging',
+  'tease_and_denial',
+  'anal',
+  'strap-on',
+  'spanking',
+  'bdsm',
+  'domination',
+  'submission',
+  'rope_bondage',
+  'gag',
+  'blindfold',
+  'cbt',
+  'chastity',
+  'forced_feminization',
+  'mind_control',
+  'hypnosis',
+  'body_writing',
+  'pet_play',
+  'latex',
+  'pov_dom',
 ];
 
 const ambienceState = {
@@ -2378,8 +2405,11 @@ export async function forceFetchStyleTags() {
   
   console.log(`Force fetching style tags for ${totalCount} ${hasFilters ? 'filtered' : 'total'} artists...`);
   
-  // Show the overlay with progress bar and cancel handler
+  // Show the overlay immediately with progress bar
   showForceFetchOverlay(totalCount);
+  
+  // Use requestAnimationFrame to ensure UI updates before heavy processing
+  await new Promise(resolve => requestAnimationFrame(resolve));
   
   try {
     // Fetch only the filtered artists
@@ -2396,6 +2426,26 @@ export async function forceFetchStyleTags() {
       hideForceFetchOverlay();
       console.log('Style tag fetch cancelled by user');
     } else {
+      // Update UI to show we're sorting
+      const modalContent = document.querySelector('.modal-content');
+      if (modalContent) {
+        const tauntEl = modalContent.querySelector('#fetch-taunt');
+        if (tauntEl) {
+          tauntEl.textContent = 'Processing results... Almost done.';
+        }
+      }
+      
+      // Give UI time to update before sorting
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Update similar artists and trigger re-sort if needed
+      setSimilarArtists(allArtists);
+      
+      // Re-render if we're on a sort mode that benefits from style tags
+      if (sortMode === 'tag-frequency' || sortMode === 'count') {
+        forceSortAndRender();
+      }
+      
       // Show completion message
       showFetchComplete(totalCount);
     }
