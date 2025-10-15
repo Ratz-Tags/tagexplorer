@@ -631,7 +631,7 @@ te-pinned-sidebar[data-mode="overlay"] {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 11000;
 }
 
 te-shame-dossier > *,
