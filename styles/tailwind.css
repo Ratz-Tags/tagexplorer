@@ -986,13 +986,11 @@ body[data-fold-mode="fold-inner"] .shame-dossier-panel {
 @apply w-full rounded-2xl border border-white/10 bg-black/40 px-4 py-3 text-sm font-medium text-slate-100 placeholder:text-slate-500 focus:border-glow focus:outline-none focus:ring-2 focus:ring-glow/40;
 }
 .gallery-shell {
-@apply mx-auto flex w-full flex-col gap-9 px-6 pb-20 pt-8 transition-all duration-500 ease-kink;
-max-width: min(1600px, 100vw);
-box-sizing: border-box;
-overflow-x: hidden;
-}
-
-body[data-fold-mode="fold-cover"] .gallery-shell {
+  @apply mx-auto flex w-full flex-col gap-9 px-6 pb-20 pt-8 transition-all duration-500 ease-kink;
+  max-width: min(1600px, 100vw);
+  box-sizing: border-box;
+  overflow-x: clip; /* Use 'clip' instead of 'hidden' - prevents scrollbar without creating stacking context */
+}body[data-fold-mode="fold-cover"] .gallery-shell {
   padding-bottom: calc(6rem + var(--safe-area-bottom));
 }
 .gallery-layout {
