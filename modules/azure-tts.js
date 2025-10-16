@@ -91,7 +91,8 @@ function getIntensityProfile(intensity) {
 function isVoiceAllowed(voice) {
   if (!voice) return false;
   const gender = String(voice.Gender || "").toLowerCase();
-  if (gender && gender.includes("male")) return false;
+  // Only filter out voices that are explicitly "Male" (not "Female")
+  if (gender === "male") return false;
   return true;
 }
 
