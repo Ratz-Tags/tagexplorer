@@ -1033,12 +1033,17 @@ body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-w
   max-height: calc(100vh - var(--safe-area-top) - 2rem);
   pointer-events: auto;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   border-radius: 2rem;
   border: 1px solid rgba(255, 255, 255, 0.12);
   background: rgba(10, 9, 18, 0.78);
   backdrop-filter: blur(18px);
   padding: 1.5rem;
   box-shadow: 0 28px 65px -35px rgba(255, 118, 214, 0.45);
+}
+body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper::-webkit-scrollbar {
+  display: none;
 }
 body[data-fold-mode="fold-inner"] .gallery-layout > te-pinned-sidebar .sidebar-wrapper .sidebar-panel {
   border: 0;

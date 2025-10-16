@@ -1655,12 +1655,11 @@ async function setupForceFetch() {
   if (!forceFetchBtn) return;
   forceFetchBtn.addEventListener('click', async () => {
     try {
-      await filterArtists(false, true);
+      const { forceFetchStyleTags } = await import('../gallery.js');
+      await forceFetchStyleTags({ refreshCounts: true });
     } catch (error) {
-      console.warn('Failed to refresh counts before force fetch:', error);
+      console.error('Failed to launch force fetch', error);
     }
-    const { forceFetchStyleTags } = await import('../gallery.js');
-    await forceFetchStyleTags();
   });
 }
 

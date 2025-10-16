@@ -2370,30 +2370,77 @@ async function fetchStyleTagsForAllArtists(onProgress = null, shouldCancel = nul
  * Force fetch style tags for currently filtered artists with UI feedback
  * This is the user-triggered version with progress display
  */
-export async function forceFetchStyleTags() {
-  const { showForceFetchOverlay, updateForceFetchProgress, showFetchComplete, hideForceFetchOverlay, isCancelRequested } = await import('./force-fetch-ui.js');
-  
+export async function forceFetchStyleTags(options = {}) {
+  const { refreshCounts = false } = options ?? {};
+  const {
+    showForceFetchOverlay,
+    updateForceFetchProgress,
+    showFetchComplete,
+    hideForceFetchOverlay,
+    isCancelRequested,
+    setForceFetchTaunt,
+  } = await import('./force-fetch-ui.js');
+
   // Use filtered artists (those matching current tags), not all artists
-  const artistsToFetch = filtered.length > 0 ? filtered : allArtists;
-  
+  let artistsToFetch = filtered.length > 0 ? filtered : allArtists;
+  let hasFilters = filtered.length > 0;
+
   if (!artistsToFetch || artistsToFetch.length === 0) {
     alert('No artists to fetch. Please wait for the gallery to load.');
     return;
   }
-  
+
+  // Show the overlay immediately with the current count
+  showForceFetchOverlay(artistsToFetch.length);
+
+  // Ensure the overlay paints before continuing
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
+  if (refreshCounts) {
+    try {
+      setForceFetchTaunt('Tightening your filters before I indulge you…', {
+        tone: 'info',
+        holdMs: 3600,
+      });
+      await filterArtists(false, true);
+      artistsToFetch = filtered.length > 0 ? filtered : allArtists;
+      hasFilters = filtered.length > 0;
+
+      if (!artistsToFetch || artistsToFetch.length === 0) {
+        setForceFetchTaunt('Your precious list is empty. Loosen those tags.', {
+          tone: 'warning',
+          holdMs: 4200,
+        });
+        hideForceFetchOverlay();
+        return;
+      }
+
+      // Reset progress with the refreshed totals
+      updateForceFetchProgress(0, artistsToFetch.length);
+    } catch (error) {
+      console.warn('Failed to refresh counts before force fetch:', error);
+      setForceFetchTaunt('Fine. I will fetch without your tidy counts.', {
+        tone: 'warning',
+        holdMs: 3600,
+      });
+    }
+
+    // Allow a frame for the status change before heavy work resumes
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+
   const totalCount = artistsToFetch.length;
-  const hasFilters = filtered.length > 0;
-  
+
   console.log(`Force fetching style tags for ${totalCount} ${hasFilters ? 'filtered' : 'total'} artists...`);
-  
-  // Show the overlay immediately with progress bar
-  showForceFetchOverlay(totalCount);
-  
-  // Use requestAnimationFrame to ensure UI updates before heavy processing
-  await new Promise(resolve => requestAnimationFrame(resolve));
-  
+
+  setForceFetchTaunt(
+    hasFilters
+      ? 'Counting every filtered indulgence you demanded…'
+      : 'All of them? Greedy. I’ll fetch them all.',
+    { tone: 'info', holdMs: 2800 }
+  );
+
   try {
-    // Fetch only the filtered artists
     await fetchStyleTagsForArtistList(
       artistsToFetch,
       (current, total) => {
@@ -2401,36 +2448,26 @@ export async function forceFetchStyleTags() {
       },
       () => isCancelRequested()
     );
-    
-    // Check if cancelled
+
     if (isCancelRequested()) {
       hideForceFetchOverlay();
       console.log('Style tag fetch cancelled by user');
-    } else {
-      // Update UI to show we're sorting
-      const modalContent = document.querySelector('.modal-content');
-      if (modalContent) {
-        const tauntEl = modalContent.querySelector('#fetch-taunt');
-        if (tauntEl) {
-          tauntEl.textContent = 'Processing results... Almost done.';
-        }
-      }
-      
-      // Give UI time to update before sorting
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // setSimilarArtists is already called at the end of fetchStyleTagsForArtistList
-      // No need to call it again here
-      
-      // Re-render if we're on a sort mode that benefits from style tags
-      if (sortMode === 'tag-frequency' || sortMode === 'count') {
-        forceSortAndRender();
-      }
-      
-      // Show completion message
-      showFetchComplete(totalCount);
+      return;
     }
-    
+
+    setForceFetchTaunt('Processing results… Try not to squirm.', {
+      tone: 'info',
+      holdMs: 3200,
+    });
+
+    // Give UI time to update before sorting
+    await new Promise((resolve) => setTimeout(resolve, 120));
+
+    if (sortMode === 'tag-frequency' || sortMode === 'count') {
+      forceSortAndRender();
+    }
+
+    showFetchComplete(totalCount);
   } catch (error) {
     console.error('Force fetch failed:', error);
     hideForceFetchOverlay();
