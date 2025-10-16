@@ -50,12 +50,12 @@ html {
 @apply bg-night text-slate-100 min-h-screen;
 width: 100%;
 max-width: 100vw;
-overflow-x: hidden;
 }
 body {
-@apply min-h-screen bg-night text-slate-100 font-sans antialiased overflow-x-hidden;
+@apply min-h-screen bg-night text-slate-100 font-sans antialiased;
 width: 100%;
 max-width: 100vw;
+overflow-x: clip; /* Only body needs overflow control, not both html and body */
 --command-accent: #66f3ff;
 --command-backdrop: rgba(102, 243, 255, 0.18);
 --command-outline: rgba(102, 243, 255, 0.45);
