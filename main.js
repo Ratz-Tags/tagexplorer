@@ -15,6 +15,24 @@ const pageId = document.body.dataset.page || 'gallery';
 let beforeNavigateHandler = null;
 let foldAdapterInstance = null;
 
+const HANDLED_API_LOG_INTERVAL = 6000;
+const handledApiLogState = new Map();
+
+function logHandledApiMessage(message) {
+  if (!message) return;
+  const now = Date.now();
+  const entry = handledApiLogState.get(message) || { last: 0, suppressed: 0 };
+  if (now - entry.last < HANDLED_API_LOG_INTERVAL) {
+    entry.suppressed += 1;
+    handledApiLogState.set(message, entry);
+    return;
+  }
+
+  const suffix = entry.suppressed > 0 ? ` (suppressed ${entry.suppressed} similar)` : '';
+  console.warn(`API error handled: ${message}${suffix}`);
+  handledApiLogState.set(message, { last: now, suppressed: 0 });
+}
+
 async function bootstrap() {
   try {
     const shell = await mountShell({ page: pageId });
@@ -85,24 +103,36 @@ window.addEventListener('unhandledrejection', (event) => {
   if (event.reason) {
     // Check for our specific APIError type
     if (event.reason.name === 'APIError') {
-      console.warn('API error handled:', event.reason.message);
+      logHandledApiMessage(event.reason.message);
       event.preventDefault(); // Prevent the error from being logged as unhandled
       return;
     }
-    
+
     // Check for common API error messages
     if (event.reason.message) {
       const message = event.reason.message;
-      if (message.includes('API request failed') || 
-          message.includes('Rate limit exceeded') || 
+      if (message.includes('API request failed') ||
+          message.includes('Rate limit exceeded') ||
           message.includes('CORS') ||
           message.includes('Failed to fetch')) {
-        console.warn('API error handled:', message);
+        logHandledApiMessage(message);
         event.preventDefault(); // Prevent the error from being logged as unhandled
         return;
       }
     }
+
+    if (typeof event.reason === 'string') {
+      const message = event.reason;
+      if (message.includes('API request failed') ||
+          message.includes('Rate limit exceeded') ||
+          message.includes('CORS') ||
+          message.includes('Failed to fetch')) {
+        logHandledApiMessage(message);
+        event.preventDefault();
+        return;
+      }
+    }
   }
-  
+
   console.error('Unhandled promise rejection:', event.reason);
 });
