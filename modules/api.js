@@ -49,6 +49,134 @@ const RATE_LIMIT_CONFIG = {
   backoffMultiplier: 1.65, // quick recovery while respecting limits
 };
 
+// Rate limit observability helpers
+const RATE_LIMIT_EVENT_NAME = "tagexplorer:api:rate-limit";
+const RATE_LIMIT_LOG_INTERVALS = {
+  info: 3500,
+  warn: 4500,
+  error: 12000,
+};
+const rateLimitLogTimestamps = new Map();
+
+const rateLimitState = {
+  active: false,
+  lastDetail: null,
+};
+
+function setBodyRateLimitState(active) {
+  if (typeof document === "undefined") return;
+  if (!document.body || !document.body.dataset) return;
+  if (active) {
+    document.body.dataset.apiRateLimited = "true";
+  } else {
+    delete document.body.dataset.apiRateLimited;
+  }
+}
+
+function dispatchRateLimitEvent(phase, detail = {}) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") {
+    return;
+  }
+  const EventCtor = typeof window.CustomEvent === "function" ? window.CustomEvent : null;
+  if (!EventCtor) return;
+  try {
+    const event = new EventCtor(RATE_LIMIT_EVENT_NAME, {
+      detail: { phase, ...detail },
+    });
+    window.dispatchEvent(event);
+  } catch (err) {
+    logRateLimitEvent("warn", "Failed to dispatch rate limit event", {
+      error: err?.message || err,
+      phase,
+    });
+  }
+}
+
+function logRateLimitEvent(level, message, detail = {}) {
+  const now = Date.now();
+  const interval = RATE_LIMIT_LOG_INTERVALS[level] ?? 4000;
+  const key = `${level}:${message}`;
+  const last = rateLimitLogTimestamps.get(key) ?? 0;
+  if (now - last < interval) {
+    return;
+  }
+  rateLimitLogTimestamps.set(key, now);
+  const logger = typeof console[level] === "function" ? console[level].bind(console) : console.log.bind(console);
+  logger(`[api] ${message}`, detail);
+}
+
+function markRateLimitActive(detail = {}) {
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.lastDetail = merged;
+  if (!rateLimitState.active) {
+    rateLimitState.active = true;
+    setBodyRateLimitState(true);
+    dispatchRateLimitEvent("active", merged);
+  } else {
+    dispatchRateLimitEvent("update", merged);
+  }
+}
+
+function markRateLimitRecovered(detail = {}) {
+  if (!rateLimitState.active) return;
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.active = false;
+  rateLimitState.lastDetail = null;
+  setBodyRateLimitState(false);
+  dispatchRateLimitEvent("recovered", merged);
+  logRateLimitEvent("info", "Rate limit recovered", merged);
+}
+
+function reportRateLimitExhausted(detail = {}) {
+  markRateLimitActive(detail);
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.lastDetail = merged;
+  dispatchRateLimitEvent("exhausted", merged);
+  logRateLimitEvent("error", "Rate limit exhausted", merged);
+}
+
+function createRateLimitResponse({ retryAfterMs = 0 } = {}) {
+  if (typeof Response === "function") {
+    const headersInit = { "x-tagexplorer-rate-limit": "exhausted" };
+    if (retryAfterMs > 0) {
+      headersInit["retry-after"] = String(Math.ceil(retryAfterMs / 1000));
+    }
+    return new Response(null, {
+      status: 429,
+      statusText: "Too Many Requests",
+      headers: headersInit,
+    });
+  }
+
+  const headerStore = new Map();
+  headerStore.set("x-tagexplorer-rate-limit", "exhausted");
+  if (retryAfterMs > 0) {
+    headerStore.set("retry-after", String(Math.ceil(retryAfterMs / 1000)));
+  }
+
+  return {
+    ok: false,
+    status: 429,
+    statusText: "Too Many Requests",
+    headers: {
+      get(name) {
+        const key = String(name || "").toLowerCase();
+        if (headerStore.has(key)) return headerStore.get(key);
+        return null;
+      },
+    },
+    async json() {
+      return { rateLimited: true };
+    },
+    async text() {
+      return "";
+    },
+    clone() {
+      return this;
+    },
+  };
+}
+
 // Request queue and tracking
 let requestQueue = [];
 let activeQueuedRequests = 0;
@@ -222,33 +350,57 @@ async function handleQueuedRequest(request) {
 
       if (response.status === 429) {
         request.retries += 1;
+
+        const retryAfterHeader = response.headers?.get("retry-after");
+        const retryAfterMs = parseRetryAfter(retryAfterHeader);
+
+        if (dynamicMaxParallelFetches > 1) {
+          dynamicMaxParallelFetches = Math.max(1, Math.floor(dynamicMaxParallelFetches * 0.66));
+        }
+
+        let waitMs = retryAfterMs;
+        if (!waitMs) {
+          const next = Math.min(
+            Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
+            RATE_LIMIT_CONFIG.maxDelay
+          );
+          const jitter = Math.floor(Math.random() * Math.max(150, Math.floor(next * 0.2)));
+          currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
+          waitMs = currentDelay;
+        } else {
+          currentDelay = Math.max(waitMs, RATE_LIMIT_CONFIG.minDelay);
+        }
+
+        const rateLimitDetail = {
+          url: request.url,
+          retries: request.retries,
+          waitMs,
+          queueSize: requestQueue.length,
+          activeRequests: activeQueuedRequests,
+          currentDelay,
+        };
+        if (retryAfterHeader) {
+          rateLimitDetail.retryAfterHeader = retryAfterHeader;
+        }
+        if (retryAfterMs) {
+          rateLimitDetail.retryAfterMs = retryAfterMs;
+        }
+
         if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
-          const retryAfterHeader = response.headers?.get('retry-after');
-          const retryAfterMs = parseRetryAfter(retryAfterHeader);
-          if (dynamicMaxParallelFetches > 1) {
-            dynamicMaxParallelFetches = Math.max(1, Math.floor(dynamicMaxParallelFetches * 0.66));
-          }
-          let waitMs = retryAfterMs;
-          if (!waitMs) {
-            const next = Math.min(
-              Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
-              RATE_LIMIT_CONFIG.maxDelay
-            );
-            const jitter = Math.floor(Math.random() * Math.max(150, Math.floor(next * 0.2)));
-            currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
-            waitMs = currentDelay;
-          } else {
-            currentDelay = Math.max(waitMs, RATE_LIMIT_CONFIG.minDelay);
-          }
           if (request.retries === 1) {
-            showRateLimitWarning();
+            logRateLimitEvent("warn", "Danbooru rate limit hit; backing off", rateLimitDetail);
+          } else {
+            logRateLimitEvent("info", "Retrying after Danbooru rate limit", rateLimitDetail);
           }
+          showRateLimitWarning(rateLimitDetail);
           await delay(waitMs);
           continue;
         }
-        console.error('Danbooru rate limit exceeded, max retries reached');
-        showRateLimitError();
-        request.reject(new Error('Rate limit exceeded, max retries reached'));
+
+        reportRateLimitExhausted(rateLimitDetail);
+        showRateLimitError(rateLimitDetail);
+        const fallbackResponse = createRateLimitResponse({ retryAfterMs: waitMs });
+        request.resolve(fallbackResponse);
         return;
       }
 
@@ -259,6 +411,9 @@ async function handleQueuedRequest(request) {
             MAX_PARALLEL_FETCHES,
             dynamicMaxParallelFetches + 1
           );
+        }
+        if (rateLimitState.active) {
+          markRateLimitRecovered({ url: request.url, queueSize: requestQueue.length });
         }
         hideRateLimitWarning();
       } else {
@@ -295,65 +450,112 @@ async function handleQueuedRequest(request) {
  * User feedback for rate limiting
  */
 let rateLimitWarningEl = null;
+let rateLimitWarningState = "inactive";
 
-function showRateLimitWarning() {
-  if (typeof document === 'undefined') return;
-  
-  hideRateLimitWarning(); // Remove any existing warning
-  
-  rateLimitWarningEl = document.createElement('div');
-  rateLimitWarningEl.className = 'rate-limit-warning';
-  rateLimitWarningEl.innerHTML = `
-    <div style="
-      position: fixed; 
-      top: 80px; 
-      right: 20px; 
-      background: rgba(255, 130, 87, 0.9); 
-      color: white; 
-      padding: 12px 20px; 
-      border-radius: 12px; 
-      font-size: 0.8rem; 
-      z-index: 10000;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 130, 87, 0.3);
-      max-width: 300px;
-    ">
-      ⚠️ API rate limited - slowing down requests...
-    </div>
-  `;
-  
-  document.body.appendChild(rateLimitWarningEl);
+function describeWaitDuration(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  if (ms < 1000) {
+    return `${Math.max(1, Math.round(ms / 50) * 50)}ms`;
+  }
+  if (ms < 60_000) {
+    const seconds = ms / 1000;
+    return seconds < 10 ? `${seconds.toFixed(1)}s` : `${Math.round(seconds)}s`;
+  }
+  const minutes = ms / 60000;
+  return minutes < 10 ? `${minutes.toFixed(1)}m` : `${Math.round(minutes)}m`;
 }
 
-function showRateLimitError() {
-  if (typeof document === 'undefined') return;
-  
-  hideRateLimitWarning();
-  
-  rateLimitWarningEl = document.createElement('div');
-  rateLimitWarningEl.className = 'rate-limit-error';
-  rateLimitWarningEl.innerHTML = `
-    <div style="
-      position: fixed; 
-      top: 80px; 
-      right: 20px; 
-      background: rgba(239, 68, 68, 0.9); 
-      color: white; 
-      padding: 12px 20px; 
-      border-radius: 12px; 
-      font-size: 0.8rem; 
-      z-index: 10000;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      max-width: 300px;
-    ">
-      ❌ API rate limit exceeded - some images may not load
-    </div>
-  `;
-  
+function buildRateLimitMessage(detail = {}, { hard = false } = {}) {
+  const parts = [];
+  if (hard) {
+    parts.push("❌ API rate limit exceeded");
+  } else {
+    parts.push("⚠️ API rate limited - slowing down");
+  }
+  if (Number.isFinite(detail.waitMs) && detail.waitMs > 0) {
+    parts.push(`next retry in ${describeWaitDuration(detail.waitMs)}`);
+  }
+  if (Number.isFinite(detail.retryAfterMs) && detail.retryAfterMs > 0 && detail.retryAfterMs !== detail.waitMs) {
+    parts.push(`retry-after ${describeWaitDuration(detail.retryAfterMs)}`);
+  }
+  if (Number.isFinite(detail.queueSize) && detail.queueSize > 0) {
+    parts.push(`${detail.queueSize} queued`);
+  }
+  if (Number.isFinite(detail.activeRequests) && detail.activeRequests > 0) {
+    parts.push(`${detail.activeRequests} active`);
+  }
+  if (parts.length <= 1) {
+    return parts[0];
+  }
+  const [lead, ...rest] = parts;
+  return `${lead} • ${rest.join(" • ")}`;
+}
+
+function createRateLimitElement(message, { hard = false } = {}) {
+  const container = document.createElement("div");
+  container.className = hard ? "rate-limit-error" : "rate-limit-warning";
+  const messageEl = document.createElement("div");
+  messageEl.style.cssText = [
+    "position: fixed",
+    "top: 80px",
+    "right: 20px",
+    `background: ${hard ? "rgba(239, 68, 68, 0.9)" : "rgba(255, 130, 87, 0.9)"}`,
+    "color: white",
+    "padding: 12px 20px",
+    "border-radius: 12px",
+    "font-size: 0.8rem",
+    "z-index: 10000",
+    "backdrop-filter: blur(10px)",
+    `border: 1px solid ${hard ? "rgba(239, 68, 68, 0.3)" : "rgba(255, 130, 87, 0.3)"}`,
+    "max-width: 320px",
+    "line-height: 1.4",
+  ].join(";") + ";";
+  messageEl.textContent = message;
+  container.appendChild(messageEl);
+  container._messageEl = messageEl;
+  return container;
+}
+
+function updateRateLimitMessage(detail, { hard = false } = {}) {
+  if (!rateLimitWarningEl) return;
+  const node = rateLimitWarningEl._messageEl || rateLimitWarningEl.firstElementChild;
+  if (!node) return;
+  node.textContent = buildRateLimitMessage(detail, { hard });
+}
+
+function showRateLimitWarning(detail = {}) {
+  markRateLimitActive(detail);
+  if (typeof document === "undefined") return;
+  if (rateLimitWarningState === "warning" && rateLimitWarningEl) {
+    updateRateLimitMessage(detail, { hard: false });
+    return;
+  }
+  if (rateLimitWarningState === "error") {
+    hideRateLimitWarning();
+  }
+
+  const message = buildRateLimitMessage(detail, { hard: false });
+  rateLimitWarningEl = createRateLimitElement(message, { hard: false });
   document.body.appendChild(rateLimitWarningEl);
-  
-  // Auto-hide error after 5 seconds
+  rateLimitWarningState = "warning";
+}
+
+function showRateLimitError(detail = {}) {
+  markRateLimitActive(detail);
+  if (typeof document === "undefined") return;
+  if (rateLimitWarningState === "error" && rateLimitWarningEl) {
+    updateRateLimitMessage(detail, { hard: true });
+    return;
+  }
+
+  hideRateLimitWarning();
+
+  const message = buildRateLimitMessage(detail, { hard: true });
+  rateLimitWarningEl = createRateLimitElement(message, { hard: true });
+  document.body.appendChild(rateLimitWarningEl);
+  rateLimitWarningState = "error";
+
+  // Auto-hide error after 5 seconds to reduce distraction
   setTimeout(() => {
     hideRateLimitWarning();
   }, 5000);
@@ -364,6 +566,7 @@ function hideRateLimitWarning() {
     rateLimitWarningEl.parentNode.removeChild(rateLimitWarningEl);
     rateLimitWarningEl = null;
   }
+  rateLimitWarningState = "inactive";
 }
 
 /**
@@ -499,7 +702,11 @@ async function fetchPosts(tags, options = {}) {
     
     // Check if the response is ok before trying to parse JSON
     if (!response.ok) {
-      console.warn(`Danbooru API returned ${response.status} ${response.statusText} for: ${url}`);
+      if (response.status === 429) {
+        logRateLimitEvent("info", "Danbooru returned 429 for posts request", { url });
+      } else {
+        console.warn(`Danbooru API returned ${response.status} ${response.statusText} for: ${url}`);
+      }
       return [];
     }
     
