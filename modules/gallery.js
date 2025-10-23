@@ -1986,15 +1986,8 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     actions.appendChild(copyBtn);
     actions.appendChild(pinBtn);
     actions.appendChild(reloadBtn);
-    const detailLink = document.createElement('a');
-    detailLink.className = 'browse-btn artist-detail-link';
-    detailLink.textContent = 'Profile';
-    detailLink.href = `../artist/[id]/?slug=${encodeURIComponent(artistSlug || '')}`;
-    detailLink.setAttribute('data-router-link', '');
-    detailLink.addEventListener('click', (e) => e.stopPropagation());
-
     actions.appendChild(similarBtn);
-    actions.appendChild(detailLink);
+  // Profile link removed per UI update
     actions.appendChild(tagsToggle);
 
     const footer = document.createElement("div");
