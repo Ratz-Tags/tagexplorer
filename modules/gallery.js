@@ -1913,6 +1913,7 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     nameLink.className = "artist-name-link";
     nameLink.setAttribute('data-router-link', '');
     nameLink.addEventListener('click', (e) => {
+      e.preventDefault();
       e.stopPropagation();
     });
     name.appendChild(nameLink);
