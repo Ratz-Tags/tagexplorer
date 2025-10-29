@@ -91,10 +91,6 @@ function handleArtistCopy(artist, imgSrc) {
       showToast(
         added ? `Copied: ${artistTag}` : `Copied again: ${artistTag}`
       );
-      // --- INCREASE HUMILIATION METER ---
-      if (typeof window.incrementDesperationMeter === "function") {
-        window.incrementDesperationMeter(1);
-      }
     })
     .catch(() => {
       showToast("Failed to copy artist name");
@@ -680,58 +676,6 @@ function addGalleryCardHover(card) {
   });
 }
 
-function updateDesperationMeter() {
-  let meter = document.getElementById("desperation-meter");
-  if (!meter) {
-    meter = document.createElement("div");
-    meter.id = "desperation-meter";
-    meter.innerHTML = `<div class="desperation-bar"></div><span class="desperation-taunt"></span>`;
-    document.body.appendChild(meter);
-  }
-  const count = copiedArtists.size;
-  const bar = meter.querySelector(".desperation-bar");
-  const taunt = meter.querySelector(".desperation-taunt");
-  const percent = Math.min(100, count * 5);
-  bar.style.width = percent + "%";
-  bar.style.background =
-    percent > 80 ? "#fd7bc5" : percent > 50 ? "#ff63a5" : "#f9badd";
-  let msg = "";
-  if (count === 0) msg = "Dignity: Intact (for now)";
-  else if (count < 5) msg = "Mildly desperate";
-  else if (count < 10) msg = "Getting needy...";
-  else if (count < 20) msg = "Desperation rising!";
-  else if (count < 30) msg = "Utterly shameless!";
-  else msg = "No hope left!";
-  taunt.textContent = msg;
-}
-
-/**
- * Increments the desperation meter (for humiliation features)
- */
-function incrementDesperationMeter(amount = 1) {
-  let meter = document.getElementById("desperation-meter");
-  if (!meter) return;
-  let bar = meter.querySelector(".desperation-bar");
-  let taunt = meter.querySelector(".desperation-taunt");
-  let width = parseFloat(bar.style.width) || 0;
-  width = Math.min(100, width + amount * 5);
-  bar.style.width = width + "%";
-  bar.style.background =
-    width > 80 ? "#fd7bc5" : width > 50 ? "#ff63a5" : "#f9badd";
-  let msg = "";
-  if (width === 0) msg = "Dignity: Intact (for now)";
-  else if (width < 20) msg = "Mildly desperate";
-  else if (width < 40) msg = "Getting needy...";
-  else if (width < 60) msg = "Desperation rising!";
-  else if (width < 80) msg = "Utterly shameless!";
-  else msg = "No hope left!";
-  taunt.textContent = msg;
-  // Optionally, show a humiliation toast
-  if (width > 80) {
-    showToast("You're really pushing your limits, aren't you?");
-  }
-}
-
 // Patch into gallery rendering (assumes renderArtistCards or similar is called)
 if (typeof window !== "undefined") {
   window._galleryHumiliationPatch = function patchGalleryHumiliation() {
@@ -757,23 +701,10 @@ showToast = function (message) {
   if (message && message.startsWith("Copied")) {
     const taunt = copyTaunts[Math.floor(Math.random() * copyTaunts.length)];
     origShowToast(`${message}  ${taunt}`);
-    updateDesperationMeter();
   } else {
     origShowToast(message);
   }
 };
-
-// Patch desperation meter update into sidebar update
-const origUpdateCopiedSidebar = updateCopiedSidebar;
-updateCopiedSidebar = function () {
-  origUpdateCopiedSidebar.apply(this, arguments);
-  updateDesperationMeter();
-};
-
-// Expose incrementDesperationMeter globally for use in other modules
-if (typeof window !== "undefined") {
-  window.incrementDesperationMeter = incrementDesperationMeter;
-}
 
 // Export functions for ES modules
 export {
@@ -812,7 +743,6 @@ if (typeof module !== "undefined" && module.exports) {
 // addShameBadgeToCard: used by window._galleryHumiliationPatch
 // showGalleryEmptyState: used by window._showGalleryEmptyState
 // addGalleryCardHover: used by window._galleryHumiliationPatch
-// updateDesperationMeter: used by showToast (patch), updateCopiedSidebar (patch), and window._galleryHumiliationPatch
 // window._galleryHumiliationPatch: used by gallery.js (assumed via window)
 // window._showGalleryEmptyState: used by gallery.js (assumed via window)
 
