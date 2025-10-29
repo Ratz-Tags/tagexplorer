@@ -23,6 +23,7 @@ let coverModeSuppressed = false;
 let privacySuppressed = false;
 let reducedVolumePref = false;
 let privacyEventsBound = false;
+let coverObserver = null;
 
 const GLOBAL_MUTE_STORAGE_KEY = 'te.audio.globalMute';
 const PLAYLIST_DATA_URL = 'data/audio-playlists.json';

@@ -14,6 +14,22 @@ const fetchFn = fetch;
 
 import { fetchWithCache } from "./fetch-cache.js";
 
+// Environment detection for better error handling
+function isGitHubPages() {
+  return typeof window !== 'undefined' && 
+         (window.location.hostname.includes('github.io') || 
+          window.location.hostname.includes('github.dev'));
+}
+
+function isCorsError(error) {
+  return error && (
+    (error.name === 'TypeError' && error.message.includes('Failed to fetch')) ||
+    error.message.includes('CORS') ||
+    error.message.includes('Cross-Origin') ||
+    error.message.includes('blocked')
+  );
+}
+
 const ARTISTS_DATA_URL = new URL("../artists.json", import.meta.url).href;
 const TOOLTIP_DATA_URL = new URL("../tag-tooltips.json", import.meta.url).href;
 const TAUNTS_DATA_URL = new URL("../taunts.json", import.meta.url).href;
@@ -26,18 +42,148 @@ let artistsListPromise = null;
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  // Ultra-fast for maximum responsiveness
-  minDelay: 15, // Minimum 15ms between requests (maximum speed)
-  maxDelay: 3000, // Maximum 3s delay for backoff (reduced from 5s)
-  maxRetries: 4, // allow an extra retry before failing
-  backoffMultiplier: 1.4, // moderate backoff multiplier (reduced from 1.5)
+  // Slow the baseline to avoid hammering Danbooru during parallel fetches
+  minDelay: 150, // Minimum spacing between queued requests
+  maxDelay: 8000, // Maximum delay for aggressive backoff recovery
+  maxRetries: 5, // allow a couple more retries before failing
+  backoffMultiplier: 1.65, // quick recovery while respecting limits
 };
+
+// Rate limit observability helpers
+const RATE_LIMIT_EVENT_NAME = "tagexplorer:api:rate-limit";
+const RATE_LIMIT_LOG_INTERVALS = {
+  info: 3500,
+  warn: 4500,
+  error: 12000,
+};
+const rateLimitLogTimestamps = new Map();
+
+const rateLimitState = {
+  active: false,
+  lastDetail: null,
+};
+
+function setBodyRateLimitState(active) {
+  if (typeof document === "undefined") return;
+  if (!document.body || !document.body.dataset) return;
+  if (active) {
+    document.body.dataset.apiRateLimited = "true";
+  } else {
+    delete document.body.dataset.apiRateLimited;
+  }
+}
+
+function dispatchRateLimitEvent(phase, detail = {}) {
+  if (typeof window === "undefined" || typeof window.dispatchEvent !== "function") {
+    return;
+  }
+  const EventCtor = typeof window.CustomEvent === "function" ? window.CustomEvent : null;
+  if (!EventCtor) return;
+  try {
+    const event = new EventCtor(RATE_LIMIT_EVENT_NAME, {
+      detail: { phase, ...detail },
+    });
+    window.dispatchEvent(event);
+  } catch (err) {
+    logRateLimitEvent("warn", "Failed to dispatch rate limit event", {
+      error: err?.message || err,
+      phase,
+    });
+  }
+}
+
+function logRateLimitEvent(level, message, detail = {}) {
+  const now = Date.now();
+  const interval = RATE_LIMIT_LOG_INTERVALS[level] ?? 4000;
+  const key = `${level}:${message}`;
+  const last = rateLimitLogTimestamps.get(key) ?? 0;
+  if (now - last < interval) {
+    return;
+  }
+  rateLimitLogTimestamps.set(key, now);
+  const logger = typeof console[level] === "function" ? console[level].bind(console) : console.log.bind(console);
+  logger(`[api] ${message}`, detail);
+}
+
+function markRateLimitActive(detail = {}) {
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.lastDetail = merged;
+  if (!rateLimitState.active) {
+    rateLimitState.active = true;
+    setBodyRateLimitState(true);
+    dispatchRateLimitEvent("active", merged);
+  } else {
+    dispatchRateLimitEvent("update", merged);
+  }
+}
+
+function markRateLimitRecovered(detail = {}) {
+  if (!rateLimitState.active) return;
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.active = false;
+  rateLimitState.lastDetail = null;
+  setBodyRateLimitState(false);
+  dispatchRateLimitEvent("recovered", merged);
+  logRateLimitEvent("info", "Rate limit recovered", merged);
+}
+
+function reportRateLimitExhausted(detail = {}) {
+  markRateLimitActive(detail);
+  const merged = { ...(rateLimitState.lastDetail || {}), ...detail };
+  rateLimitState.lastDetail = merged;
+  dispatchRateLimitEvent("exhausted", merged);
+  logRateLimitEvent("error", "Rate limit exhausted", merged);
+}
+
+function createRateLimitResponse({ retryAfterMs = 0 } = {}) {
+  if (typeof Response === "function") {
+    const headersInit = { "x-tagexplorer-rate-limit": "exhausted" };
+    if (retryAfterMs > 0) {
+      headersInit["retry-after"] = String(Math.ceil(retryAfterMs / 1000));
+    }
+    return new Response(null, {
+      status: 429,
+      statusText: "Too Many Requests",
+      headers: headersInit,
+    });
+  }
+
+  const headerStore = new Map();
+  headerStore.set("x-tagexplorer-rate-limit", "exhausted");
+  if (retryAfterMs > 0) {
+    headerStore.set("retry-after", String(Math.ceil(retryAfterMs / 1000)));
+  }
+
+  return {
+    ok: false,
+    status: 429,
+    statusText: "Too Many Requests",
+    headers: {
+      get(name) {
+        const key = String(name || "").toLowerCase();
+        if (headerStore.has(key)) return headerStore.get(key);
+        return null;
+      },
+    },
+    async json() {
+      return { rateLimited: true };
+    },
+    async text() {
+      return "";
+    },
+    clone() {
+      return this;
+    },
+  };
+}
 
 // Request queue and tracking
 let requestQueue = [];
-let isProcessingQueue = false;
+let activeQueuedRequests = 0;
+let queueProcessingScheduled = false;
 let lastRequestTime = 0;
 let currentDelay = RATE_LIMIT_CONFIG.minDelay;
+let rateLimiterCursor = Promise.resolve();
 
 // Request deduplication
 const pendingRequests = new Map(); // url -> Promise
@@ -47,16 +193,66 @@ const requestBatches = new Map(); // batch key -> array of requests
 // In-memory API JSON cache to avoid reparsing/rehydration during a session
 const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
 
-const DEFAULT_BATCH_DELAY_MS = 16;
+const DEFAULT_BATCH_DELAY_MS = 24;
 const DEFAULT_MAX_CONCURRENT_REQUESTS = (() => {
   if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
     const hw = Number(navigator.hardwareConcurrency) || 0;
     if (hw > 0) {
-      return Math.min(16, Math.max(8, Math.ceil(hw * 1.5)));
+      return Math.min(10, Math.max(6, Math.ceil(hw)));
     }
   }
-  return 12;
+  return 6;
 })();
+
+const MAX_PARALLEL_FETCHES = (() => {
+  if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
+    const hw = Number(navigator.hardwareConcurrency) || 0;
+    if (hw > 0) {
+      return Math.min(6, Math.max(3, Math.round(hw * 0.5)));
+    }
+  }
+  return 4;
+})();
+
+let dynamicMaxParallelFetches = MAX_PARALLEL_FETCHES;
+
+const scheduleMicrotask =
+  typeof queueMicrotask === 'function'
+    ? (cb) => queueMicrotask(cb)
+    : (cb) => Promise.resolve().then(cb);
+
+function delay(ms) {
+  return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
+function parseRetryAfter(value) {
+  if (!value) return 0;
+  const numeric = Number(value);
+  if (Number.isFinite(numeric) && numeric >= 0) {
+    return Math.round(numeric * 1000);
+  }
+  const parsed = Date.parse(value);
+  if (!Number.isNaN(parsed)) {
+    const diff = parsed - Date.now();
+    return diff > 0 ? diff : 0;
+  }
+  return 0;
+}
+
+async function waitForRateSlot() {
+  const previous = rateLimiterCursor;
+  rateLimiterCursor = previous
+    .catch(() => {})
+    .then(async () => {
+      const now = Date.now();
+      const elapsed = now - lastRequestTime;
+      if (elapsed < currentDelay) {
+        await delay(currentDelay - elapsed);
+      }
+      lastRequestTime = Date.now();
+    });
+  await rateLimiterCursor;
+}
 
 function toArtistSlug(name, fallbackIndex = 0) {
   const base = String(name || "artist").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -101,7 +297,7 @@ async function rateLimitedFetch(url, options = {}) {
   const promise = new Promise((resolve, reject) => {
     requestQueue.push({ url, options, resolve, reject, retries: 0 });
     console.debug && console.debug('[api] enqueued', url, 'queueLen=', requestQueue.length);
-    processQueue();
+    scheduleQueueProcessing();
   });
   
   // Store the promise for deduplication
@@ -118,68 +314,134 @@ async function rateLimitedFetch(url, options = {}) {
 /**
  * Process the request queue with rate limiting
  */
-async function processQueue() {
-  if (isProcessingQueue || requestQueue.length === 0) return;
-  
-  isProcessingQueue = true;
-  
-  while (requestQueue.length > 0) {
+function processQueue() {
+  queueProcessingScheduled = false;
+  if (!requestQueue.length) {
+    return;
+  }
+
+  const availableSlots = Math.max(1, dynamicMaxParallelFetches - activeQueuedRequests);
+  for (let i = 0; i < availableSlots && requestQueue.length; i++) {
     const request = requestQueue.shift();
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    
-    // Wait if we need to respect rate limits
-    if (timeSinceLastRequest < currentDelay) {
-      await new Promise(resolve => setTimeout(resolve, currentDelay - timeSinceLastRequest));
-    }
-    
+    activeQueuedRequests++;
+    handleQueuedRequest(request)
+      .catch((error) => {
+        // The error has already been logged and rejected in handleQueuedRequest
+        // This catch is just to ensure the promise chain doesn't break
+      })
+      .finally(() => {
+        activeQueuedRequests = Math.max(0, activeQueuedRequests - 1);
+        scheduleQueueProcessing();
+      });
+  }
+}
+
+function scheduleQueueProcessing() {
+  if (queueProcessingScheduled) return;
+  queueProcessingScheduled = true;
+  scheduleMicrotask(processQueue);
+}
+
+async function handleQueuedRequest(request) {
+  while (true) {
     try {
-      lastRequestTime = Date.now();
+      await waitForRateSlot();
       const response = await fetchFn(request.url, request.options);
-      
+
       if (response.status === 429) {
-        // Rate limited - implement exponential backoff
-        request.retries++;
-        if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
-          // Increase delay with multiplier, clamp to maxDelay, and add small random jitter
+        request.retries += 1;
+
+        const retryAfterHeader = response.headers?.get("retry-after");
+        const retryAfterMs = parseRetryAfter(retryAfterHeader);
+
+        if (dynamicMaxParallelFetches > 1) {
+          dynamicMaxParallelFetches = Math.max(1, Math.floor(dynamicMaxParallelFetches * 0.66));
+        }
+
+        let waitMs = retryAfterMs;
+        if (!waitMs) {
           const next = Math.min(
             Math.floor(currentDelay * RATE_LIMIT_CONFIG.backoffMultiplier),
             RATE_LIMIT_CONFIG.maxDelay
           );
-          const jitter = Math.floor(Math.random() * Math.max(100, Math.floor(next * 0.12))); // up to ~12% jitter
+          const jitter = Math.floor(Math.random() * Math.max(150, Math.floor(next * 0.2)));
           currentDelay = Math.min(next + jitter, RATE_LIMIT_CONFIG.maxDelay);
-          console.warn(`Rate limited, backing off to ${currentDelay}ms delay (retry ${request.retries}/${RATE_LIMIT_CONFIG.maxRetries})`);
-          
-          // Show user feedback on first rate limit hit
-          if (request.retries === 1) {
-            showRateLimitWarning();
-          }
-          
-          requestQueue.unshift(request); // Put back at front
-          continue;
+          waitMs = currentDelay;
         } else {
-          console.error('Danbooru rate limit exceeded, max retries reached');
-          showRateLimitError();
-          request.reject(new Error('Rate limit exceeded, max retries reached'));
+          currentDelay = Math.max(waitMs, RATE_LIMIT_CONFIG.minDelay);
+        }
+
+        const rateLimitDetail = {
+          url: request.url,
+          retries: request.retries,
+          waitMs,
+          queueSize: requestQueue.length,
+          activeRequests: activeQueuedRequests,
+          currentDelay,
+        };
+        if (retryAfterHeader) {
+          rateLimitDetail.retryAfterHeader = retryAfterHeader;
+        }
+        if (retryAfterMs) {
+          rateLimitDetail.retryAfterMs = retryAfterMs;
+        }
+
+        if (request.retries <= RATE_LIMIT_CONFIG.maxRetries) {
+          if (request.retries === 1) {
+            logRateLimitEvent("warn", "Danbooru rate limit hit; backing off", rateLimitDetail);
+          } else {
+            logRateLimitEvent("info", "Retrying after Danbooru rate limit", rateLimitDetail);
+          }
+          showRateLimitWarning(rateLimitDetail);
+          await delay(waitMs);
           continue;
         }
-      } else if (response.ok) {
-        // Success - reduce delay gradually
-        // Reduce currentDelay gradually toward minDelay
-        currentDelay = Math.max(Math.floor(currentDelay * 0.88), RATE_LIMIT_CONFIG.minDelay);
+
+        reportRateLimitExhausted(rateLimitDetail);
+        showRateLimitError(rateLimitDetail);
+        const fallbackResponse = createRateLimitResponse({ retryAfterMs: waitMs });
+        request.resolve(fallbackResponse);
+        return;
+      }
+
+      if (response.ok) {
+        currentDelay = Math.max(Math.floor(currentDelay * 0.8), RATE_LIMIT_CONFIG.minDelay);
+        if (dynamicMaxParallelFetches < MAX_PARALLEL_FETCHES) {
+          dynamicMaxParallelFetches = Math.min(
+            MAX_PARALLEL_FETCHES,
+            dynamicMaxParallelFetches + 1
+          );
+        }
+        if (rateLimitState.active) {
+          markRateLimitRecovered({ url: request.url, queueSize: requestQueue.length });
+        }
         hideRateLimitWarning();
       } else {
-        // Other HTTP errors
         console.warn(`API request failed with status ${response.status}: ${request.url}`);
       }
+
       request.resolve(response);
-      
+      return;
     } catch (error) {
-      request.reject(error);
+      // Handle network errors, CORS errors, and other fetch failures
+      if (isCorsError(error)) {
+        if (isGitHubPages()) {
+          console.warn(`CORS error on GitHub Pages for ${request.url}: Cross-origin requests may be blocked by browser policy`);
+        } else {
+          console.warn(`CORS error for ${request.url}: API may not allow cross-origin requests`);
+        }
+      } else {
+        console.warn(`Fetch error for ${request.url}:`, error.message || error);
+      }
+      
+      // Reject with a more descriptive error that won't cause unhandled rejections
+      const friendlyError = new Error(`API request failed: ${error.message || 'Network error'}`);
+      friendlyError.name = 'APIError'; // Specific error type for filtering
+      friendlyError.originalError = error;
+      request.reject(friendlyError);
+      return;
     }
   }
-  
-  isProcessingQueue = false;
 }
 
 
@@ -188,65 +450,112 @@ async function processQueue() {
  * User feedback for rate limiting
  */
 let rateLimitWarningEl = null;
+let rateLimitWarningState = "inactive";
 
-function showRateLimitWarning() {
-  if (typeof document === 'undefined') return;
-  
-  hideRateLimitWarning(); // Remove any existing warning
-  
-  rateLimitWarningEl = document.createElement('div');
-  rateLimitWarningEl.className = 'rate-limit-warning';
-  rateLimitWarningEl.innerHTML = `
-    <div style="
-      position: fixed; 
-      top: 80px; 
-      right: 20px; 
-      background: rgba(255, 130, 87, 0.9); 
-      color: white; 
-      padding: 12px 20px; 
-      border-radius: 12px; 
-      font-size: 0.8rem; 
-      z-index: 10000;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 130, 87, 0.3);
-      max-width: 300px;
-    ">
-      ⚠️ API rate limited - slowing down requests...
-    </div>
-  `;
-  
-  document.body.appendChild(rateLimitWarningEl);
+function describeWaitDuration(ms) {
+  if (!Number.isFinite(ms) || ms <= 0) return "";
+  if (ms < 1000) {
+    return `${Math.max(1, Math.round(ms / 50) * 50)}ms`;
+  }
+  if (ms < 60_000) {
+    const seconds = ms / 1000;
+    return seconds < 10 ? `${seconds.toFixed(1)}s` : `${Math.round(seconds)}s`;
+  }
+  const minutes = ms / 60000;
+  return minutes < 10 ? `${minutes.toFixed(1)}m` : `${Math.round(minutes)}m`;
 }
 
-function showRateLimitError() {
-  if (typeof document === 'undefined') return;
-  
-  hideRateLimitWarning();
-  
-  rateLimitWarningEl = document.createElement('div');
-  rateLimitWarningEl.className = 'rate-limit-error';
-  rateLimitWarningEl.innerHTML = `
-    <div style="
-      position: fixed; 
-      top: 80px; 
-      right: 20px; 
-      background: rgba(239, 68, 68, 0.9); 
-      color: white; 
-      padding: 12px 20px; 
-      border-radius: 12px; 
-      font-size: 0.8rem; 
-      z-index: 10000;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      max-width: 300px;
-    ">
-      ❌ API rate limit exceeded - some images may not load
-    </div>
-  `;
-  
+function buildRateLimitMessage(detail = {}, { hard = false } = {}) {
+  const parts = [];
+  if (hard) {
+    parts.push("❌ API rate limit exceeded");
+  } else {
+    parts.push("⚠️ API rate limited - slowing down");
+  }
+  if (Number.isFinite(detail.waitMs) && detail.waitMs > 0) {
+    parts.push(`next retry in ${describeWaitDuration(detail.waitMs)}`);
+  }
+  if (Number.isFinite(detail.retryAfterMs) && detail.retryAfterMs > 0 && detail.retryAfterMs !== detail.waitMs) {
+    parts.push(`retry-after ${describeWaitDuration(detail.retryAfterMs)}`);
+  }
+  if (Number.isFinite(detail.queueSize) && detail.queueSize > 0) {
+    parts.push(`${detail.queueSize} queued`);
+  }
+  if (Number.isFinite(detail.activeRequests) && detail.activeRequests > 0) {
+    parts.push(`${detail.activeRequests} active`);
+  }
+  if (parts.length <= 1) {
+    return parts[0];
+  }
+  const [lead, ...rest] = parts;
+  return `${lead} • ${rest.join(" • ")}`;
+}
+
+function createRateLimitElement(message, { hard = false } = {}) {
+  const container = document.createElement("div");
+  container.className = hard ? "rate-limit-error" : "rate-limit-warning";
+  const messageEl = document.createElement("div");
+  messageEl.style.cssText = [
+    "position: fixed",
+    "top: 80px",
+    "right: 20px",
+    `background: ${hard ? "rgba(239, 68, 68, 0.9)" : "rgba(255, 130, 87, 0.9)"}`,
+    "color: white",
+    "padding: 12px 20px",
+    "border-radius: 12px",
+    "font-size: 0.8rem",
+    "z-index: 10000",
+    "backdrop-filter: blur(10px)",
+    `border: 1px solid ${hard ? "rgba(239, 68, 68, 0.3)" : "rgba(255, 130, 87, 0.3)"}`,
+    "max-width: 320px",
+    "line-height: 1.4",
+  ].join(";") + ";";
+  messageEl.textContent = message;
+  container.appendChild(messageEl);
+  container._messageEl = messageEl;
+  return container;
+}
+
+function updateRateLimitMessage(detail, { hard = false } = {}) {
+  if (!rateLimitWarningEl) return;
+  const node = rateLimitWarningEl._messageEl || rateLimitWarningEl.firstElementChild;
+  if (!node) return;
+  node.textContent = buildRateLimitMessage(detail, { hard });
+}
+
+function showRateLimitWarning(detail = {}) {
+  markRateLimitActive(detail);
+  if (typeof document === "undefined") return;
+  if (rateLimitWarningState === "warning" && rateLimitWarningEl) {
+    updateRateLimitMessage(detail, { hard: false });
+    return;
+  }
+  if (rateLimitWarningState === "error") {
+    hideRateLimitWarning();
+  }
+
+  const message = buildRateLimitMessage(detail, { hard: false });
+  rateLimitWarningEl = createRateLimitElement(message, { hard: false });
   document.body.appendChild(rateLimitWarningEl);
-  
-  // Auto-hide error after 5 seconds
+  rateLimitWarningState = "warning";
+}
+
+function showRateLimitError(detail = {}) {
+  markRateLimitActive(detail);
+  if (typeof document === "undefined") return;
+  if (rateLimitWarningState === "error" && rateLimitWarningEl) {
+    updateRateLimitMessage(detail, { hard: true });
+    return;
+  }
+
+  hideRateLimitWarning();
+
+  const message = buildRateLimitMessage(detail, { hard: true });
+  rateLimitWarningEl = createRateLimitElement(message, { hard: true });
+  document.body.appendChild(rateLimitWarningEl);
+  rateLimitWarningState = "error";
+
+  // Auto-hide error after 5 seconds to reduce distraction
   setTimeout(() => {
     hideRateLimitWarning();
   }, 5000);
@@ -257,6 +566,7 @@ function hideRateLimitWarning() {
     rateLimitWarningEl.parentNode.removeChild(rateLimitWarningEl);
     rateLimitWarningEl = null;
   }
+  rateLimitWarningState = "inactive";
 }
 
 /**
@@ -389,23 +699,51 @@ async function fetchPosts(tags, options = {}) {
     }
 
     const response = await rateLimitedFetch(url);
-    const data = await response.json();
+    
+    // Check if the response is ok before trying to parse JSON
+    if (!response.ok) {
+      if (response.status === 429) {
+        logRateLimitEvent("info", "Danbooru returned 429 for posts request", { url });
+      } else {
+        console.warn(`Danbooru API returned ${response.status} ${response.statusText} for: ${url}`);
+      }
+      return [];
+    }
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.warn(`Failed to parse JSON response from Danbooru API: ${parseError.message}`);
+      return [];
+    }
 
     // Populate in-memory cache for this session (even if useCache is false)
     if (Array.isArray(data) && data.length > 0) {
       try { apiMemoryCache.set(memoryKey, data); } catch (e) {}
     }
 
-  // Cache the result if enabled and non-empty (don't cache empty results)
-  if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
-    try {
-      sessionStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch {
-      // Cache quota exceeded, ignore
+    // Cache the result if enabled and non-empty (don't cache empty results)
+    if (useCache && cacheKey && Array.isArray(data) && data.length > 0) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify(data));
+      } catch {
+        // Cache quota exceeded, ignore
+      }
     }
-  }    return Array.isArray(data) ? data : [];
+    
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.warn("Danbooru API fetch failed:", error);
+    // More specific error logging
+    if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      console.warn("Danbooru API network error: likely CORS or connectivity issue");
+    } else if (error.message && error.message.includes('CORS')) {
+      console.warn("Danbooru API CORS error: cross-origin request blocked");
+    } else if (error.message && error.message.includes('Rate limit')) {
+      console.warn("Danbooru API rate limit error:", error.message);
+    } else {
+      console.warn("Danbooru API fetch failed:", error.message || error);
+    }
     return [];
   }
 }
@@ -516,19 +854,18 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  // Send all selected tags to the API (no artificial client-side two-tag limit)
+  // Always query Danbooru with only the artist tag. Gallery filtering happens client-side.
   const page = Math.max(1, options.page || 1);
   const limit = options.limit || 200;
   const order = options.order || "approvals";
   const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
-  const tagSignature = Array.isArray(selectedTags) && selectedTags.length ? selectedTags.join(",") : "_all";
-  const apiCacheKey = `danbooru-api-${artistName}-${tagSignature}-${cacheSignature}`;
+  const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
+
+  // Create deduplication key for this specific artist + paging request
+  const artistRequestKey = `${artistName}-${cacheSignature}`;
   
-  // Create deduplication key for this specific artist+tags API call
-  const artistRequestKey = `${artistName}-${tagSignature}-${cacheSignature}`;
-  
-  // Check if this exact artist+tags API call is already pending
+  // Check if this exact artist request is already pending
   if (pendingArtistRequests.has(artistRequestKey)) {
     const posts = await pendingArtistRequests.get(artistRequestKey);
     return filterValidImagePosts(posts, selectedTags);
@@ -553,8 +890,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // Create the API call promise - include artistName + all selectedTags
-  const apiPromise = fetchPosts([artistName, ...(Array.isArray(selectedTags) ? selectedTags : [])], {
+  // Create the API call promise using only the artist tag
+  const apiPromise = fetchPosts([artistName], {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
     limit,

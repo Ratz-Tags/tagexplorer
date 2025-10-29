@@ -250,6 +250,13 @@ function setupMissionRitual() {
   const backButtons = Array.from(dialog.querySelectorAll('[data-ritual-back]'));
   const consentButton = dialog.querySelector('[data-ritual-consent]');
   const confirmButton = dialog.querySelector('[data-ritual-confirm]');
+  
+  console.log('[landing] Ritual elements found:');
+  console.log('  - Mission buttons:', missionButtons.length);
+  console.log('  - Back buttons:', backButtons.length);
+  console.log('  - Consent button:', !!consentButton);
+  console.log('  - Confirm button:', !!confirmButton);
+  console.log('  - Summary element:', !!summaryEl);
   const handleCancel = (event) => {
     if (ritualComplete) return;
     event.preventDefault();
@@ -271,15 +278,27 @@ function setupMissionRitual() {
   };
 
   function setStep(step) {
+    console.log('[landing] Setting ritual step:', step);
     activeStep = step;
     const stages = Array.from(dialog.querySelectorAll('[data-ritual-step]'));
+    console.log('[landing] Found stages:', stages.length);
+    
     stages.forEach((stage) => {
       const key = stage.getAttribute('data-ritual-step');
       const isActive = key === step;
-      stage.toggleAttribute('hidden', !isActive);
+      console.log(`[landing] Stage "${key}": active=${isActive}`);
+      
+      // Use removeAttribute/setAttribute instead of toggleAttribute for better compatibility
+      if (isActive) {
+        stage.removeAttribute('hidden');
+      } else {
+        stage.setAttribute('hidden', '');
+      }
       stage.classList.toggle('landing-ritual__stage--active', isActive);
     });
+    
     dialog.setAttribute('data-ritual-stage', step);
+    console.log('[landing] Dialog stage set to:', step);
     queueMicrotask(() => focusCurrentStep());
   }
 
@@ -312,11 +331,19 @@ function setupMissionRitual() {
   }
 
   function openRitual(initialStep = 'mission') {
-    if (ritualComplete) return;
+    console.log('[landing] Opening ritual with step:', initialStep);
+    if (ritualComplete) {
+      console.log('[landing] Ritual already complete, not opening');
+      return;
+    }
+    
     const alreadyOpen = Boolean(dialog.open);
+    console.log('[landing] Dialog already open:', alreadyOpen);
+    
     try {
       dialog.removeAttribute('hidden');
     } catch {}
+    
     setStep(initialStep);
     if (!alreadyOpen) {
       if (typeof dialog.showModal === 'function') {
@@ -331,6 +358,15 @@ function setupMissionRitual() {
       }
       dialog.classList.add('landing-ritual--open');
       dialog.setAttribute('aria-hidden', 'false');
+      
+      // Prevent background scrolling on mobile
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = 'hidden';
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+      }
+      
       if (focusTrapDisposer) {
         focusTrapDisposer();
       }
@@ -362,6 +398,17 @@ function setupMissionRitual() {
     }
     dialog.classList.remove('landing-ritual--open');
     dialog.setAttribute('aria-hidden', 'true');
+    dialog.dataset.ritualState = 'complete';
+    dialog.setAttribute('hidden', '');
+    
+    // Restore background scrolling on mobile
+    if (typeof document !== 'undefined') {
+      document.body.style.overflow = '';
+      document.body.style.position = '';
+      document.body.style.width = '';
+      document.body.style.height = '';
+    }
+    
     enterLink.focus({ preventScroll: true });
   }
 
@@ -392,8 +439,10 @@ function setupMissionRitual() {
     }
   }
 
-  missionButtons.forEach((button) => {
+  missionButtons.forEach((button, index) => {
+    console.log(`[landing] Setting up mission button ${index + 1}:`, button.dataset.missionOption);
     button.addEventListener('click', () => {
+      console.log(`[landing] Mission button clicked:`, button.dataset.missionOption);
       selectedMission = button.dataset.missionOption || '';
       selectedLabel = button.dataset.missionLabel || selectedMission;
       selectedCopy = button.dataset.missionCopy || '';
@@ -446,6 +495,19 @@ function setupMissionRitual() {
   if (storedProfile) {
     ritualComplete = true;
     unlockCTA(storedProfile);
+    dialog.classList.remove('landing-ritual--open');
+    try {
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
+    } catch {
+      dialog.removeAttribute('open');
+    }
+    dialog.dataset.ritualState = 'complete';
+    dialog.setAttribute('hidden', '');
+    dialog.setAttribute('aria-hidden', 'true');
     return storedProfile;
   }
 
@@ -561,7 +623,55 @@ function setupThemeToggles() {
   });
 }
 
-export async function initLandingPage({ shell }) {
+function setupLandingFoldModeSync({ foldAdapter }) {
+  const applyMode = (mode) => {
+    const normalized = mode || 'default';
+    console.log('[landing] Applying fold mode:', normalized);
+    if (typeof document !== 'undefined') {
+      document.documentElement.dataset.foldMode = normalized;
+      document.body.dataset.foldMode = normalized;
+      const shellRoot = document.querySelector('[data-shell]');
+      if (shellRoot) {
+        shellRoot.dataset.foldMode = normalized;
+      }
+      console.log('[landing] Fold mode applied to body:', document.body.dataset.foldMode);
+    }
+    updateLandingCommandStatusLabels(normalized);
+  };
+
+  const currentMode =
+    (foldAdapter && typeof foldAdapter.getMode === 'function' && foldAdapter.getMode()) ||
+    document.body.dataset.foldMode ||
+    'default';
+  applyMode(currentMode);
+
+  if (!foldAdapter || typeof foldAdapter.subscribe !== 'function') {
+    return () => {};
+  }
+
+  const unsubscribe = foldAdapter.subscribe((mode) => {
+    applyMode(mode || 'default');
+  });
+
+  return () => {
+    if (typeof unsubscribe === 'function') {
+      unsubscribe();
+    }
+  };
+}
+
+function updateLandingCommandStatusLabels(mode) {
+  const labels = document.querySelectorAll('.command-status__label');
+  const normalized = mode || 'default';
+  labels.forEach((label) => {
+    const target = label?.dataset?.mode ? `fold-${label.dataset.mode}` : null;
+    const isActive = target && target === normalized;
+    label.classList.toggle('is-active', Boolean(isActive));
+    label.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+  });
+}
+
+export async function initLandingPage({ shell, foldAdapter }) {
   const audioButton = document.querySelector('[data-landing-audio]');
   let setupPromise = null;
   let ambienceHandle = null;
@@ -569,24 +679,62 @@ export async function initLandingPage({ shell }) {
   applySavedTheme();
   let motionMode = applyMotionPreference(readMotionPreference());
 
-  try {
-    await setRandomBackground({ motionMode });
-  } catch (error) {
-    console.warn('[landing] failed to apply initial ambience', error);
-  }
+  // Setup fold mode detection for mobile/desktop layouts
+  setupLandingFoldModeSync({ foldAdapter });
 
-  try {
-    ambienceHandle = await setupBackgroundRotation(setRandomBackground);
-  } catch (error) {
-    console.warn('[landing] failed to initialise ambience rotation', error);
-  }
+  // Critical path: Setup basic UI components
+  setupThemeToggles();
+  const disposePressureMeter = setupPressureMeter();
+  // setupMissionRitual(); // Removed - no more ritual dialog
+
+  // Non-critical path: Background operations (defer to avoid blocking UI)
+  // Use requestIdleCallback or setTimeout to defer heavy operations
+  const deferBackgroundSetup = () => {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(async () => {
+        try {
+          await setRandomBackground({ motionMode });
+        } catch (error) {
+          console.warn('[landing] failed to apply initial ambience', error);
+        }
+      });
+    } else {
+      setTimeout(async () => {
+        try {
+          await setRandomBackground({ motionMode });
+        } catch (error) {
+          console.warn('[landing] failed to apply initial ambience', error);
+        }
+      }, 100);
+    }
+  };
+
+  const deferAmbienceSetup = () => {
+    if (window.requestIdleCallback) {
+      requestIdleCallback(async () => {
+        try {
+          ambienceHandle = await setupBackgroundRotation(setRandomBackground);
+        } catch (error) {
+          console.warn('[landing] failed to initialise ambience rotation', error);
+        }
+      });
+    } else {
+      setTimeout(async () => {
+        try {
+          ambienceHandle = await setupBackgroundRotation(setRandomBackground);
+        } catch (error) {
+          console.warn('[landing] failed to initialise ambience rotation', error);
+        }
+      }, 200);
+    }
+  };
+
+  // Start background operations without blocking
+  deferBackgroundSetup();
+  deferAmbienceSetup();
 
   // Ensure listeners created inside ambience controller receive the current mode.
   motionMode = applyMotionPreference(motionMode);
-
-  setupThemeToggles();
-  const disposePressureMeter = setupPressureMeter();
-  setupMissionRitual();
 
   function revealAudioPanel() {
     if (!shell?.audioPanel) return;

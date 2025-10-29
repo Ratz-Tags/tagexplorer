@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tag Loading Test - TagExplorer</title>
+    <link rel="stylesheet" href="styles/tailwind.css">
+    <style>
+        body {
+            background: oklch(10% 0.02 260);
+            color: white;
+            font-family: system-ui, sans-serif;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .test-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(102, 243, 255, 0.3);
+            border-radius: 0.5rem;
+            background: rgba(102, 243, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            margin: 0.25rem;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            border-color: rgba(102, 243, 255, 0.6);
+            background: rgba(102, 243, 255, 0.2);
+        }
+        
+        #log {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+        
+        .log-entry {
+            margin: 0.25rem 0;
+        }
+        
+        .log-info { color: #66f3ff; }
+        .log-warn { color: #ffba08; }
+        .log-error { color: #ff6b6b; }
+        .log-success { color: #51cf66; }
+        
+        #tag-explorer-test {
+            min-height: 200px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 style="text-align: center; margin-bottom: 2rem; color: #66f3ff;">
+            TagExplorer Performance Fix Test
+        </h1>
+        
+        <div class="test-section">
+            <h2>1. Tag Loading Test</h2>
+            <p>Test the new tag loading mechanism with error handling and retry.</p>
+            <button class="test-button" onclick="testTagLoading()">
+                🏷️ Test Tag Loading
+            </button>
+            <button class="test-button" onclick="testTagLoadingError()">
+                ⚠️ Simulate Error
+            </button>
+            <button class="test-button" onclick="testTagReload()">
+                🔄 Test Reload
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Tag Explorer Rendering</h2>
+            <p>Test the tag explorer with the new error states and loading indicators.</p>
+            <button class="test-button" onclick="testTagExplorer()">
+                🔍 Initialize Tag Explorer
+            </button>
+            <button class="test-button" onclick="clearTagExplorer()">
+                🗑️ Clear Explorer
+            </button>
+            
+            <div id="tag-explorer-test">
+                <span style="color: #888;">Tag explorer will appear here</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Performance Metrics</h2>
+            <p>Check loading times and performance indicators.</p>
+            <button class="test-button" onclick="measurePerformance()">
+                📊 Measure Performance
+            </button>
+            <button class="test-button" onclick="stressTest()">
+                🔥 Stress Test
+            </button>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Debug Log</h2>
+            <div id="log"></div>
+            <button class="test-button" onclick="clearLog()">
+                🧹 Clear Log
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        const log = document.getElementById('log');
+        let logCount = 0;
+
+        function addLog(message, type = 'info') {
+            logCount++;
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.innerHTML = `<span style="color: #888;">[${timestamp}]</span> ${message}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            
+            if (logCount > 100) {
+                log.removeChild(log.firstChild);
+                logCount--;
+            }
+        }
+
+        // Intercept console methods to show in our log
+        const originalConsole = {
+            log: console.log,
+            warn: console.warn,
+            error: console.error,
+        };
+
+        console.log = (...args) => {
+            originalConsole.log(...args);
+            addLog(args.join(' '), 'info');
+        };
+
+        console.warn = (...args) => {
+            originalConsole.warn(...args);
+            addLog(args.join(' '), 'warn');
+        };
+
+        console.error = (...args) => {
+            originalConsole.error(...args);
+            addLog(args.join(' '), 'error');
+        };
+
+        // Test functions
+        window.testTagLoading = async function() {
+            addLog('Testing tag loading mechanism...', 'info');
+            try {
+                const { initTags } = await import('./modules/tags.js');
+                const startTime = performance.now();
+                await initTags();
+                const endTime = performance.now();
+                addLog(`Tag loading completed in ${(endTime - startTime).toFixed(2)}ms`, 'success');
+            } catch (error) {
+                addLog(`Tag loading failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.testTagLoadingError = async function() {
+            addLog('Simulating tag loading error...', 'warn');
+            // Temporarily break the fetch
+            const originalFetch = window.fetch;
+            window.fetch = () => Promise.reject(new Error('Simulated network error'));
+            
+            try {
+                const { initTags } = await import('./modules/tags.js');
+                await initTags();
+            } catch (error) {
+                addLog(`Expected error caught: ${error.message}`, 'warn');
+            } finally {
+                // Restore fetch
+                window.fetch = originalFetch;
+                addLog('Fetch restored', 'info');
+            }
+        };
+
+        window.testTagReload = async function() {
+            addLog('Testing tag reload mechanism...', 'info');
+            if (window.tagExplorer && window.tagExplorer.forceReload) {
+                window.tagExplorer.forceReload();
+                addLog('Force reload triggered', 'success');
+            } else {
+                addLog('Force reload not available yet', 'warn');
+            }
+        };
+
+        window.testTagExplorer = async function() {
+            addLog('Initializing tag explorer...', 'info');
+            const container = document.getElementById('tag-explorer-test');
+            
+            try {
+                // Create a mini tag explorer for testing
+                const { initTagExplorer } = await import('./modules/tag-explorer.js');
+                
+                // Clear container
+                container.innerHTML = `
+                    <div style="width: 100%; text-align: left;">
+                        <div id="tag-explorer-categories" style="max-height: 150px; overflow-y: auto;"></div>
+                    </div>
+                `;
+                
+                // Initialize
+                initTagExplorer();
+                addLog('Tag explorer initialized successfully', 'success');
+                
+            } catch (error) {
+                container.innerHTML = `<span style="color: #ff6b6b;">Error: ${error.message}</span>`;
+                addLog(`Tag explorer initialization failed: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearTagExplorer = function() {
+            const container = document.getElementById('tag-explorer-test');
+            container.innerHTML = '<span style="color: #888;">Tag explorer cleared</span>';
+            addLog('Tag explorer cleared', 'info');
+        };
+
+        window.measurePerformance = function() {
+            addLog('Measuring performance metrics...', 'info');
+            
+            // Check loading times
+            const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+            addLog(`Page load time: ${loadTime}ms`, 'info');
+            
+            // Check memory usage (if available)
+            if (performance.memory) {
+                const memory = performance.memory;
+                addLog(`Memory used: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)}MB`, 'info');
+                addLog(`Memory limit: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)}MB`, 'info');
+            }
+            
+            // Check if tag data is loaded
+            setTimeout(async () => {
+                try {
+                    const { getKinkTags } = await import('./modules/tags.js');
+                    const tags = getKinkTags();
+                    addLog(`Tags available: ${tags.length} categories`, tags.length > 0 ? 'success' : 'warn');
+                } catch (error) {
+                    addLog(`Cannot access tags: ${error.message}`, 'error');
+                }
+            }, 100);
+        };
+
+        window.stressTest = async function() {
+            addLog('Starting stress test...', 'warn');
+            
+            // Rapid tag loading attempts
+            const attempts = 5;
+            const startTime = performance.now();
+            
+            for (let i = 0; i < attempts; i++) {
+                try {
+                    const { getKinkTags } = await import(`./modules/tags.js?t=${Date.now()}`);
+                    const tags = getKinkTags();
+                    addLog(`Stress test ${i + 1}/${attempts}: ${tags.length} categories`, 'info');
+                } catch (error) {
+                    addLog(`Stress test ${i + 1}/${attempts} failed: ${error.message}`, 'error');
+                }
+                
+                // Small delay between attempts
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+            
+            const endTime = performance.now();
+            addLog(`Stress test completed in ${(endTime - startTime).toFixed(2)}ms`, 'success');
+        };
+
+        window.clearLog = function() {
+            log.innerHTML = '';
+            logCount = 0;
+            addLog('Log cleared', 'info');
+        };
+
+        // Listen for tag loading events
+        window.addEventListener('tagsLoaded', (event) => {
+            addLog(`Tags loaded event: ${event.detail.categories} categories, ${event.detail.totalTags} tags`, 'success');
+        });
+
+        window.addEventListener('tagsLoadError', (event) => {
+            addLog(`Tags load error event: ${event.detail.error}`, 'error');
+        });
+
+        // Initial log
+        addLog('Test page initialized - ready for testing!', 'success');
+    </script>
+</body>
+</html>

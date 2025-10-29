@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Mode Test - TagExplorer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #0f0f23;
+      color: #fff;
+    }
+    
+    .test-controls {
+      background: #1a1a2e;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      background: #16a085;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #1abc9c;
+    }
+    
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      background: #2c3e50;
+      border-radius: 4px;
+    }
+    
+    .link-section {
+      margin-top: 20px;
+    }
+    
+    a {
+      color: #3498db;
+      text-decoration: none;
+      font-size: 18px;
+      display: inline-block;
+      margin: 10px 0;
+      padding: 10px 15px;
+      background: #34495e;
+      border-radius: 5px;
+    }
+    
+    a:hover {
+      background: #4a6741;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 TagExplorer Mobile Mode Test</h1>
+  
+  <div class="test-controls">
+    <h2>Fold Mode Controls</h2>
+    <p>Use these buttons to simulate different device modes:</p>
+    
+    <button onclick="setFoldMode('fold-cover')">📱 Set Mobile Mode (fold-cover)</button>
+    <button onclick="setFoldMode('fold-inner')">📺 Set Desktop Mode (fold-inner)</button>
+    <button onclick="setFoldMode('default')">🖥️ Set Default Mode</button>
+    <button onclick="checkCurrentMode()">🔍 Check Current Mode</button>
+    
+    <div class="status" id="status">
+      Ready to test fold modes...
+    </div>
+  </div>
+  
+  <div class="link-section">
+    <h3>Quick Links</h3>
+    <a href="./">🏠 Go to Landing Page</a><br>
+    <a href="./gallery/">🖼️ Go to Gallery</a><br>
+    <a href="javascript:openDevTools()">🛠️ Open Developer Tools Tips</a>
+  </div>
+  
+  <div style="margin-top: 30px; font-size: 14px; opacity: 0.7;">
+    <h4>Instructions:</h4>
+    <ol>
+      <li>Click "📱 Set Mobile Mode" to simulate mobile device</li>
+      <li>Go to the Landing Page</li>
+      <li>You should see "Quick Gallery Access" button instead of "Enter under watch"</li>
+      <li>The ritual dialog should be completely hidden on mobile</li>
+      <li>Switch back to desktop mode to see the original ritual button</li>
+    </ol>
+  </div>
+  
+  <script>
+    function setFoldMode(mode) {
+      try {
+        // Set the mode on both document elements
+        document.documentElement.dataset.foldMode = mode;
+        document.body.dataset.foldMode = mode;
+        
+        // Also store in localStorage for persistence
+        localStorage.setItem('te.test.foldMode', mode);
+        
+        updateStatus(`✅ Fold mode set to: ${mode}`);
+        console.log('Fold mode changed to:', mode);
+      } catch (error) {
+        updateStatus(`❌ Error setting fold mode: ${error.message}`);
+      }
+    }
+    
+    function checkCurrentMode() {
+      const bodyMode = document.body.dataset.foldMode;
+      const htmlMode = document.documentElement.dataset.foldMode;
+      const stored = localStorage.getItem('te.test.foldMode');
+      
+      updateStatus(`
+        📊 Current Status:<br>
+        - Body fold-mode: ${bodyMode || 'not set'}<br>
+        - HTML fold-mode: ${htmlMode || 'not set'}<br>
+        - Stored test mode: ${stored || 'not set'}<br>
+        - Window width: ${window.innerWidth}px<br>
+        - Window height: ${window.innerHeight}px
+      `);
+    }
+    
+    function updateStatus(message) {
+      document.getElementById('status').innerHTML = message;
+    }
+    
+    function openDevTools() {
+      alert(`To inspect the mobile bypass button:
+      
+1. Open Developer Tools (F12)
+2. Click the device toggle icon (📱) 
+3. Select a mobile device or set custom size < 520px width
+4. Refresh the landing page
+5. Look for the "Quick Gallery Access" button
+
+Alternatively, use the buttons above to force mobile mode!`);
+    }
+    
+    // Auto-check mode on page load
+    window.addEventListener('load', () => {
+      checkCurrentMode();
+      
+      // Apply stored test mode if it exists
+      const storedMode = localStorage.getItem('te.test.foldMode');
+      if (storedMode) {
+        setFoldMode(storedMode);
+      }
+    });
+  </script>
+</body>
+</html>

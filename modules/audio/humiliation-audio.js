@@ -4,7 +4,7 @@ import {
 } from '../progression/pressure-meter.js';
 
 const STORAGE_KEY = 'te.audio.indulgenceLevel';
-const MANIFEST_URL = 'data/asmr-layers.json';
+const MANIFEST_URL = '/data/asmr-layers.json'; // Absolute path to work from any page
 
 const INDULGENCE_LABELS = ['Off', 'Curious', 'Needy', 'Desperate'];
 const CROSSFADE_MS = 1400;
@@ -14,7 +14,7 @@ const DEFAULT_LAYER_PRESET = [
   {
     id: 'breath-soft',
     title: 'Soft breath loops',
-    src: 'audio/asmr/breath-soft.webm',
+    src: '/audio/asmr/breath-soft.webm', // Absolute path
     lane: 1,
     baseVolume: 0.26,
     rateRange: 0.08,
@@ -23,7 +23,7 @@ const DEFAULT_LAYER_PRESET = [
   {
     id: 'whimper-mid',
     title: 'Quiet whimpers',
-    src: 'audio/asmr/whimper-mid.webm',
+    src: '/audio/asmr/whimper-mid.webm', // Absolute path
     lane: 2,
     baseVolume: 0.34,
     rateRange: 0.12,
@@ -32,7 +32,7 @@ const DEFAULT_LAYER_PRESET = [
   {
     id: 'moan-intense',
     title: 'Edge of a moan',
-    src: 'audio/asmr/moan-intense.webm',
+    src: '/audio/asmr/moan-intense.webm', // Absolute path
     lane: 3,
     baseVolume: 0.42,
     rateRange: 0.16,

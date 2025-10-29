@@ -50,72 +50,7 @@ template.innerHTML = `
             FETCH
           </button>
         </div>
-        <div class="command-deck" role="group" aria-label="Command deck controls">
-          <button
-            id="command-kneel"
-            class="control-btn command-btn command-deck__btn command-deck__btn--kneel"
-            type="button"
-            data-command-action="kneel"
-            data-haptic="command"
-            aria-pressed="false"
-            aria-describedby="command-kneel-desc"
-            aria-label="Kneel preset. Adds leash and restraint tags to the gallery filters."
-          >
-            <span class="command-deck__glyph" aria-hidden="true">⟟</span>
-            <span class="command-deck__label">KNEEL</span>
-            <span id="command-kneel-desc" class="sr-only">
-              Queue leash, restraint, and viewer-on-leash tags while intensifying the glow.
-            </span>
-          </button>
-          <button
-            id="command-confess"
-            class="control-btn command-btn command-deck__btn command-deck__btn--confess"
-            type="button"
-            data-command-action="confess"
-            data-haptic="command"
-            aria-pressed="false"
-            aria-describedby="command-confess-desc"
-            aria-label="Confess preset. Pushes humiliation and public exposure filters."
-          >
-            <span class="command-deck__glyph" aria-hidden="true">✧</span>
-            <span class="command-deck__label">CONFESS</span>
-            <span id="command-confess-desc" class="sr-only">
-              Layer humiliation, public nudity, and body writing to broadcast every secret.
-            </span>
-          </button>
-          <button
-            id="command-siren"
-            class="control-btn command-btn command-deck__btn command-deck__btn--siren"
-            type="button"
-            data-command-action="siren"
-            data-haptic="command"
-            aria-pressed="false"
-            aria-describedby="command-siren-desc"
-            aria-label="Siren preset. Floods trance and denial tags while spiking the ambience."
-          >
-            <span class="command-deck__glyph" aria-hidden="true">⚠</span>
-            <span class="command-deck__label">SIREN</span>
-            <span id="command-siren-desc" class="sr-only">
-              Engage emergency trance: hypnosis, mind break, and denial tags plus alarmed lighting.
-            </span>
-          </button>
-          <button
-            id="command-escape"
-            class="control-btn command-btn command-deck__btn command-deck__btn--escape"
-            type="button"
-            data-command-action="escape"
-            data-haptic="command"
-            aria-pressed="false"
-            aria-describedby="command-escape-desc"
-            aria-label="Escape preset. Clears command filters and calms the ambience."
-          >
-            <span class="command-deck__glyph" aria-hidden="true">⎋</span>
-            <span class="command-deck__label">ESCAPE</span>
-            <span id="command-escape-desc" class="sr-only">
-              Release the deck influence, restore your saved tags, and drop the indulgence to zero.
-            </span>
-          </button>
-        </div>
+        <!-- Command deck buttons removed - they were confusing -->
         <div class="command-streak" role="group" aria-label="Return streak tracker">
           <button
             id="streak-chip"

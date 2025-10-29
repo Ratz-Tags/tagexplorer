@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Performance Diagnostics</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .test-section {
+      background: #333;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .success { color: #51cf66; }
+    .error { color: #ff6b6b; }
+    .warning { color: #ffd43b; }
+    .timing { color: #74c0fc; }
+    button {
+      background: #444;
+      color: #fff;
+      border: 1px solid #666;
+      padding: 8px 15px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #555; }
+    pre { 
+      background: #222; 
+      padding: 10px; 
+      border-radius: 4px; 
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    .performance-metrics {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 10px;
+      margin: 10px 0;
+    }
+    .metric {
+      background: #2a2a2a;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>TagExplorer Performance Diagnostics</h1>
+  
+  <div class="test-section">
+    <h2>Landing Page Performance Test</h2>
+    <div id="landing-perf"></div>
+    <button onclick="testLandingPerformance()">Test Landing Performance</button>
+    <button onclick="testMissionRitual()">Test Mission Ritual Only</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Tag Loading Test</h2>
+    <div id="tag-loading"></div>
+    <button onclick="testTagLoading()">Test Tag Loading</button>
+  </div>
+
+  <div class="test-section">
+    <h2>Mobile Detection</h2>
+    <div id="mobile-info"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Network Performance</h2>
+    <div id="network-info"></div>
+    <button onclick="testNetworkSpeed()">Test Network Speed</button>
+  </div>
+
+  <script>
+    const log = (element, message, className = '') => {
+      const p = document.createElement('p');
+      p.innerHTML = message;
+      if (className) p.className = className;
+      element.appendChild(p);
+    };
+
+    // Mobile detection
+    const checkMobile = () => {
+      const mobileEl = document.getElementById('mobile-info');
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isSmallScreen = window.innerWidth <= 768;
+      const isTouch = 'ontouchstart' in window;
+      
+      log(mobileEl, `<strong>User Agent:</strong> ${userAgent}`);
+      log(mobileEl, `<strong>Is Mobile:</strong> ${isMobile}`, isMobile ? 'warning' : 'success');
+      log(mobileEl, `<strong>Small Screen:</strong> ${isSmallScreen}`, isSmallScreen ? 'warning' : 'success');
+      log(mobileEl, `<strong>Touch Device:</strong> ${isTouch}`, isTouch ? 'warning' : 'success');
+      log(mobileEl, `<strong>Screen Size:</strong> ${window.innerWidth}x${window.innerHeight}`);
+      
+      // Test fold adapter if available
+      if (window.foldAdapter) {
+        log(mobileEl, `<strong>Fold Mode:</strong> ${document.body.dataset.foldMode || 'not detected'}`, 'timing');
+      }
+    };
+
+    // Landing page performance test
+    async function testLandingPerformance() {
+      const perfEl = document.getElementById('landing-perf');
+      perfEl.innerHTML = '';
+      
+      log(perfEl, 'Starting landing page performance test...', 'timing');
+      const startTime = performance.now();
+      
+      try {
+        // Test main.js import
+        const mainStart = performance.now();
+        const mainModule = await import('./main.js');
+        const mainTime = performance.now() - mainStart;
+        log(perfEl, `✓ Main.js loaded in ${mainTime.toFixed(2)}ms`, 'success');
+
+        // Test individual modules
+        const moduleTests = [
+          { name: 'azure-tts.js', path: './modules/azure-tts.js' },
+          { name: 'shell.js', path: './modules/shell.js' },
+          { name: 'fold-adapter.js', path: './modules/fold-adapter.js' },
+          { name: 'landing.js', path: './modules/pages/landing.js' }
+        ];
+
+        for (const test of moduleTests) {
+          try {
+            const testStart = performance.now();
+            await import(test.path);
+            const testTime = performance.now() - testStart;
+            log(perfEl, `✓ ${test.name} loaded in ${testTime.toFixed(2)}ms`, 
+                testTime > 100 ? 'warning' : 'success');
+          } catch (error) {
+            log(perfEl, `✗ ${test.name} failed: ${error.message}`, 'error');
+          }
+        }
+
+        const totalTime = performance.now() - startTime;
+        log(perfEl, `<strong>Total landing setup time: ${totalTime.toFixed(2)}ms</strong>`, 
+            totalTime > 500 ? 'error' : totalTime > 200 ? 'warning' : 'success');
+
+      } catch (error) {
+        log(perfEl, `✗ Landing test failed: ${error.message}`, 'error');
+      }
+    }
+
+    // Mission ritual specific test
+    async function testMissionRitual() {
+      const perfEl = document.getElementById('landing-perf');
+      
+      log(perfEl, 'Testing mission ritual specifically...', 'timing');
+      
+      try {
+        // Test localStorage access
+        const localStart = performance.now();
+        const missionProfile = localStorage.getItem('te.mission.profile');
+        const localTime = performance.now() - localStart;
+        log(perfEl, `LocalStorage access: ${localTime.toFixed(2)}ms`, 'timing');
+        log(perfEl, `Mission profile exists: ${!!missionProfile}`, missionProfile ? 'warning' : 'success');
+        
+        // Test fold adapter
+        const foldStart = performance.now();
+        const foldModule = await import('./modules/fold-adapter.js');
+        const foldTime = performance.now() - foldStart;
+        log(perfEl, `Fold adapter: ${foldTime.toFixed(2)}ms`, 'timing');
+
+      } catch (error) {
+        log(perfEl, `Mission ritual test error: ${error.message}`, 'error');
+      }
+    }
+
+    // Tag loading test
+    async function testTagLoading() {
+      const tagEl = document.getElementById('tag-loading');
+      tagEl.innerHTML = '';
+      
+      log(tagEl, 'Starting tag loading test...', 'timing');
+      
+      try {
+        // Test direct JSON fetch
+        const jsonStart = performance.now();
+        const response = await fetch('./kink-tags.json');
+        const jsonTime = performance.now() - jsonStart;
+        
+        if (!response.ok) {
+          log(tagEl, `✗ kink-tags.json fetch failed: ${response.status}`, 'error');
+          return;
+        }
+        
+        const parseStart = performance.now();
+        const tags = await response.json();
+        const parseTime = performance.now() - parseStart;
+        
+        log(tagEl, `✓ JSON fetch: ${jsonTime.toFixed(2)}ms`, 'success');
+        log(tagEl, `✓ JSON parse: ${parseTime.toFixed(2)}ms`, 'success');
+        log(tagEl, `✓ Categories loaded: ${tags.length}`, 'success');
+        
+        let totalTags = 0;
+        tags.forEach(cat => {
+          totalTags += cat.tags.length;
+          log(tagEl, `  - ${cat.category}: ${cat.tags.length} tags`, 'timing');
+        });
+        
+        log(tagEl, `<strong>Total tags: ${totalTags}</strong>`, 'success');
+
+        // Test tag module loading
+        const moduleStart = performance.now();
+        const tagModule = await import('./modules/tags.js');
+        const moduleTime = performance.now() - moduleStart;
+        log(tagEl, `✓ Tag module: ${moduleTime.toFixed(2)}ms`, 'success');
+
+        // Test tag-explorer module
+        const explorerStart = performance.now();
+        const explorerModule = await import('./modules/tag-explorer.js');
+        const explorerTime = performance.now() - explorerStart;
+        log(tagEl, `✓ Tag explorer: ${explorerTime.toFixed(2)}ms`, 'success');
+
+      } catch (error) {
+        log(tagEl, `✗ Tag loading failed: ${error.message}`, 'error');
+        console.error('Tag loading error:', error);
+      }
+    }
+
+    // Network speed test
+    async function testNetworkSpeed() {
+      const netEl = document.getElementById('network-info');
+      netEl.innerHTML = '';
+      
+      log(netEl, 'Testing network performance...', 'timing');
+      
+      const tests = [
+        { name: 'Small JSON (kink-tags.json)', url: './kink-tags.json' },
+        { name: 'CSS file', url: './style.css' },
+        { name: 'JavaScript main', url: './main.js' }
+      ];
+
+      for (const test of tests) {
+        try {
+          const start = performance.now();
+          const response = await fetch(test.url + '?t=' + Date.now());
+          const end = performance.now();
+          
+          if (response.ok) {
+            const size = response.headers.get('content-length') || 'unknown';
+            log(netEl, `✓ ${test.name}: ${(end - start).toFixed(2)}ms (${size} bytes)`, 
+                (end - start) > 200 ? 'warning' : 'success');
+          } else {
+            log(netEl, `✗ ${test.name}: ${response.status}`, 'error');
+          }
+        } catch (error) {
+          log(netEl, `✗ ${test.name}: ${error.message}`, 'error');
+        }
+      }
+    }
+
+    // Run mobile detection on load
+    checkMobile();
+
+    // Monitor performance
+    window.addEventListener('load', () => {
+      const perfEl = document.getElementById('network-info');
+      if (window.performance && performance.getEntriesByType) {
+        const entries = performance.getEntriesByType('navigation');
+        if (entries.length > 0) {
+          const nav = entries[0];
+          log(perfEl, `<strong>Page Load Performance:</strong>`, 'timing');
+          log(perfEl, `DOM loaded: ${nav.domContentLoadedEventEnd - nav.domContentLoadedEventStart}ms`);
+          log(perfEl, `Full load: ${nav.loadEventEnd - nav.loadEventStart}ms`);
+        }
+      }
+    });
+  </script>
+</body>
+</html>

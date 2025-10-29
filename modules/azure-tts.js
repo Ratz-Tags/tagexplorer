@@ -1,5 +1,5 @@
 const STORAGE_KEY = "azureTTSConfig";
-const DEFAULT_VOICE = "en-US-AvaMultilingualNeural";
+const DEFAULT_VOICE = "en-US-NancyNeural";
 const WHISPER_STYLE_CANONICAL = "whispering";
 const SAMPLE_PREVIEW_LINE = "Caught you tweaking my whispers again, pet.";
 
@@ -12,6 +12,10 @@ const INTENSITY_PROFILES = {
 const FALLBACK_INTENSITY = 2;
 
 let azureConfig = {
+  voice: DEFAULT_VOICE,
+  style: WHISPER_STYLE_CANONICAL,
+};
+let pendingVoicePreference = {
   voice: DEFAULT_VOICE,
   style: WHISPER_STYLE_CANONICAL,
 };
@@ -28,6 +32,7 @@ let statusEl = null;
 let closeBtn = null;
 let escKeyHandler = null;
 let ensureDefaultVoicePromise = null;
+let voiceStyleMap = new Map([[DEFAULT_VOICE, [WHISPER_STYLE_CANONICAL]]]);
 
 function safeLocalStorage(action) {
   if (typeof window === "undefined" || !window.localStorage) return;
@@ -51,6 +56,10 @@ function loadStoredConfig() {
     try {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === "object") {
+        pendingVoicePreference = {
+          voice: parsed.voice || DEFAULT_VOICE,
+          style: parsed.style || WHISPER_STYLE_CANONICAL,
+        };
         azureConfig = normalizeVoiceConfig(parsed);
       }
     } catch (error) {
@@ -79,25 +88,116 @@ function getIntensityProfile(intensity) {
   return INTENSITY_PROFILES[lane] || INTENSITY_PROFILES[FALLBACK_INTENSITY];
 }
 
+function isVoiceAllowed(voice) {
+  if (!voice) return false;
+  const gender = String(voice.Gender || "").toLowerCase();
+  // Only filter out voices that are explicitly "Male" (not "Female")
+  if (gender === "male") return false;
+  return true;
+}
+
+function getVoiceWhisperStyles(voiceName) {
+  if (voiceStyleMap.has(voiceName)) {
+    const styles = voiceStyleMap.get(voiceName);
+    if (Array.isArray(styles) && styles.length) {
+      return styles;
+    }
+  }
+  if (voiceName === DEFAULT_VOICE) {
+    return [WHISPER_STYLE_CANONICAL];
+  }
+  return [];
+}
+
+function resolveStyleForVoice(voiceName, requestedStyle) {
+  const availableStyles = getVoiceWhisperStyles(voiceName);
+  const requested = canonicalizeStyle(requestedStyle);
+  if (availableStyles.length) {
+    if (requested) {
+      const match = availableStyles.find(
+        (style) =>
+          canonicalizeStyle(style)?.toLowerCase() === requested.toLowerCase()
+      );
+      if (match) return match;
+    }
+    return availableStyles[0];
+  }
+  if (requested && requested.toLowerCase().includes("whisper")) {
+    return requested.toLowerCase() === WHISPER_STYLE_CANONICAL
+      ? WHISPER_STYLE_CANONICAL
+      : requested;
+  }
+  return WHISPER_STYLE_CANONICAL;
+}
+
+function filterWhisperCapableVoices(voices = []) {
+  if (!Array.isArray(voices)) return [];
+  return voices.filter(
+    (voice) => isVoiceAllowed(voice) && filterWhisperStyles(voice?.StyleList).length > 0
+  );
+}
+
 function normalizeVoicePoolEntry(voice) {
   if (!voice || typeof voice !== "object") return null;
+  if (!isVoiceAllowed(voice)) return null;
   const styles = filterWhisperStyles(voice.StyleList);
   if (!styles.length) return null;
+  const shortName = voice.ShortName || voice.VoiceId || DEFAULT_VOICE;
+  voiceStyleMap.set(shortName, styles);
   return {
-    voice: voice.ShortName || voice.VoiceId || DEFAULT_VOICE,
+    voice: shortName,
     styles,
   };
 }
 
 function registerWhisperVoicePool(voices = []) {
+  voiceStyleMap = new Map([[DEFAULT_VOICE, [WHISPER_STYLE_CANONICAL]]]);
   const normalized = Array.isArray(voices)
     ? voices
-        .map(normalizeVoicePoolEntry)
+        .map((voice) => normalizeVoicePoolEntry(voice))
         .filter(Boolean)
     : [];
-  if (!normalized.length) return;
   whisperVoicePool = normalized;
   whisperVoiceCursor = 0;
+  applyPendingVoicePreference();
+}
+
+function applyPendingVoicePreference() {
+  if (
+    pendingVoicePreference &&
+    pendingVoicePreference.voice &&
+    voiceStyleMap.has(pendingVoicePreference.voice)
+  ) {
+    const desiredVoice = pendingVoicePreference.voice;
+    const desiredStyle = resolveStyleForVoice(
+      desiredVoice,
+      pendingVoicePreference.style
+    );
+    if (
+      azureConfig.voice !== desiredVoice ||
+      azureConfig.style !== desiredStyle
+    ) {
+      setAzureTTSConfig({
+        voice: desiredVoice,
+        style: desiredStyle,
+      });
+    }
+    return;
+  }
+
+  pendingVoicePreference = {
+    voice: DEFAULT_VOICE,
+    style: WHISPER_STYLE_CANONICAL,
+  };
+  if (
+    azureConfig.voice !== DEFAULT_VOICE ||
+    azureConfig.style !== WHISPER_STYLE_CANONICAL
+  ) {
+    setAzureTTSConfig({
+      voice: DEFAULT_VOICE,
+      style: WHISPER_STYLE_CANONICAL,
+    });
+  }
 }
 
 function pickStyleForIntensity(styles = [], intensity = FALLBACK_INTENSITY) {
@@ -105,7 +205,7 @@ function pickStyleForIntensity(styles = [], intensity = FALLBACK_INTENSITY) {
     return azureConfig.style || WHISPER_STYLE_CANONICAL;
   }
   const canonical = styles.find(
-    (style) => canonicalizeStyle(style) === WHISPER_STYLE_CANONICAL
+    (style) => canonicalizeStyle(style)?.toLowerCase() === WHISPER_STYLE_CANONICAL
   );
   if (canonical) return canonical;
   const containsWhisper = styles.find((style) =>
@@ -151,20 +251,41 @@ function normalizeVoiceConfig(partial = {}) {
     ...azureConfig,
     ...partial,
   };
-  const rawStyle = canonicalizeStyle(merged.style);
-  const normalizedStyle = rawStyle
-    ? rawStyle.toLowerCase() === WHISPER_STYLE_CANONICAL
-      ? WHISPER_STYLE_CANONICAL
-      : rawStyle
-    : WHISPER_STYLE_CANONICAL;
+  const candidateVoice = merged.voice || DEFAULT_VOICE;
+  const normalizedVoice = voiceStyleMap.has(candidateVoice)
+    ? candidateVoice
+    : DEFAULT_VOICE;
+  const normalizedStyle = resolveStyleForVoice(normalizedVoice, merged.style);
   return {
-    voice: merged.voice || DEFAULT_VOICE,
+    voice: normalizedVoice,
     style: normalizedStyle,
   };
 }
 
 function setAzureTTSConfig(partial = {}) {
+  const hasVoice = Object.prototype.hasOwnProperty.call(partial, "voice");
+  const hasStyle = Object.prototype.hasOwnProperty.call(partial, "style");
+  if (hasVoice || hasStyle) {
+    const nextPreference = {
+      voice:
+        (hasVoice ? partial.voice : pendingVoicePreference?.voice) ||
+        azureConfig.voice ||
+        DEFAULT_VOICE,
+      style:
+        (hasStyle ? partial.style : pendingVoicePreference?.style) ||
+        azureConfig.style ||
+        WHISPER_STYLE_CANONICAL,
+    };
+    pendingVoicePreference = nextPreference;
+  }
+
   azureConfig = normalizeVoiceConfig(partial);
+  if (hasVoice || hasStyle) {
+    pendingVoicePreference = {
+      voice: azureConfig.voice,
+      style: azureConfig.style,
+    };
+  }
   persistConfig();
   applyConfigToWindow();
   emitConfigChange();
@@ -348,9 +469,11 @@ function toReadableStyle(style) {
 }
 
 function filterWhisperStyles(styleList = []) {
-  return styleList.filter((style) =>
-    typeof style === "string" && style.toLowerCase().includes("whisper")
-  );
+  return styleList
+    .map((style) => canonicalizeStyle(style))
+    .filter(
+      (style) => typeof style === "string" && style.toLowerCase().includes("whisper")
+    );
 }
 
 function updateStatusLine(message) {
@@ -566,11 +689,7 @@ async function showAzureVoiceSelector() {
   if (credentials) {
     try {
       const voices = await fetchAzureVoices(credentials.key, credentials.region);
-      whisperVoices = voices.filter(
-        (voice) =>
-          Array.isArray(voice?.StyleList) &&
-          filterWhisperStyles(voice.StyleList).length > 0
-      );
+      whisperVoices = filterWhisperCapableVoices(voices);
       if (!whisperVoices.length) {
         statusMessage = "No whisper-capable voices were returned for this Azure resource.";
       }
@@ -654,31 +773,33 @@ export async function ensureDefaultWhisperVoice() {
           window._azureTTSKey,
           window._azureTTSRegion
         );
-        const whisperVoices = Array.isArray(voices)
-          ? voices.filter((voice) =>
-              Array.isArray(voice?.StyleList) &&
-              voice.StyleList.some((style) => String(style).toLowerCase() === 'whispering')
-            )
-          : [];
+        const whisperVoices = filterWhisperCapableVoices(voices);
+        registerWhisperVoicePool(whisperVoices);
         if (whisperVoices.length) {
-          registerWhisperVoicePool(whisperVoices);
           const currentVoice = window._azureTTSVoice;
-          const preferred = whisperVoices.find((voice) => voice.ShortName === currentVoice);
+          const preferred =
+            currentVoice && voiceStyleMap.has(currentVoice)
+              ? whisperVoices.find((voice) => voice.ShortName === currentVoice)
+              : null;
           const fallback =
-            whisperVoices.find((voice) => voice.ShortName === DEFAULT_VOICE) || whisperVoices[0];
+            whisperVoices.find((voice) => voice.ShortName === DEFAULT_VOICE) ||
+            whisperVoices[0];
           const voiceToUse = preferred || fallback;
-          const whisperStyle = Array.isArray(voiceToUse?.StyleList)
-            ? voiceToUse.StyleList.find(
-                (style) => String(style).toLowerCase() === WHISPER_STYLE_CANONICAL
-              ) ||
-              voiceToUse.StyleList.find((style) =>
-                String(style).toLowerCase().includes('whisper')
-              )
-            : null;
-          setAzureTTSConfig({
-            voice: voiceToUse.ShortName,
-            style: whisperStyle || WHISPER_STYLE_CANONICAL,
-          });
+          const targetVoice = voiceToUse?.ShortName || DEFAULT_VOICE;
+          const styles = filterWhisperStyles(voiceToUse?.StyleList || []);
+          const targetStyle = resolveStyleForVoice(
+            targetVoice,
+            styles[0] || WHISPER_STYLE_CANONICAL
+          );
+          if (
+            azureConfig.voice !== targetVoice ||
+            azureConfig.style !== targetStyle
+          ) {
+            setAzureTTSConfig({
+              voice: targetVoice,
+              style: targetStyle,
+            });
+          }
           return;
         }
       }

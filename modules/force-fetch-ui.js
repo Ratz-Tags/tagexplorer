@@ -36,11 +36,38 @@ const FETCH_TAUNTS = [
   "This wouldn't be necessary if you had any self-control."
 ];
 
+const TAUNT_DEFAULT_COLOR = 'rgba(226, 232, 240, 0.8)';
+const TAUNT_INFO_COLOR = 'rgba(148, 233, 255, 0.85)';
+const TAUNT_WARNING_COLOR = 'rgba(255, 160, 160, 0.9)';
+const TAUNT_SUCCESS_COLOR = 'rgba(255, 118, 214, 0.85)';
+
 let currentOverlay = null;
 let messageInterval = null;
 let currentMessageIndex = 0;
 let cancelRequested = false;
 let onCancelCallback = null;
+let pinnedMessageUntil = 0;
+
+function applyTauntToneColor(element, tone = 'default') {
+  if (!element) return;
+  switch (tone) {
+    case 'warning':
+      element.style.color = TAUNT_WARNING_COLOR;
+      break;
+    case 'success':
+      element.style.color = TAUNT_SUCCESS_COLOR;
+      break;
+    case 'info':
+      element.style.color = TAUNT_INFO_COLOR;
+      break;
+    default:
+      element.style.color = TAUNT_DEFAULT_COLOR;
+  }
+}
+
+function scheduleMessageHold(durationMs = 2400) {
+  pinnedMessageUntil = Date.now() + Math.max(0, durationMs);
+}
 
 /**
  * Show the force fetch overlay with progress bar and taunts
@@ -98,6 +125,12 @@ export function showForceFetchOverlay(totalArtists, onCancel = null) {
   overlay.appendChild(modalContent);
   document.body.appendChild(overlay);
   currentOverlay = overlay;
+
+  const initialTaunt = document.getElementById('fetch-taunt');
+  if (initialTaunt) {
+    applyTauntToneColor(initialTaunt, 'default');
+    scheduleMessageHold(2800);
+  }
   
   // Add cancel button handler
   const cancelBtn = modalContent.querySelector('#fetch-cancel-btn');
@@ -117,24 +150,29 @@ export function showForceFetchOverlay(totalArtists, onCancel = null) {
       // Update taunt
       const tauntEl = document.getElementById('fetch-taunt');
       if (tauntEl) {
-        tauntEl.textContent = "Giving up already? Pathetic.";
-        tauntEl.style.color = 'rgba(255, 102, 102, 0.9)';
+        tauntEl.textContent = 'Giving up already? Pathetic.';
+        applyTauntToneColor(tauntEl, 'warning');
+        scheduleMessageHold(3600);
       }
     });
   }
-  
+
   // Rotate taunts every 4 seconds
   currentMessageIndex = 0;
   messageInterval = setInterval(() => {
+    if (Date.now() < pinnedMessageUntil) {
+      return;
+    }
     currentMessageIndex = (currentMessageIndex + 1) % FETCH_TAUNTS.length;
     const tauntEl = document.getElementById('fetch-taunt');
     if (tauntEl) {
       // Fade out
       tauntEl.style.opacity = '0';
       tauntEl.style.transition = 'opacity 0.3s ease';
-      
+
       setTimeout(() => {
         tauntEl.textContent = FETCH_TAUNTS[currentMessageIndex];
+        applyTauntToneColor(tauntEl, 'default');
         tauntEl.style.opacity = '1';
       }, 300);
     }
@@ -150,19 +188,40 @@ export function updateForceFetchProgress(current, total) {
   const progressBar = document.getElementById('fetch-progress-bar');
   const currentEl = document.getElementById('fetch-current');
   const totalEl = document.getElementById('fetch-total');
-  
+
   if (progressBar) {
     const percentage = total > 0 ? (current / total) * 100 : 0;
     progressBar.style.width = `${percentage}%`;
   }
-  
+
   if (currentEl) {
     currentEl.textContent = current;
   }
-  
+
   if (totalEl) {
     totalEl.textContent = total;
   }
+}
+
+export function setForceFetchTaunt(message, options = {}) {
+  const { tone = 'default', holdMs = 2400 } = options ?? {};
+  const tauntEl = document.getElementById('fetch-taunt');
+  if (!tauntEl) return;
+
+  tauntEl.style.transition = 'opacity 0.25s ease';
+  tauntEl.style.opacity = '0';
+
+  const applyUpdate = () => {
+    tauntEl.textContent = message ?? FETCH_TAUNTS[currentMessageIndex] ?? '';
+    applyTauntToneColor(tauntEl, tone);
+    tauntEl.style.opacity = '1';
+  };
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(applyUpdate);
+  });
+
+  scheduleMessageHold(typeof holdMs === 'number' ? holdMs : 2400);
 }
 
 /**
@@ -178,6 +237,7 @@ export function isCancelRequested() {
 export function resetCancellation() {
   cancelRequested = false;
   onCancelCallback = null;
+  pinnedMessageUntil = 0;
 }
 
 /**

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug - TagExplorer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .test-box {
+      background: #333;
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .error { color: #ff6b6b; }
+    .success { color: #51cf66; }
+  </style>
+</head>
+<body>
+  <h1>TagExplorer Debug Page</h1>
+  
+  <div class="test-box">
+    <h2>Basic HTML/CSS Test</h2>
+    <p class="success">✓ This text should be visible if basic HTML/CSS is working</p>
+  </div>
+
+  <div class="test-box">
+    <h2>JavaScript Test</h2>
+    <p id="js-test" class="error">✗ JavaScript not loaded</p>
+  </div>
+
+  <div class="test-box">
+    <h2>Module Import Test</h2>
+    <p id="module-test" class="error">✗ ES Modules not working</p>
+  </div>
+
+  <div class="test-box">
+    <h2>CSS File Test</h2>
+    <p id="css-test" class="error">✗ External CSS not loaded</p>
+  </div>
+
+  <div class="test-box">
+    <h2>Navigation Links</h2>
+    <a href="/" style="color: #51cf66; margin-right: 10px;">Landing Page</a>
+    <a href="/gallery/" style="color: #51cf66; margin-right: 10px;">Gallery</a>
+    <a href="http://127.0.0.1:8080" style="color: #51cf66;">Direct Server Link</a>
+  </div>
+
+  <script>
+    // Basic JavaScript test
+    document.getElementById('js-test').textContent = '✓ JavaScript is working';
+    document.getElementById('js-test').className = 'success';
+
+    // Test CSS file loading
+    fetch('style.css')
+      .then(response => {
+        if (response.ok) {
+          document.getElementById('css-test').textContent = '✓ CSS file accessible';
+          document.getElementById('css-test').className = 'success';
+        } else {
+          document.getElementById('css-test').textContent = '✗ CSS file returned ' + response.status;
+        }
+      })
+      .catch(error => {
+        document.getElementById('css-test').textContent = '✗ CSS file error: ' + error.message;
+      });
+  </script>
+
+  <script type="module">
+    // ES Module test
+    try {
+      document.getElementById('module-test').textContent = '✓ ES Modules working';
+      document.getElementById('module-test').className = 'success';
+      
+      // Test main.js import
+      import('./main.js')
+        .then(() => {
+          const moduleDiv = document.createElement('div');
+          moduleDiv.className = 'test-box';
+          moduleDiv.innerHTML = '<h2>Main.js Test</h2><p class="success">✓ main.js loaded successfully</p>';
+          document.body.appendChild(moduleDiv);
+        })
+        .catch(error => {
+          const moduleDiv = document.createElement('div');
+          moduleDiv.className = 'test-box';
+          moduleDiv.innerHTML = '<h2>Main.js Test</h2><p class="error">✗ main.js error: ' + error.message + '</p>';
+          document.body.appendChild(moduleDiv);
+        });
+    } catch (error) {
+      document.getElementById('module-test').textContent = '✗ ES Modules error: ' + error.message;
+    }
+  </script>
+</body>
+</html>

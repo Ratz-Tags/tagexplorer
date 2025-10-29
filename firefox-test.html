@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firefox Compatibility Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    
+    /* Test backdrop-filter */
+    .backdrop-test {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 20px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* Test CSS custom properties */
+    :root {
+      --test-color: #51cf66;
+      --test-size: 16px;
+    }
+    
+    .custom-props {
+      color: var(--test-color);
+      font-size: var(--test-size);
+    }
+    
+    /* Test modern CSS features */
+    .modern-css {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      container-type: inline-size;
+    }
+    
+    /* Test dialog element */
+    dialog {
+      background: #333;
+      color: #fff;
+      border: 1px solid #666;
+      border-radius: 8px;
+      padding: 20px;
+    }
+    
+    dialog::backdrop {
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+    }
+  </style>
+</head>
+<body>
+  <h1>Firefox Compatibility Test</h1>
+  
+  <div class="backdrop-test">
+    <h2>Backdrop Filter Test</h2>
+    <p>This should have a blurred backdrop effect. If you can't see the blur, backdrop-filter might not be supported.</p>
+  </div>
+
+  <div class="custom-props">
+    <h2>CSS Custom Properties</h2>
+    <p>This text should be green and 16px if custom properties work.</p>
+  </div>
+
+  <div class="modern-css">
+    <div style="background: #333; padding: 10px; border-radius: 4px;">Grid Item 1</div>
+    <div style="background: #333; padding: 10px; border-radius: 4px;">Grid Item 2</div>
+  </div>
+
+  <button onclick="openDialog()">Test Dialog</button>
+  
+  <dialog id="test-dialog">
+    <h3>Test Dialog</h3>
+    <p>This dialog should appear with a blurred backdrop.</p>
+    <button onclick="closeDialog()">Close</button>
+  </dialog>
+
+  <div style="margin-top: 30px;">
+    <h2>Console Check</h2>
+    <p>Open Developer Tools (F12) and check the console for any errors.</p>
+    <p id="js-check" style="color: red;">JavaScript not working</p>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <h2>Navigation</h2>
+    <a href="/" style="color: #51cf66; margin-right: 10px;">Back to Landing</a>
+    <a href="/debug.html" style="color: #51cf66; margin-right: 10px;">Debug Page</a>
+  </div>
+
+  <script>
+    // Basic functionality test
+    document.getElementById('js-check').textContent = 'JavaScript working!';
+    document.getElementById('js-check').style.color = '#51cf66';
+
+    function openDialog() {
+      const dialog = document.getElementById('test-dialog');
+      dialog.showModal();
+    }
+
+    function closeDialog() {
+      const dialog = document.getElementById('test-dialog');
+      dialog.close();
+    }
+
+    // Log browser info
+    console.log('User Agent:', navigator.userAgent);
+    console.log('Browser supports backdrop-filter:', CSS.supports('backdrop-filter', 'blur(10px)'));
+    console.log('Browser supports CSS grid:', CSS.supports('display', 'grid'));
+    
+    // Test ES modules
+    if ('noModule' in HTMLScriptElement.prototype) {
+      console.log('ES Modules supported');
+    } else {
+      console.log('ES Modules NOT supported');
+    }
+    
+    // Log any console errors
+    window.addEventListener('error', function(e) {
+      console.error('Error caught:', e.error);
+    });
+  </script>
+</body>
+</html>

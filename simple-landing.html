@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Landing Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #0c0b16;
+      color: #f1f5f9;
+      font-family: Inter, system-ui, sans-serif;
+      min-height: 100vh;
+    }
+    
+    .test-content {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    .landing-title {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #66f3ff 0%, #ff76d6 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      color: transparent;
+    }
+    
+    .landing-intro {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    
+    .landing-cta {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: rgba(102, 243, 255, 0.1);
+      border: 1px solid rgba(102, 243, 255, 0.3);
+      border-radius: 0.5rem;
+      color: #66f3ff;
+      text-decoration: none;
+      margin: 0.5rem;
+      transition: all 0.3s ease;
+    }
+    
+    .landing-cta:hover {
+      background: rgba(102, 243, 255, 0.2);
+      border-color: #66f3ff;
+    }
+    
+    .status-info {
+      background: #1e1b2e;
+      border: 1px solid #333;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin-top: 2rem;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-content">
+    <h1 class="landing-title">TagExplorer Test</h1>
+    <p class="landing-intro">This is a simplified version to test if basic styling works.</p>
+    
+    <div>
+      <a href="/gallery/" class="landing-cta">Gallery</a>
+      <a href="/about/" class="landing-cta">About</a>
+      <button onclick="testDialog()" class="landing-cta">Test Dialog</button>
+    </div>
+    
+    <div class="status-info">
+      <h3>Status Check:</h3>
+      <p id="css-status">❌ CSS Test</p>
+      <p id="js-status">❌ JavaScript Test</p>
+      <p id="module-status">❌ ES Module Test</p>
+      <p id="main-status">❌ Main.js Test</p>
+    </div>
+  </div>
+
+  <script>
+    // Basic JS test
+    document.getElementById('js-status').innerHTML = '✅ JavaScript Working';
+    
+    // CSS test
+    if (getComputedStyle(document.body).backgroundColor === 'rgb(12, 11, 22)') {
+      document.getElementById('css-status').innerHTML = '✅ CSS Working';
+    }
+    
+    function testDialog() {
+      alert('Dialog test - if you see this, basic JS is working');
+    }
+  </script>
+  
+  <script type="module">
+    // ES Module test
+    document.getElementById('module-status').innerHTML = '✅ ES Modules Working';
+    
+    // Try to import main.js
+    try {
+      const main = await import('./main.js');
+      document.getElementById('main-status').innerHTML = '✅ Main.js Loaded Successfully';
+    } catch (error) {
+      document.getElementById('main-status').innerHTML = `❌ Main.js Error: ${error.message}`;
+      console.error('Main.js import error:', error);
+    }
+  </script>
+</body>
+</html>

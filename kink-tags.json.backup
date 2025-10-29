@@ -7,28 +7,35 @@
       "dominatrix",
       "femdom",
       "forced",
-      "sadism",
-      "boot_on_head",
-      "hand_on_throat",
-      "kneeling",
-      "submissive_male",
-      "trampling"
+      "humiliation",
       "punishment_game",
+      "reverse_rape",
       "sadism"
     ]
   },
   {
     "category": "Bondage & Restraints",
     "tags": [
+      "blindfold",
       "bondage",
       "bound",
+      "bound_arms",
+      "bound_legs",
+      "bound_wrists",
+      "chain_leash",
+      "chains",
+      "collar",
+      "handcuffs",
       "hogtie",
       "immobilization",
       "leash",
       "restrained",
       "restraints",
+      "rope",
+      "rope_bondage",
       "shibari",
       "spreader_bar",
+      "tied_up",
       "viewer_on_leash"
     ]
   },
@@ -49,12 +56,11 @@
     "tags": [
       "bimbofication",
       "crossdressing",
-      "crossdressing_(mtf)",
       "feminization",
-      "forced_crossdressing",
       "forced_feminization",
-      "maid_outfit",
-      "sissification",
+      "genderswap",
+      "genderswap_(mtf)",
+      "otoko_no_ko",
       "trap"
     ]
   },
@@ -63,22 +69,19 @@
     "tags": [
       "annoyed",
       "assisted_exposure",
-      "begging",
       "body_writing",
       "bullying",
       "clothed_female_nude_male",
       "cumdump",
-      "foot_on_head",
       "embarrassed",
       "exhibitionism",
       "forced_exposure",
       "humiliation",
-      "public_humiliation",
+      "nude",
       "public_nudity",
       "public_use",
       "small_penis",
-      "small_penis_humiliation",
-      "verbal_abuse"
+      "small_penis_humiliation"
     ]
   },
   {
@@ -86,17 +89,22 @@
     "tags": [
       "brainwashing",
       "hypnosis",
+      "hypnotic_eyes",
       "mind_break",
       "mind_control",
-      "trigger_phrase"
+      "spiral_eyes"
     ]
   },
   {
     "category": "Anal Play & Pegging",
     "tags": [
+      "anal",
+      "anal_beads",
       "anal_fingering",
       "anal_fisting",
       "anal_object_insertion",
+      "anal_tail",
+      "buttplug",
       "cum_in_ass",
       "pegging",
       "strap-on"
@@ -105,31 +113,41 @@
   {
     "category": "Oral & Mouth Play",
     "tags": [
+      "ball_gag",
+      "bit_gag",
+      "blowjob",
       "cum_in_mouth",
+      "deepthroat",
       "fellatio",
       "gag",
       "gagged",
       "gokkun",
       "irrumatio",
       "oral",
-      "swallowing"
+      "ring_gag",
+      "swallowing",
+      "tape_gag"
     ]
   },
   {
     "category": "Toys, Machines & Objects",
     "tags": [
+      "cock_ring",
+      "dildo",
       "dildo_riding",
+      "double_dildo",
       "huge_dildo",
       "milking_machine",
-      "remote_vibrator",
+      "remote_control_vibrator",
       "sex_machine",
       "sex_toy",
-      "vibrator_under_clothes"
+      "vibrator"
     ]
   },
   {
     "category": "Penetration & Insertion",
     "tags": [
+      "double_penetration",
       "ejaculating_while_penetrated",
       "large_insertion",
       "male_penetrated",
@@ -143,12 +161,14 @@
   {
     "category": "Body Worship & Sensory",
     "tags": [
+      "facesitting",
+      "foot_focus",
+      "foot_licking",
       "foot_worship",
+      "footjob",
       "lactation",
-      "sensory_deprivation",
       "sockjob",
       "spanking",
-      "teasing",
       "toe_sucking"
     ]
   },
@@ -157,7 +177,9 @@
     "tags": [
       "condom",
       "cum",
+      "cumdrip",
       "drinking_from_condom",
+      "ejaculation",
       "hand_milking",
       "handsfree_ejaculation",
       "penis_milking",
@@ -174,8 +196,6 @@
     "tags": [
       "before_and_after",
       "cheating_(relationship)",
-      "cuckold",
-      "hotwife",
       "netorare",
       "netorase"
     ]
@@ -184,31 +204,74 @@
     "category": "Fantasy & Non-Human",
     "tags": [
       "futanari",
+      "futa_with_male",
       "knotting",
+      "monster_girl",
       "tentacle_pit",
-      "tentacle_sex"
+      "tentacle_sex",
+      "tentacles"
     ]
   },
   {
     "category": "Roleplay & Pet Play",
     "tags": [
-      "kitten_play",
+      "animal_ears",
+      "cat_ears",
+      "dog_ears",
       "pet_play",
-      "puppy_play"
+      "tail",
+      "tail_plug"
+    ]
+  },
+  {
+    "category": "Clothing & Attire",
+    "tags": [
+      "fishnet_legwear",
+      "fishnet_thighhighs",
+      "garter_belt",
+      "high_heels",
+      "latex",
+      "leather",
+      "lingerie",
+      "pantyhose",
+      "stockings",
+      "thighhighs"
     ]
   },
   {
     "category": "Physical Attributes",
     "tags": [
       "dark_skin",
+      "huge_breasts",
+      "large_breasts",
+      "muscular_female",
       "nipple_piercing",
-      "pubic_hair"
+      "piercing",
+      "pubic_hair",
+      "tattoo",
+      "thick_thighs"
+    ]
+  },
+  {
+    "category": "Positions & Acts",
+    "tags": [
+      "cowgirl_position",
+      "doggystyle",
+      "facesitting",
+      "missionary",
+      "pov",
+      "pov_dom",
+      "reverse_cowgirl",
+      "sitting_on_face",
+      "standing_sex"
     ]
   },
   {
     "category": "Extreme & Non-Consensual",
     "tags": [
-      "rape"
+      "forced",
+      "rape",
+      "reverse_rape"
     ]
   }
 ]
