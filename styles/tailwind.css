@@ -1975,22 +1975,10 @@ display: none;
 .screen-pulse {
 @apply animate-[screenPulse_0.9s_ease-in-out_1];
 }
-#desperation-meter {
-@apply fixed bottom-6 right-6 z-[9500] w-52 rounded-3xl border border-white/10 bg-black/70 p-4 text-[0.6rem] uppercase tracking-[0.35em] text-slate-200 shadow-neon;
-}
-#desperation-meter .desperation-bar {
-@apply h-1 w-full rounded-full bg-glow/30 transition-all duration-300;
-}
-#desperation-meter .desperation-taunt {
-@apply mt-3 block text-[0.55rem] text-slate-400;
-}
 body.audio-panel-open .gallery-shell {
 padding-bottom: clamp(12rem, 28vw, 16rem);
 }
 body.audio-panel-open #jrpg-bubbles {
-bottom: calc(env(safe-area-inset-bottom) + 12rem);
-}
-body.audio-panel-open #desperation-meter {
 bottom: calc(env(safe-area-inset-bottom) + 12rem);
 }
 body.audio-panel-open #back-to-top.is-visible {
