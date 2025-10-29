@@ -1,9 +1,11 @@
+const FALLBACK_IMAGE_PLACEHOLDER = new URL('../fallback.jpg', import.meta.url).href;
+
 export async function fetchWithCache(url, options = {}) {
   const {
     cacheKey = url,
     useCache = true,
     type = 'json',
-    placeholder = 'fallback.jpg'
+    placeholder = FALLBACK_IMAGE_PLACEHOLDER
   } = options;
 
   const isBrowser = typeof window !== 'undefined';
