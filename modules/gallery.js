@@ -16,6 +16,8 @@ import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js"
 import { showSimilarArtistsModal, setAllArtists as setSimilarArtists } from "./similar-artists.js";
 import { toggleFavorite, isFavorite } from "./favorites.js";
 
+const FALLBACK_IMAGE_URL = new URL('../fallback.jpg', import.meta.url).href;
+
 /**
  * Returns the thumbnail URL for an artist (used by sidebar and cards)
  */
@@ -984,7 +986,7 @@ function setBestImage(artist, img) {
 
   function showNoEntries() {
     img.style.display = "none";
-    img.src = "fallback.jpg";
+    img.src = FALLBACK_IMAGE_URL;
     setTimeout(() => {
       img.style.display = "block";
     }, 100);
@@ -1873,7 +1875,7 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       img.src = cachedUrl;
       img.style.display = "block";
       img.onerror = () => {
-        img.src = "fallback.jpg";
+        img.src = FALLBACK_IMAGE_URL;
         img.style.display = "block";
       };
     } else {
