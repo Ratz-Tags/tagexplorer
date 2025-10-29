@@ -1,0 +1,16 @@
+export function initGallery(...args: any[]): any;
+export function filterArtists(...args: any[]): any;
+export function setRandomBackground(...args: any[]): any;
+export function setAllArtists(...args: any[]): any;
+export function setGetActiveTagsCallback(...args: any[]): any;
+export function setGetArtistNameFilterCallback(...args: any[]): any;
+export function setSortMode(...args: any[]): any;
+export function setSortPreference(...args: any[]): any;
+export function getPaginationInfo(...args: any[]): any;
+export function getCurrentPage(...args: any[]): any;
+export function setCurrentPage(...args: any[]): any;
+export function renderArtistsPage(...args: any[]): any;
+export function getFilteredArtists(...args: any[]): any;
+export function forceFetchStyleTags(...args: any[]): Promise<any>;
+export function filterGalleryToFavorites(...args: any[]): any;
+export function clearGalleryFilters(...args: any[]): any;

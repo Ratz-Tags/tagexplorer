@@ -1,0 +1,13 @@
+export function initTags(...args: any[]): Promise<any>;
+export function setAllArtists(...args: any[]): any;
+export function setRenderArtistsCallback(...args: any[]): any;
+export function setRandomBackgroundCallback(...args: any[]): any;
+export function setTagTooltips(...args: any[]): any;
+export function setTagTaunts(...args: any[]): any;
+export function setTaunts(...args: any[]): any;
+export function getActiveTags(...args: any[]): any;
+export function getArtistNameFilter(...args: any[]): any;
+export function renderTagButtons(...args: any[]): any;
+export function setTagSearchMode(...args: any[]): any;
+export function hydrateTagState(...args: any[]): any;
+export function handleArtistNameFilter(...args: any[]): any;

@@ -1,0 +1,147 @@
+import { ensureDefaultWhisperVoice } from './modules/azure-tts.js';
+import { mountShell } from './modules/shell.js';
+import { initRouter } from './modules/router.js';
+import { initFoldAdapter } from './modules/fold-adapter.js';
+import type {
+  FoldAdapter,
+  MountShellResult,
+  PageLifecycle,
+  PageModule,
+  RouterNavigateEvent,
+} from './modules/types.js';
+
+type LazyPageModuleLoader = () => Promise<PageModule>;
+
+const PAGE_LAZY_MODULES: Record<string, LazyPageModuleLoader> = {
+  landing: () => import('./modules/pages/landing.js'),
+  gallery: () => import('./modules/pages/gallery.js'),
+  about: () => import('./modules/pages/about.js'),
+  artist: () => import('./modules/pages/artist.js'),
+  data: () => import('./modules/pages/data.js'),
+};
+
+const pageId = document.body.dataset.page || 'gallery';
+let beforeNavigateHandler: PageLifecycle['beforeNavigate'] | null = null;
+let foldAdapterInstance: FoldAdapter | null = null;
+
+const HANDLED_API_LOG_INTERVAL = 6000;
+const handledApiLogState = new Map<string, { last: number; suppressed: number }>();
+
+function logHandledApiMessage(message: string): void {
+  if (!message) return;
+  const now = Date.now();
+  const entry = handledApiLogState.get(message) || { last: 0, suppressed: 0 };
+  if (now - entry.last < HANDLED_API_LOG_INTERVAL) {
+    entry.suppressed += 1;
+    handledApiLogState.set(message, entry);
+    return;
+  }
+
+  const suffix = entry.suppressed > 0 ? ` (suppressed ${entry.suppressed} similar)` : '';
+  console.warn(`API error handled: ${message}${suffix}`);
+  handledApiLogState.set(message, { last: now, suppressed: 0 });
+}
+
+async function bootstrap(): Promise<void> {
+  try {
+    const shell: MountShellResult = await mountShell({ page: pageId });
+    if (!foldAdapterInstance) {
+      foldAdapterInstance = initFoldAdapter();
+    }
+    const foldAdapter = foldAdapterInstance;
+
+    if (['landing', 'gallery', 'artist'].includes(pageId)) {
+      await ensureDefaultWhisperVoice();
+    }
+
+    initRouter({
+      async beforeNavigate(event: RouterNavigateEvent) {
+        if (typeof beforeNavigateHandler === 'function') {
+          try {
+            await beforeNavigateHandler(event);
+          } catch (error) {
+            console.warn('[main] beforeNavigate handler failed', error);
+          }
+        }
+      },
+    });
+
+    const loadModule = PAGE_LAZY_MODULES[pageId];
+    if (loadModule) {
+      const module = await loadModule();
+      const initializer = module.initPage || module.initGalleryPage || module.initLandingPage;
+      if (typeof initializer === 'function') {
+        const lifecycle = await initializer({ page: pageId, shell, foldAdapter });
+        if (lifecycle && typeof lifecycle.beforeNavigate === 'function') {
+          beforeNavigateHandler = lifecycle.beforeNavigate;
+        }
+        if (lifecycle && typeof lifecycle.onDispose === 'function') {
+          window.addEventListener('pagehide', () => lifecycle.onDispose(), { once: true });
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to bootstrap TagExplorer', error);
+    document.body.innerHTML = `
+      <div class="boot-error">
+        <h1>Failed to initialize TagExplorer</h1>
+        <p>${error?.message || 'An unknown error occurred.'}</p>
+        <p class="boot-error__hint">Refresh or return to the <a href="/" data-router-link>landing page</a>.</p>
+      </div>
+    `;
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootstrap);
+} else {
+  bootstrap();
+}
+
+window.addEventListener('error', (event) => {
+  if (event.error && event.error.name === 'DOMException') return;
+  if (event.error && event.error.message && event.error.message.includes('NetworkError')) return;
+  console.error('Unhandled error:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.name === 'DOMException') return;
+  if (event.reason && event.reason.message && event.reason.message.includes('NetworkError')) return;
+  
+  // Handle API-related errors gracefully
+  if (event.reason) {
+    // Check for our specific APIError type
+    if (event.reason.name === 'APIError') {
+      logHandledApiMessage(event.reason.message);
+      event.preventDefault(); // Prevent the error from being logged as unhandled
+      return;
+    }
+
+    // Check for common API error messages
+    if (event.reason.message) {
+      const message = event.reason.message;
+      if (message.includes('API request failed') ||
+          message.includes('Rate limit exceeded') ||
+          message.includes('CORS') ||
+          message.includes('Failed to fetch')) {
+        logHandledApiMessage(message);
+        event.preventDefault(); // Prevent the error from being logged as unhandled
+        return;
+      }
+    }
+
+    if (typeof event.reason === 'string') {
+      const message = event.reason;
+      if (message.includes('API request failed') ||
+          message.includes('Rate limit exceeded') ||
+          message.includes('CORS') ||
+          message.includes('Failed to fetch')) {
+        logHandledApiMessage(message);
+        event.preventDefault();
+        return;
+      }
+    }
+  }
+
+  console.error('Unhandled promise rejection:', event.reason);
+});

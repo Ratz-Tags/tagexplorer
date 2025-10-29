@@ -1,5 +1,4 @@
 export async function initAboutPage() {
-  return {};
+    return {};
 }
-
 export const initPage = initAboutPage;
