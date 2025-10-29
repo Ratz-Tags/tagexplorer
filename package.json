@@ -8,6 +8,8 @@
     "update:tags": "node scripts/updateKinkTags.js",
     "update:audio": "node scripts/generate-audio-list.js",
     "build:css": "tailwindcss -i styles/tailwind.css -o style.css --minify",
+    "build:ts": "tsc --project tsconfig.json",
+    "build": "npm run build:css && npm run build:ts",
     "serve": "npx http-server -c-1 . -p 8080 --silent"
   },
   "keywords": [],
@@ -15,6 +17,8 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
-    "tailwindcss": "^3.4.13"
+    "@types/node": "^20.16.10",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3"
   }
 }

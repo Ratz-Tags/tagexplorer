@@ -69,6 +69,13 @@ A modern, visually unified web app for exploring, filtering, and discovering art
 2. Open `index.html` in your browser
 3. Explore artists, tags, and sidebar features
 
+## Build & Type-Checking Workflow
+
+- Run `npm run build:css` to regenerate the Tailwind bundle whenever you tweak utility layers or add new components.
+- Run `npm run build:ts` to type-check and compile the browser-facing TypeScript under `src/` into `dist/` using the bundler-centric `tsconfig.json`.
+- Run `npm run build` to chain the CSS and TypeScript builds before serving locally or deploying the static bundle.
+- For future Node-based maintenance scripts written in TypeScript, target `tsconfig.scripts.json` to pull in the Node 16 resolution strategy and ambient `@types/node` definitions.
+
 ## Landing Ritual & Mission Storage
 
 - The landing page now opens with a whisper ritual that locks the **Enter Gallery** call-to-action until you pick a mission profile, consent to local logging, and confirm the choice.
