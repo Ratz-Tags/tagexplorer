@@ -43,7 +43,7 @@ let artistsListPromise = null;
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
   // Slow the baseline to avoid hammering Danbooru during parallel fetches
-  minDelay: 120, // Minimum spacing between queued requests
+  minDelay: 150, // Minimum spacing between queued requests
   maxDelay: 8000, // Maximum delay for aggressive backoff recovery
   maxRetries: 5, // allow a couple more retries before failing
   backoffMultiplier: 1.65, // quick recovery while respecting limits
@@ -193,25 +193,25 @@ const requestBatches = new Map(); // batch key -> array of requests
 // In-memory API JSON cache to avoid reparsing/rehydration during a session
 const apiMemoryCache = new Map(); // cacheKey -> parsed JSON
 
-const DEFAULT_BATCH_DELAY_MS = 16;
+const DEFAULT_BATCH_DELAY_MS = 24;
 const DEFAULT_MAX_CONCURRENT_REQUESTS = (() => {
   if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
     const hw = Number(navigator.hardwareConcurrency) || 0;
     if (hw > 0) {
-      return Math.min(16, Math.max(8, Math.ceil(hw * 1.5)));
+      return Math.min(10, Math.max(6, Math.ceil(hw)));
     }
   }
-  return 12;
+  return 6;
 })();
 
 const MAX_PARALLEL_FETCHES = (() => {
   if (typeof navigator !== 'undefined' && navigator?.hardwareConcurrency) {
     const hw = Number(navigator.hardwareConcurrency) || 0;
     if (hw > 0) {
-      return Math.min(12, Math.max(4, Math.round(hw * 0.75)));
+      return Math.min(6, Math.max(3, Math.round(hw * 0.5)));
     }
   }
-  return 6;
+  return 4;
 })();
 
 let dynamicMaxParallelFetches = MAX_PARALLEL_FETCHES;

@@ -56,11 +56,46 @@ const virtualState = {
   recyclePool: [],
 };
 
-const IMAGE_OBSERVER_ROOT_MARGIN = "260px";
-const IMAGE_OBSERVER_THRESHOLD = 0.02;
-const DEFAULT_EAGER_IMAGE_COUNT = 9;
-const IDLE_FALLBACK_TIMEOUT = 2500;
-const PRIME_VISIBLE_BUFFER = 260;
+const IMAGE_OBSERVER_ROOT_MARGIN = "160px";
+const IMAGE_OBSERVER_THRESHOLD = 0.04;
+const DEFAULT_EAGER_IMAGE_COUNT = 4;
+const IDLE_FALLBACK_TIMEOUT = 1200;
+const PRIME_VISIBLE_BUFFER = 160;
+
+const IMAGE_FETCH_CONCURRENCY = 3;
+const imageFetchQueue = [];
+let activeImageFetches = 0;
+
+function scheduleImageFetchProcessing() {
+  if (activeImageFetches >= IMAGE_FETCH_CONCURRENCY) return;
+  const next = imageFetchQueue.shift();
+  if (!next) return;
+
+  activeImageFetches += 1;
+  Promise.resolve()
+    .then(next.task)
+    .then((result) => {
+      next.resolve(result);
+    })
+    .catch((error) => {
+      next.reject(error);
+    })
+    .finally(() => {
+      activeImageFetches = Math.max(0, activeImageFetches - 1);
+      scheduleMicrotask(scheduleImageFetchProcessing);
+    });
+}
+
+function enqueueImageFetch(task) {
+  return new Promise((resolve, reject) => {
+    imageFetchQueue.push({ task, resolve, reject });
+    scheduleMicrotask(scheduleImageFetchProcessing);
+  });
+}
+
+function queueFetchArtistImages(artistName, tags = [], options = {}) {
+  return enqueueImageFetch(() => fetchArtistImages(artistName, tags, options));
+}
 
 const DEFAULT_AMBIENT_TAGS = [
   'chastity_cage',
@@ -541,8 +576,8 @@ async function populateArtistCounts({
   mostCommonTag,
   generation,
   spinner,
-  batchSize = 20,
-  delayMs = 250,
+  batchSize = 18,
+  delayMs = 150,
 }) {
   if (!Array.isArray(artists) || artists.length === 0) return;
   let fetchPostCountForTagsFn = null;
@@ -556,37 +591,54 @@ async function populateArtistCounts({
   }
 
   let processed = 0;
+  const concurrency = resolveCountFetchConcurrency();
   for (let i = 0; i < artists.length; i += batchSize) {
     if (generation !== filterGeneration) return;
     const batch = artists.slice(i, i + batchSize);
-    await Promise.all(
-      batch.map(async (artist) => {
-        if (!artist || generation !== filterGeneration) return;
-        try {
-          const totalCount =
-            typeof artist.postCount === "number"
-              ? artist.postCount
-              : await getArtistImageCount(artist.artistName);
-          artist._totalImageCount = totalCount;
-          artist._imageCount = totalCount;
-          if (mostCommonTag && typeof fetchPostCountForTagsFn === "function") {
-            const tagCount = await fetchPostCountForTagsFn([
-              artist.artistName,
-              mostCommonTag,
-            ]);
-            artist._mostCommonTagCount = Number(tagCount) || 0;
-          } else {
-            artist._mostCommonTagCount = 0;
+    let cursor = 0;
+    const workerCount = Math.min(concurrency, batch.length);
+    const workers = Array.from({ length: workerCount }, () =>
+      (async function worker() {
+        while (true) {
+          if (generation !== filterGeneration) {
+            return;
           }
-        } catch (error) {
-          artist._totalImageCount = artist.postCount || 0;
-          artist._imageCount = artist.postCount || 0;
-          if (typeof artist._mostCommonTagCount !== "number") {
-            artist._mostCommonTagCount = 0;
+          const index = cursor++;
+          if (index >= batch.length) {
+            return;
+          }
+          const artist = batch[index];
+          if (!artist) {
+            continue;
+          }
+          try {
+            const totalCount =
+              typeof artist.postCount === "number"
+                ? artist.postCount
+                : await getArtistImageCount(artist.artistName);
+            artist._totalImageCount = totalCount;
+            artist._imageCount = totalCount;
+            if (mostCommonTag && typeof fetchPostCountForTagsFn === "function") {
+              const tagCount = await fetchPostCountForTagsFn([
+                artist.artistName,
+                mostCommonTag,
+              ]);
+              artist._mostCommonTagCount = Number(tagCount) || 0;
+            } else {
+              artist._mostCommonTagCount = 0;
+            }
+          } catch (error) {
+            artist._totalImageCount = artist.postCount || 0;
+            artist._imageCount = artist.postCount || 0;
+            if (typeof artist._mostCommonTagCount !== "number") {
+              artist._mostCommonTagCount = 0;
+            }
           }
         }
-      })
+      })()
     );
+
+    await Promise.all(workers);
 
     processed += batch.length;
     if (spinner && typeof spinner.updateProgress === "function") {
@@ -598,6 +650,15 @@ async function populateArtistCounts({
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
+}
+
+function resolveCountFetchConcurrency() {
+  if (typeof navigator !== "undefined" && navigator?.hardwareConcurrency) {
+    const cores = Number(navigator.hardwareConcurrency) || 0;
+    if (cores >= 8) return 4;
+    if (cores >= 4) return 3;
+  }
+  return 2;
 }
 
 function normaliseAmbientTag(tag) {
@@ -928,6 +989,7 @@ function setBestImage(artist, img) {
     setTimeout(() => {
       img.style.display = "block";
     }, 100);
+    img._loadingImage = false;
   }
 
   function processApiData(data, isFallback = false) {
@@ -940,7 +1002,7 @@ function setBestImage(artist, img) {
         // Wait briefly to allow any rate-limited requests to complete before giving up
         const WAIT_MS = 300; // small grace period (reduced from 700ms)
         setTimeout(() => {
-          fetchArtistImages(artistData.artistName)
+          queueFetchArtistImages(artistData.artistName)
             .then((fallbackData) => {
               processApiData(fallbackData, true);
             })
@@ -982,6 +1044,7 @@ function setBestImage(artist, img) {
               img.fetchPriority = 'high';
             }
           } catch (e) {}
+          img._loadingImage = false;
       };
       img.src = url;
     }
@@ -1008,6 +1071,7 @@ function setBestImage(artist, img) {
     img.onload = () => {
       img.onerror = null;
       img.onload = null;
+      img._loadingImage = false;
     };
     img.src = cachedUrl;
   } else {
@@ -1023,13 +1087,13 @@ function setBestImage(artist, img) {
 
     // For thumbnail images, fetch without tag filtering to get all artist images
     // We'll do a more lenient filtering in processApiData
-    fetchArtistImages(artistData.artistName, [])
+    queueFetchArtistImages(artistData.artistName, [])
       .then((data) => {
         setApiCache(data);
         processApiData(data);
       })
       .catch(() => {
-        img.src = "fallback.jpg";
+        showNoEntries();
       });
   }
 }
