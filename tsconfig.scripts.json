@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Node16",
+    "moduleResolution": "node16",
+    "rootDir": "src/scripts",
+    "outDir": "scripts",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": false,
+    "allowSyntheticDefaultImports": true,
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "lib": ["ES2022"],
+    "types": ["node", "undici-types"]
+  },
+  "include": [
+    "src/scripts/**/*.ts",
+    "src/scripts/**/*.d.ts"
+  ],
+  "exclude": ["node_modules"]
+}
