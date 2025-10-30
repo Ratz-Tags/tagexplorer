@@ -28,6 +28,8 @@ jobs:
           if git show-ref --quiet refs/remotes/origin/Holding; then
             git checkout Holding
             git reset --hard origin/Holding
+          else
+            git checkout -b Holding
           fi
 
       - name: Setup Node.js

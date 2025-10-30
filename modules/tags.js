@@ -593,7 +593,15 @@ function getKinkTags() {
  * Sets the random background callback function
  */
 function setRandomBackgroundCallback(callback) {
-  setRandomBackground = callback;
+  // Debounce background updates to avoid rapid consecutive fetches
+  function debounce(fn, wait = 300) {
+    let t;
+    return (...args) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+  }
+  setRandomBackground = debounce(callback, 300);
 }
 
 /**

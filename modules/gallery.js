@@ -123,6 +123,11 @@ const ambienceState = {
   lastQuery: 'chastity_cage',
 };
 
+// Ambient background fetch guardrails to prevent request storms
+let _ambientBackgroundBusy = false;
+let _lastAmbientApplyTs = 0;
+const AMBIENT_MIN_INTERVAL_MS = 2500; // coalesce bursts (tags toggled rapidly, etc.)
+
 const resolvePerPage = (value) => {
   const floored = Math.floor(Number(value));
   if (Number.isFinite(floored) && floored > 0) {
@@ -889,6 +894,18 @@ async function setRandomBackground(options = {}) {
     return;
   }
 
+  // Throttle and de-dupe background refreshes to avoid request storms
+  const now = Date.now();
+  const force = options?.force === true || options?.reason === 'init';
+  if (_ambientBackgroundBusy && !force) {
+    console.log('[ambience] refresh skipped: in-flight');
+    return;
+  }
+  if (!force && now - _lastAmbientApplyTs < AMBIENT_MIN_INTERVAL_MS) {
+    console.log('[ambience] refresh skipped: within min interval');
+    return;
+  }
+
   const { tagWeights, intensity, motionMode } = options;
   if (Number.isFinite(Number(intensity))) {
     ambienceState.intensity = Number(intensity);
@@ -903,6 +920,7 @@ async function setRandomBackground(options = {}) {
   console.log('[ambience] derived query:', query, 'from weights:', Object.fromEntries(weights || []));
 
   let imageUrl = null;
+  _ambientBackgroundBusy = true;
   try {
     imageUrl = await getRandomBackgroundImage(query);
     console.log('[ambience] fetched imageUrl:', imageUrl);
@@ -935,8 +953,11 @@ async function setRandomBackground(options = {}) {
     blur.style.backgroundImage = 'none';
     blur.style.backgroundColor = 'transparent';
     console.log('[ambience] ✓ background applied successfully');
+    _lastAmbientApplyTs = Date.now();
   } catch (error) {
     console.warn('[ambience] failed to apply background', error);
+  } finally {
+    _ambientBackgroundBusy = false;
   }
 }
 
