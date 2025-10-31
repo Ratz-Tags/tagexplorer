@@ -11,31 +11,26 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: update-artists-json
+  cancel-in-progress: false
+
 jobs:
   update:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Holding branch
         uses: actions/checkout@v4
         with:
+          ref: Holding
           fetch-depth: 0
           persist-credentials: true
-
-      - name: Prepare Holding branch
-        run: |
-          git fetch origin Holding || true
-          if git show-ref --quiet refs/remotes/origin/Holding; then
-            git checkout Holding
-            git reset --hard origin/Holding
-          else
-            git checkout -b Holding
-          fi
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install || echo "No dependencies"
@@ -45,10 +40,11 @@ jobs:
 
       - name: Commit changes
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git add artists.json
-          git commit -m "Auto-update artists.json [skip ci]" || echo "No changes to commit"
+          git commit -m "chore: auto-update artists.json [skip ci]" || echo "No changes to commit"
 
       - name: Push changes
         run: |

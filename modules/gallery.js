@@ -60,7 +60,7 @@ const virtualState = {
 };
 
 const IMAGE_OBSERVER_ROOT_MARGIN = "160px";
-const IMAGE_OBSERVER_THRESHOLD = 0.04;
+const IMAGE_OBSERVER_THRESHOLD = 0.01;
 const DEFAULT_EAGER_IMAGE_COUNT = 4;
 const IDLE_FALLBACK_TIMEOUT = 1200;
 const PRIME_VISIBLE_BUFFER = 160;
@@ -1163,8 +1163,9 @@ function setBestImage(artist, img) {
       return;
     }
 
-    function tryLoadUrls(urls, index = 0) {
-      if (index >= urls.length) {
+    // Strategy: load a lightweight preview first for reliability, then upgrade to full in the background.
+    function tryLoadPreviewThenUpgrade(posts, postIndex = 0) {
+      if (postIndex >= posts.length) {
         if (isRateLimitActive()) {
           scheduleImageRetry("exhausted-image-candidates");
         } else {
@@ -1172,55 +1173,77 @@ function setBestImage(artist, img) {
         }
         return;
       }
-      const url = urls[index];
-      img.onerror = () => tryLoadUrls(urls, index + 1);
-      img.onload = () => {
+
+      const post = posts[postIndex];
+      const preview = buildImageUrl(post.preview_file_url || post.large_file_url || post.file_url);
+      const full = buildImageUrl(post.large_file_url || post.file_url || post.preview_file_url);
+
+      if (!preview && !full) {
+        tryLoadPreviewThenUpgrade(posts, postIndex + 1);
+        return;
+      }
+
+      // Ensure handlers are unique per attempt
+      const onPreviewError = () => {
         img.onerror = null;
         img.onload = null;
-          if (index === 0) {
-            localStorage.setItem(cacheKey, url);
-          }
-          // Attach the resolved post id to the img element for per-post persistence
-          const postId = validPosts[index]?.id;
-          if (postId) {
-            try { img.dataset.postId = String(postId); } catch {};
-          }
-          artistData._thumbnailPostId = postId;
-          
-          // Mark as quality-enhanced and set image rendering attributes
-          try {
-            img.dataset.qualityEnhanced = 'true';
-            img.decoding = 'async';
-            if ('fetchPriority' in HTMLImageElement.prototype) {
-              img.fetchPriority = 'high';
-            }
-          } catch (e) {}
-          img._loadingImage = false;
-          img._imageRetryCount = 0;
-          try {
-            if (img._pendingRetry) {
-              clearTimeout(img._pendingRetry);
-            }
-          } catch (error) {
-            // Ignore cleanup errors after a successful load
-          }
-          img._pendingRetry = null;
+        tryLoadPreviewThenUpgrade(posts, postIndex + 1);
       };
-      img.src = url;
+
+      const onPreviewLoad = () => {
+        img.onerror = null;
+        img.onload = null;
+
+        // Persist cache to speed up next loads
+        try { localStorage.setItem(cacheKey, img.src); } catch {}
+
+        const postId = post?.id;
+        if (postId) {
+          try { img.dataset.postId = String(postId); } catch {}
+          artistData._thumbnailPostId = postId;
+        }
+
+        try {
+          img.dataset.qualityEnhanced = 'true';
+          img.decoding = 'async';
+          if ('fetchPriority' in HTMLImageElement.prototype) {
+            img.fetchPriority = 'high';
+          }
+        } catch (e) {}
+
+        // Mark preview phase complete
+        img._loadingImage = false;
+        img._imageRetryCount = 0;
+        try { if (img._pendingRetry) clearTimeout(img._pendingRetry); } catch {}
+        img._pendingRetry = null;
+
+        // Attempt upgrade to full-resolution in the background; if it fails, keep preview.
+        if (full && full !== img.src) {
+          const upgrader = new Image();
+          upgrader.decoding = 'async';
+          upgrader.onload = () => {
+            // Swap only if the same artist/card is still current
+            try {
+              img.src = full;
+              localStorage.setItem(cacheKey, full);
+            } catch {}
+          };
+          upgrader.onerror = () => {
+            // Silently keep preview
+          };
+          upgrader.src = full;
+        }
+      };
+
+      img.onerror = onPreviewError;
+      img.onload = onPreviewLoad;
+      img.src = preview || full;
     }
 
-    // Use higher quality images for artist cards to avoid pixelation
-    const candidateUrls = pickThumbnailCandidateUrls(validPosts, { 
-      maxPosts: 8, 
-      preferHighQuality: true // Prefer higher quality images to prevent pixelation
-    });
-    const imageUrls = candidateUrls
-      .map((u) => buildImageUrl(u))
-      .filter(Boolean)
-      .slice(0, 5);
-
-    if (imageUrls.length > 0) {
-      tryLoadUrls(imageUrls);
+    // Prefer to try up to 8 posts, starting with ones likely to succeed quickly
+    const candidates = Array.isArray(validPosts) ? validPosts.slice(0, 8) : [];
+    if (candidates.length > 0) {
+      tryLoadPreviewThenUpgrade(candidates, 0);
     } else if (isRateLimitActive()) {
       scheduleImageRetry("no-thumbnail-candidates");
     } else {
