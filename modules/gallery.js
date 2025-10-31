@@ -73,6 +73,14 @@ const IMAGE_FETCH_MAX_RETRIES = 4;
 const IMAGE_FETCH_BASE_DELAY = 900;
 const IMAGE_FETCH_MAX_DELAY = 6500;
 
+// Microtask scheduler used by the image fetch queue; provide a local fallback
+// instead of relying on other modules defining it. This prevents queue stalls
+// when running in environments where only queueMicrotask or Promises are available.
+const scheduleMicrotask =
+  typeof queueMicrotask === 'function'
+    ? (cb) => queueMicrotask(cb)
+    : (cb) => Promise.resolve().then(cb);
+
 function scheduleImageFetchProcessing() {
   if (activeImageFetches >= IMAGE_FETCH_CONCURRENCY) return;
   const next = imageFetchQueue.shift();

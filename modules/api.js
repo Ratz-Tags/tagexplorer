@@ -333,7 +333,8 @@ function processQueue() {
     return;
   }
 
-  const availableSlots = Math.max(1, dynamicMaxParallelFetches - activeQueuedRequests);
+  // Respect the dynamic concurrency cap; do not exceed it.
+  const availableSlots = Math.max(0, dynamicMaxParallelFetches - activeQueuedRequests);
   for (let i = 0; i < availableSlots && requestQueue.length; i++) {
     const request = requestQueue.shift();
     activeQueuedRequests++;
