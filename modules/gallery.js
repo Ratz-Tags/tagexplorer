@@ -9,6 +9,8 @@ import {
   getArtistSlug,
   getRandomBackgroundImage,
   filterValidImagePosts,
+  isApiRateLimited,
+  getRateLimitDetail,
 } from "./api.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
@@ -66,6 +68,10 @@ const PRIME_VISIBLE_BUFFER = 160;
 const IMAGE_FETCH_CONCURRENCY = 3;
 const imageFetchQueue = [];
 let activeImageFetches = 0;
+
+const IMAGE_FETCH_MAX_RETRIES = 4;
+const IMAGE_FETCH_BASE_DELAY = 900;
+const IMAGE_FETCH_MAX_DELAY = 6500;
 
 function scheduleImageFetchProcessing() {
   if (activeImageFetches >= IMAGE_FETCH_CONCURRENCY) return;
@@ -188,6 +194,39 @@ function triggerGalleryHumiliationPatch() {
       // Swallow errors to avoid breaking gallery rendering if the helper fails
     }
   }
+}
+
+function isRateLimitActive() {
+  try {
+    if (typeof isApiRateLimited === "function" && isApiRateLimited()) {
+      return true;
+    }
+  } catch (error) {
+    // Ignore probing errors and fall back to DOM signal checks below
+  }
+
+  try {
+    if (
+      typeof document !== "undefined" &&
+      document.body &&
+      document.body.dataset &&
+      document.body.dataset.apiRateLimited === "true"
+    ) {
+      return true;
+    }
+  } catch (error) {
+    // Ignore DOM access errors (e.g. server-side rendering)
+  }
+
+  try {
+    if (typeof window !== "undefined" && window._danbooruUnavailable) {
+      return true;
+    }
+  } catch (error) {
+    // Ignore window access errors
+  }
+
+  return false;
 }
 
 // External dependencies
@@ -965,13 +1004,29 @@ async function setRandomBackground(options = {}) {
  * Sets the best image for an artist with caching and lazy loading
  */
 function setBestImage(artist, img) {
-  if (!img || img._loadingImage) {
+  if (!img) {
     return;
+  }
+  if (img._loadingImage) {
+    return;
+  }
+
+  if (img._pendingRetry) {
+    try {
+      clearTimeout(img._pendingRetry);
+    } catch (error) {
+      // Ignore timer cleanup failures
+    }
+    img._pendingRetry = null;
   }
 
   const artistData = artist || img.__artistData;
   if (!artistData || !artistData.artistName) {
     return;
+  }
+
+  if (typeof img._imageRetryCount !== "number") {
+    img._imageRetryCount = 0;
   }
 
   img._loadingImage = true;
@@ -1005,13 +1060,77 @@ function setBestImage(artist, img) {
     } catch {}
   }
 
-  function showNoEntries() {
+  function applyFallbackImage(reason = "unknown") {
+    try {
+      if (img._pendingRetry) {
+        clearTimeout(img._pendingRetry);
+      }
+    } catch (error) {
+      // Ignore timer cleanup failures during fallback
+    }
+    img._pendingRetry = null;
+    img._loadingImage = false;
+    try {
+      img._imageRetryCount = IMAGE_FETCH_MAX_RETRIES;
+    } catch (error) {
+      // Ignore retry counter assignment errors
+    }
+
+    const context = { artist: artistData.artistName, reason };
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn("[gallery] using fallback image", context);
+    }
+
     img.style.display = "none";
     img.src = FALLBACK_IMAGE_URL;
     setTimeout(() => {
       img.style.display = "block";
     }, 100);
+  }
+
+  function scheduleImageRetry(reason = "unknown", delayOverride) {
+    const attempt = typeof img._imageRetryCount === "number" ? img._imageRetryCount : 0;
+    if (attempt >= IMAGE_FETCH_MAX_RETRIES) {
+      applyFallbackImage(reason);
+      return;
+    }
+
+    const exponent = Math.max(0, attempt);
+    const computedDelay = IMAGE_FETCH_BASE_DELAY * Math.pow(1.6, exponent);
+    const delay = Math.min(
+      Math.max(IMAGE_FETCH_BASE_DELAY, Number(delayOverride) || computedDelay),
+      IMAGE_FETCH_MAX_DELAY
+    );
+
+    if (typeof console !== "undefined" && console.info) {
+      console.info(
+        "[gallery] retrying artist image",
+        {
+          artist: artistData.artistName,
+          attempt: attempt + 1,
+          delay,
+          reason,
+          rateLimited: isRateLimitActive(),
+          detail: typeof getRateLimitDetail === "function" ? getRateLimitDetail() : null,
+        }
+      );
+    }
+
     img._loadingImage = false;
+    img._imageRetryCount = attempt + 1;
+
+    try {
+      if (img._pendingRetry) {
+        clearTimeout(img._pendingRetry);
+      }
+    } catch (error) {
+      // Ignore timer cleanup issues and overwrite with new timer below
+    }
+
+    img._pendingRetry = setTimeout(() => {
+      img._pendingRetry = null;
+      setBestImage(artistData, img);
+    }, delay);
   }
 
   function processApiData(data, isFallback = false) {
@@ -1028,19 +1147,29 @@ function setBestImage(artist, img) {
             .then((fallbackData) => {
               processApiData(fallbackData, true);
             })
-            .catch(() => {
-              showNoEntries();
+            .catch((error) => {
+              if (isRateLimitActive()) {
+                scheduleImageRetry("fallback-fetch-error");
+              } else {
+                applyFallbackImage(error?.message || "fallback-fetch-error");
+              }
             });
         }, WAIT_MS);
+      } else if (isRateLimitActive()) {
+        scheduleImageRetry("no-valid-posts");
       } else {
-        showNoEntries();
+        applyFallbackImage("no-valid-posts");
       }
       return;
     }
 
     function tryLoadUrls(urls, index = 0) {
       if (index >= urls.length) {
-        showNoEntries();
+        if (isRateLimitActive()) {
+          scheduleImageRetry("exhausted-image-candidates");
+        } else {
+          applyFallbackImage("exhausted-image-candidates");
+        }
         return;
       }
       const url = urls[index];
@@ -1067,6 +1196,15 @@ function setBestImage(artist, img) {
             }
           } catch (e) {}
           img._loadingImage = false;
+          img._imageRetryCount = 0;
+          try {
+            if (img._pendingRetry) {
+              clearTimeout(img._pendingRetry);
+            }
+          } catch (error) {
+            // Ignore cleanup errors after a successful load
+          }
+          img._pendingRetry = null;
       };
       img.src = url;
     }
@@ -1083,8 +1221,10 @@ function setBestImage(artist, img) {
 
     if (imageUrls.length > 0) {
       tryLoadUrls(imageUrls);
+    } else if (isRateLimitActive()) {
+      scheduleImageRetry("no-thumbnail-candidates");
     } else {
-      showNoEntries();
+      applyFallbackImage("no-thumbnail-candidates");
     }
   }
 
@@ -1094,6 +1234,15 @@ function setBestImage(artist, img) {
       img.onerror = null;
       img.onload = null;
       img._loadingImage = false;
+      img._imageRetryCount = 0;
+      try {
+        if (img._pendingRetry) {
+          clearTimeout(img._pendingRetry);
+        }
+      } catch (error) {
+        // Ignore cleanup errors for cached image load
+      }
+      img._pendingRetry = null;
     };
     img.src = cachedUrl;
   } else {
@@ -1114,8 +1263,12 @@ function setBestImage(artist, img) {
         setApiCache(data);
         processApiData(data);
       })
-      .catch(() => {
-        showNoEntries();
+      .catch((error) => {
+        if (isRateLimitActive()) {
+          scheduleImageRetry("primary-fetch-error");
+        } else {
+          applyFallbackImage(error?.message || "primary-fetch-error");
+        }
       });
   }
 }
