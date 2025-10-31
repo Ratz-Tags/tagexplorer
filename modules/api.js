@@ -135,6 +135,19 @@ function reportRateLimitExhausted(detail = {}) {
   logRateLimitEvent("error", "Rate limit exhausted", merged);
 }
 
+export function isApiRateLimited() {
+  return rateLimitState.active === true;
+}
+
+export function getRateLimitDetail() {
+  if (!rateLimitState.lastDetail) return null;
+  try {
+    return { ...rateLimitState.lastDetail };
+  } catch (error) {
+    return rateLimitState.lastDetail;
+  }
+}
+
 function createRateLimitResponse({ retryAfterMs = 0 } = {}) {
   if (typeof Response === "function") {
     const headersInit = { "x-tagexplorer-rate-limit": "exhausted" };
