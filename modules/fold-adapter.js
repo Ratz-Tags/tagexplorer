@@ -2,12 +2,7 @@ const COVER_QUERY = '(max-width: 520px) and (orientation: portrait)';
 const INNER_QUERY = '(min-width: 980px) and (min-height: 980px)';
 
 function resolveMode(coverMedia, innerMedia) {
-  if (coverMedia && coverMedia.matches) {
-    return 'fold-cover';
-  }
-  if (innerMedia && innerMedia.matches) {
-    return 'fold-inner';
-  }
+  // Fold layout is disabled in favor of a responsive phone layout
   return 'default';
 }
 

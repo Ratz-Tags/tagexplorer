@@ -61,16 +61,16 @@ const virtualState = {
 
 const IMAGE_OBSERVER_ROOT_MARGIN = "160px";
 const IMAGE_OBSERVER_THRESHOLD = 0.01;
-const DEFAULT_EAGER_IMAGE_COUNT = 4;
-const IDLE_FALLBACK_TIMEOUT = 1200;
-const PRIME_VISIBLE_BUFFER = 160;
+const DEFAULT_EAGER_IMAGE_COUNT = 12; // Increased for better initial load
+const IDLE_FALLBACK_TIMEOUT = 800; // Reduced timeout
+const PRIME_VISIBLE_BUFFER = 320; // Increased buffer
 
-const IMAGE_FETCH_CONCURRENCY = 3;
+const IMAGE_FETCH_CONCURRENCY = 6; // Increased concurrency
 const imageFetchQueue = [];
 let activeImageFetches = 0;
 
 const IMAGE_FETCH_MAX_RETRIES = 4;
-const IMAGE_FETCH_BASE_DELAY = 900;
+const IMAGE_FETCH_BASE_DELAY = 500; // Reduced base delay
 const IMAGE_FETCH_MAX_DELAY = 6500;
 
 // Microtask scheduler used by the image fetch queue; provide a local fallback

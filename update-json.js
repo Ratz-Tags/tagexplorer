@@ -28,17 +28,31 @@ async function updateCounts() {
   const data = JSON.parse(await fs.readFile(filePath, "utf8"));
   const zeroAfter = [];
 
-  for (const artist of data) {
+  const CONCURRENCY = 8;
+  const queue = [...data];
+  const active = new Set();
+  let completed = 0;
+
+  const processArtist = async (artist) => {
     const prev = Number.isInteger(artist.postCount) ? artist.postCount : 0;
     let count = await fetchCountWithRetry(artist.artistName, 2);
     // If we failed to get a positive count, keep previous positive value
     if (!Number.isInteger(count) || count < 0) count = prev;
     if (count === 0 && prev > 0) count = prev;
     artist.postCount = count;
-    console.log(`${artist.artistName}: ${count}`);
+    console.log(`[${++completed}/${data.length}] ${artist.artistName}: ${count}`);
     if (count === 0) zeroAfter.push(artist.artistName);
-    // Be a little nice to the API
-    await sleep(120);
+  };
+
+  while (queue.length > 0 || active.size > 0) {
+    while (queue.length > 0 && active.size < CONCURRENCY) {
+      const artist = queue.shift();
+      const promise = processArtist(artist).finally(() => active.delete(promise));
+      active.add(promise);
+    }
+    if (active.size > 0) {
+      await Promise.race(active);
+    }
   }
 
   console.log("✅ Updating file:", filePath);

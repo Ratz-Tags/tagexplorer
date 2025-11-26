@@ -63,7 +63,27 @@ const extraTags = [
   'bullying',
   'body_writing',
   'cumdump',
-  'assisted_exposure'
+  'assisted_exposure',
+  'crying',
+  'begging',
+  'drooling',
+  'ahegao',
+  'messy',
+  'covered_in_cum',
+  'shamed',
+  'public_sex',
+  'exhibitionism',
+  'voyeurism',
+  'lingerie',
+  'latex',
+  'leather',
+  'maid',
+  'nurse',
+  'collar',
+  'chains',
+  'blindfold',
+  'rope',
+  'cuffs'
 ];
 
 // Basic throttle to avoid hammering Danbooru
