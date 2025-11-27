@@ -7,7 +7,7 @@ import {
   handleTagSearch,
   clearAllTags,
 } from "./tags.js";
-import { setSortMode } from "./gallery.js";
+import { setSortMode, reshuffleArtists } from "./gallery.js";
 
 // Removed client-side selection cap: allow unlimited tag selection.
 // Server/API handles any practical limits; keep client lightweight.
@@ -825,6 +825,10 @@ function initTagExplorer() {
              <input type="checkbox" name="sort" value="tag-frequency" />
              <span class="sort-chip">Relevance</span>
            </label>
+           <label class="sort-option" title="Randomize order">
+             <input type="checkbox" name="sort" value="shuffle" />
+             <span class="sort-chip">Shuffle</span>
+           </label>
            <label class="sort-option" title="Sort alphabetically (always active)">
              <input type="checkbox" name="sort" value="name" checked disabled />
              <span class="sort-chip">Name</span>
@@ -902,7 +906,19 @@ function initTagExplorer() {
 
   const sortCheckboxes = popoverEl.querySelectorAll('input[name="sort"]');
   sortCheckboxes.forEach(cb => {
-    cb.addEventListener('change', handleSortChange);
+    cb.addEventListener("change", (e) => {
+       if (e.target.value === "shuffle" && e.target.checked) {
+         sortCheckboxes.forEach(other => {
+           if (other !== e.target && other.value !== "name") {
+             other.checked = false;
+           }
+         });
+       } else if (e.target.value !== "shuffle" && e.target.checked) {
+         const shuffleCb = popoverEl.querySelector('input[value="shuffle"]');
+         if (shuffleCb) shuffleCb.checked = false;
+       }
+       handleSortChange();
+    });
   });
 
   document.addEventListener("tags:updated", () => {

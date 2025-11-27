@@ -3152,3 +3152,36 @@ body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
 .tag-explorer-subtitle {
   @apply text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400;
 }
+
+/* Foldable / Dual-Screen Layout */
+@media (min-width: 980px) and (min-height: 980px) {
+  /* Assume 'fold-inner' or large tablet mode */
+  body.fold-inner .tag-explorer-sidebar {
+    width: 50vw;
+    max-width: 50vw;
+    left: 0;
+    right: auto;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    transform: translateX(0) !important; /* Always visible */
+    background: rgba(0, 0, 0, 0.95);
+  }
+
+  body.fold-inner .gallery-shell {
+    margin-left: 50vw;
+    width: 50vw;
+  }
+
+  body.fold-inner .tag-explorer-overlay {
+    display: none !important;
+  }
+
+  body.fold-inner .tag-explorer-close {
+    display: none;
+  }
+}
+
+/* Slideshow Transitions */
+.artist-card img {
+  transition: opacity 0.3s ease-in-out;
+}
+

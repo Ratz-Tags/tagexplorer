@@ -2,7 +2,19 @@ const COVER_QUERY = '(max-width: 520px) and (orientation: portrait)';
 const INNER_QUERY = '(min-width: 980px) and (min-height: 980px)';
 
 function resolveMode(coverMedia, innerMedia) {
-  // Fold layout is disabled in favor of a responsive phone layout
+  // Check for dual-screen/foldable segments API
+  if (window.visualViewport && window.visualViewport.segments && window.visualViewport.segments.length > 1) {
+    return 'fold-inner'; // Spanning across two screens
+  }
+  
+  // Fallback to media queries
+  if (innerMedia && innerMedia.matches) {
+    return 'fold-inner'; // Large inner screen (tablet/open fold)
+  }
+  if (coverMedia && coverMedia.matches) {
+    return 'fold-cover'; // Small cover screen (phone mode)
+  }
+  
   return 'default';
 }
 

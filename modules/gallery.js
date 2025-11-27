@@ -563,10 +563,34 @@ function updatePaginationSnapshot() {
   totalPages = pagination.total;
 }
 
+// Fisher-Yates shuffle
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
 
   const modes = Array.isArray(mode) ? mode : [mode];
+
+  // If "shuffle" is the primary mode, we randomize once and return.
+  // Note: This mutates the list in-place, which is consistent with existing sort behavior.
+  if (modes[0] === "shuffle") {
+    // Only shuffle if we haven't already shuffled this specific filtered set
+    // or if explicit reshuffle is requested (handled elsewhere by resetting this flag/state)
+    if (!list._isShuffled) {
+       shuffleArray(list);
+       list._isShuffled = true;
+    }
+    return list;
+  }
+  
+  // If we are not in shuffle mode, clear the shuffled flag so next time we do shuffle
+  list._isShuffled = false;
 
   list.sort((a, b) => {
     for (const m of modes) {
@@ -575,6 +599,11 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
         diff = (b._totalImageCount || 0) - (a._totalImageCount || 0);
       } else if (m === "tag-frequency") {
         diff = (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0);
+      } else if (m === "shuffle") {
+         // Shuffle as a secondary sort doesn't make much sense in a stable sort, 
+         // but we can treat it as "no op" or random tie-breaker.
+         // For now, let's treat it as random tie-breaker.
+         diff = Math.random() - 0.5;
       } else {
         // Default: sort by name
         diff = a.artistName.localeCompare(b.artistName, undefined, {
@@ -591,6 +620,14 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
 function requiresCountBasedData(mode = sortMode) {
   const modes = Array.isArray(mode) ? mode : [mode];
   return modes.includes("count") || modes.includes("tag-frequency");
+}
+
+function reshuffleArtists() {
+  if (filtered) {
+    filtered._isShuffled = false;
+    sortCurrentArtists(filtered, ["shuffle"]);
+    renderArtistsPage({ force: true });
+  }
 }
 
 function clearArtistCountState(list = []) {
@@ -1211,6 +1248,41 @@ function setBestImage(artist, img) {
         const postId = post?.id;
         if (postId) {
           try { img.dataset.postId = String(postId); } catch {}
+          
+          // Store multiple images for slideshow
+          // We take up to 5 valid posts
+          const slideshowPosts = posts.slice(0, 5);
+          const slideshowUrls = slideshowPosts.map(p => 
+            buildImageUrl(p.large_file_url || p.file_url || p.preview_file_url)
+          ).filter(Boolean);
+          
+          if (slideshowUrls.length > 1) {
+            img.__slideshowUrls = slideshowUrls;
+            img.__slideshowIndex = 0;
+            
+            // If this is the first time setting up slideshow for this card, add listeners
+            // Note: img is inside a card. We usually want to attach listeners to the card container.
+            // But here we only have reference to 'img'. 
+            // The card container is img.closest('.artist-card').
+            const card = img.closest('.artist-card');
+            if (card && !card.__slideshowInitialized) {
+              card.__slideshowInitialized = true;
+              
+              // Desktop hover
+              card.addEventListener('mouseenter', () => {
+                startSlideshow(img);
+              });
+              card.addEventListener('mouseleave', () => {
+                stopSlideshow(img);
+              });
+              
+              // Mobile auto-cycle via IntersectionObserver is handled globally or by a separate observer
+              if (typeof registerMobileSlideshowObserver === "function") {
+                 registerMobileSlideshowObserver(card);
+              }
+            }
+          }
+        }
           artistData._thumbnailPostId = postId;
         }
 
@@ -1305,6 +1377,71 @@ function setBestImage(artist, img) {
         }
       });
   }
+// Slideshow helpers
+function startSlideshow(img) {
+  if (!img || !img.__slideshowUrls || img.__slideshowUrls.length <= 1) return;
+  if (img.__slideshowInterval) return;
+  
+  // Preload next images
+  img.__slideshowUrls.forEach(url => {
+    const i = new Image();
+    i.src = url;
+  });
+  
+  img.__slideshowInterval = setInterval(() => {
+    cycleCardImage(img, 1);
+  }, 1200); // 1.2s per slide
+}
+
+function stopSlideshow(img) {
+  if (!img) return;
+  if (img.__slideshowInterval) {
+    clearInterval(img.__slideshowInterval);
+    img.__slideshowInterval = null;
+  }
+  // Reset to primary image (index 0)
+  if (img.__slideshowUrls && img.__slideshowUrls.length > 0) {
+    img.src = img.__slideshowUrls[0];
+    img.__slideshowIndex = 0;
+  }
+}
+
+function cycleCardImage(img, direction = 1) {
+  if (!img || !img.__slideshowUrls || img.__slideshowUrls.length <= 1) return;
+  
+  let nextIndex = (img.__slideshowIndex + direction) % img.__slideshowUrls.length;
+  if (nextIndex < 0) nextIndex = img.__slideshowUrls.length - 1;
+  
+  img.__slideshowIndex = nextIndex;
+  img.src = img.__slideshowUrls[nextIndex];
+}
+
+// Mobile Slideshow Observer
+let mobileSlideshowObserver = null;
+function registerMobileSlideshowObserver(card) {
+  if (typeof IntersectionObserver === 'undefined') return;
+  
+  if (!mobileSlideshowObserver) {
+    mobileSlideshowObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        const img = entry.target.querySelector('img');
+        if (!img) return;
+        
+        if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+          // Card is mostly visible (center of screen likely)
+          startSlideshow(img);
+        } else {
+          stopSlideshow(img);
+        }
+      });
+    }, {
+      threshold: 0.85,
+      rootMargin: "-10% 0px -10% 0px" // Only trigger when well within viewport
+    });
+  }
+  
+  mobileSlideshowObserver.observe(card);
+}
 }
 
 function lazyLoadBestImage(artist, img) {
@@ -2521,17 +2658,6 @@ function initGallery() {
       lastSortMode = e.target.value;
     });
   }
-}
-
-
-
-// Export setBestImage for smoke testing in-browser
-export { setBestImage as _test_setBestImage };
-
-function setSortMode(mode, options = {}) {
-  const { preservePage = false, deferRender = false } = options;
-  sortMode = mode;
-  lastSortMode = mode;
   const needsCounts = requiresCountBasedData(mode);
   if (needsCounts && !countsReadyForActiveFilter) {
     requestedCountSortMode = mode;
