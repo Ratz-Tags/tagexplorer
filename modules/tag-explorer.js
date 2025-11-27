@@ -7,6 +7,7 @@ import {
   handleTagSearch,
   clearAllTags,
 } from "./tags.js";
+import { setSortMode } from "./gallery.js";
 
 // Removed client-side selection cap: allow unlimited tag selection.
 // Server/API handles any practical limits; keep client lightweight.
@@ -765,6 +766,21 @@ function handleSearchInput(value) {
   renderCategories();
 }
 
+function handleSortChange() {
+  if (!popoverEl) return;
+  const checkboxes = popoverEl.querySelectorAll('input[name="sort"]:checked');
+  const modes = Array.from(checkboxes).map(cb => cb.value);
+  
+  // Ensure 'name' is always included as fallback
+  if (!modes.includes('name')) modes.push('name');
+  
+  // Prioritize: Count > Tag Frequency > Name
+  const order = ['count', 'tag-frequency', 'name'];
+  modes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  
+  setSortMode(modes);
+}
+
 function initTagExplorer() {
   if (isInitialized || typeof document === "undefined") return;
   ensurePinnedSelectedContainer();
@@ -799,6 +815,22 @@ function initTagExplorer() {
       </div>
     </div>
     <div class="tag-explorer-content">
+      <div class="tag-explorer-sort">
+        <div class="sort-options">
+           <label class="sort-option" title="Sort by total number of images">
+             <input type="checkbox" name="sort" value="count" />
+             <span class="sort-chip">Count</span>
+           </label>
+           <label class="sort-option" title="Sort by frequency of selected tags">
+             <input type="checkbox" name="sort" value="tag-frequency" />
+             <span class="sort-chip">Relevance</span>
+           </label>
+           <label class="sort-option" title="Sort alphabetically (always active)">
+             <input type="checkbox" name="sort" value="name" checked disabled />
+             <span class="sort-chip">Name</span>
+           </label>
+        </div>
+      </div>
       <div class="tag-explorer-search">
         <input id="tag-filter-search" type="search" placeholder="Search tags..." autocomplete="off" />
       </div>
@@ -867,6 +899,11 @@ function initTagExplorer() {
       handleSearchInput(event.target.value || "");
     });
   }
+
+  const sortCheckboxes = popoverEl.querySelectorAll('input[name="sort"]');
+  sortCheckboxes.forEach(cb => {
+    cb.addEventListener('change', handleSortChange);
+  });
 
   document.addEventListener("tags:updated", () => {
     renderSelectedTags();

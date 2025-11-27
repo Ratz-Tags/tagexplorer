@@ -1208,7 +1208,8 @@ mix-blend-mode: screen;
 @apply mt-1 px-6 py-2 text-[0.58rem];
 }
 .artist-card {
-@apply relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-panel/75 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-1 hover:border-glow/80 hover:shadow-[0_25px_60px_-25px_rgba(102,243,255,0.6)];
+@apply relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-panel/60 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-2 hover:border-glow/80 hover:shadow-[0_30px_70px_-20px_rgba(102,243,255,0.5)];
+backdrop-filter: blur(16px);
 }
 .artist-card[data-page] {
 @apply will-change-transform;
@@ -2213,12 +2214,13 @@ animation: pulseGlow 1.8s ease-in-out infinite;
   position: absolute;
   inset: 0;
   background-image: 
-    linear-gradient(0deg, rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(0deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
   background-size: 40px 40px;
-  opacity: 0.4;
+  opacity: 0.5;
   pointer-events: none;
   z-index: 1;
+  filter: drop-shadow(0 0 1px rgba(102, 243, 255, 0.3));
 }
 
 .landing-montage {
@@ -2297,7 +2299,8 @@ animation: pulseGlow 1.8s ease-in-out infinite;
   @apply text-white;
   @apply transition-all duration-300;
   @apply shadow-neon;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  animation: pulse-glow 3s infinite;
 }
 
 .landing-cta:hover {
@@ -2341,8 +2344,9 @@ animation: pulseGlow 1.8s ease-in-out infinite;
 
 .landing-meter {
   @apply relative isolate grid gap-6 rounded-[2.25rem] border border-white/15 bg-black/50 px-8 py-8 text-left text-slate-200 shadow-pressure-low transition-all duration-700 ease-kink;
-  backdrop-filter: blur(26px);
+  backdrop-filter: blur(32px);
   overflow: hidden;
+  box-shadow: 0 0 50px -10px rgba(102, 243, 255, 0.15);
 }
 
 .landing-meter::before {
@@ -2409,11 +2413,12 @@ animation: pulseGlow 1.8s ease-in-out infinite;
   transform-origin: left center;
   transform: scaleX(var(--pressure-meter-progress, 0));
   border-radius: inherit;
-  background: linear-gradient(90deg, rgba(102, 243, 255, 0.65), rgba(255, 100, 212, 0.55));
-  box-shadow: 0 0 28px var(--pressure-glow-low);
+  background: linear-gradient(90deg, rgba(102, 243, 255, 0.85), rgba(255, 100, 212, 0.75));
+  box-shadow: 0 0 35px var(--pressure-glow-low);
   transition:
     transform calc(600ms * var(--motion-scale)) cubic-bezier(.4,-0.2,.2,1.2),
     box-shadow 0.6s ease;
+  filter: brightness(1.2);
 }
 
 .landing-meter__value {
@@ -3109,4 +3114,41 @@ body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
   .ritual-glow-border {
     box-shadow: 0 0 0 1px rgba(255, 100, 212, 0.35), 0 0 38px rgba(102, 243, 255, 0.45);
   }
+}
+
+/* Tag Explorer Sort Options */
+.tag-explorer-sort {
+  @apply border-b border-white/10 p-4;
+}
+
+.sort-options {
+  @apply flex flex-wrap gap-2 mt-2;
+}
+
+.sort-option {
+  @apply relative cursor-pointer;
+}
+
+.sort-option input {
+  @apply sr-only;
+}
+
+.sort-chip {
+  @apply inline-flex items-center justify-center rounded-full border border-white/10 bg-black/40 px-3 py-1.5 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-slate-300 transition-all duration-200;
+}
+
+.sort-option input:checked + .sort-chip {
+  @apply border-glow/60 bg-glow/20 text-white shadow-[0_0_15px_rgba(102,243,255,0.25)];
+}
+
+.sort-option input:disabled + .sort-chip {
+  @apply opacity-60 cursor-not-allowed border-white/5 bg-white/5;
+}
+
+.sort-option:hover input:not(:disabled):not(:checked) + .sort-chip {
+  @apply border-glow/40 bg-glow/10 text-white;
+}
+
+.tag-explorer-subtitle {
+  @apply text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-slate-400;
 }

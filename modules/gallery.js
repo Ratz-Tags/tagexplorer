@@ -41,7 +41,7 @@ const MAX_PAGES_IN_DOM = MAX_VIRTUAL_CHUNKS + VIRTUAL_OVERSCAN_CHUNKS;
 
 let filtered = [];
 let isFetching = false;
-let sortMode = "name";
+let sortMode = ["name"];
 let filterGeneration = 0;
 let artistsPerPage = DEFAULT_ARTISTS_PER_PAGE;
 let currentPage = 1;
@@ -566,28 +566,31 @@ function updatePaginationSnapshot() {
 function sortCurrentArtists(list = filtered, mode = sortMode) {
   if (!Array.isArray(list) || !list.length) return list;
 
-  if (mode === "count") {
-    list.sort(
-      (a, b) => (b._totalImageCount || 0) - (a._totalImageCount || 0)
-    );
-  } else if (mode === "tag-frequency") {
-    // Sort by most common tag frequency (descending)
-    list.sort(
-      (a, b) => (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0)
-    );
-  } else {
-    // Default: sort by name
-    list.sort((a, b) =>
-      a.artistName.localeCompare(b.artistName, undefined, {
-        sensitivity: "base",
-      })
-    );
-  }
+  const modes = Array.isArray(mode) ? mode : [mode];
+
+  list.sort((a, b) => {
+    for (const m of modes) {
+      let diff = 0;
+      if (m === "count") {
+        diff = (b._totalImageCount || 0) - (a._totalImageCount || 0);
+      } else if (m === "tag-frequency") {
+        diff = (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0);
+      } else {
+        // Default: sort by name
+        diff = a.artistName.localeCompare(b.artistName, undefined, {
+          sensitivity: "base",
+        });
+      }
+      if (diff !== 0) return diff;
+    }
+    return 0;
+  });
   return list;
 }
 
 function requiresCountBasedData(mode = sortMode) {
-  return mode === "count" || mode === "tag-frequency";
+  const modes = Array.isArray(mode) ? mode : [mode];
+  return modes.includes("count") || modes.includes("tag-frequency");
 }
 
 function clearArtistCountState(list = []) {
@@ -2473,15 +2476,20 @@ async function filterArtists(reset = true, force = false) {
 
     countsReadyForActiveFilter = true;
 
-    if (pendingMostCommonTag && sortMode === "name") {
+    const currentModes = Array.isArray(sortMode) ? sortMode : [sortMode];
+    const isDefaultName = currentModes.length === 1 && currentModes[0] === 'name';
+    const hasTagFreq = currentModes.includes('tag-frequency');
+
+    if (pendingMostCommonTag && isDefaultName) {
       console.log(
         `Auto-switching to tag-frequency sort (most common: ${pendingMostCommonTag})`
       );
-      sortMode = "tag-frequency";
-      lastSortMode = "tag-frequency";
-    } else if (!pendingMostCommonTag && sortMode === "tag-frequency") {
-      sortMode = "name";
-      lastSortMode = "name";
+      sortMode = ["tag-frequency", "name"];
+      lastSortMode = sortMode;
+    } else if (!pendingMostCommonTag && hasTagFreq) {
+      sortMode = currentModes.filter(m => m !== "tag-frequency");
+      if (sortMode.length === 0) sortMode = ["name"];
+      lastSortMode = sortMode;
     }
 
     requestedCountSortMode = null;
