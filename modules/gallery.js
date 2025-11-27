@@ -1282,7 +1282,6 @@ function setBestImage(artist, img) {
               }
             }
           }
-        }
           artistData._thumbnailPostId = postId;
         }
 
@@ -2658,6 +2657,13 @@ function initGallery() {
       lastSortMode = e.target.value;
     });
   }
+}
+
+function setSortMode(mode, options = {}) {
+  const { preservePage = false, deferRender = false } = options;
+  sortMode = Array.isArray(mode) ? mode : [mode];
+  lastSortMode = sortMode;
+  
   const needsCounts = requiresCountBasedData(mode);
   if (needsCounts && !countsReadyForActiveFilter) {
     requestedCountSortMode = mode;
@@ -2974,6 +2980,7 @@ export {
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
   setSortMode,
+  reshuffleArtists,
   getPaginationInfo,
   getFilteredArtists,
   setArtistsPerPage,
