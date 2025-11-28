@@ -65,7 +65,7 @@ const DEFAULT_EAGER_IMAGE_COUNT = 24; // Increased for better initial load
 const IDLE_FALLBACK_TIMEOUT = 800; // Reduced timeout
 const PRIME_VISIBLE_BUFFER = 320; // Increased buffer
 
-const IMAGE_FETCH_CONCURRENCY = 12; // Increased concurrency
+const IMAGE_FETCH_CONCURRENCY = 6; // Reduced from 12 to prevent network saturation
 const imageFetchQueue = [];
 let activeImageFetches = 0;
 
@@ -685,62 +685,79 @@ async function populateArtistCounts({
 
   let processed = 0;
   const concurrency = resolveCountFetchConcurrency();
+  
   for (let i = 0; i < artists.length; i += batchSize) {
     if (generation !== filterGeneration) return;
     const batch = artists.slice(i, i + batchSize);
-    let cursor = 0;
-    const workerCount = Math.min(concurrency, batch.length);
-    const workers = Array.from({ length: workerCount }, () =>
-      (async function worker() {
-        while (true) {
-          if (generation !== filterGeneration) {
-            return;
-          }
-          const index = cursor++;
-          if (index >= batch.length) {
-            return;
-          }
-          const artist = batch[index];
-          if (!artist) {
-            continue;
-          }
-          try {
-            const totalCount =
-              typeof artist.postCount === "number"
-                ? artist.postCount
-                : await getArtistImageCount(artist.artistName);
-            artist._totalImageCount = totalCount;
-            artist._imageCount = totalCount;
-            if (mostCommonTag && typeof fetchPostCountForTagsFn === "function") {
-              const tagCount = await fetchPostCountForTagsFn([
-                artist.artistName,
-                mostCommonTag,
-              ]);
-              artist._mostCommonTagCount = Number(tagCount) || 0;
-            } else {
-              artist._mostCommonTagCount = 0;
-            }
-          } catch (error) {
-            artist._totalImageCount = artist.postCount || 0;
-            artist._imageCount = artist.postCount || 0;
-            if (typeof artist._mostCommonTagCount !== "number") {
-              artist._mostCommonTagCount = 0;
-            }
-          }
-        }
-      })()
-    );
+    
+    // Optimization: Separate artists that need fetching from those that don't
+    const needsFetch = [];
+    
+    for (const artist of batch) {
+      if (!artist) continue;
+      
+      // If we need tag-specific counts, we always fetch (unless we add caching for that too later)
+      // If we don't have a total count, we need to fetch.
+      if (mostCommonTag || typeof artist.postCount !== "number") {
+        needsFetch.push(artist);
+      } else {
+        // Fast path: data is available
+        artist._totalImageCount = artist.postCount;
+        artist._imageCount = artist.postCount;
+        artist._mostCommonTagCount = 0;
+      }
+    }
 
-    await Promise.all(workers);
+    // Only spin up workers if we actually have network requests to make
+    if (needsFetch.length > 0) {
+      let cursor = 0;
+      const workerCount = Math.min(concurrency, needsFetch.length);
+      const workers = Array.from({ length: workerCount }, () =>
+        (async function worker() {
+          while (true) {
+            if (generation !== filterGeneration) return;
+            const index = cursor++;
+            if (index >= needsFetch.length) return;
+            
+            const artist = needsFetch[index];
+            try {
+              const totalCount =
+                typeof artist.postCount === "number"
+                  ? artist.postCount
+                  : await getArtistImageCount(artist.artistName);
+              artist._totalImageCount = totalCount;
+              artist._imageCount = totalCount;
+              
+              if (mostCommonTag && typeof fetchPostCountForTagsFn === "function") {
+                const tagCount = await fetchPostCountForTagsFn([
+                  artist.artistName,
+                  mostCommonTag,
+                ]);
+                artist._mostCommonTagCount = Number(tagCount) || 0;
+              } else {
+                artist._mostCommonTagCount = 0;
+              }
+            } catch (error) {
+              artist._totalImageCount = artist.postCount || 0;
+              artist._imageCount = artist.postCount || 0;
+              artist._mostCommonTagCount = typeof artist._mostCommonTagCount === "number" ? artist._mostCommonTagCount : 0;
+            }
+          }
+        })()
+      );
+
+      await Promise.all(workers);
+      
+      // Only delay if we actually did network work
+      if (generation !== filterGeneration) return;
+      if (i + batchSize < artists.length) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
 
     processed += batch.length;
     if (spinner && typeof spinner.updateProgress === "function") {
       spinner.updateProgress(processed);
-    }
-
-    if (generation !== filterGeneration) return;
-    if (i + batchSize < artists.length) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
 }

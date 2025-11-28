@@ -30,13 +30,7 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
-let heightSyncFrame = null;
-let tagListResizeObserver = null;
-const observedTagLists =
-  typeof WeakSet === "function" ? new WeakSet() : null;
-let heightSyncListenersBound = false;
-let heightSyncResizeHandler = null;
-let scrollRepositionHandler = null;
+// Height sync variables removed
 let filtersButtonEl = null;
 let outsideClickHandler = null;
 function setAllArtists(artists) {
@@ -214,125 +208,7 @@ function positionPopover() {
   popoverEl.classList.toggle("is-flipped", flipped);
 }
 
-function syncOpenCategoryHeights() {
-  heightSyncFrame = null;
-  if (!groupsContainerEl) return;
-  const sections = groupsContainerEl.querySelectorAll(".filter-category");
-  sections.forEach((section) => {
-    const tagList = section.querySelector(".filter-category__tags");
-    if (!tagList) return;
-    
-    // Force layout to get accurate measurements
-    tagList.style.transition = 'none';
-    const height = tagList.scrollHeight;
-    const value = Number.isFinite(height) && height > 0 ? `${Math.ceil(height)}px` : "0px";
-    
-    // Only update if the value has actually changed to prevent flickering
-    const currentValue = section.style.getPropertyValue("--filter-category-open-height");
-    if (currentValue !== value) {
-      try {
-        section.style.setProperty("--filter-category-open-height", value);
-      } catch {
-        // ignore style assignment issues
-      }
-    }
-    
-    // Re-enable transitions after a frame
-    requestAnimationFrame(() => {
-      tagList.style.transition = '';
-    });
-  });
-}
-
-function scheduleOpenCategoryHeightSync() {
-  if (heightSyncFrame !== null && typeof cancelAnimationFrame === "function") {
-    cancelAnimationFrame(heightSyncFrame);
-  }
-  if (typeof requestAnimationFrame === "function") {
-    heightSyncFrame = requestAnimationFrame(() => {
-      syncOpenCategoryHeights();
-    });
-  } else {
-    syncOpenCategoryHeights();
-  }
-}
-
-function observeTagListHeight(tagList) {
-  if (!tagList || typeof ResizeObserver !== "function") return;
-  if (!tagListResizeObserver) {
-    try {
-      tagListResizeObserver = new ResizeObserver(() => {
-        scheduleOpenCategoryHeightSync();
-      });
-    } catch {
-      tagListResizeObserver = null;
-    }
-  }
-  if (!tagListResizeObserver) return;
-  if (observedTagLists && observedTagLists.has(tagList)) return;
-  try {
-    tagListResizeObserver.observe(tagList);
-    if (observedTagLists) observedTagLists.add(tagList);
-  } catch {
-    // ignore observer errors
-  }
-}
-
-function ensureHeightSyncListeners() {
-  if (heightSyncListenersBound || typeof window === "undefined") return;
-  heightSyncResizeHandler = () => {
-    scheduleOpenCategoryHeightSync();
-    if (isOpen) {
-      positionPopover();
-    }
-  };
-  try {
-    window.addEventListener("resize", heightSyncResizeHandler, { passive: true });
-    window.addEventListener("orientationchange", heightSyncResizeHandler);
-  } catch {
-    // ignore listener binding failures
-  }
-  try {
-    scrollRepositionHandler = () => {
-      if (isOpen) {
-        positionPopover();
-      }
-    };
-    window.addEventListener("scroll", scrollRepositionHandler, { passive: true });
-  } catch {
-    scrollRepositionHandler = null;
-  }
-  try {
-    window.addEventListener("beforeunload", () => {
-      if (heightSyncResizeHandler) {
-        window.removeEventListener("resize", heightSyncResizeHandler);
-        window.removeEventListener("orientationchange", heightSyncResizeHandler);
-        heightSyncResizeHandler = null;
-      }
-      if (scrollRepositionHandler) {
-        window.removeEventListener("scroll", scrollRepositionHandler);
-        scrollRepositionHandler = null;
-      }
-      unbindOutsideClickListener();
-      if (tagListResizeObserver) {
-        try {
-          tagListResizeObserver.disconnect();
-        } catch {
-          // ignore disconnect issues
-        }
-        tagListResizeObserver = null;
-      }
-    });
-  } catch {
-    // ignore beforeunload issues
-  }
-  try {
-    window.scheduleOpenCategoryHeightSync = scheduleOpenCategoryHeightSync;
-  } catch {
-    // ignore global assignment issues
-  }
-  heightSyncListenersBound = true;
-}
+// Height sync functions removed
 
 function emitOverlayToggle(open) {
   if (typeof document === "undefined" || typeof document.dispatchEvent !== "function") {
@@ -411,28 +287,26 @@ function handleTagToggle(tag) {
 
 function expandAllCategories() {
   if (!groupsContainerEl) return;
-  const sections = groupsContainerEl.querySelectorAll(".tag-category-item");
+  const sections = groupsContainerEl.querySelectorAll(".filter-category");
   sections.forEach(section => {
     section.classList.add("open");
-    const header = section.querySelector(".tag-category-header");
-    const tagList = section.querySelector(".tag-category-tags");
+    const header = section.querySelector(".filter-category__header");
+    const tagList = section.querySelector(".filter-category__tags");
     if (header) header.setAttribute("aria-expanded", "true");
     if (tagList) tagList.setAttribute("aria-hidden", "false");
   });
-  scheduleOpenCategoryHeightSync();
 }
 
 function collapseAllCategories() {
   if (!groupsContainerEl) return;
-  const sections = groupsContainerEl.querySelectorAll(".tag-category-item");
+  const sections = groupsContainerEl.querySelectorAll(".filter-category");
   sections.forEach(section => {
     section.classList.remove("open");
-    const header = section.querySelector(".tag-category-header");
-    const tagList = section.querySelector(".tag-category-tags");
+    const header = section.querySelector(".filter-category__header");
+    const tagList = section.querySelector(".filter-category__tags");
     if (header) header.setAttribute("aria-expanded", "false");
     if (tagList) tagList.setAttribute("aria-hidden", "true");
   });
-  scheduleOpenCategoryHeightSync();
 }
 
 function formatTagLabel(tag) {
@@ -551,13 +425,13 @@ function renderCategories() {
 
     renderedAny = true;
     const section = document.createElement("div");
-    section.className = "tag-category-item";
+    section.className = "filter-category";
     const shouldOpen =
       searchValueLower !== "" || matchingTags.some((tag) => active.has(tag));
     if (shouldOpen) section.classList.add("open");
 
     const header = document.createElement("div");
-    header.className = "tag-category-header";
+    header.className = "filter-category__header";
     header.innerHTML = `
       <div class="tag-category-info">
         <span class="tag-category-title">${category}</span>
@@ -571,18 +445,18 @@ function renderCategories() {
     `;
 
     const tagList = document.createElement("div");
-    tagList.className = "tag-category-tags";
+    tagList.className = "filter-category__tags";
     tagList.setAttribute("role", "group");
     tagList.setAttribute("aria-hidden", shouldOpen ? "false" : "true");
+
+    const inner = document.createElement("div");
+    inner.className = "filter-category__inner";
 
     const setExpandedState = (open, options = {}) => {
       const isOpen = Boolean(open);
       section.classList.toggle("open", isOpen);
       header.setAttribute("aria-expanded", isOpen ? "true" : "false");
       tagList.setAttribute("aria-hidden", isOpen ? "false" : "true");
-      if (!options.skipSchedule) {
-        scheduleOpenCategoryHeightSync();
-      }
     };
 
     header.addEventListener("click", (e) => {
@@ -600,12 +474,12 @@ function renderCategories() {
       const count = counts[tag] || 0;
       btn.innerHTML = `${formatTagLabel(tag)} <span style="color: #94a3b8; font-size: 0.7em;">(${count})</span>`;
       btn.addEventListener("click", () => handleTagToggle(tag));
-      tagList.appendChild(btn);
+      inner.appendChild(btn);
     });
 
+    tagList.appendChild(inner);
     section.appendChild(tagList);
     groupsContainerEl.appendChild(section);
-    observeTagListHeight(tagList);
     setExpandedState(shouldOpen, { skipSchedule: true });
   });
 
@@ -616,11 +490,7 @@ function renderCategories() {
       ? "No tags match your search."
       : "No tags available for the current filters.";
     groupsContainerEl.appendChild(emptyState);
-  } else {
-    scheduleOpenCategoryHeightSync();
   }
-
-  scheduleOpenCategoryHeightSync();
 }
 
 function renderExplorer() {
@@ -941,7 +811,7 @@ function initTagExplorer() {
     }
   });
 
-  ensureHeightSyncListeners();
+  // ensureHeightSyncListeners removed
   renderExplorer();
   isInitialized = true;
 }
