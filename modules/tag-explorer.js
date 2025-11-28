@@ -30,6 +30,7 @@ let escapeListener = null;
 let searchValue = "";
 let searchValueLower = "";
 let limitMessageTimer = null;
+let searchDebounceTimer = null;
 // Height sync variables removed
 let filtersButtonEl = null;
 let outsideClickHandler = null;
@@ -279,10 +280,28 @@ function renderSelectedTags() {
 }
 
 function handleTagToggle(tag) {
-  const active = getActiveTags();
-  // Unlimited selection: directly toggle without client-side limits.
+  // 1. Update state
   toggleTag(tag);
-  renderExplorer();
+  
+  // 2. Immediate visual feedback (optimistic update)
+  if (groupsContainerEl) {
+    const btn = groupsContainerEl.querySelector(`button[data-tag="${tag}"]`);
+    if (btn) {
+      const isActive = btn.classList.toggle("active");
+      // Optional: Update aria-pressed if you were using it, or just rely on class
+    }
+  }
+  
+  // 3. Fast update of selected tags bar
+  renderSelectedTags();
+
+  // 4. Defer heavy re-render of categories (counts/sorting) to next frame
+  // This allows the button toggle to paint immediately
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      renderCategories();
+    }, 0);
+  });
 }
 
 function expandAllCategories() {
@@ -638,8 +657,12 @@ function closeTagExplorer() {
 function handleSearchInput(value) {
   searchValue = value;
   searchValueLower = value.trim().toLowerCase();
-  handleTagSearch(value);
-  renderCategories();
+  
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchDebounceTimer = setTimeout(() => {
+    handleTagSearch(value);
+    renderCategories();
+  }, 300);
 }
 
 function handleSortChange() {

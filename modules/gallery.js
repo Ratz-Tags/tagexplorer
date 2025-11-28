@@ -2277,6 +2277,57 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       openArtistZoom(artist);
     });
 
+    // Hover Slideshow
+    let slideshowTimer = null;
+    let slideshowInterval = null;
+
+    media.addEventListener("mouseenter", () => {
+      if (slideshowTimer) clearTimeout(slideshowTimer);
+      
+      // Save original src if not already saved (and if it's not a placeholder)
+      if (!img._originalSrc && img.src && !img.src.includes('data:image')) {
+        img._originalSrc = img.src;
+      }
+
+      slideshowTimer = setTimeout(async () => {
+        // If we don't have images yet, fetch them
+        if (!artist._slideshowImages) {
+          try {
+            // Fetch a few images for the slideshow
+            // Use a separate limit/order if needed, but default is fine
+            const posts = await fetchArtistImages(artist.artistName, [], { limit: 6 });
+            artist._slideshowImages = posts
+              .map(p => p.preview_file_url || p.large_file_url || p.file_url)
+              .filter(Boolean);
+          } catch (e) {
+            // console.warn("Slideshow fetch failed for", artist.artistName, e);
+            artist._slideshowImages = []; // Prevent retry loop
+          }
+        }
+
+        if (artist._slideshowImages && artist._slideshowImages.length > 1) {
+          let idx = 0;
+          slideshowInterval = setInterval(() => {
+            idx = (idx + 1) % artist._slideshowImages.length;
+            const nextUrl = artist._slideshowImages[idx];
+            if (nextUrl) img.src = nextUrl;
+          }, 1200);
+        }
+      }, 600); // 600ms delay to prevent accidental triggers during scroll
+    });
+
+    media.addEventListener("mouseleave", () => {
+      if (slideshowTimer) clearTimeout(slideshowTimer);
+      if (slideshowInterval) clearInterval(slideshowInterval);
+      slideshowTimer = null;
+      slideshowInterval = null;
+      
+      // Restore original image
+      if (img._originalSrc) {
+        img.src = img._originalSrc;
+      }
+    });
+
     const name = document.createElement("div");
     name.className = "artist-name";
     let displayName = artist.artistName.replace(/_/g, " ");

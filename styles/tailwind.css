@@ -1196,8 +1196,9 @@ mix-blend-mode: screen;
 @apply mt-1 px-6 py-2 text-[0.58rem];
 }
 .artist-card {
-@apply relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 bg-panel/80 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-2 hover:border-glow/80 hover:shadow-[0_30px_70px_-20px_rgba(102,243,255,0.5)];
-/* backdrop-filter removed for performance */
+@apply relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/10 shadow-neon transition-all duration-500 ease-kink hover:-translate-y-2 hover:border-glow/80 hover:shadow-[0_30px_70px_-20px_rgba(102,243,255,0.5)];
+background: linear-gradient(145deg, rgba(20, 20, 35, 0.85), rgba(10, 10, 20, 0.92));
+box-shadow: 0 4px 20px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .artist-card[data-page] {
 @apply will-change-transform;
@@ -3257,5 +3258,47 @@ body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
 /* Headings/Text enhancement */
 h1, h2, h3, .landing-logo, .tag-explorer-title {
   text-shadow: 0 0 10px rgba(255, 100, 212, 0.5), 0 0 20px rgba(176, 38, 255, 0.3) !important;
+}
+
+
+/* Mobile Tag Explorer Optimization */
+@media (max-width: 640px) {
+  .tag-explorer-sidebar {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-right: none !important;
+    background: rgba(12, 12, 20, 0.98) !important; /* Higher opacity for mobile */
+  }
+  
+  .tag-explorer-content {
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  /* Prevent zoom on inputs */
+  .tag-explorer-search input,
+  input[type="text"],
+  input[type="search"] {
+    font-size: 16px !important; 
+  }
+
+  /* Ensure tags wrap and don't get cut off */
+  .filter-category__tags,
+  .filter-category__inner {
+    flex-wrap: wrap !important;
+    white-space: normal !important;
+  }
+  
+  /* Larger touch targets for close button */
+  .tag-explorer-close {
+    padding: 1rem !important;
+  }
+}
+
+/* General fix for tag wrapping */
+.filter-category__tags,
+.filter-category__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
