@@ -541,6 +541,12 @@ function renderCategories() {
       return count > 0 || active.has(tag);
     });
 
+    matchingTags.sort((a, b) => {
+      const countA = counts[a] || 0;
+      const countB = counts[b] || 0;
+      return countB - countA || a.localeCompare(b);
+    });
+
     if (matchingTags.length === 0) return;
 
     renderedAny = true;

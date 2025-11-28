@@ -1434,28 +1434,29 @@ function cycleCardImage(img, direction = 1) {
 // Mobile Slideshow Observer
 let mobileSlideshowObserver = null;
 function registerMobileSlideshowObserver(card) {
-  if (typeof IntersectionObserver === 'undefined') return;
+  // Auto-play disabled by user request.
+  // if (typeof IntersectionObserver === 'undefined') return;
   
-  if (!mobileSlideshowObserver) {
-    mobileSlideshowObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        const img = entry.target.querySelector('img');
-        if (!img) return;
-        
-        if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
-          // Card is mostly visible (center of screen likely)
-          startSlideshow(img);
-        } else {
-          stopSlideshow(img);
-        }
-      });
-    }, {
-      threshold: 0.85,
-      rootMargin: "-10% 0px -10% 0px" // Only trigger when well within viewport
-    });
-  }
+  // if (!mobileSlideshowObserver) {
+  //   mobileSlideshowObserver = new IntersectionObserver((entries) => {
+  //     entries.forEach(entry => {
+  //       const img = entry.target.querySelector('img');
+  //       if (!img) return;
+  //       
+  //       if (entry.isIntersecting && entry.intersectionRatio > 0.8) {
+  //         // Card is mostly visible (center of screen likely)
+  //         startSlideshow(img);
+  //       } else {
+  //         stopSlideshow(img);
+  //       }
+  //     });
+  //   }, {
+  //     threshold: 0.85,
+  //     rootMargin: "-10% 0px -10% 0px" // Only trigger when well within viewport
+  //   });
+  // }
   
-  mobileSlideshowObserver.observe(card);
+  // mobileSlideshowObserver.observe(card);
 }
 }
 
