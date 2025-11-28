@@ -2211,6 +2211,7 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
   artists.forEach((artist) => {
     const card = document.createElement("div");
     card.className = "artist-card group";
+    card.tabIndex = 0; // Enable keyboard focus
     if (annotatePage) {
       card.dataset.page = String(chunkId);
     } else {
@@ -3279,3 +3280,31 @@ function clearArtistAllPostsCache(artistName, tags = []) {
 }
 
 export { getArtistAllPostsCache, clearArtistAllPostsCache, DEFAULT_ALLPOSTS_TTL_MS, setAllPostsTTL, expireAllPostsCaches };
+// Keyboard Navigation
+if (typeof document !== "undefined") {
+  document.addEventListener("keydown", (e) => {
+    // Only handle if no modal/overlay is open (simple check)
+    if (document.querySelector(".fullscreen-viewer.open")) return;
+    
+    // If search input is focused, don't interfere
+    if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) return;
+
+    const active = document.activeElement;
+    if (!active || !active.classList.contains("artist-card")) return;
+
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      const next = active.nextElementSibling;
+      if (next && next.classList.contains("artist-card")) next.focus();
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      const prev = active.previousElementSibling;
+      if (prev && prev.classList.contains("artist-card")) prev.focus();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      // Trigger the click on the media element
+      const media = active.querySelector(".artist-media");
+      if (media) media.click();
+    }
+  });
+}
