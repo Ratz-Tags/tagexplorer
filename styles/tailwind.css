@@ -7,18 +7,6 @@
 color-scheme: dark;
 --safe-area-top: env(safe-area-inset-top, 0px);
 --safe-area-right: env(safe-area-inset-right, 0px);
---safe-area-bottom: env(safe-area-inset-bottom, 0px);
---safe-area-left: env(safe-area-inset-left, 0px);
---motion-scale: 1;
---pressure-glow-low: rgba(102, 243, 255, 0.45);
---pressure-glow-mid: rgba(255, 100, 212, 0.42);
---pressure-glow-high: rgba(255, 130, 87, 0.48);
---pressure-glow-max: rgba(255, 47, 100, 0.6);
-}
-
-:root[data-motion="reduced"] {
---motion-scale: 0;
-scroll-behavior: auto;
 }
 
 :root[data-motion="reduced"] * {
@@ -3183,5 +3171,120 @@ body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
 /* Slideshow Transitions */
 .artist-card img {
   transition: opacity 0.3s ease-in-out;
+}
+
+
+/* Enhanced Aesthetics - Feminized & Humiliating */
+
+/* deeply feminized card glow */
+.artist-card {
+  border-color: rgba(255, 100, 212, 0.3) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 100, 212, 0.1) !important;
+}
+
+.artist-card:hover {
+  border-color: var(--fem-pink) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 100, 212, 0.4) !important;
+  transform: translateY(-4px) scale(1.01);
+}
+
+/* Slideshow toggle specific styling */
+.slideshow-toggle {
+  color: var(--fem-pink) !important;
+  border-color: rgba(255, 100, 212, 0.3) !important;
+  background: rgba(255, 100, 212, 0.05) !important;
+}
+
+.slideshow-toggle:hover {
+  background: rgba(255, 100, 212, 0.2) !important;
+  box-shadow: 0 0 10px var(--fem-pink) !important;
+}
+
+.slideshow-toggle.active {
+  background: rgba(255, 100, 212, 0.3) !important;
+  border-color: var(--fem-pink) !important;
+  box-shadow: inset 0 0 10px rgba(255, 100, 212, 0.5) !important;
+  animation: pulse-pink 2s infinite;
+}
+
+@keyframes pulse-pink {
+  0% { box-shadow: 0 0 5px var(--fem-pink); }
+  50% { box-shadow: 0 0 15px var(--fem-pink); }
+  100% { box-shadow: 0 0 5px var(--fem-pink); }
+}
+
+/* Humiliation/Empty State Enhancement */
+.gallery-empty-humiliation {
+  border-color: var(--humiliation-red) !important;
+  background: linear-gradient(135deg, rgba(76, 5, 25, 0.4), rgba(0, 0, 0, 0.8)) !important;
+  box-shadow: 0 0 30px rgba(255, 47, 100, 0.2) !important;
+}
+
+.gallery-empty-msg {
+  color: #ffb3c1 !important;
+  text-shadow: 0 0 5px rgba(255, 47, 100, 0.5);
+}
+
+/* Scrollbar refinement */
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, var(--fem-pink), var(--fem-purple)) !important;
+  border-radius: 4px !important;
+}
+
+/* Selection color */
+::selection {
+  background: var(--fem-pink) !important;
+  color: white !important;
+}
+
+/* Tag Buttons */
+.tag-button {
+  border-color: rgba(255, 100, 212, 0.2) !important;
+  background: rgba(255, 100, 212, 0.05) !important;
+  color: #ffb3e6 !important;
+}
+
+.tag-button:hover {
+  border-color: var(--fem-pink) !important;
+  background: rgba(255, 100, 212, 0.15) !important;
+  box-shadow: 0 0 10px rgba(255, 100, 212, 0.3) !important;
+}
+
+.tag-button.active {
+  background: rgba(255, 100, 212, 0.25) !important;
+  border-color: var(--fem-pink) !important;
+  box-shadow: 0 0 15px var(--fem-pink) !important;
+  color: white !important;
+}
+
+/* Zoom Controls */
+.zoom-next, .zoom-prev, .zoom-close, .zoom-back-btn {
+  border-color: rgba(176, 38, 255, 0.4) !important;
+  color: #e0aaff !important;
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+.zoom-next:hover, .zoom-prev:hover, .zoom-close:hover, .zoom-back-btn:hover {
+  border-color: var(--fem-purple) !important;
+  color: white !important;
+  box-shadow: 0 0 15px var(--fem-purple) !important;
+  background: rgba(176, 38, 255, 0.2) !important;
+}
+
+/* General Control Buttons */
+.control-btn, .audio-toggle, .theme-toggle, .sidebar-toggle {
+  border-color: rgba(255, 100, 212, 0.25) !important;
+  color: #ffcce6 !important;
+}
+
+.control-btn:hover, .audio-toggle:hover, .theme-toggle:hover, .sidebar-toggle:hover {
+  border-color: var(--fem-pink) !important;
+  box-shadow: 0 0 12px rgba(255, 100, 212, 0.4) !important;
+  transform: scale(1.05);
+}
+
+/* Headings/Text enhancement */
+h1, h2, h3, .landing-logo, .tag-explorer-title {
+  text-shadow: 0 0 10px rgba(255, 100, 212, 0.5), 0 0 20px rgba(176, 38, 255, 0.3) !important;
 }
 
