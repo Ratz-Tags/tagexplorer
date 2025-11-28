@@ -61,16 +61,16 @@ const virtualState = {
 
 const IMAGE_OBSERVER_ROOT_MARGIN = "160px";
 const IMAGE_OBSERVER_THRESHOLD = 0.01;
-const DEFAULT_EAGER_IMAGE_COUNT = 12; // Increased for better initial load
+const DEFAULT_EAGER_IMAGE_COUNT = 24; // Increased for better initial load
 const IDLE_FALLBACK_TIMEOUT = 800; // Reduced timeout
 const PRIME_VISIBLE_BUFFER = 320; // Increased buffer
 
-const IMAGE_FETCH_CONCURRENCY = 6; // Increased concurrency
+const IMAGE_FETCH_CONCURRENCY = 12; // Increased concurrency
 const imageFetchQueue = [];
 let activeImageFetches = 0;
 
 const IMAGE_FETCH_MAX_RETRIES = 4;
-const IMAGE_FETCH_BASE_DELAY = 500; // Reduced base delay
+const IMAGE_FETCH_BASE_DELAY = 100; // Reduced base delay
 const IMAGE_FETCH_MAX_DELAY = 6500;
 
 // Microtask scheduler used by the image fetch queue; provide a local fallback
@@ -1268,12 +1268,28 @@ function setBestImage(artist, img) {
             if (card && !card.__slideshowInitialized) {
               card.__slideshowInitialized = true;
               
+              // Reveal the slideshow toggle button if present
+              const toggleBtn = card.querySelector('.slideshow-toggle');
+              if (toggleBtn) {
+                toggleBtn.style.display = 'inline-block';
+              }
+
               // Desktop hover
               card.addEventListener('mouseenter', () => {
-                startSlideshow(img);
+                // Only auto-start if not manually toggled on (to avoid double intervals, though startSlideshow handles that)
+                // and if we want hover behavior. 
+                // If the user manually toggled it ON, we don't need to do anything on enter.
+                // If the user manually toggled it OFF (not implemented, just on/off), we might want to respect that?
+                // For now, let's say manual toggle overrides hover.
+                if (!img.__manualSlideshow) {
+                   startSlideshow(img);
+                }
               });
               card.addEventListener('mouseleave', () => {
-                stopSlideshow(img);
+                // Only stop if not manually toggled on
+                if (!img.__manualSlideshow) {
+                  stopSlideshow(img);
+                }
               });
               
               // Mobile auto-cycle via IntersectionObserver is handled globally or by a separate observer
@@ -1389,7 +1405,7 @@ function startSlideshow(img) {
   
   img.__slideshowInterval = setInterval(() => {
     cycleCardImage(img, 1);
-  }, 1200); // 1.2s per slide
+  }, 2500); // 2.5s per slide
 }
 
 function stopSlideshow(img) {
@@ -2387,6 +2403,31 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       showSimilarArtistsModal(artist, { limit: 12, minSimilarity: 0.05 });
     });
 
+    // Slideshow toggle button (hidden by default)
+    const slideshowBtn = document.createElement("button");
+    slideshowBtn.type = "button";
+    slideshowBtn.className = "slideshow-toggle copy-button"; // Reuse copy-button style for consistency
+    slideshowBtn.textContent = "▶️";
+    slideshowBtn.title = "Toggle slideshow";
+    slideshowBtn.style.display = "none"; // Hidden until we know we have multiple images
+    slideshowBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (!img.__slideshowUrls || img.__slideshowUrls.length <= 1) return;
+      
+      img.__manualSlideshow = !img.__manualSlideshow;
+      if (img.__manualSlideshow) {
+        startSlideshow(img);
+        slideshowBtn.textContent = "⏸️";
+        slideshowBtn.title = "Pause slideshow";
+        slideshowBtn.classList.add("active");
+      } else {
+        stopSlideshow(img);
+        slideshowBtn.textContent = "▶️";
+        slideshowBtn.title = "Play slideshow";
+        slideshowBtn.classList.remove("active");
+      }
+    };
+
     const actions = document.createElement("div");
     actions.className = "artist-actions";
     actions.style.display = "flex";
@@ -2396,6 +2437,7 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     actions.appendChild(pinBtn);
     actions.appendChild(reloadBtn);
     actions.appendChild(similarBtn);
+    actions.appendChild(slideshowBtn);
   // Profile link removed per UI update
     actions.appendChild(tagsToggle);
 
