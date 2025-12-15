@@ -42,7 +42,7 @@ jobs:
       - name: Inject OpenRouter API Key
         run: |
           if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
-            cat > openrouter-api.local.js << 'EOF'
+            cat > openrouter-api.local.js << EOF
           /**
            * OpenRouter API Configuration (Injected via GitHub Actions)
            * This file is generated during deployment
@@ -53,6 +53,16 @@ jobs:
           EOF
           else
             echo "Warning: OPENROUTER_API_KEY secret not set"
+            # Create placeholder file so script loading doesn't fail
+            cat > openrouter-api.local.js << 'EOF'
+          /**
+           * OpenRouter API Configuration (Injected via GitHub Actions)
+           * This file is generated during deployment
+           */
+          if (typeof window !== 'undefined') {
+            window._openRouterApiKey = null;
+          }
+          EOF
           fi
 
       - name: Setup Pages

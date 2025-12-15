@@ -472,7 +472,15 @@ function createFullscreenViewer(options = {}) {
 function setupKeyboardShortcuts(shortcuts = {}) {
   document.addEventListener("keydown", (e) => {
     // Skip if typing in an input
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") {
+    const target = e.target;
+    if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
+      return;
+    }
+    
+    // Explicitly exclude AI companion input
+    if (target?.id === 'companion-input' || 
+        target?.closest('#ai-companion') ||
+        target?.closest('.ai-companion')) {
       return;
     }
 

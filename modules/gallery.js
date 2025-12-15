@@ -3481,7 +3481,18 @@ if (typeof document !== "undefined") {
     if (document.querySelector(".fullscreen-viewer.open")) return;
     
     // If search input is focused, don't interfere
-    if (document.activeElement && (document.activeElement.tagName === "INPUT" || document.activeElement.tagName === "TEXTAREA")) return;
+    const activeEl = document.activeElement;
+    if (activeEl) {
+      const tagName = activeEl.tagName;
+      if (tagName === "INPUT" || tagName === "TEXTAREA") return;
+      
+      // Explicitly exclude AI companion input
+      if (activeEl.id === "companion-input" || 
+          activeEl.closest("#ai-companion") ||
+          activeEl.closest(".ai-companion")) {
+        return;
+      }
+    }
 
     const active = document.activeElement;
     if (!active || !active.classList.contains("artist-card")) return;

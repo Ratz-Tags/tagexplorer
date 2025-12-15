@@ -674,6 +674,10 @@ function openTagExplorer() {
   }
   if (typeof document !== 'undefined' && document.body) {
     document.body.classList.add('filters-open');
+    // Add class for fold-inner mode to control gallery layout
+    if (isInnerMode) {
+      document.body.classList.add('tag-explorer-open');
+    }
   }
   
   if (filterTriggerEl) {
@@ -718,14 +722,17 @@ function openTagExplorer() {
 }
 
 function closeTagExplorer() {
-  if (!popoverEl || !isOpen) return;
+  if (!popoverEl) return;
+  
+  // Check fold mode explicitly
+  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
+  const isCoverMode = foldMode === 'fold-cover' || 
+    (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px) and (orientation: portrait)').matches);
+  const isInnerMode = foldMode === 'fold-inner' || 
+    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches && !isCoverMode);
   
   // Don't close on fold-inner mode (persistent sidebar)
-  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
-  const isInnerMode = foldMode === 'fold-inner' || 
-    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches);
-  
-  if (isInnerMode) {
+  if (isInnerMode && !isCoverMode) {
     // On fold-inner, just update aria but keep visible
     const filterButtons = [
       document.getElementById('filters-btn'),
@@ -735,6 +742,7 @@ function closeTagExplorer() {
     return;
   }
   
+  // Always allow closing on fold-cover mode
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
@@ -753,6 +761,7 @@ function closeTagExplorer() {
   }
   if (typeof document !== 'undefined' && document.body) {
     document.body.classList.remove('filters-open');
+    document.body.classList.remove('tag-explorer-open');
   }
   
   if (filterTriggerEl) {

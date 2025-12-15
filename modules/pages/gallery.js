@@ -655,6 +655,14 @@ async function setupCommandDeck() {
       if (['input', 'textarea', 'select'].includes(normalized)) return;
     }
     if (target?.isContentEditable) return;
+    
+    // Explicitly exclude AI companion input
+    if (target?.id === 'companion-input' || 
+        target?.closest('#ai-companion') ||
+        target?.closest('.ai-companion')) {
+      return;
+    }
+    
     const commandId = COMMAND_KEYBOARD_BINDINGS[event.code];
     if (!commandId) return;
     event.preventDefault();

@@ -124,11 +124,11 @@ let chatHistory = [];
 let isMinimized = false;
 let currentEmotion = COMPANION_EMOTIONS.idle;
 let aiConfig = {
-  provider: 'openai', // 'openai', 'anthropic', 'openrouter', or 'local'
+  provider: 'openrouter', // 'openai', 'anthropic', 'openrouter', or 'local'
   apiKey: null,
-  model: 'gpt-4o-mini', // Model varies by provider
+  model: 'gryphe/mythomist-7b:free', // Default NSFW-friendly model (better for uncensored content than Llama)
   enabled: false,
-  nsfwEnabled: false, // Enable NSFW content (requires NSFW-capable provider)
+  nsfwEnabled: true, // Enable NSFW content (default enabled for OpenRouter)
 };
 
 // Load OpenRouter API key from window (injected via GitHub Actions or local file)
@@ -163,6 +163,17 @@ async function loadAIConfig() {
       // Ensure NSFW is only enabled for compatible providers
       if (aiConfig.nsfwEnabled && aiConfig.provider !== 'openrouter' && aiConfig.provider !== 'local') {
         aiConfig.nsfwEnabled = false;
+      }
+    } else {
+      // No stored config - try to auto-configure with OpenRouter key
+      const defaultKey = await loadOpenRouterKey();
+      if (defaultKey) {
+        aiConfig.provider = 'openrouter';
+        aiConfig.apiKey = defaultKey;
+        aiConfig.enabled = true;
+        aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
+        aiConfig.model = 'gryphe/mythomist-7b:free'; // Best free NSFW model
+        saveAIConfig(); // Save the auto-configuration
       }
     }
     
@@ -267,17 +278,17 @@ async function callOpenRouter(messages, systemPrompt) {
     throw new Error('OpenRouter API key not configured');
   }
 
-  // NSFW-friendly models on OpenRouter
+  // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
   const nsfwModels = {
-    'meta-llama/llama-3.1-8b-instruct:free': true,
+    'gryphe/mythomist-7b:free': true, // Best for creative/NSFW content, uncensored
+    'undi95/toppy-m-7b:free': true, // Also excellent for uncensored content
+    'meta-llama/llama-3.1-8b-instruct:free': true, // General purpose, may have some filters
     'mistralai/mistral-7b-instruct:free': true,
     'openchat/openchat-7b:free': true,
-    'gryphe/mythomist-7b:free': true,
-    'undi95/toppy-m-7b:free': true,
   };
 
   const defaultModel = aiConfig.nsfwEnabled 
-    ? 'meta-llama/llama-3.1-8b-instruct:free'
+    ? 'gryphe/mythomist-7b:free' // Best free NSFW model on OpenRouter
     : 'openai/gpt-4o-mini';
 
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -674,14 +685,20 @@ function createSettingsModal() {
         </div>
         <div class="setting-group">
           <label>Model</label>
+          <select 
+            id="ai-model" 
+            class="setting-input"
+          >
+            <!-- Options will be populated dynamically based on provider -->
+          </select>
           <input 
             type="text" 
-            id="ai-model" 
+            id="ai-model-custom" 
             class="setting-input" 
-            placeholder="See guide for model suggestions"
-            value="${aiConfig.model || ''}"
+            style="display: none; margin-top: 0.5rem;"
+            placeholder="Enter custom model name..."
           />
-          <small id="model-hint">OpenRouter: meta-llama/llama-3.1-8b-instruct:free (NSFW) | Local: llama3.2, mistral, etc.</small>
+          <small id="model-hint">Select a model from the dropdown or choose "Custom" to enter your own</small>
         </div>
         <div class="setting-actions">
           <button class="setting-save">Save</button>
@@ -939,6 +956,22 @@ function createCompanionElement() {
         border-color: rgba(255, 100, 212, 0.5);
       }
       
+      /* Select dropdown specific styling */
+      select.setting-input {
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff64d4' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        padding-right: 36px;
+      }
+      
+      select.setting-input option {
+        background: rgba(9, 10, 18, 0.95);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 8px;
+      }
+      
       .setting-group small {
         display: block;
         color: rgba(255, 255, 255, 0.5);
@@ -1090,10 +1123,31 @@ export async function initAICompanion() {
     };
     
     sendBtn.addEventListener('click', sendMessage);
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+    
+    // Prevent keyboard events from bubbling to gallery handlers
+    input.addEventListener('keydown', (e) => {
+      // Stop propagation for all keys to prevent gallery navigation
+      e.stopPropagation();
+      
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
         sendMessage();
       }
+    });
+    
+    input.addEventListener('keypress', (e) => {
+      // Stop propagation for all keys
+      e.stopPropagation();
+    });
+    
+    input.addEventListener('keyup', (e) => {
+      // Stop propagation for all keys
+      e.stopPropagation();
+    });
+    
+    // Prevent focus from causing scroll issues
+    input.addEventListener('focus', (e) => {
+      e.stopPropagation();
     });
   }
   
@@ -1129,33 +1183,126 @@ export async function initAICompanion() {
         closeBtn?.addEventListener('click', closeModal);
         cancelBtn?.addEventListener('click', closeModal);
         
-        // Update model hint based on provider
+        // Model options for each provider
+        const modelOptions = {
+          openrouter: [
+            { value: 'gryphe/mythomist-7b:free', label: 'Mythomist 7B (Best NSFW) ⭐' },
+            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Excellent NSFW)' },
+            { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General)' },
+            { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B' },
+            { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B' },
+            { value: 'custom', label: '--- Custom Model ---' },
+          ],
+          local: [
+            { value: 'llama3.2', label: 'Llama 3.2' },
+            { value: 'llama3.1', label: 'Llama 3.1' },
+            { value: 'mistral', label: 'Mistral' },
+            { value: 'openchat', label: 'OpenChat' },
+            { value: 'mythomist', label: 'Mythomist' },
+            { value: 'toppy-m', label: 'Toppy-M' },
+            { value: 'custom', label: '--- Custom Model ---' },
+          ],
+          openai: [
+            { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Cheapest)' },
+            { value: 'gpt-4o', label: 'GPT-4o' },
+            { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+            { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+            { value: 'custom', label: '--- Custom Model ---' },
+          ],
+          anthropic: [
+            { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku (Fastest)' },
+            { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+            { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+            { value: 'custom', label: '--- Custom Model ---' },
+          ],
+        };
+        
+        // Function to populate model dropdown
+        function populateModelDropdown(provider, currentModel = '') {
+          const modelSelect = document.getElementById('ai-model');
+          const modelCustom = document.getElementById('ai-model-custom');
+          const modelHint = document.getElementById('model-hint');
+          
+          if (!modelSelect) return;
+          
+          const options = modelOptions[provider] || [];
+          modelSelect.innerHTML = '';
+          
+          // Add options
+          options.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.label;
+            if (opt.value === currentModel || (!currentModel && opt.value !== 'custom' && options.indexOf(opt) === 0)) {
+              option.selected = true;
+            }
+            modelSelect.appendChild(option);
+          });
+          
+          // Show/hide custom input based on selection
+          const showCustom = modelSelect.value === 'custom';
+          if (modelCustom) {
+            modelCustom.style.display = showCustom ? 'block' : 'none';
+            if (showCustom && currentModel && !options.find(o => o.value === currentModel)) {
+              modelCustom.value = currentModel;
+            } else if (!showCustom) {
+              modelCustom.value = '';
+            }
+          }
+          
+          // Update hint
+          if (modelHint) {
+            if (provider === 'openrouter') {
+              modelHint.textContent = 'Best for NSFW: Mythomist or Toppy-M. Llama 3.1 is general-purpose.';
+            } else if (provider === 'local') {
+              modelHint.textContent = 'Install models via: ollama pull <model-name>';
+            } else if (provider === 'openai') {
+              modelHint.textContent = 'GPT-4o Mini is the cheapest option. GPT-4o is more capable.';
+            } else if (provider === 'anthropic') {
+              modelHint.textContent = 'Haiku is fastest/cheapest. Opus is most capable.';
+            }
+          }
+        }
+        
+        // Update model dropdown based on provider
         const providerSelect = document.getElementById('ai-provider');
-        const modelInput = document.getElementById('ai-model');
+        const modelSelect = document.getElementById('ai-model');
+        const modelCustom = document.getElementById('ai-model-custom');
         const modelHint = document.getElementById('model-hint');
+        
+        // Initialize dropdown on modal open
+        populateModelDropdown(aiConfig.provider, aiConfig.model);
         
         providerSelect?.addEventListener('change', (e) => {
           const provider = e.target.value;
-          if (provider === 'openrouter') {
-            modelInput.placeholder = 'meta-llama/llama-3.1-8b-instruct:free';
-            modelHint.textContent = 'NSFW models: meta-llama/llama-3.1-8b-instruct:free, mistralai/mistral-7b-instruct:free';
-          } else if (provider === 'local') {
-            modelInput.placeholder = 'llama3.2';
-            modelHint.textContent = 'Common models: llama3.2, mistral, openchat, mythomist (install via: ollama pull <model>)';
-          } else if (provider === 'openai') {
-            modelInput.placeholder = 'gpt-4o-mini';
-            modelHint.textContent = 'Recommended: gpt-4o-mini (cheapest), gpt-4o, gpt-3.5-turbo';
-          } else if (provider === 'anthropic') {
-            modelInput.placeholder = 'claude-3-haiku-20240307';
-            modelHint.textContent = 'Recommended: claude-3-haiku-20240307 (fastest), claude-3-sonnet-20240229';
+          populateModelDropdown(provider);
+        });
+        
+        // Handle custom model selection
+        modelSelect?.addEventListener('change', (e) => {
+          const showCustom = e.target.value === 'custom';
+          if (modelCustom) {
+            modelCustom.style.display = showCustom ? 'block' : 'none';
+            if (showCustom) {
+              modelCustom.focus();
+            }
           }
         });
         
         saveBtn?.addEventListener('click', () => {
           const provider = document.getElementById('ai-provider')?.value || 'openai';
           const apiKey = document.getElementById('ai-api-key')?.value || '';
-          const model = document.getElementById('ai-model')?.value || '';
+          const modelSelect = document.getElementById('ai-model');
+          const modelCustom = document.getElementById('ai-model-custom');
           const nsfwEnabled = document.getElementById('ai-nsfw-enabled')?.checked || false;
+          
+          // Get model from dropdown or custom input
+          let model = '';
+          if (modelSelect?.value === 'custom') {
+            model = modelCustom?.value?.trim() || '';
+          } else {
+            model = modelSelect?.value || '';
+          }
           
           aiConfig.provider = provider;
           aiConfig.apiKey = apiKey;
@@ -1164,7 +1311,9 @@ export async function initAICompanion() {
           // Set default models if not provided
           if (!model) {
             if (provider === 'openrouter') {
-              aiConfig.model = 'meta-llama/llama-3.1-8b-instruct:free';
+              aiConfig.model = aiConfig.nsfwEnabled 
+                ? 'gryphe/mythomist-7b:free' // Best for NSFW
+                : 'openai/gpt-4o-mini';
             } else if (provider === 'local') {
               aiConfig.model = 'llama3.2';
             } else if (provider === 'openai') {
@@ -1202,7 +1351,76 @@ export async function initAICompanion() {
       // Populate fields
       document.getElementById('ai-provider').value = aiConfig.provider;
       document.getElementById('ai-api-key').value = aiConfig.apiKey || '';
-      document.getElementById('ai-model').value = aiConfig.model || '';
+      
+      // Populate model dropdown (function is defined inside the modal creation block)
+      const currentModel = aiConfig.model || '';
+      const provider = aiConfig.provider;
+      
+      // Get references to elements
+      const modelSelect = document.getElementById('ai-model');
+      const modelCustom = document.getElementById('ai-model-custom');
+      
+      // Define model options (same as inside the block)
+      const modelOptions = {
+        openrouter: [
+          { value: 'gryphe/mythomist-7b:free', label: 'Mythomist 7B (Best NSFW) ⭐' },
+          { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Excellent NSFW)' },
+          { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General)' },
+          { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B' },
+          { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B' },
+          { value: 'custom', label: '--- Custom Model ---' },
+        ],
+        local: [
+          { value: 'llama3.2', label: 'Llama 3.2' },
+          { value: 'llama3.1', label: 'Llama 3.1' },
+          { value: 'mistral', label: 'Mistral' },
+          { value: 'openchat', label: 'OpenChat' },
+          { value: 'mythomist', label: 'Mythomist' },
+          { value: 'toppy-m', label: 'Toppy-M' },
+          { value: 'custom', label: '--- Custom Model ---' },
+        ],
+        openai: [
+          { value: 'gpt-4o-mini', label: 'GPT-4o Mini (Cheapest)' },
+          { value: 'gpt-4o', label: 'GPT-4o' },
+          { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+          { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
+          { value: 'custom', label: '--- Custom Model ---' },
+        ],
+        anthropic: [
+          { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku (Fastest)' },
+          { value: 'claude-3-sonnet-20240229', label: 'Claude 3 Sonnet' },
+          { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
+          { value: 'custom', label: '--- Custom Model ---' },
+        ],
+      };
+      
+      // Populate dropdown
+      if (modelSelect) {
+        const options = modelOptions[provider] || [];
+        modelSelect.innerHTML = '';
+        
+        options.forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          if (opt.value === currentModel || (!currentModel && opt.value !== 'custom' && options.indexOf(opt) === 0)) {
+            option.selected = true;
+          }
+          modelSelect.appendChild(option);
+        });
+        
+        // Check if current model is in options, otherwise set to custom
+        if (currentModel) {
+          const hasModel = options.some(opt => opt.value === currentModel);
+          if (!hasModel) {
+            modelSelect.value = 'custom';
+            if (modelCustom) {
+              modelCustom.value = currentModel;
+              modelCustom.style.display = 'block';
+            }
+          }
+        }
+      }
       
       settingsModal.classList.add('visible');
     });

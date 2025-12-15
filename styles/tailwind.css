@@ -1516,6 +1516,16 @@ body[data-fold-mode="fold-cover"] .tag-explorer-sidebar {
   transform: translateY(110%);
   padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -24px 70px -35px rgba(255, 118, 214, 0.35);
+  /* Ensure sidebar never affects gallery layout on fold-cover */
+  position: fixed;
+  z-index: 1000;
+}
+
+/* Ensure gallery is never affected by sidebar on fold-cover */
+body[data-fold-mode="fold-cover"] .gallery-shell {
+  margin-left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 body[data-fold-mode="fold-cover"] .tag-explorer-sidebar.open {
   transform: translateY(0);
@@ -3194,10 +3204,20 @@ body[data-fold-mode="fold-cover"] .landing-ritual__secondary {
     opacity: 1 !important;
   }
 
-  body[data-fold-mode="fold-inner"] .gallery-shell,
-  body.fold-inner .gallery-shell {
+  /* Only shift gallery when sidebar is actually open on fold-inner */
+  body[data-fold-mode="fold-inner"].tag-explorer-open .gallery-shell,
+  body.fold-inner.tag-explorer-open .gallery-shell,
+  body[data-fold-mode="fold-inner"]:has(.tag-explorer-sidebar.open) .gallery-shell,
+  body.fold-inner:has(.tag-explorer-sidebar.open) .gallery-shell {
     margin-left: 400px;
     width: calc(100% - 400px);
+  }
+  
+  /* Ensure gallery is full width when sidebar is closed on fold-inner */
+  body[data-fold-mode="fold-inner"]:not(.tag-explorer-open):not(:has(.tag-explorer-sidebar.open)) .gallery-shell,
+  body.fold-inner:not(.tag-explorer-open):not(:has(.tag-explorer-sidebar.open)) .gallery-shell {
+    margin-left: 0;
+    width: 100%;
   }
 
   body[data-fold-mode="fold-inner"] .tag-explorer-overlay,
