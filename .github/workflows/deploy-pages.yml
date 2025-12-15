@@ -5,6 +5,11 @@ on:
     branches:
       - main
       - master
+    paths-ignore:
+      - 'artists.json'
+      - 'kink-tags.json'
+      - '.github/workflows/main.yml'
+      - '.github/workflows/Update.yml'
   workflow_dispatch:
 
 permissions:
