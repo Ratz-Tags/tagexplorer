@@ -1795,6 +1795,15 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   } catch (error) {
     console.error('[gallery] Failed to initialize tag explorer:', error);
   }
+  
+  // Initialize AI Companion
+  try {
+    const { initAICompanion } = await import('../components/ai-companion.js');
+    await initAICompanion();
+    console.log('[gallery] AI Companion initialized');
+  } catch (error) {
+    console.warn('[gallery] Failed to initialize AI Companion:', error);
+  }
   setupBackgroundRotation(setRandomBackground, {
     getActiveTags,
     getFilteredArtists,

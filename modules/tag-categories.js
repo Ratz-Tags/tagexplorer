@@ -1,6 +1,92 @@
 const DEFAULT_OTHER_CATEGORY = "All Tags";
 
-export const TAG_CATEGORY_RULES = [];
+export const TAG_CATEGORY_RULES = [
+  {
+    id: "character",
+    label: "Characters",
+    matcher: (tag) =>
+      /^(character:|char:|person:|persona:)/i.test(tag) ||
+      tag.includes("(") || // simplistic guess for "Name (Source)"
+      [
+        "miku",
+        "rin",
+        "len",
+        "luka",
+        "kaito",
+        "meiko",
+        "gumi",
+        "ia",
+        "yukari",
+        "teto",
+      ].some((n) => tag.includes(n)),
+  },
+  {
+    id: "artist",
+    label: "Artists",
+    matcher: (tag) => /^(artist:|art by|by )/i.test(tag),
+  },
+  {
+    id: "copyright",
+    label: "Copyright",
+    matcher: (tag) =>
+      /^(copyright:|series:|source:|game:|anime:|manga:)/i.test(tag) ||
+      [
+        "vocaloid",
+        "project sekai",
+        "touhou",
+        "genshin",
+        "honkai",
+        "blue archive",
+        "arknights",
+        "fate",
+        "idolmaster",
+        "love live",
+        "pokemon",
+      ].some((n) => tag.includes(n)),
+  },
+  {
+    id: "meta",
+    label: "Meta",
+    matcher: (tag) =>
+      /^(meta:|rating:|score:|user:|fav:|pool:)/i.test(tag) ||
+      ["absurdres", "highres", "translated", "commentary", "check_my_"].some(
+        (m) => tag.includes(m)
+      ),
+  },
+  {
+    id: "style",
+    label: "Style",
+    matcher: (tag) =>
+      /^(style:|medium:|tool:)/i.test(tag) ||
+      [
+        "monochrome",
+        "greyscale",
+        "sketch",
+        "traditional",
+        "watercolor",
+        "pixel art",
+        "3d",
+      ].some((s) => tag.includes(s)),
+  },
+  {
+    id: "anatomy",
+    label: "Anatomy",
+    matcher: (tag) =>
+      [
+        "hair",
+        "eyes",
+        "skin",
+        "legs",
+        "arms",
+        "breasts",
+        "thighs",
+        "tail",
+        "wings",
+        "ears",
+        "horns",
+      ].some((a) => tag.includes(a)),
+  },
+];
 
 function normalizeTagName(tag) {
   return String(tag ?? "")

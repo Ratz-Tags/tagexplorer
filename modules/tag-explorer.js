@@ -34,6 +34,7 @@ let searchDebounceTimer = null;
 // Height sync variables removed
 let filtersButtonEl = null;
 let outsideClickHandler = null;
+let isGlobalSearchMode = false;
 function setAllArtists(artists) {
   if (!Array.isArray(artists)) {
     allArtists = [];
@@ -159,19 +160,20 @@ function positionPopover() {
     !filtersButtonEl ||
     typeof window === "undefined"
   ) {
-
     return;
   }
 
   const btnRect = filtersButtonEl.getBoundingClientRect();
   if (!btnRect || !Number.isFinite(btnRect.top)) return;
 
-  const viewportHeight =
-    window.innerHeight || document.documentElement.clientHeight || 0;
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
   const panelRect = panelEl.getBoundingClientRect();
   const panelHeight = panelRect.height || panelEl.offsetHeight || 0;
+  const panelWidth = panelRect.width || popoverEl.offsetWidth || 0;
   const gutter = 16;
 
+  // Vertical positioning
   const spaceBelow = viewportHeight ? viewportHeight - btnRect.bottom - gutter : 0;
   const spaceAbove = btnRect.top - gutter;
   let flipped = false;
@@ -200,6 +202,63 @@ function positionPopover() {
       );
     } catch {
       // ignore style assignment issues
+    }
+  }
+
+  // Horizontal positioning: ensure popover stays within viewport
+  if (popoverEl.style.position === 'fixed' || getComputedStyle(popoverEl).position === 'fixed') {
+    // For fixed positioning, calculate left/right constraints
+    const popoverRect = popoverEl.getBoundingClientRect();
+    const currentLeft = popoverRect.left;
+    const currentRight = popoverRect.right;
+    const minLeft = gutter;
+    const maxRight = viewportWidth - gutter;
+    
+    let leftAdjust = 0;
+    let rightAdjust = 0;
+    
+    // Check if popover overflows on the left
+    if (currentLeft < minLeft) {
+      leftAdjust = minLeft - currentLeft;
+    }
+    
+    // Check if popover overflows on the right
+    if (currentRight > maxRight) {
+      rightAdjust = currentRight - maxRight;
+    }
+    
+    // Apply adjustments
+    if (leftAdjust > 0 || rightAdjust > 0) {
+      const currentLeftStyle = popoverEl.style.left;
+      const currentRightStyle = popoverEl.style.right;
+      
+      if (currentLeftStyle && currentLeftStyle !== 'auto') {
+        const leftValue = parseFloat(currentLeftStyle) || 0;
+        popoverEl.style.left = `${leftValue + leftAdjust - rightAdjust}px`;
+      } else if (currentRightStyle && currentRightStyle !== 'auto') {
+        const rightValue = parseFloat(currentRightStyle) || 0;
+        popoverEl.style.right = `${rightValue + rightAdjust - leftAdjust}px`;
+      } else {
+        // Fallback: use transform or margin
+        const currentTransform = popoverEl.style.transform || '';
+        const translateX = leftAdjust > 0 ? leftAdjust : (rightAdjust > 0 ? -rightAdjust : 0);
+        if (translateX !== 0) {
+          popoverEl.style.transform = `translateX(${translateX}px) ${currentTransform.replace(/translateX\([^)]+\)/g, '').trim()}`;
+        }
+      }
+    }
+  } else {
+    // For absolute positioning relative to button, ensure it doesn't overflow
+    const spaceRight = viewportWidth ? viewportWidth - btnRect.right - gutter : 0;
+    const spaceLeft = btnRect.left - gutter;
+    
+    // If popover would overflow on the right, align it to the right edge
+    if (panelWidth > 0 && spaceRight < panelWidth && spaceLeft > spaceRight) {
+      popoverEl.classList.add("align-left");
+      popoverEl.classList.remove("align-right");
+    } else {
+      popoverEl.classList.add("align-right");
+      popoverEl.classList.remove("align-left");
     }
   }
 
@@ -593,12 +652,25 @@ function openTagExplorer() {
   ].filter(Boolean);
   filterButtons.forEach(btn => btn.setAttribute('aria-expanded', 'true'));
   
-  // Show overlay on mobile
+  // Show overlay on mobile/cover mode
   const overlay = document.querySelector("#tag-explorer-overlay");
-  const foldMode = document.documentElement?.dataset?.foldMode;
-  const isCoverMode = foldMode === 'fold-cover' || (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px)').matches);
-  if (overlay && isCoverMode) {
+  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
+  const isCoverMode = foldMode === 'fold-cover' || 
+    (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px)').matches);
+  const isInnerMode = foldMode === 'fold-inner' || 
+    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches);
+  
+  // Only show overlay on cover mode, not inner mode
+  if (overlay && isCoverMode && !isInnerMode) {
     overlay.classList.add("visible");
+  }
+  
+  // On fold-inner mode, ensure sidebar is always visible
+  if (isInnerMode && popoverEl) {
+    popoverEl.classList.add("open");
+    popoverEl.style.transform = "translateX(0)";
+    popoverEl.style.visibility = "visible";
+    popoverEl.style.opacity = "1";
   }
   if (typeof document !== 'undefined' && document.body) {
     document.body.classList.add('filters-open');
@@ -647,6 +719,22 @@ function openTagExplorer() {
 
 function closeTagExplorer() {
   if (!popoverEl || !isOpen) return;
+  
+  // Don't close on fold-inner mode (persistent sidebar)
+  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
+  const isInnerMode = foldMode === 'fold-inner' || 
+    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches);
+  
+  if (isInnerMode) {
+    // On fold-inner, just update aria but keep visible
+    const filterButtons = [
+      document.getElementById('filters-btn'),
+      document.getElementById('cover-filters-btn'),
+    ].filter(Boolean);
+    filterButtons.forEach(btn => btn.setAttribute('aria-expanded', 'true'));
+    return;
+  }
+  
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
@@ -731,12 +819,18 @@ function initTagExplorer() {
     <div class="tag-explorer-header">
       <h2 class="tag-explorer-title">Filter Tags</h2>
       <div class="tag-explorer-controls">
+        <button type="button" class="tag-explorer-search-mode-toggle" aria-label="Toggle search mode" title="Toggle Global Search Mode">
+          <span class="search-mode-label">🔍</span>
+        </button>
         <button type="button" class="tag-explorer-expand-all" aria-label="Expand all categories" title="Expand All">⊞</button>
         <button type="button" class="tag-explorer-collapse-all" aria-label="Collapse all categories" title="Collapse All">⊟</button>
         <button type="button" class="tag-explorer-close" aria-label="Close tag explorer">×</button>
       </div>
     </div>
     <div class="tag-explorer-content">
+      <div class="tag-explorer-mode-notice" id="search-mode-notice" style="display: none;">
+        <span>🌐 Global Search Mode: Finding artists from all Danbooru posts</span>
+      </div>
       <div class="tag-explorer-sort">
         <div class="sort-options">
            <label class="sort-option" title="Sort by total number of images">
@@ -815,6 +909,49 @@ function initTagExplorer() {
     collapseAllBtn.addEventListener("click", () => collapseAllCategories());
   }
   
+  // Global search mode toggle
+  const searchModeToggle = popoverEl.querySelector(".tag-explorer-search-mode-toggle");
+  const searchModeNotice = popoverEl.querySelector("#search-mode-notice");
+  if (searchModeToggle) {
+    // Load saved state
+    try {
+      const saved = localStorage.getItem("tagexplorer:global-search-mode");
+      isGlobalSearchMode = saved === "true";
+    } catch (e) {}
+    updateSearchModeUI();
+    
+    searchModeToggle.addEventListener("click", () => {
+      isGlobalSearchMode = !isGlobalSearchMode;
+      try {
+        localStorage.setItem("tagexplorer:global-search-mode", String(isGlobalSearchMode));
+      } catch (e) {}
+      updateSearchModeUI();
+      // Trigger gallery refresh
+      if (typeof window !== "undefined" && typeof document !== "undefined") {
+        document.dispatchEvent(new CustomEvent("tags:updated", { 
+          detail: { globalSearchMode: isGlobalSearchMode } 
+        }));
+      }
+    });
+  }
+  
+  function updateSearchModeUI() {
+    if (searchModeToggle) {
+      searchModeToggle.classList.toggle("active", isGlobalSearchMode);
+      searchModeToggle.setAttribute("aria-pressed", String(isGlobalSearchMode));
+      const label = searchModeToggle.querySelector(".search-mode-label");
+      if (label) {
+        label.textContent = isGlobalSearchMode ? "🌐" : "🔍";
+        searchModeToggle.title = isGlobalSearchMode 
+          ? "Switch to Filter Mode (curated list)" 
+          : "Switch to Global Search Mode (all Danbooru artists)";
+      }
+    }
+    if (searchModeNotice) {
+      searchModeNotice.style.display = isGlobalSearchMode ? "block" : "none";
+    }
+  }
+  
   const overlay = document.querySelector("#tag-explorer-overlay");
   if (overlay) {
     overlay.addEventListener("click", () => closeTagExplorer());
@@ -862,4 +999,8 @@ function initTagExplorer() {
   isInitialized = true;
 }
 
-export { openTagExplorer, initTagExplorer, toggleTagExplorer, setAllArtists, getFilteredCounts };
+function getGlobalSearchMode() {
+  return isGlobalSearchMode;
+}
+
+export { openTagExplorer, initTagExplorer, toggleTagExplorer, setAllArtists, getFilteredCounts, getGlobalSearchMode };

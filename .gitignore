@@ -1,7 +1,12 @@
 # Ignore local Azure TTS secrets
 azure-tts.local.js
+# Ignore local API keys
+openrouter-api.local.js
 .github/instructions/*
 .github/copilot-instructions.md
 .github/prompts/promptsfile.prompt.md
 .github/chatmodes/chatmodes.chatmode.md
 node_modules
+docs/ai-companion-guide.md
+docs/github-secrets-setup.md
+docs/OPENROUTER_SETUP.md

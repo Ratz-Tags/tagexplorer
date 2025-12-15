@@ -11,7 +11,9 @@ import {
   filterValidImagePosts,
   isApiRateLimited,
   getRateLimitDetail,
+  fetchArtistsByTag,
 } from "./api.js";
+import { getGlobalSearchMode } from "./tag-explorer.js";
 import { handleArtistCopy } from "./sidebar.js";
 import { pickThumbnailCandidateUrls } from "./thumbnail-chooser.js";
 import { enhanceGalleryImages, injectImageQualityCss } from "./image-quality.js";
@@ -32,7 +34,8 @@ function getThumbnailUrl(artist) {
  */
 
 // Gallery state
-const VIRTUAL_BATCH_SIZE = 48;
+// Optimized batch size: balance between initial load performance and memory usage
+const VIRTUAL_BATCH_SIZE = 40; // Reduced from 48 for better initial render performance
 const MAX_VIRTUAL_CHUNKS = 10; // Increased from 5 to keep more chunks for infinite scroll
 const VIRTUAL_OVERSCAN_CHUNKS = 2; // Increased from 1 for better coverage
 
@@ -59,14 +62,16 @@ const virtualState = {
   recyclePool: [],
 };
 
-const IMAGE_OBSERVER_ROOT_MARGIN = "160px";
+const IMAGE_OBSERVER_ROOT_MARGIN = "80px"; // Reduced from 160px to prevent premature loading
 const IMAGE_OBSERVER_THRESHOLD = 0.01;
 const DEFAULT_EAGER_IMAGE_COUNT = 24; // Increased for better initial load
 const IDLE_FALLBACK_TIMEOUT = 800; // Reduced timeout
 const PRIME_VISIBLE_BUFFER = 320; // Increased buffer
 
-const IMAGE_FETCH_CONCURRENCY = 6; // Reduced from 12 to prevent network saturation
-const imageFetchQueue = [];
+const IMAGE_FETCH_CONCURRENCY = 8; // Optimized: increased slightly since server-side filtering reduces payload size
+const PREVIEW_FETCH_LIMIT = 3; // Only fetch 3 images for previews instead of 200
+const imageFetchQueue = []; // Regular priority queue
+const previewFetchQueue = []; // High priority queue for previews
 let activeImageFetches = 0;
 
 const IMAGE_FETCH_MAX_RETRIES = 4;
@@ -83,7 +88,9 @@ const scheduleMicrotask =
 
 function scheduleImageFetchProcessing() {
   if (activeImageFetches >= IMAGE_FETCH_CONCURRENCY) return;
-  const next = imageFetchQueue.shift();
+  
+  // Prioritize preview fetches (they're faster and needed for visible cards)
+  const next = previewFetchQueue.shift() || imageFetchQueue.shift();
   if (!next) return;
 
   activeImageFetches += 1;
@@ -101,15 +108,29 @@ function scheduleImageFetchProcessing() {
     });
 }
 
-function enqueueImageFetch(task) {
+function enqueueImageFetch(task, priority = false) {
   return new Promise((resolve, reject) => {
-    imageFetchQueue.push({ task, resolve, reject });
+    const item = { task, resolve, reject };
+    if (priority) {
+      previewFetchQueue.push(item);
+    } else {
+      imageFetchQueue.push(item);
+    }
     scheduleMicrotask(scheduleImageFetchProcessing);
   });
 }
 
-function queueFetchArtistImages(artistName, tags = [], options = {}) {
-  return enqueueImageFetch(() => fetchArtistImages(artistName, tags, options));
+function queueFetchArtistImages(artistName, tags = [], options = {}, isPreview = false) {
+  // Preview fetches get priority and use smaller limit
+  if (isPreview) {
+    const previewOptions = {
+      ...options,
+      limit: PREVIEW_FETCH_LIMIT,
+      page: 1,
+    };
+    return enqueueImageFetch(() => fetchArtistImages(artistName, tags, previewOptions), true);
+  }
+  return enqueueImageFetch(() => fetchArtistImages(artistName, tags, options), false);
 }
 
 const DEFAULT_AMBIENT_TAGS = [
@@ -686,26 +707,142 @@ async function populateArtistCounts({
   let processed = 0;
   const concurrency = resolveCountFetchConcurrency();
   
+  // Helper to check sessionStorage cache before making API call
+  function getCachedCount(artistName) {
+    if (typeof sessionStorage === "undefined") return null;
+    try {
+      const cacheKey = `danbooru-count-artist-${artistName}`;
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') {
+          const created = Number(parsed.t) || 0;
+          const ttl = Number(parsed.ttl) || 0;
+          if (ttl === 0 || Date.now() - created <= ttl) {
+            if (typeof parsed.v === 'number') return parsed.v;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore sessionStorage errors
+    }
+    return null;
+  }
+  
   for (let i = 0; i < artists.length; i += batchSize) {
     if (generation !== filterGeneration) return;
     const batch = artists.slice(i, i + batchSize);
     
     // Optimization: Separate artists that need fetching from those that don't
     const needsFetch = [];
+    const needsTagCount = [];
     
     for (const artist of batch) {
       if (!artist) continue;
       
-      // If we need tag-specific counts, we always fetch (unless we add caching for that too later)
-      // If we don't have a total count, we need to fetch.
-      if (mostCommonTag || typeof artist.postCount !== "number") {
-        needsFetch.push(artist);
-      } else {
-        // Fast path: data is available
+      // Fast path: check if we already have postCount from artists.json
+      if (typeof artist.postCount === "number" && artist.postCount > 0) {
         artist._totalImageCount = artist.postCount;
         artist._imageCount = artist.postCount;
-        artist._mostCommonTagCount = 0;
+        
+        // Check if we need tag-specific count
+        if (mostCommonTag) {
+          // Check cache for tag count first
+          const tagCacheKey = `danbooru-count-tags-${artist.artistName}+${mostCommonTag}`;
+          let tagCountCached = null;
+          if (typeof sessionStorage !== "undefined") {
+            try {
+              const raw = sessionStorage.getItem(tagCacheKey);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                  const created = Number(parsed.t) || 0;
+                  const ttl = Number(parsed.ttl) || 0;
+                  if (ttl === 0 || Date.now() - created <= ttl) {
+                    tagCountCached = typeof parsed.v === 'number' ? parsed.v : 0;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+          
+          if (tagCountCached !== null) {
+            artist._mostCommonTagCount = tagCountCached;
+          } else {
+            needsTagCount.push(artist);
+          }
+        } else {
+          artist._mostCommonTagCount = 0;
+        }
+        continue;
       }
+      
+      // Check sessionStorage cache before deciding to fetch
+      const cachedCount = getCachedCount(artist.artistName);
+      if (cachedCount !== null) {
+        artist._totalImageCount = cachedCount;
+        artist._imageCount = cachedCount;
+        
+        if (mostCommonTag) {
+          // Check tag count cache
+          const tagCacheKey = `danbooru-count-tags-${artist.artistName}+${mostCommonTag}`;
+          let tagCountCached = null;
+          if (typeof sessionStorage !== "undefined") {
+            try {
+              const raw = sessionStorage.getItem(tagCacheKey);
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && typeof parsed === 'object') {
+                  const created = Number(parsed.t) || 0;
+                  const ttl = Number(parsed.ttl) || 0;
+                  if (ttl === 0 || Date.now() - created <= ttl) {
+                    tagCountCached = typeof parsed.v === 'number' ? parsed.v : 0;
+                  }
+                }
+              }
+            } catch (e) {}
+          }
+          
+          if (tagCountCached !== null) {
+            artist._mostCommonTagCount = tagCountCached;
+          } else {
+            needsTagCount.push(artist);
+          }
+        } else {
+          artist._mostCommonTagCount = 0;
+        }
+        continue;
+      }
+      
+      // Need to fetch from API
+      needsFetch.push(artist);
+    }
+
+    // Fetch tag counts separately (these are lighter requests)
+    if (needsTagCount.length > 0 && typeof fetchPostCountForTagsFn === "function") {
+      let tagCursor = 0;
+      const tagWorkerCount = Math.min(concurrency, needsTagCount.length);
+      const tagWorkers = Array.from({ length: tagWorkerCount }, () =>
+        (async function worker() {
+          while (true) {
+            if (generation !== filterGeneration) return;
+            const index = tagCursor++;
+            if (index >= needsTagCount.length) return;
+            
+            const artist = needsTagCount[index];
+            try {
+              const tagCount = await fetchPostCountForTagsFn([
+                artist.artistName,
+                mostCommonTag,
+              ]);
+              artist._mostCommonTagCount = Number(tagCount) || 0;
+            } catch (error) {
+              artist._mostCommonTagCount = 0;
+            }
+          }
+        })()
+      );
+      await Promise.all(tagWorkers);
     }
 
     // Only spin up workers if we actually have network requests to make
@@ -721,10 +858,7 @@ async function populateArtistCounts({
             
             const artist = needsFetch[index];
             try {
-              const totalCount =
-                typeof artist.postCount === "number"
-                  ? artist.postCount
-                  : await getArtistImageCount(artist.artistName);
+              const totalCount = await getArtistImageCount(artist.artistName);
               artist._totalImageCount = totalCount;
               artist._imageCount = totalCount;
               
@@ -1101,8 +1235,9 @@ function setBestImage(artist, img) {
 
   const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
 
-  // API cache key matches the format used in api.js fetchArtistImages
-  // Use the same defaults as fetchArtistImages: page=1, limit=200, order=approvals
+  // Check both preview cache (fast, limit=3) and full cache (limit=200)
+  // Prefer preview cache for initial load, fall back to full cache if available
+  const previewCacheKey = `danbooru-api-${artistData.artistName}-preview`;
   const _cache_page = 1;
   const _cache_limit = 200;
   const _cache_order = 'approvals';
@@ -1110,6 +1245,18 @@ function setBestImage(artist, img) {
   const apiCacheKey = `danbooru-api-${artistData.artistName}-${cacheSignature}`;
 
   function getApiCache() {
+    // First check preview cache (faster, smaller)
+    try {
+      const previewCached = sessionStorage.getItem(previewCacheKey);
+      if (previewCached) {
+        const parsed = JSON.parse(previewCached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    
+    // Fall back to full cache
     const cached = sessionStorage.getItem(apiCacheKey);
     if (!cached) return null;
     try {
@@ -1208,7 +1355,8 @@ function setBestImage(artist, img) {
         // Wait briefly to allow any rate-limited requests to complete before giving up
         const WAIT_MS = 300; // small grace period (reduced from 700ms)
         setTimeout(() => {
-          queueFetchArtistImages(artistData.artistName)
+          // Use preview mode for fallback too (faster)
+          queueFetchArtistImages(artistData.artistName, [], { order: 'score' }, true)
             .then((fallbackData) => {
               processApiData(fallbackData, true);
             })
@@ -1394,11 +1542,15 @@ function setBestImage(artist, img) {
       return;
     }
 
-    // For thumbnail images, fetch without tag filtering to get all artist images
-    // We'll do a more lenient filtering in processApiData
-    queueFetchArtistImages(artistData.artistName, [])
+    // For thumbnail previews, use preview mode (limit=3, priority queue)
+    // This is much faster and reduces API load
+    queueFetchArtistImages(artistData.artistName, [], { order: 'score' }, true)
       .then((data) => {
-        setApiCache(data);
+        // Cache the preview results with a preview-specific key
+        const previewCacheKey = `danbooru-api-${artistData.artistName}-preview`;
+        try {
+          sessionStorage.setItem(previewCacheKey, JSON.stringify(data));
+        } catch {}
         processApiData(data);
       })
       .catch((error) => {
@@ -2332,9 +2484,8 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
         // If we don't have images yet, fetch them
         if (!artist._slideshowImages) {
           try {
-            // Fetch a few images for the slideshow
-            // Use a separate limit/order if needed, but default is fine
-            const posts = await fetchArtistImages(artist.artistName, [], { limit: 6 });
+            // Fetch a few images for the slideshow using preview mode (faster)
+            const posts = await queueFetchArtistImages(artist.artistName, [], { limit: 6, order: 'score' }, true);
             artist._slideshowImages = posts
               .map(p => p.preview_file_url || p.large_file_url || p.file_url)
               .filter(Boolean);
@@ -2680,8 +2831,35 @@ async function filterArtists(reset = true, force = false) {
     const rawNameFilter = getArtistNameFilter ? getArtistNameFilter() : "";
     const artistNameFilter =
       typeof rawNameFilter === "string" ? rawNameFilter.toLowerCase() : "";
-
-    const sourceArtists = Array.isArray(allArtists) ? allArtists : [];
+    
+    // Check if global search mode is enabled
+    const isGlobalSearch = typeof getGlobalSearchMode === "function" && getGlobalSearchMode();
+    
+    let sourceArtists = Array.isArray(allArtists) ? allArtists : [];
+    
+    // If in global search mode and we have active tags, fetch artists from Danbooru
+    if (isGlobalSearch && activeTags.size > 0) {
+      try {
+        const searchTags = Array.from(activeTags);
+        const searchResults = await fetchArtistsByTag(searchTags, {
+          limit: 200,
+          page: 1,
+          order: "score",
+          useCache: true,
+        });
+        
+        if (Array.isArray(searchResults) && searchResults.length > 0) {
+          sourceArtists = searchResults;
+        } else {
+          // No results from search, show empty state
+          sourceArtists = [];
+        }
+      } catch (error) {
+        console.warn("Global search failed, falling back to curated list:", error);
+        // Fall back to curated list on error
+      }
+    }
+    
     pendingMostCommonTag = computeMostCommonActiveTag(activeTags, sourceArtists);
 
     if (!force) {
@@ -2699,19 +2877,35 @@ async function filterArtists(reset = true, force = false) {
         );
       });
     } else {
-      filtered = sourceArtists.filter((artist) => {
-        if (!artist) return false;
-        const tags = Array.isArray(artist.kinkTags) ? artist.kinkTags : [];
-        const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
-        if (!tagMatch) return false;
-        if (
-          artistNameFilter &&
-          !(artist.artistName || "").toLowerCase().includes(artistNameFilter)
-        ) {
-          return false;
-        }
-        return true;
-      });
+      // In global search mode, we already have filtered results from API
+      // Just apply name filter if needed
+      if (isGlobalSearch) {
+        filtered = sourceArtists.filter((artist) => {
+          if (!artist) return false;
+          if (
+            artistNameFilter &&
+            !(artist.artistName || "").toLowerCase().includes(artistNameFilter)
+          ) {
+            return false;
+          }
+          return true;
+        });
+      } else {
+        // Normal filter mode: filter from curated list
+        filtered = sourceArtists.filter((artist) => {
+          if (!artist) return false;
+          const tags = Array.isArray(artist.kinkTags) ? artist.kinkTags : [];
+          const tagMatch = Array.from(activeTags).every((tag) => tags.includes(tag));
+          if (!tagMatch) return false;
+          if (
+            artistNameFilter &&
+            !(artist.artistName || "").toLowerCase().includes(artistNameFilter)
+          ) {
+            return false;
+          }
+          return true;
+        });
+      }
     }
 
     const recalculatedTotal = updatePaginationTotals();

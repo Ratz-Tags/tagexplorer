@@ -868,20 +868,32 @@ async function getRandomBackgroundImage(query = "chastity_cage") {
 
 // Accept paging options for fetchArtistImages
 async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
-  // Always query Danbooru with only the artist tag. Gallery filtering happens client-side.
+  // Query Danbooru with artist tag + selected tags for server-side filtering
   const page = Math.max(1, options.page || 1);
   const limit = options.limit || 200;
   const order = options.order || "approvals";
-  const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`].join("");
+  
+  // Build tags array: artist name + selected tags
+  const queryTags = [artistName];
+  if (Array.isArray(selectedTags) && selectedTags.length > 0) {
+    queryTags.push(...selectedTags);
+  }
+  
+  // Include tags in cache signature to cache different tag combinations separately
+  const tagsSignature = selectedTags.length > 0 
+    ? `-tags-${selectedTags.sort().join('-')}` 
+    : '';
+  const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`, tagsSignature].join("");
   const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
 
-  // Create deduplication key for this specific artist + paging request
+  // Create deduplication key for this specific artist + tags + paging request
   const artistRequestKey = `${artistName}-${cacheSignature}`;
   
   // Check if this exact artist request is already pending
   if (pendingArtistRequests.has(artistRequestKey)) {
     const posts = await pendingArtistRequests.get(artistRequestKey);
+    // Still filter client-side as safety check (server should have filtered already)
     return filterValidImagePosts(posts, selectedTags);
   }
   
@@ -889,7 +901,9 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   if (useCache) {
     // Try in-memory cache first (fast)
     if (apiMemoryCache.has(apiCacheKey)) {
-      return filterValidImagePosts(apiMemoryCache.get(apiCacheKey), selectedTags);
+      const cachedPosts = apiMemoryCache.get(apiCacheKey);
+      // Still filter client-side as safety check
+      return filterValidImagePosts(cachedPosts, selectedTags);
     }
 
     const cached = sessionStorage.getItem(apiCacheKey);
@@ -897,6 +911,7 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
       try {
         const data = JSON.parse(cached);
         try { apiMemoryCache.set(apiCacheKey, data); } catch (e) {}
+        // Still filter client-side as safety check
         return filterValidImagePosts(data, selectedTags);
       } catch {
         // Invalid cache, continue to fetch
@@ -904,8 +919,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     }
   }
   
-  // Create the API call promise using only the artist tag
-  const apiPromise = fetchPosts([artistName], {
+  // Create the API call promise with artist + selected tags for server-side filtering
+  const apiPromise = fetchPosts(queryTags, {
     cacheKey: useCache ? apiCacheKey : null,
     useCache,
     limit,
@@ -921,9 +936,10 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     pendingArtistRequests.delete(artistRequestKey);
   });
   
-  // Wait for the API call and filter the results
+  // Wait for the API call and filter the results (safety check)
   const posts = await apiPromise;
   try { apiMemoryCache.set(apiCacheKey, posts); } catch (e) {}
+  // Server should have already filtered, but do client-side check as safety
   return filterValidImagePosts(posts, selectedTags);
 }
 
@@ -1098,6 +1114,118 @@ async function loadAppData() {
 export async function getArtistsIndex() {
   const artists = await ensureArtistsList();
   return artists;
+}
+
+/**
+ * Fetches artists by searching posts with tags and extracting unique artists
+ * This enables global tag search across all artists, not just those in the curated list
+ */
+export async function fetchArtistsByTag(searchTags = [], options = {}) {
+  const {
+    limit = 200,
+    page = 1,
+    order = "score",
+    useCache = true,
+  } = options;
+
+  if (!Array.isArray(searchTags) || searchTags.length === 0) {
+    return [];
+  }
+
+  // Build cache key for this search
+  const tagsKey = searchTags.sort().join('-');
+  const cacheKey = `danbooru-artists-by-tag-${tagsKey}-p${page}-l${limit}-o${order}`;
+
+  // Check cache first
+  if (useCache) {
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') {
+          const created = Number(parsed.t) || 0;
+          const ttl = Number(parsed.ttl) || 0;
+          if (ttl === 0 || Date.now() - created <= ttl) {
+            if (Array.isArray(parsed.v)) {
+              return parsed.v;
+            }
+          } else {
+            sessionStorage.removeItem(cacheKey);
+          }
+        }
+      }
+    } catch (e) {
+      // ignore cache errors
+    }
+  }
+
+  try {
+    // Fetch posts with the search tags
+    const posts = await fetchPosts(searchTags, {
+      limit,
+      page,
+      order,
+      useCache: true,
+    });
+
+    if (!Array.isArray(posts) || posts.length === 0) {
+      return [];
+    }
+
+    // Extract unique artists from posts
+    const artistMap = new Map();
+    
+    for (const post of posts) {
+      if (!post || !post.tag_string_artist) continue;
+      
+      // Danbooru returns artist tags as space-separated string
+      const artistTags = post.tag_string_artist.split(' ').filter(Boolean);
+      
+      for (const artistTag of artistTags) {
+        if (!artistTag || artistTag.startsWith('?')) continue; // Skip uncertain tags
+        
+        // Normalize artist name (remove underscores, etc.)
+        const artistName = artistTag.replace(/_/g, ' ');
+        
+        if (!artistMap.has(artistTag)) {
+          // Create a minimal artist object for display
+          artistMap.set(artistTag, {
+            artistName: artistName,
+            artistNameSlug: artistTag,
+            slug: toArtistSlug(artistTag),
+            // Extract preview image from post if available
+            preview: post.preview_file_url || post.file_url || null,
+            thumbnailUrl: post.preview_file_url || post.file_url || null,
+            // Store post count for this tag combination (will be fetched separately if needed)
+            postCount: null,
+            // Mark as search result
+            _isSearchResult: true,
+            _searchTags: [...searchTags],
+          });
+        }
+      }
+    }
+
+    const artists = Array.from(artistMap.values());
+
+    // Cache the results (1 hour TTL)
+    if (useCache && artists.length > 0) {
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          t: Date.now(),
+          ttl: 1000 * 60 * 60, // 1 hour
+          v: artists,
+        }));
+      } catch (e) {
+        // ignore storage errors
+      }
+    }
+
+    return artists;
+  } catch (error) {
+    console.warn('fetchArtistsByTag failed:', error);
+    return [];
+  }
 }
 
 export function getArtistSlug(name) {
@@ -1383,6 +1511,7 @@ export {
   fetchAllArtistImages,
   clearArtistCache,
   loadAppData,
+  fetchArtistsByTag,
 };
 
 // All functions in this file are defined and used as follows:
