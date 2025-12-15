@@ -1511,7 +1511,7 @@ export {
   fetchAllArtistImages,
   clearArtistCache,
   loadAppData,
-  fetchArtistsByTag,
+  // fetchArtistsByTag is exported inline above (line 1123)
 };
 
 // All functions in this file are defined and used as follows:
