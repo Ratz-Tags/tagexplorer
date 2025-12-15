@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import { getArtistImageCount } from '../modules/api.js';
 
-import { categorizeTags } from '../modules/tag-categories.js';
+import { categorizeTags, KINK_CATEGORY_RULES } from '../modules/tag-categories.js';
 
 // List of core tags used to limit collected tags
 const coreTags = [
@@ -83,7 +83,24 @@ const extraTags = [
   'chains',
   'blindfold',
   'rope',
-  'cuffs'
+  'cuffs',
+  // Cuckoldry & related tags
+  'netorare',
+  'netorase',
+  'felching',
+  'cleaning_up',
+  'licking_clean',
+  'used_condom',
+  'pouring_from_condom',
+  'forced_to_watch',
+  'watching',
+  'cuckold',
+  'cuckoldry',
+  'bull_(cuckold)',
+  'hotwife',
+  'size_comparison',
+  'denied_while_watching',
+  'chastity_while_watching',
 ];
 
 // Basic throttle to avoid hammering Danbooru
@@ -351,7 +368,7 @@ async function updateKinkTags() {
   }
 
   const tags = Array.from(new Set(tagSet)).sort();
-  const categorizedTags = categorizeTags(tags);
+  const categorizedTags = categorizeTags(tags, KINK_CATEGORY_RULES);
   await fs.writeFile('kink-tags.json', JSON.stringify(categorizedTags, null, 2) + '\n');
   console.log(`✅ kink-tags.json updated with ${tags.length} tags across ${categorizedTags.length} categories`);
 
