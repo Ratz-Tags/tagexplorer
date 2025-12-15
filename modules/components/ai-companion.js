@@ -123,6 +123,7 @@ let companionElement = null;
 let chatHistory = [];
 let isMinimized = false;
 let currentEmotion = COMPANION_EMOTIONS.idle;
+let currentOutfit = 'casual'; // 'casual', 'bdsm', 'sleepwear'
 let aiConfig = {
   provider: 'openrouter', // 'openai', 'anthropic', 'openrouter', or 'local'
   apiKey: null,
@@ -135,6 +136,7 @@ let aiConfig = {
 async function loadOpenRouterKey() {
   // Check if already set
   if (typeof window !== 'undefined' && window._openRouterApiKey) {
+    console.log('[AI Companion] Found OpenRouter key in window._openRouterApiKey');
     return window._openRouterApiKey;
   }
   
@@ -142,12 +144,15 @@ async function loadOpenRouterKey() {
   try {
     const module = await import('../../openrouter-api.local.js');
     if (typeof window !== 'undefined' && window._openRouterApiKey) {
+      console.log('[AI Companion] Loaded OpenRouter key from local file');
       return window._openRouterApiKey;
     }
   } catch (error) {
     // File doesn't exist or can't be loaded - that's okay
+    console.log('[AI Companion] Could not load local OpenRouter key file:', error.message);
   }
   
+  console.log('[AI Companion] No OpenRouter key found');
   return null;
 }
 
@@ -164,23 +169,37 @@ async function loadAIConfig() {
       if (aiConfig.nsfwEnabled && aiConfig.provider !== 'openrouter' && aiConfig.provider !== 'local') {
         aiConfig.nsfwEnabled = false;
       }
+      console.log('[AI Companion] Loaded config from storage:', {
+        provider: aiConfig.provider,
+        enabled: aiConfig.enabled,
+        hasKey: !!aiConfig.apiKey,
+        keyLength: aiConfig.apiKey?.length,
+        model: aiConfig.model,
+        nsfwEnabled: aiConfig.nsfwEnabled,
+      });
     } else {
       // No stored config - try to auto-configure with OpenRouter key
+      console.log('[AI Companion] No stored config, attempting auto-configuration...');
       const defaultKey = await loadOpenRouterKey();
       if (defaultKey) {
+        console.log('[AI Companion] Auto-configured with OpenRouter key (length:', defaultKey.length, ')');
         aiConfig.provider = 'openrouter';
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
         aiConfig.model = 'gryphe/mythomist-7b:free'; // Best free NSFW model
         saveAIConfig(); // Save the auto-configuration
+      } else {
+        console.warn('[AI Companion] No OpenRouter key found for auto-configuration');
       }
     }
     
     // If OpenRouter is selected but no key is set, try to use default from GitHub secret
     if (aiConfig.provider === 'openrouter' && !aiConfig.apiKey) {
+      console.log('[AI Companion] OpenRouter selected but no key, attempting to load...');
       const defaultKey = await loadOpenRouterKey();
       if (defaultKey) {
+        console.log('[AI Companion] Loaded OpenRouter key from window (length:', defaultKey.length, ')');
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         // Auto-enable NSFW for default key (since it's provided)
@@ -188,10 +207,22 @@ async function loadAIConfig() {
           aiConfig.nsfwEnabled = true;
         }
         saveAIConfig();
+      } else {
+        console.warn('[AI Companion] OpenRouter provider selected but no API key available');
       }
     }
+    
+    // Final status log
+    console.log('[AI Companion] Final config status:', {
+      provider: aiConfig.provider,
+      enabled: aiConfig.enabled,
+      hasKey: !!aiConfig.apiKey,
+      keyLength: aiConfig.apiKey?.length,
+      model: aiConfig.model,
+      nsfwEnabled: aiConfig.nsfwEnabled,
+    });
   } catch (e) {
-    console.warn('Failed to load AI config:', e);
+    console.error('[AI Companion] Failed to load AI config:', e);
   }
 }
 
@@ -291,6 +322,12 @@ async function callOpenRouter(messages, systemPrompt) {
     ? 'gryphe/mythomist-7b:free' // Best free NSFW model on OpenRouter
     : 'openai/gpt-4o-mini';
 
+  console.log('[AI Companion] Calling OpenRouter API with:', {
+    model: aiConfig.model || defaultModel,
+    messagesCount: messages.length,
+    systemPromptLength: systemPrompt.length,
+  });
+  
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -311,12 +348,29 @@ async function callOpenRouter(messages, systemPrompt) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error?.message || 'OpenRouter API error');
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch (e) {
+      errorData = { error: { message: errorText || 'Unknown error' } };
+    }
+    console.error('[AI Companion] OpenRouter API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorData,
+    });
+    throw new Error(errorData.error?.message || errorData.message || `OpenRouter API error: ${response.status} ${response.statusText}`);
   }
 
   const data = await response.json();
-  return data.choices[0]?.message?.content || '...';
+  const content = data.choices[0]?.message?.content;
+  console.log('[AI Companion] OpenRouter response:', {
+    hasContent: !!content,
+    contentLength: content?.length,
+    model: data.model,
+  });
+  return content || '...';
 }
 
 // Call local Ollama API (fully NSFW-capable, runs locally)
@@ -380,6 +434,14 @@ async function generateResponse(userMessage) {
   // Try AI API if enabled
   if (aiConfig.enabled && aiConfig.apiKey) {
     try {
+      console.log('[AI Companion] Calling AI API:', {
+        provider: aiConfig.provider,
+        model: aiConfig.model,
+        hasKey: !!aiConfig.apiKey,
+        keyLength: aiConfig.apiKey?.length,
+        nsfwEnabled: aiConfig.nsfwEnabled,
+      });
+      
       let response;
       if (aiConfig.provider === 'openai') {
         response = await callOpenAI(messages, systemPrompt);
@@ -392,12 +454,28 @@ async function generateResponse(userMessage) {
       }
       
       if (response && response.trim()) {
+        console.log('[AI Companion] AI response received:', response.substring(0, 100));
         return response.trim();
+      } else {
+        console.warn('[AI Companion] Empty response from AI API');
       }
     } catch (error) {
-      console.warn('AI API call failed, using fallback:', error);
+      console.error('[AI Companion] AI API call failed:', error);
+      console.error('[AI Companion] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        provider: aiConfig.provider,
+        hasKey: !!aiConfig.apiKey,
+      });
+      // Don't show error to user - silently fall back to rule-based responses
       // Fall through to rule-based fallback
     }
+  } else {
+    console.warn('[AI Companion] AI not enabled or no API key:', {
+      enabled: aiConfig.enabled,
+      hasKey: !!aiConfig.apiKey,
+      provider: aiConfig.provider,
+    });
   }
 
   // Fallback to rule-based responses
@@ -437,6 +515,63 @@ async function generateResponse(userMessage) {
   return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
+// Check if sprite images are available
+let spriteImageMode = null; // 'individual', 'sheet', or null (CSS fallback)
+let spriteSheetLoaded = false;
+
+async function checkSpriteImages(outfit = currentOutfit) {
+  if (spriteImageMode !== null) return spriteImageMode; // Already checked
+  
+  // Check for outfit-specific sprite sheet first (more efficient)
+  const sheetImg = new Image();
+  sheetImg.src = `/assets/companion/companion-${outfit}-sheet.png`;
+  
+  return new Promise((resolve) => {
+    sheetImg.onload = () => {
+      spriteImageMode = 'sheet';
+      spriteSheetLoaded = true;
+      console.log(`[AI Companion] Sprite sheet detected for outfit: ${outfit}`);
+      resolve('sheet');
+    };
+    sheetImg.onerror = () => {
+      // Check for generic sprite sheet (fallback)
+      const genericSheetImg = new Image();
+      genericSheetImg.src = '/assets/companion/companion-sheet.png';
+      genericSheetImg.onload = () => {
+        spriteImageMode = 'sheet';
+        spriteSheetLoaded = true;
+        console.log('[AI Companion] Generic sprite sheet detected');
+        resolve('sheet');
+      };
+      genericSheetImg.onerror = () => {
+        // Check for outfit-specific individual sprites
+        const testImg = new Image();
+        testImg.src = `/assets/companion/companion-${outfit}-idle.png`;
+        testImg.onload = () => {
+          spriteImageMode = 'individual';
+          console.log(`[AI Companion] Individual sprite images detected for outfit: ${outfit}`);
+          resolve('individual');
+        };
+        testImg.onerror = () => {
+          // Check for generic individual sprites (fallback)
+          const genericImg = new Image();
+          genericImg.src = '/assets/companion/companion-idle.png';
+          genericImg.onload = () => {
+            spriteImageMode = 'individual';
+            console.log('[AI Companion] Generic individual sprite images detected');
+            resolve('individual');
+          };
+          genericImg.onerror = () => {
+            spriteImageMode = null;
+            console.log('[AI Companion] No sprite images found, using CSS fallback');
+            resolve(null);
+          };
+        };
+      };
+    };
+  });
+}
+
 // Set companion emotion
 function setCompanionEmotion(emotionName) {
   const emotion = COMPANION_EMOTIONS[emotionName] || COMPANION_EMOTIONS.idle;
@@ -444,11 +579,60 @@ function setCompanionEmotion(emotionName) {
   companionState = emotionName;
   
   const sprite = companionElement?.querySelector('.companion-sprite');
-  if (sprite) {
-    sprite.setAttribute('data-emotion', emotionName);
-    sprite.setAttribute('data-state', emotionName);
+  if (!sprite) return;
+  
+  sprite.setAttribute('data-emotion', emotionName);
+  sprite.setAttribute('data-state', emotionName);
+  
+  // Update image sprite if available
+  const spriteImg = sprite.querySelector('.companion-sprite-image');
+  if (spriteImg && spriteImageMode === 'sheet') {
+    // Update sprite sheet background if outfit changed
+    const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
+    const genericSheetPath = '/assets/companion/companion-sheet.png';
     
-    // Update colors
+    // Check if we need to update the sheet
+    const currentBg = spriteImg.style.backgroundImage;
+    const expectedBg = `url("${outfitSheetPath}")`;
+    const expectedGenericBg = `url("${genericSheetPath}")`;
+    
+    if (!currentBg || (!currentBg.includes(currentOutfit) && currentBg !== expectedGenericBg)) {
+      const testSheet = new Image();
+      testSheet.onload = () => {
+        spriteImg.style.backgroundImage = `url(${outfitSheetPath})`;
+      };
+      testSheet.onerror = () => {
+        spriteImg.style.backgroundImage = `url(${genericSheetPath})`;
+      };
+      testSheet.src = outfitSheetPath;
+    }
+    
+    // Calculate sprite sheet position (4 columns, 2 rows)
+    const emotionOrder = ['idle', 'speaking', 'listening', 'teasing', 'sadistic', 'pleased', 'dominant', 'angry'];
+    const index = emotionOrder.indexOf(emotionName);
+    if (index >= 0) {
+      const col = index % 4;
+      const row = Math.floor(index / 4);
+      const x = -col * 240; // 240px per sprite
+      const y = -row * 320; // 320px per sprite
+      spriteImg.style.backgroundPosition = `${x}px ${y}px`;
+    }
+  } else if (spriteImg && spriteImageMode === 'individual') {
+    // Update individual sprite image (try outfit-specific first, then fallback to generic)
+    const outfitPath = `/assets/companion/companion-${currentOutfit}-${emotionName}.png`;
+    const genericPath = `/assets/companion/companion-${emotionName}.png`;
+    
+    // Test if outfit-specific exists
+    const testImg = new Image();
+    testImg.onload = () => {
+      spriteImg.src = outfitPath;
+    };
+    testImg.onerror = () => {
+      spriteImg.src = genericPath;
+    };
+    testImg.src = outfitPath;
+  } else {
+    // CSS fallback - update colors and expression
     const head = sprite.querySelector('.companion-head');
     const body = sprite.querySelector('.companion-body');
     if (head) {
@@ -476,6 +660,32 @@ function createCompanionSprite() {
         height: 160px;
         position: relative;
         margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .companion-sprite-image {
+        width: 120px;
+        height: 160px;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        image-rendering: pixelated;
+        object-fit: contain;
+        transition: opacity 0.3s ease;
+      }
+      
+      .companion-sprite-sheet {
+        background-repeat: no-repeat;
+        background-position: 0 0;
+        width: 120px;
+        height: 160px;
+      }
+      
+      .companion-sprite-individual {
+        width: 120px;
+        height: 160px;
+        object-fit: contain;
       }
       
       .companion-head {
@@ -606,6 +816,7 @@ function createCompanionSprite() {
       }
     </style>
     <div class="companion-sprite" data-emotion="${companionState}" data-state="${companionState}">
+      <!-- CSS fallback (will be replaced if images are available) -->
       <div class="companion-head">
         <span class="companion-expression">${currentEmotion.expression}</span>
       </div>
@@ -648,9 +859,12 @@ function createSettingsModal() {
     <div class="companion-settings-content">
       <div class="companion-settings-header">
         <h3>AI Companion Settings</h3>
-        <button class="companion-settings-close">×</button>
+        <button class="companion-settings-close">x</button>
       </div>
       <div class="companion-settings-body">
+        <div id="ai-status-indicator" class="ai-status-indicator" style="margin-bottom: 1rem; padding: 0.75rem; border-radius: 8px; background: rgba(255, 100, 212, 0.1); border: 1px solid rgba(255, 100, 212, 0.3);">
+          <strong>Status:</strong> <span id="ai-status-text">Checking...</span>
+        </div>
         <div class="setting-group">
           <label>AI Provider</label>
           <select id="ai-provider" class="setting-input">
@@ -1094,15 +1308,161 @@ async function handleUserMessage(message) {
   }, 2000);
 }
 
+// Set companion outfit
+export function setCompanionOutfit(outfit) {
+  if (!['casual', 'bdsm', 'sleepwear'].includes(outfit)) {
+    console.warn(`[AI Companion] Invalid outfit: ${outfit}, defaulting to 'casual'`);
+    outfit = 'casual';
+  }
+  
+  currentOutfit = outfit;
+  spriteImageMode = null; // Reset to re-check with new outfit
+  
+  // Reload sprites with new outfit
+  if (companionElement) {
+    checkSpriteImages(currentOutfit).then(mode => {
+      if (mode && companionElement) {
+        const sprite = companionElement.querySelector('.companion-sprite');
+        if (sprite) {
+          // Remove existing sprite image
+          const existingImg = sprite.querySelector('.companion-sprite-image');
+          if (existingImg) {
+            existingImg.remove();
+          }
+          
+          // Recreate sprite with new outfit
+          if (mode === 'sheet') {
+            const img = document.createElement('div');
+            img.className = 'companion-sprite-image companion-sprite-sheet';
+            const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
+            const genericSheetPath = '/assets/companion/companion-sheet.png';
+            
+            const testSheet = new Image();
+            testSheet.onload = () => {
+              img.style.backgroundImage = `url(${outfitSheetPath})`;
+              img.style.backgroundSize = '960px 1280px';
+            };
+            testSheet.onerror = () => {
+              img.style.backgroundImage = `url(${genericSheetPath})`;
+              img.style.backgroundSize = '960px 1280px';
+            };
+            testSheet.src = outfitSheetPath;
+            
+            sprite.appendChild(img);
+            setCompanionEmotion(companionState);
+          } else if (mode === 'individual') {
+            const img = document.createElement('img');
+            img.className = 'companion-sprite-image companion-sprite-individual';
+            const outfitPath = `/assets/companion/companion-${currentOutfit}-${companionState}.png`;
+            const genericPath = `/assets/companion/companion-${companionState}.png`;
+            
+            const testImg = new Image();
+            testImg.onload = () => {
+              img.src = outfitPath;
+            };
+            testImg.onerror = () => {
+              img.src = genericPath;
+            };
+            testImg.src = outfitPath;
+            
+            img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
+            sprite.appendChild(img);
+          }
+        }
+      }
+    });
+  }
+  
+  console.log(`[AI Companion] Outfit changed to: ${outfit}`);
+}
+
+// Get current outfit
+export function getCompanionOutfit() {
+  return currentOutfit;
+}
+
 // Initialize companion
 export async function initAICompanion() {
   if (companionElement) return;
   
+  console.log('[AI Companion] Initializing...');
+  
+  // Check for sprite images early
+  await checkSpriteImages(currentOutfit);
+  
   // Load AI config (async to load OpenRouter key if available)
   await loadAIConfig();
   
+  // Log final status
+  if (aiConfig.enabled) {
+    console.log('[AI Companion] ✅ AI enabled and ready:', {
+      provider: aiConfig.provider,
+      model: aiConfig.model,
+      nsfwEnabled: aiConfig.nsfwEnabled,
+    });
+  } else {
+    console.warn('[AI Companion] ⚠️ AI not enabled. Check settings to configure API key.');
+  }
+  
   companionElement = createCompanionElement();
   document.body.appendChild(companionElement);
+  
+  // Check for sprite images and update if available
+  checkSpriteImages(currentOutfit).then(mode => {
+    if (mode && companionElement) {
+      const sprite = companionElement.querySelector('.companion-sprite');
+      if (sprite) {
+        // Update sprite to use images
+        if (mode === 'sheet') {
+          const existingImg = sprite.querySelector('.companion-sprite-image');
+          if (!existingImg) {
+            const img = document.createElement('div');
+            img.className = 'companion-sprite-image companion-sprite-sheet';
+            // Try outfit-specific sheet first, then fallback to generic
+            const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
+            const genericSheetPath = '/assets/companion/companion-sheet.png';
+            
+            const testSheet = new Image();
+            testSheet.onload = () => {
+              img.style.backgroundImage = `url(${outfitSheetPath})`;
+              img.style.backgroundSize = '960px 1280px';
+            };
+            testSheet.onerror = () => {
+              img.style.backgroundImage = `url(${genericSheetPath})`;
+              img.style.backgroundSize = '960px 1280px';
+            };
+            testSheet.src = outfitSheetPath;
+            
+            sprite.innerHTML = '';
+            sprite.appendChild(img);
+            setCompanionEmotion(companionState); // Update to current emotion
+          }
+        } else if (mode === 'individual') {
+          const existingImg = sprite.querySelector('.companion-sprite-image');
+          if (!existingImg) {
+            const img = document.createElement('img');
+            img.className = 'companion-sprite-image companion-sprite-individual';
+            // Try outfit-specific first, then fallback to generic
+            const outfitPath = `/assets/companion/companion-${currentOutfit}-${companionState}.png`;
+            const genericPath = `/assets/companion/companion-${companionState}.png`;
+            
+            const testImg = new Image();
+            testImg.onload = () => {
+              img.src = outfitPath;
+            };
+            testImg.onerror = () => {
+              img.src = genericPath;
+            };
+            testImg.src = outfitPath;
+            
+            img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
+            sprite.innerHTML = '';
+            sprite.appendChild(img);
+          }
+        }
+      }
+    }
+  });
   
   // Add initial greeting
   setTimeout(() => {
@@ -1276,6 +1636,16 @@ export async function initAICompanion() {
         providerSelect?.addEventListener('change', (e) => {
           const provider = e.target.value;
           populateModelDropdown(provider);
+          
+          // Update status indicator
+          const statusText = document.getElementById('ai-status-text');
+          if (statusText) {
+            if (provider === 'local') {
+              statusText.textContent = '✅ Local AI (Ollama) - No API key needed';
+            } else {
+              statusText.textContent = '⚠️ Configure API key below to enable AI';
+            }
+          }
         });
         
         // Handle custom model selection
@@ -1346,6 +1716,25 @@ export async function initAICompanion() {
             closeModal();
           }
         });
+      }
+      
+      // Update status indicator
+      const statusIndicator = document.getElementById('ai-status-indicator');
+      const statusText = document.getElementById('ai-status-text');
+      if (statusIndicator && statusText) {
+        if (aiConfig.enabled && aiConfig.apiKey) {
+          statusIndicator.style.background = 'rgba(102, 243, 255, 0.1)';
+          statusIndicator.style.borderColor = 'rgba(102, 243, 255, 0.3)';
+          statusText.textContent = `✅ AI Enabled (${aiConfig.provider}, ${aiConfig.model || 'default model'})`;
+        } else if (aiConfig.provider === 'local') {
+          statusIndicator.style.background = 'rgba(102, 243, 255, 0.1)';
+          statusIndicator.style.borderColor = 'rgba(102, 243, 255, 0.3)';
+          statusText.textContent = `✅ Local AI Enabled (Ollama)`;
+        } else {
+          statusIndicator.style.background = 'rgba(255, 100, 100, 0.1)';
+          statusIndicator.style.borderColor = 'rgba(255, 100, 100, 0.3)';
+          statusText.textContent = `⚠️ AI Disabled - Configure API key below`;
+        }
       }
       
       // Populate fields
