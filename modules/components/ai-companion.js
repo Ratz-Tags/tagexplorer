@@ -696,14 +696,29 @@ let spriteSheetLoaded = false;
 async function checkFileExists(url) {
   try {
     const response = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
-    return response.ok;
-  } catch {
-    return false;
+    const exists = response.ok;
+    if (exists) {
+      console.log(`[AI Companion] ✅ File exists: ${url}`);
+    }
+    return exists;
+  } catch (error) {
+    // HEAD might fail due to CORS, try GET as fallback
+    try {
+      const response = await fetch(url, { method: 'GET', cache: 'no-cache', mode: 'no-cors' });
+      // no-cors mode doesn't let us check status, so we'll assume it exists if no error
+      console.log(`[AI Companion] ⚠️ HEAD failed, trying direct load for: ${url}`);
+      return true; // Optimistically return true, let image load handle errors
+    } catch {
+      console.log(`[AI Companion] ❌ File not found: ${url}`);
+      return false;
+    }
   }
 }
 
 async function checkSpriteImages(outfit = currentOutfit) {
   if (spriteImageMode !== null) return spriteImageMode; // Already checked
+  
+  console.log(`[AI Companion] Checking for sprite images (outfit: ${outfit})...`);
   
   // Check for outfit-specific sprite sheet first (more efficient)
   const outfitSheetPath = `/assets/companion/companion-${outfit}-sheet.png`;
@@ -712,34 +727,39 @@ async function checkSpriteImages(outfit = currentOutfit) {
   const genericIdlePath = '/assets/companion/companion-idle.png';
   
   // Check files exist before trying to load (avoids 404 console errors)
+  console.log(`[AI Companion] Checking: ${outfitSheetPath}`);
   if (await checkFileExists(outfitSheetPath)) {
     spriteImageMode = 'sheet';
     spriteSheetLoaded = true;
-    console.log(`[AI Companion] Sprite sheet detected for outfit: ${outfit}`);
+    console.log(`[AI Companion] ✅ Sprite sheet detected for outfit: ${outfit}`);
     return 'sheet';
   }
   
+  console.log(`[AI Companion] Checking: ${genericSheetPath}`);
   if (await checkFileExists(genericSheetPath)) {
     spriteImageMode = 'sheet';
     spriteSheetLoaded = true;
-    console.log('[AI Companion] Generic sprite sheet detected');
+    console.log('[AI Companion] ✅ Generic sprite sheet detected');
     return 'sheet';
   }
   
+  console.log(`[AI Companion] Checking: ${outfitIdlePath}`);
   if (await checkFileExists(outfitIdlePath)) {
     spriteImageMode = 'individual';
-    console.log(`[AI Companion] Individual sprite images detected for outfit: ${outfit}`);
+    console.log(`[AI Companion] ✅ Individual sprite images detected for outfit: ${outfit}`);
     return 'individual';
   }
   
+  console.log(`[AI Companion] Checking: ${genericIdlePath}`);
   if (await checkFileExists(genericIdlePath)) {
     spriteImageMode = 'individual';
-    console.log('[AI Companion] Generic individual sprite images detected');
+    console.log('[AI Companion] ✅ Generic individual sprite images detected');
     return 'individual';
   }
   
   spriteImageMode = null;
-  console.log('[AI Companion] No sprite images found, using CSS fallback');
+  console.warn('[AI Companion] ❌ No sprite images found, using CSS fallback');
+  console.warn('[AI Companion] Tried paths:', { outfitSheetPath, genericSheetPath, outfitIdlePath, genericIdlePath });
   return null;
 }
 
