@@ -1171,7 +1171,7 @@ function createCompanionElement() {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        width: 320px;
+        width: 360px;
         max-width: calc(100vw - 40px);
         background: linear-gradient(145deg, rgba(12, 11, 22, 0.95), rgba(14, 16, 30, 0.85));
         border: 1px solid rgba(255, 100, 212, 0.3);
@@ -1641,11 +1641,13 @@ export function setCompanionOutfit(outfit) {
             const testSheet = new Image();
             testSheet.onload = () => {
               img.style.backgroundImage = `url(${outfitSheetPath})`;
-              img.style.backgroundSize = '960px 1280px';
+              img.style.backgroundSize = 'contain';
+              img.style.backgroundPosition = 'center';
             };
             testSheet.onerror = () => {
               img.style.backgroundImage = `url(${genericSheetPath})`;
-              img.style.backgroundSize = '960px 1280px';
+              img.style.backgroundSize = 'contain';
+              img.style.backgroundPosition = 'center';
             };
             testSheet.src = outfitSheetPath;
             
@@ -1731,7 +1733,8 @@ export async function initAICompanion() {
             const testSheet = new Image();
             testSheet.onload = () => {
               img.style.backgroundImage = `url(${sheetPath})`;
-              img.style.backgroundSize = '960px 1280px';
+              img.style.backgroundSize = 'contain';
+              img.style.backgroundPosition = 'center';
               sprite.appendChild(img);
               setCompanionEmotion(companionState); // Update to current emotion
             };
