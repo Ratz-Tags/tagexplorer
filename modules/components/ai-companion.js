@@ -1830,6 +1830,7 @@ export async function initAICompanion() {
       const modelOptions = {
         openrouter: [
           { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best Free NSFW) ⭐' },
+          { value: 'tngtech/deepseek-r1t2-chimera:free', label: 'DeepSeek R1T2 Chimera (671B, Less Filtered) ⭐⭐' },
           { value: 'cognitivecomputations/dolphin-mixtral-8x7b:free', label: 'Dolphin Mixtral 8x7B (Uncensored)' },
           { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General, Filtered)' },
           { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Filtered)' },
