@@ -134,15 +134,26 @@ let aiConfig = {
 
 // Load OpenRouter API key from window (injected via GitHub Actions or local file)
 async function loadOpenRouterKey() {
-  // Check if already set
+  // Check if already set (script may have loaded synchronously)
   if (typeof window !== 'undefined' && window._openRouterApiKey) {
     console.log('[AI Companion] Found OpenRouter key in window._openRouterApiKey');
+    return window._openRouterApiKey;
+  }
+  
+  // Wait a bit for script to execute (script tag loads synchronously but execution may be delayed)
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Check again after delay
+  if (typeof window !== 'undefined' && window._openRouterApiKey) {
+    console.log('[AI Companion] Found OpenRouter key after delay');
     return window._openRouterApiKey;
   }
   
   // Try to load from local file (for development)
   try {
     const module = await import('../../openrouter-api.local.js');
+    // Wait a bit for module to set window._openRouterApiKey
+    await new Promise(resolve => setTimeout(resolve, 50));
     if (typeof window !== 'undefined' && window._openRouterApiKey) {
       console.log('[AI Companion] Loaded OpenRouter key from local file');
       return window._openRouterApiKey;
@@ -474,8 +485,23 @@ async function generateResponse(userMessage) {
     console.warn('[AI Companion] AI not enabled or no API key:', {
       enabled: aiConfig.enabled,
       hasKey: !!aiConfig.apiKey,
+      keyLength: aiConfig.apiKey?.length,
       provider: aiConfig.provider,
     });
+    
+    // Try to reload API key if missing
+    if (!aiConfig.apiKey && aiConfig.provider === 'openrouter') {
+      console.log('[AI Companion] Attempting to reload OpenRouter key...');
+      const reloadedKey = await loadOpenRouterKey();
+      if (reloadedKey) {
+        console.log('[AI Companion] Reloaded OpenRouter key, retrying...');
+        aiConfig.apiKey = reloadedKey;
+        aiConfig.enabled = true;
+        saveAIConfig();
+        // Retry the API call
+        return generateResponse(userMessage);
+      }
+    }
   }
 
   // Fallback to rule-based responses
@@ -944,7 +970,7 @@ function createCompanionElement() {
         box-shadow: 
           0 20px 60px rgba(255, 100, 212, 0.2),
           inset 0 0 0 1px rgba(102, 243, 255, 0.1);
-        z-index: 1000;
+        z-index: 11000;
         transition: transform 0.3s ease, opacity 0.3s ease;
         backdrop-filter: blur(10px);
       }
@@ -1232,6 +1258,19 @@ function createCompanionElement() {
           width: calc(100vw - 20px);
         }
       }
+      
+      @media (min-width: 1024px) {
+        .ai-companion {
+          bottom: 24px;
+          right: 24px;
+          width: 360px;
+        }
+        
+        .companion-chat {
+          height: 480px;
+          max-height: 70vh;
+        }
+      }
     </style>
     ${createCompanionSprite()}
     ${createCompanionChat()}
@@ -1412,6 +1451,12 @@ export async function initAICompanion() {
     if (mode && companionElement) {
       const sprite = companionElement.querySelector('.companion-sprite');
       if (sprite) {
+        // Remove CSS fallback elements first
+        const fallbackHead = sprite.querySelector('.companion-head');
+        const fallbackBody = sprite.querySelector('.companion-body');
+        if (fallbackHead) fallbackHead.remove();
+        if (fallbackBody) fallbackBody.remove();
+        
         // Update sprite to use images
         if (mode === 'sheet') {
           const existingImg = sprite.querySelector('.companion-sprite-image');
@@ -1426,16 +1471,19 @@ export async function initAICompanion() {
             testSheet.onload = () => {
               img.style.backgroundImage = `url(${outfitSheetPath})`;
               img.style.backgroundSize = '960px 1280px';
+              sprite.appendChild(img);
+              setCompanionEmotion(companionState); // Update to current emotion
             };
             testSheet.onerror = () => {
               img.style.backgroundImage = `url(${genericSheetPath})`;
               img.style.backgroundSize = '960px 1280px';
+              sprite.appendChild(img);
+              setCompanionEmotion(companionState); // Update to current emotion
             };
             testSheet.src = outfitSheetPath;
-            
-            sprite.innerHTML = '';
-            sprite.appendChild(img);
-            setCompanionEmotion(companionState); // Update to current emotion
+          } else {
+            // Image already exists, just update emotion
+            setCompanionEmotion(companionState);
           }
         } else if (mode === 'individual') {
           const existingImg = sprite.querySelector('.companion-sprite-image');
@@ -1449,18 +1497,23 @@ export async function initAICompanion() {
             const testImg = new Image();
             testImg.onload = () => {
               img.src = outfitPath;
+              img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
+              sprite.appendChild(img);
             };
             testImg.onerror = () => {
               img.src = genericPath;
+              img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
+              sprite.appendChild(img);
             };
             testImg.src = outfitPath;
-            
-            img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
-            sprite.innerHTML = '';
-            sprite.appendChild(img);
+          } else {
+            // Image already exists, just update emotion
+            setCompanionEmotion(companionState);
           }
         }
       }
+    } else {
+      console.log('[AI Companion] No sprite images available, using CSS fallback');
     }
   });
   
