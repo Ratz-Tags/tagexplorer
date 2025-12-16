@@ -429,6 +429,109 @@ async function callLocalOllama(messages, systemPrompt) {
   return data.message?.content || '...';
 }
 
+// Generate image prompt using AI based on conversation context
+async function generateImagePrompt(context, emotion) {
+  const promptTemplates = {
+    teasing: [
+      "A seductive, dominant woman with a knowing smirk, looking down at the viewer with condescending amusement. She's dressed in revealing, provocative clothing, one hand on her hip, the other gesturing dismissively. The scene is intimate and humiliating, with the viewer in a submissive position.",
+      "A beautiful, cruel woman with sharp eyes and a teasing smile, wearing elegant but revealing attire. She's pointing at something off-screen with mockery, her expression showing she knows exactly what the viewer is thinking. The atmosphere is degrading and seductive.",
+    ],
+    sadistic: [
+      "A dominant, sadistic woman with a cruel smile, dressed in BDSM-inspired clothing. She's looking directly at the viewer with predatory eyes, one hand holding something that suggests control. The scene is dark, intimate, and humiliating.",
+      "A mature, motherly but sadistic woman with a knowing, cruel expression. She's wearing revealing clothing that shows her dominance, standing over the viewer with a look of disappointment and amusement. The scene is degrading and sexually charged.",
+    ],
+    dominant: [
+      "A powerful, dominant woman in commanding pose, wearing elegant but provocative clothing. She's looking down at the viewer with authority, her expression showing she's in complete control. The scene is humiliating and seductive.",
+      "A tall, mature woman with a dominant stance, wearing revealing attire that shows her power. She's pointing or gesturing with authority, her expression showing she owns the situation. The scene is degrading and sexually tempting.",
+    ],
+    pleased: [
+      "A satisfied, seductive woman with a pleased smile, wearing elegant, revealing clothing. She's looking at the viewer with approval but still maintains her dominance. The scene is intimate and teasing.",
+      "A beautiful woman with a knowing, pleased expression, dressed provocatively. She's in a relaxed but dominant pose, showing she's enjoying the viewer's submission. The scene is seductive and humiliating.",
+    ],
+  };
+  
+  const templates = promptTemplates[emotion] || promptTemplates.teasing;
+  const basePrompt = templates[Math.floor(Math.random() * templates.length)];
+  
+  // Use AI to enhance the prompt based on context if available
+  if (aiConfig.enabled && aiConfig.apiKey && context) {
+    try {
+      const enhancementPrompt = `Based on this conversation context: "${context.substring(0, 200)}", create a detailed, seductive, and humiliating image prompt for a dominant woman teasing the viewer. Make it specific, provocative, and degrading. Only return the prompt, nothing else.`;
+      
+      let enhancedPrompt;
+      if (aiConfig.provider === 'openrouter') {
+        enhancedPrompt = await callOpenRouter(
+          [{ role: 'user', content: enhancementPrompt }],
+          'You are a creative prompt engineer for NSFW image generation.'
+        );
+      } else {
+        enhancedPrompt = basePrompt; // Fallback if other providers
+      }
+      
+      return enhancedPrompt || basePrompt;
+    } catch (error) {
+      console.warn('[AI Companion] Failed to enhance image prompt:', error);
+      return basePrompt;
+    }
+  }
+  
+  return basePrompt;
+}
+
+// Generate image using HuggingFace Inference API (free, supports NSFW)
+async function generateImage(prompt) {
+  if (!aiConfig.apiKey || aiConfig.provider !== 'openrouter') {
+    console.warn('[AI Companion] Image generation requires OpenRouter API key');
+    return null;
+  }
+  
+  try {
+    // Use OpenRouter's image generation endpoint if available
+    // For now, we'll use a free alternative: HuggingFace Inference API
+    // Note: This requires a HuggingFace token, but we can also try Replicate or other free services
+    
+    // Try using Stability AI via OpenRouter if available
+    // Otherwise, use a direct API call to a free service
+    
+    // For now, let's use a placeholder that generates via AI model creating a data URL
+    // or we can integrate with a free image generation service
+    
+    // Actually, let's use the AI to create a detailed prompt, then call a free image API
+    const imagePrompt = await generateImagePrompt(prompt, 'teasing');
+    
+    // Use HuggingFace Inference API (free tier available)
+    // Model: stabilityai/stable-diffusion-xl-base-1.0 or similar
+    const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Note: HuggingFace requires a token for some models, but some are free
+        // For production, you'd want to add HF_TOKEN to secrets
+      },
+      body: JSON.stringify({
+        inputs: imagePrompt,
+        parameters: {
+          num_inference_steps: 20,
+          guidance_scale: 7.5,
+        }
+      }),
+    });
+    
+    if (hfResponse.ok) {
+      const blob = await hfResponse.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      return imageUrl;
+    } else {
+      console.warn('[AI Companion] HuggingFace image generation failed, trying alternative...');
+      // Fallback: return null and show message that image generation is being set up
+      return null;
+    }
+  } catch (error) {
+    console.error('[AI Companion] Image generation error:', error);
+    return null;
+  }
+}
+
 // Generate AI response with real API or fallback
 async function generateResponse(userMessage) {
   const lower = userMessage.toLowerCase();
@@ -1299,18 +1402,31 @@ function createCompanionElement() {
 }
 
 // Add message to chat
-function addMessage(text, isUser = false) {
+function addMessage(text, isUser = false, imageUrl = null) {
   const messagesContainer = document.getElementById('companion-messages');
   if (!messagesContainer) return;
   
   const messageEl = document.createElement('div');
   messageEl.className = `companion-message ${isUser ? 'user' : 'companion'}`;
-  messageEl.textContent = text;
+  
+  if (imageUrl) {
+    const imgEl = document.createElement('img');
+    imgEl.src = imageUrl;
+    imgEl.className = 'companion-generated-image';
+    imgEl.alt = 'Generated image';
+    imgEl.style.cssText = 'max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer;';
+    imgEl.onclick = () => window.open(imageUrl, '_blank');
+    messageEl.appendChild(document.createTextNode(text));
+    messageEl.appendChild(document.createElement('br'));
+    messageEl.appendChild(imgEl);
+  } else {
+    messageEl.textContent = text;
+  }
   
   messagesContainer.appendChild(messageEl);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
   
-  chatHistory.push({ text, isUser, timestamp: Date.now() });
+  chatHistory.push({ text, isUser, timestamp: Date.now(), imageUrl });
   
   // Limit history size
   if (chatHistory.length > 50) {
@@ -1348,6 +1464,41 @@ async function handleUserMessage(message) {
   
   setCompanionEmotion(emotion);
   addMessage(response, false);
+  
+  // Occasionally generate images to tease/humiliate (30% chance for certain emotions)
+  const shouldGenerateImage = (emotion === 'teasing' || emotion === 'sadistic' || emotion === 'dominant') && 
+                               Math.random() < 0.3 && 
+                               aiConfig.enabled && 
+                               aiConfig.apiKey;
+  
+  if (shouldGenerateImage) {
+    // Generate image in background
+    generateImage(response).then(imageUrl => {
+      if (imageUrl) {
+        // Add image to the last message
+        const messagesContainer = document.getElementById('companion-messages');
+        if (messagesContainer) {
+          const lastMessage = messagesContainer.lastElementChild;
+          if (lastMessage && lastMessage.classList.contains('companion-message') && !lastMessage.classList.contains('user')) {
+            const imgEl = document.createElement('img');
+            imgEl.src = imageUrl;
+            imgEl.className = 'companion-generated-image';
+            imgEl.alt = 'Generated image';
+            imgEl.style.cssText = 'max-width: 100%; border-radius: 8px; margin-top: 8px; cursor: pointer; opacity: 0; transition: opacity 0.3s;';
+            imgEl.onclick = () => window.open(imageUrl, '_blank');
+            imgEl.onload = () => {
+              imgEl.style.opacity = '1';
+            };
+            lastMessage.appendChild(document.createElement('br'));
+            lastMessage.appendChild(imgEl);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        }
+      }
+    }).catch(err => {
+      console.warn('[AI Companion] Image generation failed:', err);
+    });
+  }
   
   // Speak with Azure TTS (whisper voice)
   try {
