@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - Holding
     paths-ignore:
       - 'artists.json'
       - 'kink-tags.json'

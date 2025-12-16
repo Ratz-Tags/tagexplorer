@@ -5,6 +5,10 @@ on:
   push:
     branches:
       - Holding
+    paths:
+      - 'artists.json'
+      - '.github/workflows/main.yml'
+      - 'update-json.js'
   schedule:
     - cron: "0 0 * * *"
 
