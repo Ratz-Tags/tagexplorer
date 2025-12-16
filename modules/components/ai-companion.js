@@ -328,10 +328,12 @@ async function callOpenRouter(messages, systemPrompt) {
   // Note: Model names may change - check https://openrouter.ai/models for current list
   // Verified models (as of 2024):
   // - undi95/toppy-m-7b:free - Best free uncensored model, designed for NSFW
+  // - tngtech/deepseek-r1t2-chimera:free - Large reasoning model (671B params), less filtered than OpenAI
   // - cognitivecomputations/dolphin-mixtral-8x7b:free - Larger uncensored model
   // - Others may have content filters
   const nsfwModels = {
     'undi95/toppy-m-7b:free': true, // Best free uncensored model for NSFW
+    'tngtech/deepseek-r1t2-chimera:free': true, // Large reasoning model, less filtered (671B params, 163k context)
     'cognitivecomputations/dolphin-mixtral-8x7b:free': true, // Larger uncensored model
     'meta-llama/llama-3.1-8b-instruct:free': false, // Has content filters
     'mistralai/mistral-7b-instruct:free': false, // Has content filters
@@ -1688,7 +1690,7 @@ export async function initAICompanion() {
           // Update hint
           if (modelHint) {
             if (provider === 'openrouter') {
-              modelHint.textContent = 'Best for NSFW: Toppy-M 7B (free, uncensored). Dolphin Mixtral is also uncensored but larger.';
+              modelHint.textContent = 'Best for NSFW: Toppy-M 7B (free, uncensored) or DeepSeek R1T2 Chimera (671B, less filtered, huge context).';
             } else if (provider === 'local') {
               modelHint.textContent = 'Install models via: ollama pull <model-name>';
             } else if (provider === 'openai') {
