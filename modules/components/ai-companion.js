@@ -127,7 +127,7 @@ let currentOutfit = 'casual'; // 'casual', 'bdsm', 'sleepwear'
 let aiConfig = {
   provider: 'openrouter', // 'openai', 'anthropic', 'openrouter', or 'local'
   apiKey: null,
-  model: 'undi95/toppy-m-7b:free', // Default NSFW-friendly model (better for uncensored content than Llama)
+  model: 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Default NSFW-friendly model (uncensored, larger model)
   enabled: false,
   nsfwEnabled: true, // Enable NSFW content (default enabled for OpenRouter)
 };
@@ -182,7 +182,8 @@ async function loadAIConfig() {
       
       // Migrate deprecated models to current ones
       const deprecatedModels = {
-        'gryphe/mythomist-7b:free': 'undi95/toppy-m-7b:free',
+        'gryphe/mythomist-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free',
+        'undi95/toppy-m-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Toppy deprecated, use Dolphin
       };
       if (aiConfig.model && deprecatedModels[aiConfig.model]) {
         console.log(`[AI Companion] Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
@@ -214,7 +215,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = 'undi95/toppy-m-7b:free'; // Best free NSFW model
+        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b:free'; // Best free NSFW model (uncensored)
         saveAIConfig(); // Save the auto-configuration
       } else {
         console.warn('[AI Companion] No OpenRouter key found for auto-configuration');
@@ -231,7 +232,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = aiConfig.model || 'undi95/toppy-m-7b:free'; // Use stored model or default
+        aiConfig.model = aiConfig.model || 'cognitivecomputations/dolphin-mixtral-8x7b:free'; // Use stored model or default
         saveAIConfig();
       } else {
         console.warn('[AI Companion] No OpenRouter key available');
@@ -343,14 +344,13 @@ async function callOpenRouter(messages, systemPrompt) {
   // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
   // Note: Model names may change - check https://openrouter.ai/models for current list
   // Verified models (as of 2024):
-  // - undi95/toppy-m-7b:free - Best free uncensored model, designed for NSFW
+  // - cognitivecomputations/dolphin-mixtral-8x7b:free - Best free uncensored model for NSFW (8x7B = 47B params)
   // - tngtech/deepseek-r1t2-chimera:free - Large reasoning model (671B params), less filtered than OpenAI
-  // - cognitivecomputations/dolphin-mixtral-8x7b:free - Larger uncensored model
+  // - undi95/toppy-m-7b:free - DEPRECATED: No longer available
   // - Others may have content filters
   const nsfwModels = {
-    'undi95/toppy-m-7b:free': true, // Best free uncensored model for NSFW
+    'cognitivecomputations/dolphin-mixtral-8x7b:free': true, // Best free uncensored model for NSFW (8x7B = 47B params)
     'tngtech/deepseek-r1t2-chimera:free': true, // Large reasoning model, less filtered (671B params, 163k context)
-    'cognitivecomputations/dolphin-mixtral-8x7b:free': true, // Larger uncensored model
     'meta-llama/llama-3.1-8b-instruct:free': false, // Has content filters
     'mistralai/mistral-7b-instruct:free': false, // Has content filters
     'openchat/openchat-7b:free': false, // Has content filters
@@ -358,7 +358,7 @@ async function callOpenRouter(messages, systemPrompt) {
   };
 
   const defaultModel = aiConfig.nsfwEnabled 
-    ? 'undi95/toppy-m-7b:free' // Best free NSFW model on OpenRouter (mythomist deprecated)
+    ? 'cognitivecomputations/dolphin-mixtral-8x7b:free' // Best free NSFW model on OpenRouter (uncensored, 47B params)
     : 'openai/gpt-4o-mini';
 
   console.log('[AI Companion] Calling OpenRouter API with:', {
@@ -1635,8 +1635,10 @@ export function setCompanionOutfit(outfit) {
           if (mode === 'sheet') {
             const img = document.createElement('div');
             img.className = 'companion-sprite-image companion-sprite-sheet';
-            const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
-            const genericSheetPath = '/assets/companion/companion-sheet.png';
+            // Use the detected path from checkSpriteImages
+            const basePath = window._companionSheetPath ? window._companionSheetPath.replace(/companion-.*\.png$/, '') : '/assets/companion/';
+            const outfitSheetPath = `${basePath}companion-${currentOutfit}-sheet.png`;
+            const genericSheetPath = `${basePath}companion-sheet.png`;
             
             const testSheet = new Image();
             testSheet.onload = () => {
@@ -1656,8 +1658,10 @@ export function setCompanionOutfit(outfit) {
           } else if (mode === 'individual') {
             const img = document.createElement('img');
             img.className = 'companion-sprite-image companion-sprite-individual';
-            const outfitPath = `/assets/companion/companion-${currentOutfit}-${companionState}.png`;
-            const genericPath = `/assets/companion/companion-${companionState}.png`;
+            // Use the detected base path from checkSpriteImages
+            const basePath = window._companionBasePath || '/assets/companion/';
+            const outfitPath = `${basePath}companion-${currentOutfit}-${companionState}.png`;
+            const genericPath = `${basePath}companion-${companionState}.png`;
             
             const testImg = new Image();
             testImg.onload = () => {
@@ -1877,7 +1881,7 @@ export async function initAICompanion() {
         // Model options for each provider
         const modelOptions = {
           openrouter: [
-            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best Free NSFW) ⭐' },
+            { value: 'cognitivecomputations/dolphin-mixtral-8x7b:free', label: 'Dolphin Mixtral 8x7B (Best Free NSFW) ⭐' },
             { value: 'cognitivecomputations/dolphin-mixtral-8x7b:free', label: 'Dolphin Mixtral 8x7B (Uncensored)' },
             { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General, Filtered)' },
             { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Filtered)' },
@@ -2041,7 +2045,7 @@ export async function initAICompanion() {
           if (!model) {
             if (provider === 'openrouter') {
               aiConfig.model = aiConfig.nsfwEnabled 
-                ? 'undi95/toppy-m-7b:free' // Best for NSFW
+                ? 'cognitivecomputations/dolphin-mixtral-8x7b:free' // Best for NSFW (uncensored)
                 : 'openai/gpt-4o-mini';
             } else if (provider === 'local') {
               aiConfig.model = 'llama3.2';
