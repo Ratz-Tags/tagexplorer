@@ -343,10 +343,11 @@ async function callOpenRouter(messages, systemPrompt) {
 
   // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
   // Note: Model names may change - check https://openrouter.ai/models for current list
+  // Some models work with :free suffix, others without - we'll try both
   // Verified models (as of 2024):
   // - cognitivecomputations/dolphin-mixtral-8x7b:free - Best free uncensored model for NSFW (8x7B = 47B params)
   // - tngtech/deepseek-r1t2-chimera:free - Large reasoning model (671B params), less filtered than OpenAI
-  // - undi95/toppy-m-7b:free - DEPRECATED: No longer available
+  // - undi95/toppy-m-7b:free - May need to try without :free suffix
   // - Others may have content filters
   const nsfwModels = {
     'cognitivecomputations/dolphin-mixtral-8x7b:free': true, // Best free uncensored model for NSFW (8x7B = 47B params)
@@ -365,6 +366,7 @@ async function callOpenRouter(messages, systemPrompt) {
     model: aiConfig.model || defaultModel,
     messagesCount: messages.length,
     systemPromptLength: systemPrompt.length,
+    apiKeyLength: aiConfig.apiKey?.length || 0,
   });
   
   // Normalize model name - try without :free suffix if it fails
