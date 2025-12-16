@@ -184,9 +184,10 @@ async function loadAIConfig() {
       const deprecatedModels = {
         'gryphe/mythomist-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free',
         'undi95/toppy-m-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Toppy deprecated, use Dolphin
+        'undi95/toppy-m-7b': 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Also migrate without :free
       };
       if (aiConfig.model && deprecatedModels[aiConfig.model]) {
-        console.log(`[AI Companion] Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
+        console.log(`[AI Companion] ⚠️ Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
         aiConfig.model = deprecatedModels[aiConfig.model];
         saveAIConfig(); // Save the migration
       }
@@ -811,9 +812,9 @@ async function checkSpriteImages(outfit = currentOutfit) {
   const foundIdle = await checkMultiplePaths(outfitIdlePaths, 'outfit idle');
   if (foundIdle) {
     spriteImageMode = 'individual';
-    // Store base path for individual sprites
+    // Store base path for individual sprites - preserve the exact path found
     window._companionBasePath = foundIdle.replace(`companion-${outfit}-idle.png`, '');
-    console.log(`[AI Companion] ✅ Individual sprite images detected for outfit: ${outfit}`);
+    console.log(`[AI Companion] ✅ Individual sprite images detected for outfit: ${outfit} at base path: ${window._companionBasePath}`);
     return 'individual';
   }
   
@@ -823,7 +824,7 @@ async function checkSpriteImages(outfit = currentOutfit) {
   if (foundGenericIdle) {
     spriteImageMode = 'individual';
     window._companionBasePath = foundGenericIdle.replace('companion-idle.png', '');
-    console.log('[AI Companion] ✅ Generic individual sprite images detected');
+    console.log(`[AI Companion] ✅ Generic individual sprite images detected at base path: ${window._companionBasePath}`);
     return 'individual';
   }
   
@@ -1656,7 +1657,9 @@ export function setCompanionOutfit(outfit) {
   }
   
   currentOutfit = outfit;
-  spriteImageMode = null; // Reset to re-check with new outfit
+  // Don't reset spriteImageMode - preserve it and the base paths
+  // Only reset if we haven't detected sprites yet
+  const needsRecheck = spriteImageMode === null;
   
   // Reload sprites with new outfit
   if (companionElement) {
