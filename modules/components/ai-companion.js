@@ -478,54 +478,66 @@ async function generateImagePrompt(context, emotion) {
   return basePrompt;
 }
 
-// Generate image using HuggingFace Inference API (free, supports NSFW)
+// Generate image using free, no-auth services only
 async function generateImage(prompt) {
-  if (!aiConfig.apiKey || aiConfig.provider !== 'openrouter') {
-    console.warn('[AI Companion] Image generation requires OpenRouter API key');
-    return null;
-  }
-  
   try {
-    // Use OpenRouter's image generation endpoint if available
-    // For now, we'll use a free alternative: HuggingFace Inference API
-    // Note: This requires a HuggingFace token, but we can also try Replicate or other free services
-    
-    // Try using Stability AI via OpenRouter if available
-    // Otherwise, use a direct API call to a free service
-    
-    // For now, let's use a placeholder that generates via AI model creating a data URL
-    // or we can integrate with a free image generation service
-    
-    // Actually, let's use the AI to create a detailed prompt, then call a free image API
     const imagePrompt = await generateImagePrompt(prompt, 'teasing');
     
-    // Use HuggingFace Inference API (free tier available)
-    // Model: stabilityai/stable-diffusion-xl-base-1.0 or similar
-    const hfResponse = await fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // Note: HuggingFace requires a token for some models, but some are free
-        // For production, you'd want to add HF_TOKEN to secrets
-      },
-      body: JSON.stringify({
-        inputs: imagePrompt,
-        parameters: {
-          num_inference_steps: 20,
-          guidance_scale: 7.5,
+    // Use HuggingFace Inference API public endpoint (no auth required, but rate-limited)
+    // Model: runwayml/stable-diffusion-v1-5 (public, no auth needed)
+    try {
+      const hfResponse = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // No Authorization header - using completely free public endpoint
+        },
+        body: JSON.stringify({
+          inputs: imagePrompt,
+        }),
+      });
+      
+      if (hfResponse.ok) {
+        const blob = await hfResponse.blob();
+        // Check if response is actually an image (not an error JSON)
+        if (blob.type && blob.type.startsWith('image/')) {
+          const imageUrl = URL.createObjectURL(blob);
+          console.log('[AI Companion] Image generated successfully via HuggingFace (no auth)');
+          return imageUrl;
+        } else {
+          // Might be a JSON error response
+          const text = await blob.text();
+          console.warn('[AI Companion] HuggingFace returned non-image:', text.substring(0, 100));
         }
-      }),
-    });
-    
-    if (hfResponse.ok) {
-      const blob = await hfResponse.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      return imageUrl;
-    } else {
-      console.warn('[AI Companion] HuggingFace image generation failed, trying alternative...');
-      // Fallback: return null and show message that image generation is being set up
-      return null;
+      } else if (hfResponse.status === 503) {
+        // Model is loading, wait and retry once
+        console.log('[AI Companion] HuggingFace model loading, waiting 5s...');
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        const retryResponse = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputs: imagePrompt }),
+        });
+        
+        if (retryResponse.ok) {
+          const blob = await retryResponse.blob();
+          if (blob.type && blob.type.startsWith('image/')) {
+            const imageUrl = URL.createObjectURL(blob);
+            console.log('[AI Companion] Image generated on retry');
+            return imageUrl;
+          }
+        }
+      } else {
+        console.warn('[AI Companion] HuggingFace returned status:', hfResponse.status);
+      }
+    } catch (hfError) {
+      console.warn('[AI Companion] HuggingFace failed:', hfError.message);
     }
+    
+    // All free services failed or unavailable
+    console.warn('[AI Companion] Image generation unavailable (all free services failed)');
+    return null;
   } catch (error) {
     console.error('[AI Companion] Image generation error:', error);
     return null;
