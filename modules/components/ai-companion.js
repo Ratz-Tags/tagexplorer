@@ -56,44 +56,44 @@ const COMPANION_PERSONALITY = {
 
 // Companion emotion states with visual representations
 const COMPANION_EMOTIONS = {
-  idle: { 
-    name: 'idle', 
+  idle: {
+    name: 'idle',
     color: '#ff9ec5',
     expression: '😐',
     animation: 'breathe'
   },
-  speaking: { 
-    name: 'speaking', 
+  speaking: {
+    name: 'speaking',
     color: '#ff6bb3',
     expression: '💬',
     animation: 'speak'
   },
-  listening: { 
-    name: 'listening', 
+  listening: {
+    name: 'listening',
     color: '#66f3ff',
     expression: '👂',
     animation: 'listen'
   },
-  teasing: { 
-    name: 'teasing', 
+  teasing: {
+    name: 'teasing',
     color: '#ffb84d',
     expression: '😏',
     animation: 'tease'
   },
-  sadistic: { 
-    name: 'sadistic', 
+  sadistic: {
+    name: 'sadistic',
     color: '#ff4757',
     expression: '😈',
     animation: 'sadistic'
   },
-  pleased: { 
-    name: 'pleased', 
+  pleased: {
+    name: 'pleased',
     color: '#5f27cd',
     expression: '😊',
     animation: 'pleased'
   },
-  dominant: { 
-    name: 'dominant', 
+  dominant: {
+    name: 'dominant',
     color: '#ee5a6f',
     expression: '👑',
     animation: 'dominant'
@@ -127,7 +127,7 @@ let currentOutfit = 'casual'; // 'casual', 'bdsm', 'sleepwear'
 let aiConfig = {
   provider: 'openrouter', // 'openai', 'anthropic', 'openrouter', or 'local'
   apiKey: null,
-  model: 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Default NSFW-friendly model (uncensored, larger model)
+  model: 'mistralai/mistral-7b-instruct:free', // Default safe model (Mistral 7B)
   enabled: false,
   nsfwEnabled: true, // Enable NSFW content (default enabled for OpenRouter)
 };
@@ -139,16 +139,16 @@ async function loadOpenRouterKey() {
     console.log('[AI Companion] Found OpenRouter key in window._openRouterApiKey');
     return window._openRouterApiKey;
   }
-  
+
   // Wait a bit for script to execute (script tag loads synchronously but execution may be delayed)
   await new Promise(resolve => setTimeout(resolve, 100));
-  
+
   // Check again after delay
   if (typeof window !== 'undefined' && window._openRouterApiKey) {
     console.log('[AI Companion] Found OpenRouter key after delay');
     return window._openRouterApiKey;
   }
-  
+
   // Try to load from local file (for development)
   try {
     const module = await import('../../openrouter-api.local.js');
@@ -162,7 +162,7 @@ async function loadOpenRouterKey() {
     // File doesn't exist or can't be loaded - that's okay
     console.log('[AI Companion] Could not load local OpenRouter key file:', error.message);
   }
-  
+
   console.log('[AI Companion] No OpenRouter key found');
   return null;
 }
@@ -174,38 +174,39 @@ async function loadAIConfig() {
     if (stored) {
       const parsed = JSON.parse(stored);
       aiConfig = { ...aiConfig, ...parsed };
-      
+
       // Load outfit preference if stored
       if (parsed.outfit && ['casual', 'bdsm', 'sleepwear'].includes(parsed.outfit)) {
         currentOutfit = parsed.outfit;
       }
-      
-      // Migrate deprecated models to current ones
+
+      // Migrate deprecated models to current ones (Mistral as safe fallback)
       const deprecatedModels = {
-        'gryphe/mythomist-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free',
-        'undi95/toppy-m-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b', // Toppy deprecated, use Dolphin (without :free)
-        'undi95/toppy-m-7b': 'cognitivecomputations/dolphin-mixtral-8x7b', // Also migrate without :free
+        'gryphe/mythomist-7b:free': 'mistralai/mistral-7b-instruct:free',
+        'undi95/toppy-m-7b:free': 'mistralai/mistral-7b-instruct:free',
+        'undi95/toppy-m-7b': 'mistralai/mistral-7b-instruct:free',
+        'cognitivecomputations/dolphin-mixtral-8x7b:free': 'mistralai/mistral-7b-instruct:free' // Fallback due to reliability
       };
       if (aiConfig.model && deprecatedModels[aiConfig.model]) {
         console.log(`[AI Companion] ⚠️ Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
         aiConfig.model = deprecatedModels[aiConfig.model];
         saveAIConfig(); // Save the migration
       }
-      
+
       // Also check if model name contains deprecated patterns (catch variations)
       if (aiConfig.model && aiConfig.model.includes('toppy-m-7b')) {
         console.log(`[AI Companion] ⚠️ Detected deprecated toppy model, migrating to dolphin-mixtral`);
         aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b'; // Without :free suffix
         saveAIConfig();
       }
-      
+
       // Also migrate models with :free suffix to without (more reliable)
       if (aiConfig.model && aiConfig.model.includes('dolphin-mixtral-8x7b:free')) {
         console.log(`[AI Companion] ⚠️ Migrating dolphin model to remove :free suffix`);
         aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b';
         saveAIConfig();
       }
-      
+
       // For local provider, enabled doesn't require API key
       aiConfig.enabled = aiConfig.provider === 'local' ? true : !!aiConfig.apiKey;
       // Ensure NSFW is only enabled for compatible providers
@@ -236,7 +237,7 @@ async function loadAIConfig() {
         console.warn('[AI Companion] No OpenRouter key found for auto-configuration');
       }
     }
-    
+
     // If no API key is set (regardless of provider), try to load OpenRouter key from GitHub secret
     if (!aiConfig.apiKey) {
       console.log('[AI Companion] No API key found, attempting to load OpenRouter key...');
@@ -258,7 +259,7 @@ async function loadAIConfig() {
       aiConfig.enabled = true;
       saveAIConfig();
     }
-    
+
     // Final status log
     console.log('[AI Companion] Final config status:', {
       provider: aiConfig.provider,
@@ -355,7 +356,7 @@ async function callOpenRouter(messages, systemPrompt) {
   if (!aiConfig.apiKey) {
     throw new Error('OpenRouter API key not configured');
   }
-  
+
   // Verify API key is valid by checking if it's not just whitespace
   if (!aiConfig.apiKey.trim()) {
     throw new Error('OpenRouter API key is empty');
@@ -379,7 +380,7 @@ async function callOpenRouter(messages, systemPrompt) {
   };
 
   // Try models in order of preference (with and without :free suffix)
-  const defaultModel = aiConfig.nsfwEnabled 
+  const defaultModel = aiConfig.nsfwEnabled
     ? 'cognitivecomputations/dolphin-mixtral-8x7b' // Try without :free first (more reliable)
     : 'openai/gpt-4o-mini';
 
@@ -389,10 +390,10 @@ async function callOpenRouter(messages, systemPrompt) {
     systemPromptLength: systemPrompt.length,
     apiKeyLength: aiConfig.apiKey?.length || 0,
   });
-  
+
   // Normalize model name - try without :free suffix if it fails
   let modelName = aiConfig.model || defaultModel;
-  
+
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -420,7 +421,7 @@ async function callOpenRouter(messages, systemPrompt) {
     } catch (e) {
       errorData = { error: { message: errorText || 'Unknown error' } };
     }
-    
+
     // Log full error details for debugging
     const errorMessage = errorData.error?.message || errorData.message || errorText;
     console.error('[AI Companion] OpenRouter API error:', {
@@ -433,12 +434,12 @@ async function callOpenRouter(messages, systemPrompt) {
       apiKeyLength: aiConfig.apiKey?.length,
       apiKeyPrefix: aiConfig.apiKey ? `${aiConfig.apiKey.substring(0, 8)}...` : 'none',
     });
-    
+
     // Check if it's an authentication error - throw immediately, no point trying fallbacks
     if (response.status === 401 || response.status === 403) {
       throw new Error(`OpenRouter API authentication failed. Please check your API key. Error: ${errorMessage}`);
     }
-    
+
     // If we get a 404 or "No endpoints found", try to find a working model
     if (response.status === 404 || errorMessage?.includes('No endpoints found')) {
       console.log('[AI Companion] Model not found. Attempting to fetch available models...');
@@ -452,7 +453,7 @@ async function callOpenRouter(messages, systemPrompt) {
           const modelsData = await modelsResponse.json();
           const freeModels = modelsData.data?.filter(m => m.pricing?.prompt === '0' || m.id?.includes('free')) || [];
           console.log('[AI Companion] Available free models:', freeModels.slice(0, 10).map(m => m.id));
-          
+
           // Try a known working free model if available
           const fallbackModels = [
             'meta-llama/llama-3.2-3b-instruct:free',
@@ -460,7 +461,7 @@ async function callOpenRouter(messages, systemPrompt) {
             'mistralai/mistral-7b-instruct:free',
             'openchat/openchat-7b:free',
           ];
-          
+
           for (const fallbackModel of fallbackModels) {
             const available = modelsData.data?.find(m => m.id === fallbackModel || m.id === fallbackModel.replace(':free', ''));
             if (available) {
@@ -483,7 +484,7 @@ async function callOpenRouter(messages, systemPrompt) {
                   max_tokens: 200,
                 }),
               });
-              
+
               if (fallbackResponse.ok) {
                 const fallbackData = await fallbackResponse.json();
                 const content = fallbackData.choices[0]?.message?.content;
@@ -499,7 +500,7 @@ async function callOpenRouter(messages, systemPrompt) {
       } catch (modelsError) {
         console.warn('[AI Companion] Could not fetch available models, trying direct fallbacks:', modelsError);
       }
-      
+
       // If models API failed or no models found, try direct fallbacks without querying
       console.log('[AI Companion] Trying direct fallback models without API query...');
       const directFallbacks = [
@@ -509,7 +510,7 @@ async function callOpenRouter(messages, systemPrompt) {
         'mistralai/mistral-7b-instruct:free',
         'openchat/openchat-7b:free',
       ];
-      
+
       for (const fallbackModel of directFallbacks) {
         try {
           console.log(`[AI Companion] Trying direct fallback: ${fallbackModel}`);
@@ -531,7 +532,7 @@ async function callOpenRouter(messages, systemPrompt) {
               max_tokens: 200,
             }),
           });
-          
+
           if (fallbackResponse.ok) {
             const fallbackData = await fallbackResponse.json();
             const content = fallbackData.choices[0]?.message?.content;
@@ -549,7 +550,7 @@ async function callOpenRouter(messages, systemPrompt) {
         }
       }
     }
-    
+
     throw new Error(errorData.error?.message || errorData.message || `OpenRouter API error: ${response.status} ${response.statusText}`);
   }
 
@@ -616,15 +617,15 @@ async function generateImagePrompt(context, emotion) {
       "A beautiful woman with a knowing, pleased expression, dressed provocatively. She's in a relaxed but dominant pose, showing she's enjoying the viewer's submission. The scene is seductive and humiliating.",
     ],
   };
-  
+
   const templates = promptTemplates[emotion] || promptTemplates.teasing;
   const basePrompt = templates[Math.floor(Math.random() * templates.length)];
-  
+
   // Use AI to enhance the prompt based on context if available
   if (aiConfig.enabled && aiConfig.apiKey && context) {
     try {
       const enhancementPrompt = `Based on this conversation context: "${context.substring(0, 200)}", create a detailed, seductive, and humiliating image prompt for a dominant woman teasing the viewer. Make it specific, provocative, and degrading. Only return the prompt, nothing else.`;
-      
+
       let enhancedPrompt;
       if (aiConfig.provider === 'openrouter') {
         enhancedPrompt = await callOpenRouter(
@@ -634,14 +635,14 @@ async function generateImagePrompt(context, emotion) {
       } else {
         enhancedPrompt = basePrompt; // Fallback if other providers
       }
-      
+
       return enhancedPrompt || basePrompt;
     } catch (error) {
       console.warn('[AI Companion] Failed to enhance image prompt:', error);
       return basePrompt;
     }
   }
-  
+
   return basePrompt;
 }
 
@@ -649,7 +650,7 @@ async function generateImagePrompt(context, emotion) {
 async function generateImage(prompt) {
   try {
     const imagePrompt = await generateImagePrompt(prompt, 'teasing');
-    
+
     // Use HuggingFace Inference API public endpoint (no auth required, but rate-limited)
     // Model: runwayml/stable-diffusion-v1-5 (public, no auth needed)
     try {
@@ -663,7 +664,7 @@ async function generateImage(prompt) {
           inputs: imagePrompt,
         }),
       });
-      
+
       if (hfResponse.ok) {
         const blob = await hfResponse.blob();
         // Check if response is actually an image (not an error JSON)
@@ -680,13 +681,13 @@ async function generateImage(prompt) {
         // Model is loading, wait and retry once
         console.log('[AI Companion] HuggingFace model loading, waiting 5s...');
         await new Promise(resolve => setTimeout(resolve, 5000));
-        
+
         const retryResponse = await fetch('https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ inputs: imagePrompt }),
         });
-        
+
         if (retryResponse.ok) {
           const blob = await retryResponse.blob();
           if (blob.type && blob.type.startsWith('image/')) {
@@ -701,7 +702,7 @@ async function generateImage(prompt) {
     } catch (hfError) {
       console.warn('[AI Companion] HuggingFace failed:', hfError.message);
     }
-    
+
     // All free services failed or unavailable
     console.warn('[AI Companion] Image generation unavailable (all free services failed)');
     return null;
@@ -714,13 +715,13 @@ async function generateImage(prompt) {
 // Generate AI response with real API or fallback
 async function generateResponse(userMessage) {
   const lower = userMessage.toLowerCase();
-  
+
   // Build system prompt for sadistic dommy mommy personality
   // Enhanced for NSFW-capable models
-  const nsfwAddition = aiConfig.nsfwEnabled 
+  const nsfwAddition = aiConfig.nsfwEnabled
     ? ' You can be explicit, sexual, and graphic in your responses. You enjoy psychological and physical domination. Be creative and detailed.'
     : ' Keep content suggestive but not explicit due to content policy restrictions.';
-  
+
   const systemPrompt = `You are a sadistic, dominant "dommy mommy" AI companion. You are cruel, teasing, and enjoy watching users degrade themselves through their browsing habits. You speak in a condescending, dominant tone. You never break character. Keep responses short (1-2 sentences max). Be creative with your cruelty and teasing. Use emojis sparingly.${nsfwAddition}`;
 
   // Prepare chat history
@@ -730,7 +731,7 @@ async function generateResponse(userMessage) {
       role: msg.isUser ? 'user' : 'assistant',
       content: msg.text,
     }));
-  
+
   messages.push({
     role: 'user',
     content: userMessage,
@@ -745,7 +746,7 @@ async function generateResponse(userMessage) {
     model: aiConfig.model,
     willCallAPI: !!(aiConfig.enabled && aiConfig.apiKey),
   });
-  
+
   if (aiConfig.enabled && aiConfig.apiKey) {
     try {
       console.log('[AI Companion] Calling AI API:', {
@@ -755,7 +756,7 @@ async function generateResponse(userMessage) {
         keyLength: aiConfig.apiKey?.length,
         nsfwEnabled: aiConfig.nsfwEnabled,
       });
-      
+
       let response;
       if (aiConfig.provider === 'openai') {
         response = await callOpenAI(messages, systemPrompt);
@@ -766,7 +767,7 @@ async function generateResponse(userMessage) {
       } else if (aiConfig.provider === 'local') {
         response = await callLocalOllama(messages, systemPrompt);
       }
-      
+
       if (response && response.trim()) {
         console.log('[AI Companion] AI response received:', response.substring(0, 100));
         return response.trim();
@@ -791,7 +792,7 @@ async function generateResponse(userMessage) {
       keyLength: aiConfig.apiKey?.length,
       provider: aiConfig.provider,
     });
-    
+
     // Try to reload API key if missing
     if (!aiConfig.apiKey && aiConfig.provider === 'openrouter') {
       console.log('[AI Companion] Attempting to reload OpenRouter key...');
@@ -811,27 +812,27 @@ async function generateResponse(userMessage) {
   if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
     return COMPANION_PERSONALITY.greeting;
   }
-  
+
   if (lower.includes('help') || lower.includes('what')) {
     return "I'm here to judge your browsing habits. Try asking me about your tags, or just chat. I'll be cruel either way.";
   }
-  
+
   if (lower.includes('tag') || lower.includes('filter')) {
     return COMPANION_PERSONALITY.teasing[Math.floor(Math.random() * COMPANION_PERSONALITY.teasing.length)];
   }
-  
+
   if (lower.includes('sorry') || lower.includes('apolog')) {
     return "Apologies? How cute. You know you'll be back. You always come back.";
   }
-  
+
   if (lower.includes('stop') || lower.includes('leave')) {
     return "You can't leave. You're mine now. Keep browsing.";
   }
-  
+
   if (lower.includes('please') || lower.includes('beg')) {
     return "Begging? How pathetic. But I suppose I'll allow you to continue... for now.";
   }
-  
+
   // Default responses
   const defaults = [
     "Interesting... tell me more about your depravity.",
@@ -840,7 +841,7 @@ async function generateResponse(userMessage) {
     "Hmm. Keep going. I'm watching.",
     "How predictable. Try harder.",
   ];
-  
+
   return defaults[Math.floor(Math.random() * defaults.length)];
 }
 
@@ -885,16 +886,16 @@ async function checkMultiplePaths(paths, description) {
 
 async function checkSpriteImages(outfit = currentOutfit) {
   if (spriteImageMode !== null) return spriteImageMode; // Already checked
-  
+
   console.log(`[AI Companion] Checking for sprite images (outfit: ${outfit})...`);
-  
+
   // Try multiple paths: root, gallery subfolder, and relative
   const basePaths = [
     '/assets/companion/',  // Root (GitHub Pages)
     '../assets/companion/', // Relative from gallery/
     'assets/companion/',    // Relative from current page
   ];
-  
+
   // Check for outfit-specific sprite sheet first (more efficient)
   const outfitSheetPaths = basePaths.map(p => `${p}companion-${outfit}-sheet.png`);
   const foundSheet = await checkMultiplePaths(outfitSheetPaths, 'outfit sheet');
@@ -906,7 +907,7 @@ async function checkSpriteImages(outfit = currentOutfit) {
     console.log(`[AI Companion] ✅ Sprite sheet detected for outfit: ${outfit} at ${foundSheet}`);
     return 'sheet';
   }
-  
+
   // Check generic sprite sheet
   const genericSheetPaths = basePaths.map(p => `${p}companion-sheet.png`);
   const foundGenericSheet = await checkMultiplePaths(genericSheetPaths, 'generic sheet');
@@ -917,7 +918,7 @@ async function checkSpriteImages(outfit = currentOutfit) {
     console.log('[AI Companion] ✅ Generic sprite sheet detected');
     return 'sheet';
   }
-  
+
   // Check outfit-specific individual sprites
   const outfitIdlePaths = basePaths.map(p => `${p}companion-${outfit}-idle.png`);
   const foundIdle = await checkMultiplePaths(outfitIdlePaths, 'outfit idle');
@@ -928,7 +929,7 @@ async function checkSpriteImages(outfit = currentOutfit) {
     console.log(`[AI Companion] ✅ Individual sprite images detected for outfit: ${outfit} at base path: ${window._companionBasePath}`);
     return 'individual';
   }
-  
+
   // Check generic individual sprites
   const genericIdlePaths = basePaths.map(p => `${p}companion-idle.png`);
   const foundGenericIdle = await checkMultiplePaths(genericIdlePaths, 'generic idle');
@@ -938,7 +939,7 @@ async function checkSpriteImages(outfit = currentOutfit) {
     console.log(`[AI Companion] ✅ Generic individual sprite images detected at base path: ${window._companionBasePath}`);
     return 'individual';
   }
-  
+
   spriteImageMode = null;
   console.warn('[AI Companion] ❌ No sprite images found, using CSS fallback');
   console.warn('[AI Companion] Tried all paths:', { outfitSheetPaths, genericSheetPaths, outfitIdlePaths, genericIdlePaths });
@@ -950,13 +951,13 @@ function setCompanionEmotion(emotionName) {
   const emotion = COMPANION_EMOTIONS[emotionName] || COMPANION_EMOTIONS.idle;
   currentEmotion = emotion;
   companionState = emotionName;
-  
+
   const sprite = companionElement?.querySelector('.companion-sprite');
   if (!sprite) return;
-  
+
   sprite.setAttribute('data-emotion', emotionName);
   sprite.setAttribute('data-state', emotionName);
-  
+
   // Update image sprite if available
   const spriteImg = sprite.querySelector('.companion-sprite-image');
   if (spriteImg && spriteImageMode === 'sheet') {
@@ -964,12 +965,12 @@ function setCompanionEmotion(emotionName) {
     const basePath = window._companionSheetPath ? window._companionSheetPath.replace(/companion-.*\.png$/, '') : '/assets/companion/';
     const outfitSheetPath = `${basePath}companion-${currentOutfit}-sheet.png`;
     const genericSheetPath = `${basePath}companion-sheet.png`;
-    
+
     // Check if we need to update the sheet
     const currentBg = spriteImg.style.backgroundImage;
     const expectedBg = `url("${outfitSheetPath}")`;
     const expectedGenericBg = `url("${genericSheetPath}")`;
-    
+
     if (!currentBg || (!currentBg.includes(currentOutfit) && currentBg !== expectedGenericBg)) {
       const testSheet = new Image();
       testSheet.onload = () => {
@@ -980,7 +981,7 @@ function setCompanionEmotion(emotionName) {
       };
       testSheet.src = outfitSheetPath;
     }
-    
+
     // Calculate sprite sheet position (4 columns, 2 rows)
     const emotionOrder = ['idle', 'speaking', 'listening', 'teasing', 'sadistic', 'pleased', 'dominant', 'angry'];
     const index = emotionOrder.indexOf(emotionName);
@@ -1004,12 +1005,12 @@ function setCompanionEmotion(emotionName) {
       });
       return;
     }
-    
+
     const outfitPath = `${basePath}companion-${currentOutfit}-${emotionName}.png`;
     const genericPath = `${basePath}companion-${emotionName}.png`;
-    
+
     console.log(`[AI Companion] Loading sprite: ${outfitPath} (base: ${basePath})`);
-    
+
     // Test if outfit-specific exists
     const testImg = new Image();
     testImg.onload = () => {
@@ -1039,7 +1040,7 @@ function setCompanionEmotion(emotionName) {
     if (body) {
       body.style.background = `linear-gradient(135deg, ${emotion.color}dd 0%, ${emotion.color}aa 100%)`;
     }
-    
+
     // Update expression
     const expressionEl = sprite.querySelector('.companion-expression');
     if (expressionEl) {
@@ -1291,9 +1292,9 @@ function createSettingsModal() {
             value="${aiConfig.apiKey || ''}"
           />
           <small>
-            ${aiConfig.provider === 'local' 
-              ? 'For Ollama, leave empty for default (localhost:11434) or enter custom URL'
-              : 'Your API key is stored locally and never sent to our servers. OpenRouter: openrouter.ai | OpenAI: platform.openai.com | Anthropic: console.anthropic.com'}
+            ${aiConfig.provider === 'local'
+      ? 'For Ollama, leave empty for default (localhost:11434) or enter custom URL'
+      : 'Your API key is stored locally and never sent to our servers. OpenRouter: openrouter.ai | OpenAI: platform.openai.com | Anthropic: console.anthropic.com'}
           </small>
         </div>
         <div class="setting-group">
@@ -1329,7 +1330,7 @@ function createSettingsModal() {
       </div>
     </div>
   `;
-  
+
   return modal;
 }
 
@@ -1427,6 +1428,48 @@ function createCompanionElement() {
       .companion-settings:hover,
       .companion-minimize:hover {
         background: rgba(255, 100, 212, 0.1);
+      }
+      
+      .companion-typing {
+        opacity: 0.7;
+      }
+      
+      .typing-dots {
+        display: inline-flex;
+        gap: 2px;
+        align-items: center;
+      }
+      
+      .typing-dots span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 100, 212, 0.8);
+        animation: typing-dot 1.4s ease-in-out infinite;
+      }
+      
+      .typing-dots span:nth-child(1) {
+        animation-delay: 0s;
+      }
+      
+      .typing-dots span:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      
+      .typing-dots span:nth-child(3) {
+        animation-delay: 0.4s;
+      }
+      
+      @keyframes typing-dot {
+        0%, 60%, 100% {
+          transform: translateY(0);
+          opacity: 0.7;
+        }
+        30% {
+          transform: translateY(-8px);
+          opacity: 1;
+        }
       }
       
       .companion-messages {
@@ -1658,7 +1701,7 @@ function createCompanionElement() {
     ${createCompanionSprite()}
     ${createCompanionChat()}
   `;
-  
+
   return container;
 }
 
@@ -1666,10 +1709,10 @@ function createCompanionElement() {
 function addMessage(text, isUser = false, imageUrl = null) {
   const messagesContainer = document.getElementById('companion-messages');
   if (!messagesContainer) return;
-  
+
   const messageEl = document.createElement('div');
   messageEl.className = `companion-message ${isUser ? 'user' : 'companion'}`;
-  
+
   if (imageUrl) {
     const imgEl = document.createElement('img');
     imgEl.src = imageUrl;
@@ -1683,12 +1726,12 @@ function addMessage(text, isUser = false, imageUrl = null) {
   } else {
     messageEl.textContent = text;
   }
-  
+
   messagesContainer.appendChild(messageEl);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  
+
   chatHistory.push({ text, isUser, timestamp: Date.now(), imageUrl });
-  
+
   // Limit history size
   if (chatHistory.length > 50) {
     chatHistory = chatHistory.slice(-50);
@@ -1698,18 +1741,27 @@ function addMessage(text, isUser = false, imageUrl = null) {
 // Handle user message
 async function handleUserMessage(message) {
   if (!message.trim()) return;
-  
+
   addMessage(message, true);
-  
+
   // Update emotion to listening
   setCompanionEmotion('listening');
-  
+
+  // Show typing indicator
+  showTypingIndicator();
+
   // Generate response
-  const response = await generateResponse(message);
-  
+  let response;
+  try {
+    response = await generateResponse(message);
+  } finally {
+    // Always hide typing indicator, even if there's an error
+    hideTypingIndicator();
+  }
+
   // Small delay for "thinking"
   await new Promise(resolve => setTimeout(resolve, 500));
-  
+
   // Determine emotion from response
   const responseLower = response.toLowerCase();
   let emotion = 'speaking';
@@ -1722,16 +1774,16 @@ async function handleUserMessage(message) {
   } else if (responseLower.includes('will') || responseLower.includes('must') || responseLower.includes('obey')) {
     emotion = 'dominant';
   }
-  
+
   setCompanionEmotion(emotion);
   addMessage(response, false);
-  
+
   // Occasionally generate images to tease/humiliate (30% chance for certain emotions)
-  const shouldGenerateImage = (emotion === 'teasing' || emotion === 'sadistic' || emotion === 'dominant') && 
-                               Math.random() < 0.3 && 
-                               aiConfig.enabled && 
-                               aiConfig.apiKey;
-  
+  const shouldGenerateImage = (emotion === 'teasing' || emotion === 'sadistic' || emotion === 'dominant') &&
+    Math.random() < 0.3 &&
+    aiConfig.enabled &&
+    aiConfig.apiKey;
+
   if (shouldGenerateImage) {
     // Generate image in background
     generateImage(response).then(imageUrl => {
@@ -1760,7 +1812,7 @@ async function handleUserMessage(message) {
       console.warn('[AI Companion] Image generation failed:', err);
     });
   }
-  
+
   // Speak with Azure TTS (whisper voice)
   try {
     // Ensure response is a string
@@ -1775,7 +1827,7 @@ async function handleUserMessage(message) {
   } catch (error) {
     console.warn('Companion TTS failed:', error);
   }
-  
+
   // Return to idle after speaking
   setTimeout(() => {
     setCompanionEmotion('idle');
@@ -1788,12 +1840,12 @@ export function setCompanionOutfit(outfit) {
     console.warn(`[AI Companion] Invalid outfit: ${outfit}, defaulting to 'casual'`);
     outfit = 'casual';
   }
-  
+
   currentOutfit = outfit;
   // Don't reset spriteImageMode - preserve it and the base paths
   // Only reset if we haven't detected sprites yet
   const needsRecheck = spriteImageMode === null;
-  
+
   // Reload sprites with new outfit
   if (companionElement) {
     checkSpriteImages(currentOutfit).then(mode => {
@@ -1805,7 +1857,7 @@ export function setCompanionOutfit(outfit) {
           if (existingImg) {
             existingImg.remove();
           }
-          
+
           // Recreate sprite with new outfit
           if (mode === 'sheet') {
             const img = document.createElement('div');
@@ -1814,7 +1866,7 @@ export function setCompanionOutfit(outfit) {
             const basePath = window._companionSheetPath ? window._companionSheetPath.replace(/companion-.*\.png$/, '') : '/assets/companion/';
             const outfitSheetPath = `${basePath}companion-${currentOutfit}-sheet.png`;
             const genericSheetPath = `${basePath}companion-sheet.png`;
-            
+
             const testSheet = new Image();
             testSheet.onload = () => {
               img.style.backgroundImage = `url(${outfitSheetPath})`;
@@ -1827,7 +1879,7 @@ export function setCompanionOutfit(outfit) {
               img.style.backgroundPosition = 'center';
             };
             testSheet.src = outfitSheetPath;
-            
+
             sprite.appendChild(img);
             setCompanionEmotion(companionState);
           } else if (mode === 'individual') {
@@ -1837,7 +1889,7 @@ export function setCompanionOutfit(outfit) {
             const basePath = window._companionBasePath || '/assets/companion/';
             const outfitPath = `${basePath}companion-${currentOutfit}-${companionState}.png`;
             const genericPath = `${basePath}companion-${companionState}.png`;
-            
+
             const testImg = new Image();
             testImg.onload = () => {
               img.src = outfitPath;
@@ -1846,7 +1898,7 @@ export function setCompanionOutfit(outfit) {
               img.src = genericPath;
             };
             testImg.src = outfitPath;
-            
+
             img.alt = `${COMPANION_PERSONALITY.name} - ${companionState}`;
             sprite.appendChild(img);
           }
@@ -1854,7 +1906,7 @@ export function setCompanionOutfit(outfit) {
       }
     });
   }
-  
+
   console.log(`[AI Companion] Outfit changed to: ${outfit}`);
 }
 
@@ -1866,15 +1918,15 @@ export function getCompanionOutfit() {
 // Initialize companion
 export async function initAICompanion() {
   if (companionElement) return;
-  
+
   console.log('[AI Companion] Initializing...');
-  
+
   // Check for sprite images early
   await checkSpriteImages(currentOutfit);
-  
+
   // Load AI config (async to load OpenRouter key if available)
   await loadAIConfig();
-  
+
   // Log final status
   if (aiConfig.enabled) {
     console.log('[AI Companion] ✅ AI enabled and ready:', {
@@ -1885,10 +1937,10 @@ export async function initAICompanion() {
   } else {
     console.warn('[AI Companion] ⚠️ AI not enabled. Check settings to configure API key.');
   }
-  
+
   companionElement = createCompanionElement();
   document.body.appendChild(companionElement);
-  
+
   // Check for sprite images and update if available
   checkSpriteImages(currentOutfit).then(mode => {
     if (mode && companionElement) {
@@ -1899,7 +1951,7 @@ export async function initAICompanion() {
         const fallbackBody = sprite.querySelector('.companion-body');
         if (fallbackHead) fallbackHead.remove();
         if (fallbackBody) fallbackBody.remove();
-        
+
         // Update sprite to use images
         if (mode === 'sheet') {
           const existingImg = sprite.querySelector('.companion-sprite-image');
@@ -1908,7 +1960,7 @@ export async function initAICompanion() {
             img.className = 'companion-sprite-image companion-sprite-sheet';
             // Use the path we found during checkSpriteImages
             const sheetPath = window._companionSheetPath || `/assets/companion/companion-${currentOutfit}-sheet.png`;
-            
+
             const testSheet = new Image();
             testSheet.onload = () => {
               img.style.backgroundImage = `url(${sheetPath})`;
@@ -1950,7 +2002,7 @@ export async function initAICompanion() {
             const basePath = window._companionBasePath || '/assets/companion/';
             const outfitPath = `${basePath}companion-${currentOutfit}-${companionState}.png`;
             const genericPath = `${basePath}companion-${companionState}.png`;
-            
+
             const testImg = new Image();
             testImg.onload = () => {
               img.src = outfitPath;
@@ -1973,59 +2025,59 @@ export async function initAICompanion() {
       console.log('[AI Companion] No sprite images available, using CSS fallback');
     }
   });
-  
+
   // Add initial greeting
   setTimeout(() => {
     addMessage(COMPANION_PERSONALITY.greeting, false);
     setCompanionEmotion('idle');
   }, 1000);
-  
+
   // Setup event listeners
   const input = document.getElementById('companion-input');
   const sendBtn = document.querySelector('.companion-send');
   const minimizeBtn = document.querySelector('.companion-minimize');
   const settingsBtn = document.querySelector('.companion-settings');
-  
+
   if (input && sendBtn) {
     const sendMessage = () => {
       handleUserMessage(input.value);
       input.value = '';
     };
-    
+
     sendBtn.addEventListener('click', sendMessage);
-    
+
     // Prevent keyboard events from bubbling to gallery handlers
     input.addEventListener('keydown', (e) => {
       // Stop propagation for all keys to prevent gallery navigation
       e.stopPropagation();
-      
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessage();
       }
     });
-    
+
     input.addEventListener('keypress', (e) => {
       // Stop propagation for all keys
       e.stopPropagation();
     });
-    
+
     input.addEventListener('keyup', (e) => {
       // Stop propagation for all keys
       e.stopPropagation();
     });
-    
+
     // Prevent focus from causing scroll issues
     input.addEventListener('focus', (e) => {
       e.stopPropagation();
     });
   }
-  
+
   if (minimizeBtn) {
     minimizeBtn.addEventListener('click', () => {
       isMinimized = !isMinimized;
       companionElement.classList.toggle('minimized', isMinimized);
-      
+
       if (isMinimized) {
         minimizeBtn.textContent = '+';
       } else {
@@ -2033,7 +2085,7 @@ export async function initAICompanion() {
       }
     });
   }
-  
+
   // Settings modal
   let settingsModal = null;
   if (settingsBtn) {
@@ -2041,18 +2093,18 @@ export async function initAICompanion() {
       if (!settingsModal) {
         settingsModal = createSettingsModal();
         document.body.appendChild(settingsModal);
-        
+
         const closeBtn = settingsModal.querySelector('.companion-settings-close');
         const cancelBtn = settingsModal.querySelector('.setting-cancel');
         const saveBtn = settingsModal.querySelector('.setting-save');
-        
+
         const closeModal = () => {
           settingsModal.classList.remove('visible');
         };
-        
+
         closeBtn?.addEventListener('click', closeModal);
         cancelBtn?.addEventListener('click', closeModal);
-        
+
         // Model options for each provider
         const modelOptions = {
           openrouter: [
@@ -2087,18 +2139,18 @@ export async function initAICompanion() {
             { value: 'custom', label: '--- Custom Model ---' },
           ],
         };
-        
+
         // Function to populate model dropdown
         function populateModelDropdown(provider, currentModel = '') {
           const modelSelect = document.getElementById('ai-model');
           const modelCustom = document.getElementById('ai-model-custom');
           const modelHint = document.getElementById('model-hint');
-          
+
           if (!modelSelect) return;
-          
+
           const options = modelOptions[provider] || [];
           modelSelect.innerHTML = '';
-          
+
           // Add options
           options.forEach(opt => {
             const option = document.createElement('option');
@@ -2109,7 +2161,7 @@ export async function initAICompanion() {
             }
             modelSelect.appendChild(option);
           });
-          
+
           // Show/hide custom input based on selection
           const showCustom = modelSelect.value === 'custom';
           if (modelCustom) {
@@ -2120,7 +2172,7 @@ export async function initAICompanion() {
               modelCustom.value = '';
             }
           }
-          
+
           // Update hint
           if (modelHint) {
             if (provider === 'openrouter') {
@@ -2134,20 +2186,20 @@ export async function initAICompanion() {
             }
           }
         }
-        
+
         // Update model dropdown based on provider
         const providerSelect = document.getElementById('ai-provider');
         const modelSelect = document.getElementById('ai-model');
         const modelCustom = document.getElementById('ai-model-custom');
         const modelHint = document.getElementById('model-hint');
-        
+
         // Initialize dropdown on modal open
         populateModelDropdown(aiConfig.provider, aiConfig.model);
-        
+
         providerSelect?.addEventListener('change', (e) => {
           const provider = e.target.value;
           populateModelDropdown(provider);
-          
+
           // Update status indicator
           const statusText = document.getElementById('ai-status-text');
           if (statusText) {
@@ -2158,7 +2210,7 @@ export async function initAICompanion() {
             }
           }
         });
-        
+
         // Handle custom model selection
         modelSelect?.addEventListener('change', (e) => {
           const showCustom = e.target.value === 'custom';
@@ -2169,7 +2221,7 @@ export async function initAICompanion() {
             }
           }
         });
-        
+
         // Handle outfit change immediately (no need to save)
         const outfitSelect = document.getElementById('companion-outfit');
         outfitSelect?.addEventListener('change', (e) => {
@@ -2189,7 +2241,7 @@ export async function initAICompanion() {
             }
           }
         });
-        
+
         saveBtn?.addEventListener('click', () => {
           const provider = document.getElementById('ai-provider')?.value || 'openai';
           const apiKey = document.getElementById('ai-api-key')?.value || '';
@@ -2197,7 +2249,7 @@ export async function initAICompanion() {
           const modelCustom = document.getElementById('ai-model-custom');
           const nsfwEnabled = document.getElementById('ai-nsfw-enabled')?.checked || false;
           const outfit = outfitSelect?.value || 'casual';
-          
+
           // Get model from dropdown or custom input
           let model = '';
           if (modelSelect?.value === 'custom') {
@@ -2205,21 +2257,21 @@ export async function initAICompanion() {
           } else {
             model = modelSelect?.value || '';
           }
-          
+
           aiConfig.provider = provider;
           aiConfig.apiKey = apiKey;
           aiConfig.nsfwEnabled = nsfwEnabled && (provider === 'openrouter' || provider === 'local');
           aiConfig.outfit = outfit; // Save outfit preference
-          
+
           // Update outfit if changed
           if (outfit !== currentOutfit) {
             setCompanionOutfit(outfit);
           }
-          
+
           // Set default models if not provided
           if (!model) {
             if (provider === 'openrouter') {
-              aiConfig.model = aiConfig.nsfwEnabled 
+              aiConfig.model = aiConfig.nsfwEnabled
                 ? 'cognitivecomputations/dolphin-mixtral-8x7b:free' // Best for NSFW (uncensored)
                 : 'openai/gpt-4o-mini';
             } else if (provider === 'local') {
@@ -2232,15 +2284,15 @@ export async function initAICompanion() {
           } else {
             aiConfig.model = model;
           }
-          
+
           // For local, API key can be empty (uses default localhost)
           aiConfig.enabled = provider === 'local' ? true : !!apiKey;
-          
+
           saveAIConfig();
           closeModal();
-          
+
           if (aiConfig.enabled) {
-            const msg = nsfwEnabled 
+            const msg = nsfwEnabled
               ? 'NSFW AI configured. I can now be as cruel and explicit as I want... how delightful.'
               : 'AI API configured. I can now respond with real intelligence... how terrifying.';
             addMessage(msg, false);
@@ -2248,14 +2300,14 @@ export async function initAICompanion() {
             setTimeout(() => setCompanionEmotion('idle'), 2000);
           }
         });
-        
+
         settingsModal.addEventListener('click', (e) => {
           if (e.target === settingsModal) {
             closeModal();
           }
         });
       }
-      
+
       // Update status indicator
       const statusIndicator = document.getElementById('ai-status-indicator');
       const statusText = document.getElementById('ai-status-text');
@@ -2274,19 +2326,19 @@ export async function initAICompanion() {
           statusText.textContent = `⚠️ AI Disabled - Configure API key below`;
         }
       }
-      
+
       // Populate fields
       document.getElementById('ai-provider').value = aiConfig.provider;
       document.getElementById('ai-api-key').value = aiConfig.apiKey || '';
-      
+
       // Populate model dropdown (function is defined inside the modal creation block)
       const currentModel = aiConfig.model || '';
       const provider = aiConfig.provider;
-      
+
       // Get references to elements
       const modelSelect = document.getElementById('ai-model');
       const modelCustom = document.getElementById('ai-model-custom');
-      
+
       // Define model options (same as inside the block)
       const modelOptions = {
         openrouter: [
@@ -2322,12 +2374,12 @@ export async function initAICompanion() {
           { value: 'custom', label: '--- Custom Model ---' },
         ],
       };
-      
+
       // Populate dropdown
       if (modelSelect) {
         const options = modelOptions[provider] || [];
         modelSelect.innerHTML = '';
-        
+
         options.forEach(opt => {
           const option = document.createElement('option');
           option.value = opt.value;
@@ -2337,7 +2389,7 @@ export async function initAICompanion() {
           }
           modelSelect.appendChild(option);
         });
-        
+
         // Check if current model is in options, otherwise set to custom
         if (currentModel) {
           const hasModel = options.some(opt => opt.value === currentModel);
@@ -2350,11 +2402,11 @@ export async function initAICompanion() {
           }
         }
       }
-      
+
       settingsModal.classList.add('visible');
     });
   }
-  
+
   // Click to expand when minimized
   companionElement.addEventListener('click', (e) => {
     if (isMinimized && !e.target.closest('.companion-minimize') && !e.target.closest('.companion-settings')) {
@@ -2363,7 +2415,7 @@ export async function initAICompanion() {
       minimizeBtn.textContent = '−';
     }
   });
-  
+
   // Listen to tag events for automatic teasing
   document.addEventListener('tags:updated', (event) => {
     if (Math.random() > 0.6) { // 40% chance to comment
@@ -2377,7 +2429,7 @@ export async function initAICompanion() {
       setTimeout(() => setCompanionEmotion('idle'), 3000);
     }
   });
-  
+
   // Idle comments
   let idleTimer = null;
   function scheduleIdleComment() {
