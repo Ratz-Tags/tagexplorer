@@ -1011,20 +1011,32 @@ function setCompanionEmotion(emotionName) {
 
     console.log(`[AI Companion] Loading sprite: ${outfitPath} (base: ${basePath})`);
 
+    // Mark as loading
+    spriteImg.classList.add('loading');
+    spriteImg.style.opacity = '0.5';
+    
     // Test if outfit-specific exists
     const testImg = new Image();
     testImg.onload = () => {
       console.log(`[AI Companion] ✅ Loaded outfit sprite: ${outfitPath}`);
       spriteImg.src = outfitPath;
+      spriteImg.classList.remove('loading', 'error');
+      spriteImg.style.opacity = '1';
     };
     testImg.onerror = () => {
       console.log(`[AI Companion] ⚠️ Outfit sprite failed, trying generic: ${genericPath}`);
       const fallbackImg = new Image();
       fallbackImg.onload = () => {
         spriteImg.src = genericPath;
+        spriteImg.classList.remove('loading', 'error');
+        spriteImg.style.opacity = '1';
       };
       fallbackImg.onerror = () => {
         console.warn(`[AI Companion] ❌ Both sprite paths failed: ${outfitPath} and ${genericPath}`);
+        spriteImg.classList.add('error');
+        spriteImg.classList.remove('loading');
+        // Gracefully fall back to CSS avatar
+        gracefullyFallbackToCSS(sprite, emotion);
       };
       fallbackImg.src = genericPath;
     };
@@ -1049,6 +1061,60 @@ function setCompanionEmotion(emotionName) {
   }
 }
 
+// Gracefully fallback to CSS avatar when images fail
+function gracefullyFallbackToCSS(sprite, emotion) {
+  if (!sprite) return;
+  
+  // Remove any image elements
+  const spriteImg = sprite.querySelector('.companion-sprite-image');
+  if (spriteImg) {
+    spriteImg.style.opacity = '0';
+    setTimeout(() => spriteImg.remove(), 300);
+  }
+  
+  // Ensure CSS fallback elements exist
+  let head = sprite.querySelector('.companion-head');
+  let body = sprite.querySelector('.companion-body');
+  let expression = sprite.querySelector('.companion-expression');
+  
+  if (!head) {
+    head = document.createElement('div');
+    head.className = 'companion-head';
+    sprite.appendChild(head);
+  }
+  
+  if (!body) {
+    body = document.createElement('div');
+    body.className = 'companion-body';
+    sprite.appendChild(body);
+  }
+  
+  if (!expression) {
+    expression = document.createElement('span');
+    expression.className = 'companion-expression';
+    sprite.appendChild(expression);
+  }
+  
+  // Update colors and expression
+  head.style.background = `linear-gradient(135deg, ${emotion.color} 0%, ${emotion.color}dd 100%)`;
+  head.style.boxShadow = `0 4px 20px ${emotion.color}66`;
+  body.style.background = `linear-gradient(135deg, ${emotion.color}dd 0%, ${emotion.color}aa 100%)`;
+  expression.textContent = emotion.expression;
+  
+  // Add fade-in animation
+  head.style.opacity = '0';
+  body.style.opacity = '0';
+  expression.style.opacity = '0';
+  setTimeout(() => {
+    head.style.transition = 'opacity 0.5s ease';
+    body.style.transition = 'opacity 0.5s ease';
+    expression.style.transition = 'opacity 0.5s ease';
+    head.style.opacity = '1';
+    body.style.opacity = '1';
+    expression.style.opacity = '1';
+  }, 50);
+}
+
 // Create enhanced companion sprite with multiple emotions
 function createCompanionSprite() {
   return `
@@ -1062,6 +1128,21 @@ function createCompanionSprite() {
         align-items: center;
         justify-content: center;
         min-height: 280px;
+        cursor: pointer;
+        transition: transform 0.2s ease, filter 0.2s ease;
+      }
+      
+      .companion-sprite:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+      }
+      
+      .companion-sprite:active {
+        transform: scale(0.98);
+      }
+      
+      .companion-sprite.interactive {
+        animation: companion-pulse 2s ease-in-out infinite;
       }
       
       .companion-sprite-image {
@@ -1071,7 +1152,21 @@ function createCompanionSprite() {
         image-rendering: crisp-edges;
         image-rendering: pixelated;
         object-fit: contain;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.3s ease, transform 0.2s ease;
+        pointer-events: none;
+      }
+      
+      .companion-sprite:hover .companion-sprite-image {
+        transform: scale(1.02);
+      }
+      
+      .companion-sprite-image.loading {
+        opacity: 0.5;
+        filter: blur(2px);
+      }
+      
+      .companion-sprite-image.error {
+        opacity: 0;
       }
       
       .companion-sprite-sheet {
@@ -1213,6 +1308,15 @@ function createCompanionSprite() {
         0%, 100% { transform: translateX(0) scale(1); }
         25% { transform: translateX(-2px) scale(1.02); }
         75% { transform: translateX(2px) scale(1.02); }
+      }
+      
+      @keyframes companion-pulse {
+        0%, 100% { 
+          box-shadow: 0 0 0 0 rgba(255, 100, 212, 0.4);
+        }
+        50% { 
+          box-shadow: 0 0 20px 5px rgba(255, 100, 212, 0.6);
+        }
       }
     </style>
     <div class="companion-sprite" data-emotion="${companionState}" data-state="${companionState}">
@@ -2431,6 +2535,44 @@ export async function initAICompanion() {
     });
   }
 
+  // Add interactive sprite click handler
+  const sprite = companionElement.querySelector('.companion-sprite');
+  if (sprite) {
+    sprite.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // Don't trigger if clicking on settings/minimize buttons
+      if (e.target.closest('.companion-header-controls')) return;
+      
+      // Add interactive class for pulse animation
+      sprite.classList.add('interactive');
+      setTimeout(() => sprite.classList.remove('interactive'), 2000);
+      
+      // Trigger a random teasing response
+      const teasingMessages = [
+        "Touching me without permission? How bold.",
+        "What do you think you're doing?",
+        "Pathetic. You can't even resist clicking on me.",
+        "Is that all you can do? Click on things?",
+        "How desperate. Clicking on me won't help you.",
+      ];
+      const randomMessage = teasingMessages[Math.floor(Math.random() * teasingMessages.length)];
+      
+      // Show brief emotion change
+      setCompanionEmotion('teasing');
+      setTimeout(() => {
+        if (companionState === 'teasing') {
+          setCompanionEmotion('idle');
+        }
+      }, 1500);
+      
+      // Optionally add a message (uncomment if desired)
+      // addMessage(randomMessage, false);
+    });
+    
+    // Add hover tooltip
+    sprite.title = 'Click me... if you dare.';
+  }
+  
   // Click to expand when minimized
   companionElement.addEventListener('click', (e) => {
     if (isMinimized && !e.target.closest('.companion-minimize') && !e.target.closest('.companion-settings')) {
