@@ -183,8 +183,8 @@ async function loadAIConfig() {
       // Migrate deprecated models to current ones
       const deprecatedModels = {
         'gryphe/mythomist-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free',
-        'undi95/toppy-m-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Toppy deprecated, use Dolphin
-        'undi95/toppy-m-7b': 'cognitivecomputations/dolphin-mixtral-8x7b:free', // Also migrate without :free
+        'undi95/toppy-m-7b:free': 'cognitivecomputations/dolphin-mixtral-8x7b', // Toppy deprecated, use Dolphin (without :free)
+        'undi95/toppy-m-7b': 'cognitivecomputations/dolphin-mixtral-8x7b', // Also migrate without :free
       };
       if (aiConfig.model && deprecatedModels[aiConfig.model]) {
         console.log(`[AI Companion] ⚠️ Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
@@ -195,7 +195,14 @@ async function loadAIConfig() {
       // Also check if model name contains deprecated patterns (catch variations)
       if (aiConfig.model && aiConfig.model.includes('toppy-m-7b')) {
         console.log(`[AI Companion] ⚠️ Detected deprecated toppy model, migrating to dolphin-mixtral`);
-        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b:free';
+        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b'; // Without :free suffix
+        saveAIConfig();
+      }
+      
+      // Also migrate models with :free suffix to without (more reliable)
+      if (aiConfig.model && aiConfig.model.includes('dolphin-mixtral-8x7b:free')) {
+        console.log(`[AI Companion] ⚠️ Migrating dolphin model to remove :free suffix`);
+        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b';
         saveAIConfig();
       }
       
@@ -223,7 +230,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b:free'; // Best free NSFW model (uncensored)
+        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b'; // Best free NSFW model (uncensored, try without :free)
         saveAIConfig(); // Save the auto-configuration
       } else {
         console.warn('[AI Companion] No OpenRouter key found for auto-configuration');
@@ -240,7 +247,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = aiConfig.model || 'cognitivecomputations/dolphin-mixtral-8x7b:free'; // Use stored model or default
+        aiConfig.model = aiConfig.model || 'cognitivecomputations/dolphin-mixtral-8x7b'; // Use stored model or default (without :free)
         saveAIConfig();
       } else {
         console.warn('[AI Companion] No OpenRouter key available');
@@ -366,8 +373,9 @@ async function callOpenRouter(messages, systemPrompt) {
     'qwen/qwen-2.5-7b-instruct:free': false, // General purpose, may filter
   };
 
+  // Try models in order of preference (with and without :free suffix)
   const defaultModel = aiConfig.nsfwEnabled 
-    ? 'cognitivecomputations/dolphin-mixtral-8x7b:free' // Best free NSFW model on OpenRouter (uncensored, 47B params)
+    ? 'cognitivecomputations/dolphin-mixtral-8x7b' // Try without :free first (more reliable)
     : 'openai/gpt-4o-mini';
 
   console.log('[AI Companion] Calling OpenRouter API with:', {
@@ -889,17 +897,39 @@ function setCompanionEmotion(emotionName) {
     }
   } else if (spriteImg && spriteImageMode === 'individual') {
     // Use the base path we found during checkSpriteImages
-    const basePath = window._companionBasePath || '/assets/companion/';
+    // CRITICAL: Always use the stored base path, never fall back to absolute path
+    const basePath = window._companionBasePath;
+    if (!basePath) {
+      console.warn('[AI Companion] ⚠️ No base path stored! Re-checking sprites...');
+      // Re-check to get the base path
+      checkSpriteImages(currentOutfit).then(() => {
+        // Retry with the newly detected path
+        setCompanionEmotion(emotionName);
+      });
+      return;
+    }
+    
     const outfitPath = `${basePath}companion-${currentOutfit}-${emotionName}.png`;
     const genericPath = `${basePath}companion-${emotionName}.png`;
+    
+    console.log(`[AI Companion] Loading sprite: ${outfitPath} (base: ${basePath})`);
     
     // Test if outfit-specific exists
     const testImg = new Image();
     testImg.onload = () => {
+      console.log(`[AI Companion] ✅ Loaded outfit sprite: ${outfitPath}`);
       spriteImg.src = outfitPath;
     };
     testImg.onerror = () => {
-      spriteImg.src = genericPath;
+      console.log(`[AI Companion] ⚠️ Outfit sprite failed, trying generic: ${genericPath}`);
+      const fallbackImg = new Image();
+      fallbackImg.onload = () => {
+        spriteImg.src = genericPath;
+      };
+      fallbackImg.onerror = () => {
+        console.warn(`[AI Companion] ❌ Both sprite paths failed: ${outfitPath} and ${genericPath}`);
+      };
+      fallbackImg.src = genericPath;
     };
     testImg.src = outfitPath;
   } else {
