@@ -367,16 +367,19 @@ async function callOpenRouter(messages, systemPrompt) {
     systemPromptLength: systemPrompt.length,
   });
   
+  // Normalize model name - try without :free suffix if it fails
+  let modelName = aiConfig.model || defaultModel;
+  
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${aiConfig.apiKey}`,
-      'HTTP-Referer': window.location.origin,
+      'HTTP-Referer': window.location.origin || 'https://ratz-tags.github.io',
       'X-Title': 'TagExplorer AI Companion',
     },
     body: JSON.stringify({
-      model: aiConfig.model || defaultModel,
+      model: modelName,
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages,
@@ -394,10 +397,44 @@ async function callOpenRouter(messages, systemPrompt) {
     } catch (e) {
       errorData = { error: { message: errorText || 'Unknown error' } };
     }
+    
+    // If we get a 404 and model has :free suffix, try without it
+    if (response.status === 404 && modelName.includes(':free')) {
+      console.log('[AI Companion] Model with :free suffix failed, trying without suffix...');
+      const modelWithoutFree = modelName.replace(':free', '');
+      
+      const retryResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${aiConfig.apiKey}`,
+          'HTTP-Referer': window.location.origin || 'https://ratz-tags.github.io',
+          'X-Title': 'TagExplorer AI Companion',
+        },
+        body: JSON.stringify({
+          model: modelWithoutFree,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+          ],
+          temperature: 0.9,
+          max_tokens: 200,
+        }),
+      });
+      
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json();
+        const content = retryData.choices[0]?.message?.content;
+        console.log('[AI Companion] Retry successful without :free suffix');
+        return content || '...';
+      }
+    }
+    
     console.error('[AI Companion] OpenRouter API error:', {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
+      model: modelName,
     });
     throw new Error(errorData.error?.message || errorData.message || `OpenRouter API error: ${response.status} ${response.statusText}`);
   }
