@@ -43,7 +43,8 @@ function setKinkTags(tagsByCategory) {
     const normalized = [];
     for (const cat of tagsByCategory) {
       if (!cat || typeof cat.category !== "string" || !Array.isArray(cat.tags)) {
-        return;
+        console.warn('[tags] Skipping invalid category entry:', cat);
+        continue; // Skip invalid entries instead of returning early
       }
       const sanitizedTags = Array.from(
         new Set(

@@ -115,6 +115,10 @@ async function loadManifest() {
     try {
       const response = await fetch(MANIFEST_URL, { cache: 'no-store' });
       if (!response.ok) {
+        // Silently fall back to defaults if manifest doesn't exist (expected)
+        if (response.status === 404) {
+          return DEFAULT_LAYER_PRESET.map((entry) => normalizeLayer(entry)).filter(Boolean);
+        }
         throw new Error(`Manifest response ${response.status}`);
       }
       const data = await response.json();
@@ -126,7 +130,10 @@ async function loadManifest() {
         return normalized;
       }
     } catch (error) {
-      console.warn('[humiliation-audio] manifest load failed, using fallback', error);
+      // Only log non-404 errors (404 is expected if manifest doesn't exist yet)
+      if (!error.message?.includes('404') && !error.message?.includes('Manifest response 404')) {
+        console.warn('[humiliation-audio] manifest load failed, using fallback', error);
+      }
     }
     return DEFAULT_LAYER_PRESET.map((entry) => normalizeLayer(entry)).filter(Boolean);
   })();
@@ -308,6 +315,17 @@ function ensureLayer(layer) {
   audio.crossOrigin = 'anonymous';
   audio.volume = 0;
   audio.playbackRate = layer.baseRate;
+  
+  // Handle missing audio files gracefully (suppress error logging for expected 404s)
+  audio.addEventListener('error', (e) => {
+    // Silently handle missing audio files (expected if files don't exist yet)
+    // The browser will still log 404s, but we won't add additional console noise
+    const entry = layers.get(layer.id);
+    if (entry) {
+      entry.audioError = true;
+    }
+  }, { once: true });
+  
   layers.set(layer.id, { ...layer, audio });
   layerState.set(layer.id, {
     currentVolume: 0,

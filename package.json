@@ -6,6 +6,7 @@
   "scripts": {
     "test": "node --test",
     "update:tags": "node scripts/updateKinkTags.js",
+    "update:tags:local": "node scripts/updateKinkTags.js",
     "update:audio": "node scripts/generate-audio-list.js",
     "build:css": "tailwindcss -i styles/tailwind.css -o style.css --minify",
     "serve": "npx http-server -c-1 . -p 8080 --silent"

@@ -205,22 +205,26 @@ async function loadAIConfig() {
       }
     }
     
-    // If OpenRouter is selected but no key is set, try to use default from GitHub secret
-    if (aiConfig.provider === 'openrouter' && !aiConfig.apiKey) {
-      console.log('[AI Companion] OpenRouter selected but no key, attempting to load...');
+    // If no API key is set (regardless of provider), try to load OpenRouter key from GitHub secret
+    if (!aiConfig.apiKey) {
+      console.log('[AI Companion] No API key found, attempting to load OpenRouter key...');
       const defaultKey = await loadOpenRouterKey();
       if (defaultKey) {
         console.log('[AI Companion] Loaded OpenRouter key from window (length:', defaultKey.length, ')');
+        aiConfig.provider = 'openrouter';
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
-        // Auto-enable NSFW for default key (since it's provided)
-        if (!aiConfig.nsfwEnabled) {
-          aiConfig.nsfwEnabled = true;
-        }
+        aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
+        aiConfig.model = aiConfig.model || 'gryphe/mythomist-7b:free'; // Use stored model or default
         saveAIConfig();
       } else {
-        console.warn('[AI Companion] OpenRouter provider selected but no API key available');
+        console.warn('[AI Companion] No OpenRouter key available');
       }
+    } else if (aiConfig.provider === 'openrouter' && !aiConfig.enabled) {
+      // If OpenRouter is selected but disabled, re-enable if we have a key
+      console.log('[AI Companion] Re-enabling OpenRouter (key present but disabled)');
+      aiConfig.enabled = true;
+      saveAIConfig();
     }
     
     // Final status log
@@ -443,6 +447,15 @@ async function generateResponse(userMessage) {
   });
 
   // Try AI API if enabled
+  console.log('[AI Companion] generateResponse check:', {
+    enabled: aiConfig.enabled,
+    hasKey: !!aiConfig.apiKey,
+    keyLength: aiConfig.apiKey?.length,
+    provider: aiConfig.provider,
+    model: aiConfig.model,
+    willCallAPI: !!(aiConfig.enabled && aiConfig.apiKey),
+  });
+  
   if (aiConfig.enabled && aiConfig.apiKey) {
     try {
       console.log('[AI Companion] Calling AI API:', {
@@ -545,57 +558,55 @@ async function generateResponse(userMessage) {
 let spriteImageMode = null; // 'individual', 'sheet', or null (CSS fallback)
 let spriteSheetLoaded = false;
 
+// Check if a file exists using HEAD request (avoids 404 console errors)
+async function checkFileExists(url) {
+  try {
+    const response = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
 async function checkSpriteImages(outfit = currentOutfit) {
   if (spriteImageMode !== null) return spriteImageMode; // Already checked
   
   // Check for outfit-specific sprite sheet first (more efficient)
-  const sheetImg = new Image();
-  sheetImg.src = `/assets/companion/companion-${outfit}-sheet.png`;
+  const outfitSheetPath = `/assets/companion/companion-${outfit}-sheet.png`;
+  const genericSheetPath = '/assets/companion/companion-sheet.png';
+  const outfitIdlePath = `/assets/companion/companion-${outfit}-idle.png`;
+  const genericIdlePath = '/assets/companion/companion-idle.png';
   
-  return new Promise((resolve) => {
-    sheetImg.onload = () => {
-      spriteImageMode = 'sheet';
-      spriteSheetLoaded = true;
-      console.log(`[AI Companion] Sprite sheet detected for outfit: ${outfit}`);
-      resolve('sheet');
-    };
-    sheetImg.onerror = () => {
-      // Check for generic sprite sheet (fallback)
-      const genericSheetImg = new Image();
-      genericSheetImg.src = '/assets/companion/companion-sheet.png';
-      genericSheetImg.onload = () => {
-        spriteImageMode = 'sheet';
-        spriteSheetLoaded = true;
-        console.log('[AI Companion] Generic sprite sheet detected');
-        resolve('sheet');
-      };
-      genericSheetImg.onerror = () => {
-        // Check for outfit-specific individual sprites
-        const testImg = new Image();
-        testImg.src = `/assets/companion/companion-${outfit}-idle.png`;
-        testImg.onload = () => {
-          spriteImageMode = 'individual';
-          console.log(`[AI Companion] Individual sprite images detected for outfit: ${outfit}`);
-          resolve('individual');
-        };
-        testImg.onerror = () => {
-          // Check for generic individual sprites (fallback)
-          const genericImg = new Image();
-          genericImg.src = '/assets/companion/companion-idle.png';
-          genericImg.onload = () => {
-            spriteImageMode = 'individual';
-            console.log('[AI Companion] Generic individual sprite images detected');
-            resolve('individual');
-          };
-          genericImg.onerror = () => {
-            spriteImageMode = null;
-            console.log('[AI Companion] No sprite images found, using CSS fallback');
-            resolve(null);
-          };
-        };
-      };
-    };
-  });
+  // Check files exist before trying to load (avoids 404 console errors)
+  if (await checkFileExists(outfitSheetPath)) {
+    spriteImageMode = 'sheet';
+    spriteSheetLoaded = true;
+    console.log(`[AI Companion] Sprite sheet detected for outfit: ${outfit}`);
+    return 'sheet';
+  }
+  
+  if (await checkFileExists(genericSheetPath)) {
+    spriteImageMode = 'sheet';
+    spriteSheetLoaded = true;
+    console.log('[AI Companion] Generic sprite sheet detected');
+    return 'sheet';
+  }
+  
+  if (await checkFileExists(outfitIdlePath)) {
+    spriteImageMode = 'individual';
+    console.log(`[AI Companion] Individual sprite images detected for outfit: ${outfit}`);
+    return 'individual';
+  }
+  
+  if (await checkFileExists(genericIdlePath)) {
+    spriteImageMode = 'individual';
+    console.log('[AI Companion] Generic individual sprite images detected');
+    return 'individual';
+  }
+  
+  spriteImageMode = null;
+  console.log('[AI Companion] No sprite images found, using CSS fallback');
+  return null;
 }
 
 // Set companion emotion

@@ -274,7 +274,7 @@ function createSpinner(className = "gallery-spinner") {
   const spinner = document.createElement("div");
   spinner.className = className;
   spinner.innerHTML =
-    `<img src="spinner.gif" alt="Loading..." />` +
+    `<img src="/spinner.gif" alt="Loading..." />` +
     `<progress class="loading-bar" value="0" max="1"></progress>`;
 
   spinner.setTotal = (total) => {
