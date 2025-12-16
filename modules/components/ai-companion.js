@@ -804,9 +804,10 @@ function setCompanionEmotion(emotionName) {
   // Update image sprite if available
   const spriteImg = sprite.querySelector('.companion-sprite-image');
   if (spriteImg && spriteImageMode === 'sheet') {
-    // Update sprite sheet background if outfit changed
-    const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
-    const genericSheetPath = '/assets/companion/companion-sheet.png';
+    // Use the path we found during checkSpriteImages
+    const basePath = window._companionSheetPath ? window._companionSheetPath.replace(/companion-.*\.png$/, '') : '/assets/companion/';
+    const outfitSheetPath = `${basePath}companion-${currentOutfit}-sheet.png`;
+    const genericSheetPath = `${basePath}companion-sheet.png`;
     
     // Check if we need to update the sheet
     const currentBg = spriteImg.style.backgroundImage;
@@ -835,9 +836,10 @@ function setCompanionEmotion(emotionName) {
       spriteImg.style.backgroundPosition = `${x}px ${y}px`;
     }
   } else if (spriteImg && spriteImageMode === 'individual') {
-    // Update individual sprite image (try outfit-specific first, then fallback to generic)
-    const outfitPath = `/assets/companion/companion-${currentOutfit}-${emotionName}.png`;
-    const genericPath = `/assets/companion/companion-${emotionName}.png`;
+    // Use the base path we found during checkSpriteImages
+    const basePath = window._companionBasePath || '/assets/companion/';
+    const outfitPath = `${basePath}companion-${currentOutfit}-${emotionName}.png`;
+    const genericPath = `${basePath}companion-${emotionName}.png`;
     
     // Test if outfit-specific exists
     const testImg = new Image();
