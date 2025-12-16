@@ -1738,6 +1738,30 @@ function addMessage(text, isUser = false, imageUrl = null) {
   }
 }
 
+// Show typing indicator
+function showTypingIndicator() {
+  const messagesContainer = document.getElementById('companion-messages');
+  if (!messagesContainer) return;
+
+  // Remove any existing typing indicator
+  const existing = messagesContainer.querySelector('.companion-typing');
+  if (existing) existing.remove();
+
+  const typingEl = document.createElement('div');
+  typingEl.className = 'companion-message companion companion-typing';
+  typingEl.innerHTML = '<span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
+  messagesContainer.appendChild(typingEl);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+// Hide typing indicator
+function hideTypingIndicator() {
+  const messagesContainer = document.getElementById('companion-messages');
+  if (!messagesContainer) return;
+  const typingEl = messagesContainer.querySelector('.companion-typing');
+  if (typingEl) typingEl.remove();
+}
+
 // Handle user message
 async function handleUserMessage(message) {
   if (!message.trim()) return;
