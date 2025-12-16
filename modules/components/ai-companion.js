@@ -2024,6 +2024,12 @@ export async function initAICompanion() {
           aiConfig.provider = provider;
           aiConfig.apiKey = apiKey;
           aiConfig.nsfwEnabled = nsfwEnabled && (provider === 'openrouter' || provider === 'local');
+          aiConfig.outfit = outfit; // Save outfit preference
+          
+          // Update outfit if changed
+          if (outfit !== currentOutfit) {
+            setCompanionOutfit(outfit);
+          }
           
           // Set default models if not provided
           if (!model) {
