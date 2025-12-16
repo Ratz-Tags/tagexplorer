@@ -39,6 +39,14 @@ jobs:
       - name: Build Tailwind CSS
         run: npm run build:css
 
+      - name: Copy public assets to root
+        run: |
+          if [ -d "public/assets" ]; then
+            mkdir -p assets
+            cp -r public/assets/* assets/ || true
+            echo "✅ Copied assets from public/ to root/"
+          fi
+
       - name: Inject OpenRouter API Key
         run: |
           if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then
