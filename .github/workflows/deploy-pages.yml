@@ -45,6 +45,15 @@ jobs:
             mkdir -p assets
             cp -r public/assets/* assets/ || true
             echo "✅ Copied assets from public/ to root/"
+            # Verify companion images were copied
+            if [ -d "assets/companion" ]; then
+              echo "✅ Companion images found in assets/companion/"
+              ls -la assets/companion/ | head -5
+            else
+              echo "⚠️ Warning: assets/companion/ not found after copy"
+            fi
+          else
+            echo "⚠️ Warning: public/assets/ directory not found"
           fi
 
       - name: Inject OpenRouter API Key
