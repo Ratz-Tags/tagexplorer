@@ -174,6 +174,17 @@ async function loadAIConfig() {
     if (stored) {
       const parsed = JSON.parse(stored);
       aiConfig = { ...aiConfig, ...parsed };
+      
+      // Migrate deprecated models to current ones
+      const deprecatedModels = {
+        'gryphe/mythomist-7b:free': 'undi95/toppy-m-7b:free',
+      };
+      if (aiConfig.model && deprecatedModels[aiConfig.model]) {
+        console.log(`[AI Companion] Migrating deprecated model ${aiConfig.model} to ${deprecatedModels[aiConfig.model]}`);
+        aiConfig.model = deprecatedModels[aiConfig.model];
+        saveAIConfig(); // Save the migration
+      }
+      
       // For local provider, enabled doesn't require API key
       aiConfig.enabled = aiConfig.provider === 'local' ? true : !!aiConfig.apiKey;
       // Ensure NSFW is only enabled for compatible providers
