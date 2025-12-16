@@ -175,6 +175,11 @@ async function loadAIConfig() {
       const parsed = JSON.parse(stored);
       aiConfig = { ...aiConfig, ...parsed };
       
+      // Load outfit preference if stored
+      if (parsed.outfit && ['casual', 'bdsm', 'sleepwear'].includes(parsed.outfit)) {
+        currentOutfit = parsed.outfit;
+      }
+      
       // Migrate deprecated models to current ones
       const deprecatedModels = {
         'gryphe/mythomist-7b:free': 'undi95/toppy-m-7b:free',
@@ -1133,6 +1138,15 @@ function createSettingsModal() {
           />
           <small id="model-hint">Select a model from the dropdown or choose "Custom" to enter your own</small>
         </div>
+        <div class="setting-group">
+          <label>Companion Outfit</label>
+          <select id="companion-outfit" class="setting-input">
+            <option value="casual" ${currentOutfit === 'casual' ? 'selected' : ''}>Casual</option>
+            <option value="bdsm" ${currentOutfit === 'bdsm' ? 'selected' : ''}>BDSM</option>
+            <option value="sleepwear" ${currentOutfit === 'sleepwear' ? 'selected' : ''}>Sleepwear/Lingerie</option>
+          </select>
+          <small>Choose the companion's outfit style. Changes take effect immediately.</small>
+        </div>
         <div class="setting-actions">
           <button class="setting-save">Save</button>
           <button class="setting-cancel">Cancel</button>
@@ -1971,12 +1985,33 @@ export async function initAICompanion() {
           }
         });
         
+        // Handle outfit change immediately (no need to save)
+        const outfitSelect = document.getElementById('companion-outfit');
+        outfitSelect?.addEventListener('change', (e) => {
+          const newOutfit = e.target.value;
+          if (['casual', 'bdsm', 'sleepwear'].includes(newOutfit)) {
+            setCompanionOutfit(newOutfit);
+            // Save outfit preference
+            const stored = localStorage.getItem('tagexplorer:ai-companion-config');
+            if (stored) {
+              try {
+                const config = JSON.parse(stored);
+                config.outfit = newOutfit;
+                localStorage.setItem('tagexplorer:ai-companion-config', JSON.stringify(config));
+              } catch (e) {
+                console.warn('[AI Companion] Failed to save outfit preference:', e);
+              }
+            }
+          }
+        });
+        
         saveBtn?.addEventListener('click', () => {
           const provider = document.getElementById('ai-provider')?.value || 'openai';
           const apiKey = document.getElementById('ai-api-key')?.value || '';
           const modelSelect = document.getElementById('ai-model');
           const modelCustom = document.getElementById('ai-model-custom');
           const nsfwEnabled = document.getElementById('ai-nsfw-enabled')?.checked || false;
+          const outfit = outfitSelect?.value || 'casual';
           
           // Get model from dropdown or custom input
           let model = '';
