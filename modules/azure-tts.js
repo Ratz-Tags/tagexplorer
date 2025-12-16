@@ -355,7 +355,9 @@ async function fetchAzureVoices(key, region, { forceRefresh = false } = {}) {
 function buildSSML(text, config, { intensity, event } = {}) {
   const { voice, style } = normalizeVoiceConfig(config);
   const profile = getIntensityProfile(intensity ?? FALLBACK_INTENSITY);
-  const safeText = text.replace(/[<>]/g, "");
+  // Ensure text is a string
+  const textStr = typeof text === 'string' ? text : String(text || '');
+  const safeText = textStr.replace(/[<>]/g, "");
   const prosodyOpen = `<prosody rate="${profile.rate}" volume="${profile.volume}" pitch="${profile.pitch}">`;
   const prosodyClose = `</prosody>`;
   const eventAttr = event ? ` mstts:styledegree="1.0"` : "";
@@ -372,7 +374,9 @@ function buildSSML(text, config, { intensity, event } = {}) {
 }
 
 async function azureSpeak(text, overrides = {}, meta = {}) {
-  if (!text) return null;
+  // Ensure text is a string
+  const textStr = typeof text === 'string' ? text : String(text || '');
+  if (!textStr || !textStr.trim()) return null;
   const { key, region } = await ensureCredentials();
   const {
     ssml: ssmlOverride,
@@ -387,7 +391,7 @@ async function azureSpeak(text, overrides = {}, meta = {}) {
     clampIntensity(
       overrideIntensity ?? meta.intensity ?? FALLBACK_INTENSITY
     ) || FALLBACK_INTENSITY;
-  const ssml = ssmlOverride || buildSSML(text, config, {
+  const ssml = ssmlOverride || buildSSML(textStr, config, {
     intensity: resolvedIntensity,
     event: meta.event,
   });

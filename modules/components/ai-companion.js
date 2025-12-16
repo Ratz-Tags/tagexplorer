@@ -127,7 +127,7 @@ let currentOutfit = 'casual'; // 'casual', 'bdsm', 'sleepwear'
 let aiConfig = {
   provider: 'openrouter', // 'openai', 'anthropic', 'openrouter', or 'local'
   apiKey: null,
-  model: 'gryphe/mythomist-7b:free', // Default NSFW-friendly model (better for uncensored content than Llama)
+  model: 'undi95/toppy-m-7b:free', // Default NSFW-friendly model (better for uncensored content than Llama)
   enabled: false,
   nsfwEnabled: true, // Enable NSFW content (default enabled for OpenRouter)
 };
@@ -198,7 +198,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = 'gryphe/mythomist-7b:free'; // Best free NSFW model
+        aiConfig.model = 'undi95/toppy-m-7b:free'; // Best free NSFW model
         saveAIConfig(); // Save the auto-configuration
       } else {
         console.warn('[AI Companion] No OpenRouter key found for auto-configuration');
@@ -215,7 +215,7 @@ async function loadAIConfig() {
         aiConfig.apiKey = defaultKey;
         aiConfig.enabled = true;
         aiConfig.nsfwEnabled = true; // Default to NSFW enabled for OpenRouter
-        aiConfig.model = aiConfig.model || 'gryphe/mythomist-7b:free'; // Use stored model or default
+        aiConfig.model = aiConfig.model || 'undi95/toppy-m-7b:free'; // Use stored model or default
         saveAIConfig();
       } else {
         console.warn('[AI Companion] No OpenRouter key available');
@@ -325,16 +325,17 @@ async function callOpenRouter(messages, systemPrompt) {
   }
 
   // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
+  // Note: Model names may change - check https://openrouter.ai/models for current list
   const nsfwModels = {
-    'gryphe/mythomist-7b:free': true, // Best for creative/NSFW content, uncensored
-    'undi95/toppy-m-7b:free': true, // Also excellent for uncensored content
+    'undi95/toppy-m-7b:free': true, // Excellent for uncensored content
     'meta-llama/llama-3.1-8b-instruct:free': true, // General purpose, may have some filters
     'mistralai/mistral-7b-instruct:free': true,
     'openchat/openchat-7b:free': true,
+    'qwen/qwen-2.5-7b-instruct:free': true, // Alternative free model
   };
 
   const defaultModel = aiConfig.nsfwEnabled 
-    ? 'gryphe/mythomist-7b:free' // Best free NSFW model on OpenRouter
+    ? 'undi95/toppy-m-7b:free' // Best free NSFW model on OpenRouter (mythomist deprecated)
     : 'openai/gpt-4o-mini';
 
   console.log('[AI Companion] Calling OpenRouter API with:', {
@@ -1343,11 +1344,15 @@ async function handleUserMessage(message) {
   
   // Speak with Azure TTS (whisper voice)
   try {
-    const ssml = composeWhisperSSML(response, {
-      rate: '-10%',
-      volume: '-25%',
-    });
-    await azureSpeak(ssml);
+    // Ensure response is a string
+    const responseText = typeof response === 'string' ? response : String(response || '');
+    if (responseText && responseText.trim()) {
+      const ssml = composeWhisperSSML(responseText, {
+        rate: '-10%',
+        volume: '-25%',
+      });
+      await azureSpeak(ssml);
+    }
   } catch (error) {
     console.warn('Companion TTS failed:', error);
   }
@@ -1610,7 +1615,7 @@ export async function initAICompanion() {
         // Model options for each provider
         const modelOptions = {
           openrouter: [
-            { value: 'gryphe/mythomist-7b:free', label: 'Mythomist 7B (Best NSFW) ⭐' },
+            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best NSFW) ⭐' },
             { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Excellent NSFW)' },
             { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General)' },
             { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B' },
@@ -1746,7 +1751,7 @@ export async function initAICompanion() {
           if (!model) {
             if (provider === 'openrouter') {
               aiConfig.model = aiConfig.nsfwEnabled 
-                ? 'gryphe/mythomist-7b:free' // Best for NSFW
+                ? 'undi95/toppy-m-7b:free' // Best for NSFW
                 : 'openai/gpt-4o-mini';
             } else if (provider === 'local') {
               aiConfig.model = 'llama3.2';
