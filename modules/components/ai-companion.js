@@ -434,13 +434,13 @@ async function callOpenRouter(messages, systemPrompt) {
       apiKeyPrefix: aiConfig.apiKey ? `${aiConfig.apiKey.substring(0, 8)}...` : 'none',
     });
     
-    // Check if it's an authentication error
+    // Check if it's an authentication error - throw immediately, no point trying fallbacks
     if (response.status === 401 || response.status === 403) {
       throw new Error(`OpenRouter API authentication failed. Please check your API key. Error: ${errorMessage}`);
     }
     
-    // If we get a 404, try to fetch available models to suggest alternatives
-    if (response.status === 404) {
+    // If we get a 404 or "No endpoints found", try to find a working model
+    if (response.status === 404 || errorMessage?.includes('No endpoints found')) {
       console.log('[AI Companion] Model not found. Attempting to fetch available models...');
       try {
         const modelsResponse = await fetch('https://openrouter.ai/api/v1/models', {
@@ -497,7 +497,56 @@ async function callOpenRouter(messages, systemPrompt) {
           }
         }
       } catch (modelsError) {
-        console.warn('[AI Companion] Could not fetch available models:', modelsError);
+        console.warn('[AI Companion] Could not fetch available models, trying direct fallbacks:', modelsError);
+      }
+      
+      // If models API failed or no models found, try direct fallbacks without querying
+      console.log('[AI Companion] Trying direct fallback models without API query...');
+      const directFallbacks = [
+        'meta-llama/llama-3.2-3b-instruct:free',
+        'meta-llama/llama-3.2-3b-instruct',
+        'qwen/qwen-2.5-7b-instruct:free',
+        'mistralai/mistral-7b-instruct:free',
+        'openchat/openchat-7b:free',
+      ];
+      
+      for (const fallbackModel of directFallbacks) {
+        try {
+          console.log(`[AI Companion] Trying direct fallback: ${fallbackModel}`);
+          const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${aiConfig.apiKey}`,
+              'HTTP-Referer': window.location.origin || 'https://ratz-tags.github.io',
+              'X-Title': 'TagExplorer AI Companion',
+            },
+            body: JSON.stringify({
+              model: fallbackModel,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...messages,
+              ],
+              temperature: 0.9,
+              max_tokens: 200,
+            }),
+          });
+          
+          if (fallbackResponse.ok) {
+            const fallbackData = await fallbackResponse.json();
+            const content = fallbackData.choices[0]?.message?.content;
+            console.log(`[AI Companion] ✅ Direct fallback ${fallbackModel} worked!`);
+            // Update stored model to the working one
+            aiConfig.model = fallbackModel;
+            saveAIConfig();
+            return content || '...';
+          } else {
+            const fallbackError = await fallbackResponse.text();
+            console.log(`[AI Companion] Fallback ${fallbackModel} failed: ${fallbackResponse.status} ${fallbackError}`);
+          }
+        } catch (fallbackError) {
+          console.log(`[AI Companion] Fallback ${fallbackModel} error:`, fallbackError);
+        }
       }
     }
     
