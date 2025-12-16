@@ -192,6 +192,13 @@ async function loadAIConfig() {
         saveAIConfig(); // Save the migration
       }
       
+      // Also check if model name contains deprecated patterns (catch variations)
+      if (aiConfig.model && aiConfig.model.includes('toppy-m-7b')) {
+        console.log(`[AI Companion] ⚠️ Detected deprecated toppy model, migrating to dolphin-mixtral`);
+        aiConfig.model = 'cognitivecomputations/dolphin-mixtral-8x7b:free';
+        saveAIConfig();
+      }
+      
       // For local provider, enabled doesn't require API key
       aiConfig.enabled = aiConfig.provider === 'local' ? true : !!aiConfig.apiKey;
       // Ensure NSFW is only enabled for compatible providers
