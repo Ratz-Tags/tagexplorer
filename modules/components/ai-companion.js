@@ -416,44 +416,78 @@ async function callOpenRouter(messages, systemPrompt) {
       errorData = { error: { message: errorText || 'Unknown error' } };
     }
     
-    // If we get a 404 and model has :free suffix, try without it
-    if (response.status === 404 && modelName.includes(':free')) {
-      console.log('[AI Companion] Model with :free suffix failed, trying without suffix...');
-      const modelWithoutFree = modelName.replace(':free', '');
-      
-      const retryResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${aiConfig.apiKey}`,
-          'HTTP-Referer': window.location.origin || 'https://ratz-tags.github.io',
-          'X-Title': 'TagExplorer AI Companion',
-        },
-        body: JSON.stringify({
-          model: modelWithoutFree,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages,
-          ],
-          temperature: 0.9,
-          max_tokens: 200,
-        }),
-      });
-      
-      if (retryResponse.ok) {
-        const retryData = await retryResponse.json();
-        const content = retryData.choices[0]?.message?.content;
-        console.log('[AI Companion] Retry successful without :free suffix');
-        return content || '...';
-      }
-    }
-    
+    // Log full error details for debugging
     console.error('[AI Companion] OpenRouter API error:', {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
       model: modelName,
+      apiKeyPresent: !!aiConfig.apiKey,
+      apiKeyLength: aiConfig.apiKey?.length,
     });
+    
+    // If we get a 404, try to fetch available models to suggest alternatives
+    if (response.status === 404) {
+      console.log('[AI Companion] Model not found. Attempting to fetch available models...');
+      try {
+        const modelsResponse = await fetch('https://openrouter.ai/api/v1/models', {
+          headers: {
+            'Authorization': `Bearer ${aiConfig.apiKey}`,
+          },
+        });
+        if (modelsResponse.ok) {
+          const modelsData = await modelsResponse.json();
+          const freeModels = modelsData.data?.filter(m => m.pricing?.prompt === '0' || m.id?.includes('free')) || [];
+          console.log('[AI Companion] Available free models:', freeModels.slice(0, 10).map(m => m.id));
+          
+          // Try a known working free model if available
+          const fallbackModels = [
+            'meta-llama/llama-3.2-3b-instruct:free',
+            'qwen/qwen-2.5-7b-instruct:free',
+            'mistralai/mistral-7b-instruct:free',
+            'openchat/openchat-7b:free',
+          ];
+          
+          for (const fallbackModel of fallbackModels) {
+            const available = modelsData.data?.find(m => m.id === fallbackModel || m.id === fallbackModel.replace(':free', ''));
+            if (available) {
+              console.log(`[AI Companion] Trying fallback model: ${available.id}`);
+              const fallbackResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${aiConfig.apiKey}`,
+                  'HTTP-Referer': window.location.origin || 'https://ratz-tags.github.io',
+                  'X-Title': 'TagExplorer AI Companion',
+                },
+                body: JSON.stringify({
+                  model: available.id,
+                  messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...messages,
+                  ],
+                  temperature: 0.9,
+                  max_tokens: 200,
+                }),
+              });
+              
+              if (fallbackResponse.ok) {
+                const fallbackData = await fallbackResponse.json();
+                const content = fallbackData.choices[0]?.message?.content;
+                console.log(`[AI Companion] ✅ Fallback model ${available.id} worked!`);
+                // Update stored model to the working one
+                aiConfig.model = available.id;
+                saveAIConfig();
+                return content || '...';
+              }
+            }
+          }
+        }
+      } catch (modelsError) {
+        console.warn('[AI Companion] Could not fetch available models:', modelsError);
+      }
+    }
+    
     throw new Error(errorData.error?.message || errorData.message || `OpenRouter API error: ${response.status} ${response.statusText}`);
   }
 
