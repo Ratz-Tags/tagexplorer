@@ -715,51 +715,77 @@ async function checkFileExists(url) {
   }
 }
 
+// Helper to check multiple paths and return the first that exists
+async function checkMultiplePaths(paths, description) {
+  for (const path of paths) {
+    console.log(`[AI Companion] Checking: ${path} (${description})`);
+    if (await checkFileExists(path)) {
+      console.log(`[AI Companion] ✅ Found: ${path}`);
+      return path;
+    }
+  }
+  return null;
+}
+
 async function checkSpriteImages(outfit = currentOutfit) {
   if (spriteImageMode !== null) return spriteImageMode; // Already checked
   
   console.log(`[AI Companion] Checking for sprite images (outfit: ${outfit})...`);
   
-  // Check for outfit-specific sprite sheet first (more efficient)
-  const outfitSheetPath = `/assets/companion/companion-${outfit}-sheet.png`;
-  const genericSheetPath = '/assets/companion/companion-sheet.png';
-  const outfitIdlePath = `/assets/companion/companion-${outfit}-idle.png`;
-  const genericIdlePath = '/assets/companion/companion-idle.png';
+  // Try multiple paths: root, gallery subfolder, and relative
+  const basePaths = [
+    '/assets/companion/',  // Root (GitHub Pages)
+    '../assets/companion/', // Relative from gallery/
+    'assets/companion/',    // Relative from current page
+  ];
   
-  // Check files exist before trying to load (avoids 404 console errors)
-  console.log(`[AI Companion] Checking: ${outfitSheetPath}`);
-  if (await checkFileExists(outfitSheetPath)) {
+  // Check for outfit-specific sprite sheet first (more efficient)
+  const outfitSheetPaths = basePaths.map(p => `${p}companion-${outfit}-sheet.png`);
+  const foundSheet = await checkMultiplePaths(outfitSheetPaths, 'outfit sheet');
+  if (foundSheet) {
     spriteImageMode = 'sheet';
     spriteSheetLoaded = true;
-    console.log(`[AI Companion] ✅ Sprite sheet detected for outfit: ${outfit}`);
+    // Store the found path for later use
+    window._companionSheetPath = foundSheet;
+    console.log(`[AI Companion] ✅ Sprite sheet detected for outfit: ${outfit} at ${foundSheet}`);
     return 'sheet';
   }
   
-  console.log(`[AI Companion] Checking: ${genericSheetPath}`);
-  if (await checkFileExists(genericSheetPath)) {
+  // Check generic sprite sheet
+  const genericSheetPaths = basePaths.map(p => `${p}companion-sheet.png`);
+  const foundGenericSheet = await checkMultiplePaths(genericSheetPaths, 'generic sheet');
+  if (foundGenericSheet) {
     spriteImageMode = 'sheet';
     spriteSheetLoaded = true;
+    window._companionSheetPath = foundGenericSheet;
     console.log('[AI Companion] ✅ Generic sprite sheet detected');
     return 'sheet';
   }
   
-  console.log(`[AI Companion] Checking: ${outfitIdlePath}`);
-  if (await checkFileExists(outfitIdlePath)) {
+  // Check outfit-specific individual sprites
+  const outfitIdlePaths = basePaths.map(p => `${p}companion-${outfit}-idle.png`);
+  const foundIdle = await checkMultiplePaths(outfitIdlePaths, 'outfit idle');
+  if (foundIdle) {
     spriteImageMode = 'individual';
+    // Store base path for individual sprites
+    window._companionBasePath = foundIdle.replace(`companion-${outfit}-idle.png`, '');
     console.log(`[AI Companion] ✅ Individual sprite images detected for outfit: ${outfit}`);
     return 'individual';
   }
   
-  console.log(`[AI Companion] Checking: ${genericIdlePath}`);
-  if (await checkFileExists(genericIdlePath)) {
+  // Check generic individual sprites
+  const genericIdlePaths = basePaths.map(p => `${p}companion-idle.png`);
+  const foundGenericIdle = await checkMultiplePaths(genericIdlePaths, 'generic idle');
+  if (foundGenericIdle) {
     spriteImageMode = 'individual';
+    window._companionBasePath = foundGenericIdle.replace('companion-idle.png', '');
     console.log('[AI Companion] ✅ Generic individual sprite images detected');
     return 'individual';
   }
   
   spriteImageMode = null;
   console.warn('[AI Companion] ❌ No sprite images found, using CSS fallback');
-  console.warn('[AI Companion] Tried paths:', { outfitSheetPath, genericSheetPath, outfitIdlePath, genericIdlePath });
+  console.warn('[AI Companion] Tried all paths:', { outfitSheetPaths, genericSheetPaths, outfitIdlePaths, genericIdlePaths });
   return null;
 }
 
@@ -1680,24 +1706,36 @@ export async function initAICompanion() {
           if (!existingImg) {
             const img = document.createElement('div');
             img.className = 'companion-sprite-image companion-sprite-sheet';
-            // Try outfit-specific sheet first, then fallback to generic
-            const outfitSheetPath = `/assets/companion/companion-${currentOutfit}-sheet.png`;
-            const genericSheetPath = '/assets/companion/companion-sheet.png';
+            // Use the path we found during checkSpriteImages
+            const sheetPath = window._companionSheetPath || `/assets/companion/companion-${currentOutfit}-sheet.png`;
             
             const testSheet = new Image();
             testSheet.onload = () => {
-              img.style.backgroundImage = `url(${outfitSheetPath})`;
+              img.style.backgroundImage = `url(${sheetPath})`;
               img.style.backgroundSize = '960px 1280px';
               sprite.appendChild(img);
               setCompanionEmotion(companionState); // Update to current emotion
             };
             testSheet.onerror = () => {
-              img.style.backgroundImage = `url(${genericSheetPath})`;
-              img.style.backgroundSize = '960px 1280px';
-              sprite.appendChild(img);
-              setCompanionEmotion(companionState); // Update to current emotion
+              // Try fallback paths
+              const fallbackPaths = [
+                `/assets/companion/companion-${currentOutfit}-sheet.png`,
+                '/assets/companion/companion-sheet.png',
+                `../assets/companion/companion-${currentOutfit}-sheet.png`,
+                '../assets/companion/companion-sheet.png',
+              ];
+              let fallbackIndex = 0;
+              const tryNext = () => {
+                if (fallbackIndex < fallbackPaths.length) {
+                  testSheet.src = fallbackPaths[fallbackIndex++];
+                } else {
+                  console.warn('[AI Companion] All sprite sheet paths failed');
+                }
+              };
+              testSheet.onerror = tryNext;
+              tryNext();
             };
-            testSheet.src = outfitSheetPath;
+            testSheet.src = sheetPath;
           } else {
             // Image already exists, just update emotion
             setCompanionEmotion(companionState);
@@ -1707,9 +1745,10 @@ export async function initAICompanion() {
           if (!existingImg) {
             const img = document.createElement('img');
             img.className = 'companion-sprite-image companion-sprite-individual';
-            // Try outfit-specific first, then fallback to generic
-            const outfitPath = `/assets/companion/companion-${currentOutfit}-${companionState}.png`;
-            const genericPath = `/assets/companion/companion-${companionState}.png`;
+            // Use the base path we found during checkSpriteImages
+            const basePath = window._companionBasePath || '/assets/companion/';
+            const outfitPath = `${basePath}companion-${currentOutfit}-${companionState}.png`;
+            const genericPath = `${basePath}companion-${companionState}.png`;
             
             const testImg = new Image();
             testImg.onload = () => {
