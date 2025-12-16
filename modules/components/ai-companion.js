@@ -355,6 +355,11 @@ async function callOpenRouter(messages, systemPrompt) {
   if (!aiConfig.apiKey) {
     throw new Error('OpenRouter API key not configured');
   }
+  
+  // Verify API key is valid by checking if it's not just whitespace
+  if (!aiConfig.apiKey.trim()) {
+    throw new Error('OpenRouter API key is empty');
+  }
 
   // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
   // Note: Model names may change - check https://openrouter.ai/models for current list
@@ -417,14 +422,22 @@ async function callOpenRouter(messages, systemPrompt) {
     }
     
     // Log full error details for debugging
+    const errorMessage = errorData.error?.message || errorData.message || errorText;
     console.error('[AI Companion] OpenRouter API error:', {
       status: response.status,
       statusText: response.statusText,
       error: errorData,
+      errorMessage: errorMessage,
       model: modelName,
       apiKeyPresent: !!aiConfig.apiKey,
       apiKeyLength: aiConfig.apiKey?.length,
+      apiKeyPrefix: aiConfig.apiKey ? `${aiConfig.apiKey.substring(0, 8)}...` : 'none',
     });
+    
+    // Check if it's an authentication error
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`OpenRouter API authentication failed. Please check your API key. Error: ${errorMessage}`);
+    }
     
     // If we get a 404, try to fetch available models to suggest alternatives
     if (response.status === 404) {
