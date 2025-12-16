@@ -880,18 +880,19 @@ function createCompanionSprite() {
   return `
     <style>
       .companion-sprite {
-        width: 120px;
-        height: 160px;
+        width: 200px;
+        height: 280px;
         position: relative;
         margin: 0 auto;
         display: flex;
         align-items: center;
         justify-content: center;
+        min-height: 280px;
       }
       
       .companion-sprite-image {
-        width: 120px;
-        height: 160px;
+        width: 200px;
+        height: 280px;
         image-rendering: -webkit-optimize-contrast;
         image-rendering: crisp-edges;
         image-rendering: pixelated;
@@ -902,13 +903,14 @@ function createCompanionSprite() {
       .companion-sprite-sheet {
         background-repeat: no-repeat;
         background-position: 0 0;
-        width: 120px;
-        height: 160px;
+        width: 200px;
+        height: 280px;
+        background-size: contain;
       }
       
       .companion-sprite-individual {
-        width: 120px;
-        height: 160px;
+        width: 200px;
+        height: 280px;
         object-fit: contain;
       }
       
@@ -1206,6 +1208,7 @@ function createCompanionElement() {
       
       .companion-sprite {
         padding: 20px;
+        min-height: 320px;
       }
       
       .companion-chat {
