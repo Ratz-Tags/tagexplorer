@@ -326,12 +326,17 @@ async function callOpenRouter(messages, systemPrompt) {
 
   // NSFW-friendly models on OpenRouter (ranked by NSFW capability)
   // Note: Model names may change - check https://openrouter.ai/models for current list
+  // Verified models (as of 2024):
+  // - undi95/toppy-m-7b:free - Best free uncensored model, designed for NSFW
+  // - cognitivecomputations/dolphin-mixtral-8x7b:free - Larger uncensored model
+  // - Others may have content filters
   const nsfwModels = {
-    'undi95/toppy-m-7b:free': true, // Excellent for uncensored content
-    'meta-llama/llama-3.1-8b-instruct:free': true, // General purpose, may have some filters
-    'mistralai/mistral-7b-instruct:free': true,
-    'openchat/openchat-7b:free': true,
-    'qwen/qwen-2.5-7b-instruct:free': true, // Alternative free model
+    'undi95/toppy-m-7b:free': true, // Best free uncensored model for NSFW
+    'cognitivecomputations/dolphin-mixtral-8x7b:free': true, // Larger uncensored model
+    'meta-llama/llama-3.1-8b-instruct:free': false, // Has content filters
+    'mistralai/mistral-7b-instruct:free': false, // Has content filters
+    'openchat/openchat-7b:free': false, // Has content filters
+    'qwen/qwen-2.5-7b-instruct:free': false, // General purpose, may filter
   };
 
   const defaultModel = aiConfig.nsfwEnabled 
@@ -1615,11 +1620,12 @@ export async function initAICompanion() {
         // Model options for each provider
         const modelOptions = {
           openrouter: [
-            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best NSFW) ⭐' },
-            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Excellent NSFW)' },
-            { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General)' },
-            { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B' },
-            { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B' },
+            { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best Free NSFW) ⭐' },
+            { value: 'cognitivecomputations/dolphin-mixtral-8x7b:free', label: 'Dolphin Mixtral 8x7B (Uncensored)' },
+            { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General, Filtered)' },
+            { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Filtered)' },
+            { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B (Filtered)' },
+            { value: 'qwen/qwen-2.5-7b-instruct:free', label: 'Qwen 2.5 7B (General)' },
             { value: 'custom', label: '--- Custom Model ---' },
           ],
           local: [
@@ -1682,7 +1688,7 @@ export async function initAICompanion() {
           // Update hint
           if (modelHint) {
             if (provider === 'openrouter') {
-              modelHint.textContent = 'Best for NSFW: Mythomist or Toppy-M. Llama 3.1 is general-purpose.';
+              modelHint.textContent = 'Best for NSFW: Toppy-M 7B (free, uncensored). Dolphin Mixtral is also uncensored but larger.';
             } else if (provider === 'local') {
               modelHint.textContent = 'Install models via: ollama pull <model-name>';
             } else if (provider === 'openai') {
@@ -1821,11 +1827,12 @@ export async function initAICompanion() {
       // Define model options (same as inside the block)
       const modelOptions = {
         openrouter: [
-          { value: 'gryphe/mythomist-7b:free', label: 'Mythomist 7B (Best NSFW) ⭐' },
-          { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Excellent NSFW)' },
-          { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General)' },
-          { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B' },
-          { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B' },
+          { value: 'undi95/toppy-m-7b:free', label: 'Toppy-M 7B (Best Free NSFW) ⭐' },
+          { value: 'cognitivecomputations/dolphin-mixtral-8x7b:free', label: 'Dolphin Mixtral 8x7B (Uncensored)' },
+          { value: 'meta-llama/llama-3.1-8b-instruct:free', label: 'Llama 3.1 8B (General, Filtered)' },
+          { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Filtered)' },
+          { value: 'openchat/openchat-7b:free', label: 'OpenChat 7B (Filtered)' },
+          { value: 'qwen/qwen-2.5-7b-instruct:free', label: 'Qwen 2.5 7B (General)' },
           { value: 'custom', label: '--- Custom Model ---' },
         ],
         local: [
