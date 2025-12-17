@@ -477,12 +477,6 @@ function setupKeyboardShortcuts(shortcuts = {}) {
       return;
     }
     
-    // Explicitly exclude AI companion input
-    if (target?.id === 'companion-input' || 
-        target?.closest('#ai-companion') ||
-        target?.closest('.ai-companion')) {
-      return;
-    }
 
     const key = e.key.toLowerCase();
     const combo = [

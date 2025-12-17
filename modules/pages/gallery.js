@@ -656,12 +656,6 @@ async function setupCommandDeck() {
     }
     if (target?.isContentEditable) return;
     
-    // Explicitly exclude AI companion input
-    if (target?.id === 'companion-input' || 
-        target?.closest('#ai-companion') ||
-        target?.closest('.ai-companion')) {
-      return;
-    }
     
     const commandId = COMMAND_KEYBOARD_BINDINGS[event.code];
     if (!commandId) return;
@@ -1804,14 +1798,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     console.error('[gallery] Failed to initialize tag explorer:', error);
   }
   
-  // Initialize AI Companion
-  try {
-    const { initAICompanion } = await import('../components/ai-companion.js');
-    await initAICompanion();
-    console.log('[gallery] AI Companion initialized');
-  } catch (error) {
-    console.warn('[gallery] Failed to initialize AI Companion:', error);
-  }
   setupBackgroundRotation(setRandomBackground, {
     getActiveTags,
     getFilteredArtists,

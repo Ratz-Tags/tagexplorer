@@ -3486,12 +3486,6 @@ if (typeof document !== "undefined") {
       const tagName = activeEl.tagName;
       if (tagName === "INPUT" || tagName === "TEXTAREA") return;
       
-      // Explicitly exclude AI companion input
-      if (activeEl.id === "companion-input" || 
-          activeEl.closest("#ai-companion") ||
-          activeEl.closest(".ai-companion")) {
-        return;
-      }
     }
 
     const active = document.activeElement;
