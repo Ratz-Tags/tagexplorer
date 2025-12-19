@@ -575,19 +575,9 @@ function setAllArtists(artists) {
 
 /**
  * Sets the render artists callback function
-/**
- * Gets the available kink tags
  */
-function getKinkTags() {
-  if (!Array.isArray(kinkTagsByCategory) || kinkTagsByCategory.length === 0) {
-    console.warn('[tags] getKinkTags called but no categories available');
-    return [];
-  }
-  
-  return kinkTagsByCategory.map(cat => ({ 
-    category: cat.category, 
-    tags: Array.isArray(cat.tags) ? [...cat.tags] : []
-  }));
+function setRenderArtistsCallback(callback) {
+  renderArtists = callback;
 }
 
 /**
