@@ -596,13 +596,6 @@ function setRandomBackgroundCallback(callback) {
 }
 
 /**
- * Sets the render artists callback function
- */
-function setRenderArtistsCallback(callback) {
-  renderArtists = callback;
-}
-
-/**
  * Sets the tag tooltips data
  */
 function setTagTooltips(tooltips) {
