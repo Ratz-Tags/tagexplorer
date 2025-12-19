@@ -378,9 +378,23 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
   // Merge user options with saved settings
   const settings = { ...imageGenSettings, ...options };
   
+  // Merge character prompt with main prompt if provided
+  let finalPrompt = prompt;
+  if (options.characterPrompt && options.characterPrompt.trim()) {
+    const charPrompt = options.characterPrompt.trim();
+    // If character prompt doesn't mention "let NovelAI decide", merge it
+    if (!charPrompt.toLowerCase().includes('novelai decide') && !charPrompt.toLowerCase().includes('automatic')) {
+      // Combine character prompt with main prompt
+      finalPrompt = `${charPrompt}, ${prompt}`;
+    } else {
+      // If letting NovelAI decide, just use main prompt
+      finalPrompt = prompt;
+    }
+  }
+  
   // Free tier settings - no anlas usage
   const payload = {
-    input: prompt,
+    input: finalPrompt,
     model: PROMPTER_CONFIG.novelaiModel,
     action: 'generate',
     parameters: {
@@ -404,6 +418,10 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
     },
   };
   
+  // Create AbortController for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+  
   try {
     const response = await fetch(PROMPTER_CONFIG.novelaiEndpoint, {
       method: 'POST',
@@ -412,34 +430,75 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
     
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      const errorText = await response.text();
+      let errorText = '';
+      try {
+        errorText = await response.text();
+      } catch {
+        errorText = `HTTP ${response.status} ${response.statusText}`;
+      }
+      
       let errorMessage = `HTTP ${response.status}`;
       try {
         const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.message || errorJson.error || errorMessage;
+        errorMessage = errorJson.message || errorJson.error || errorJson.statusText || errorMessage;
       } catch {
-        errorMessage = errorText || errorMessage;
+        if (errorText) {
+          errorMessage = errorText.length > 200 ? errorText.substring(0, 200) + '...' : errorText;
+        }
       }
       throw new Error(errorMessage);
     }
     
-    // NovelAI returns image as base64 string
-    const data = await response.json();
-    if (data && typeof data === 'string') {
-      // If response is base64 string directly
-      return `data:image/png;base64,${data}`;
-    } else if (data && data.data) {
-      // If response has data field
-      return `data:image/png;base64,${data.data}`;
+    // NovelAI can return image as blob or base64
+    const contentType = response.headers.get('content-type') || '';
+    
+    if (contentType.includes('image/')) {
+      // Response is an image blob
+      const blob = await response.blob();
+      return URL.createObjectURL(blob);
     } else {
-      throw new Error('Invalid response format from NovelAI API');
+      // Try to parse as JSON (base64 string)
+      try {
+        const data = await response.json();
+        if (data && typeof data === 'string') {
+          // If response is base64 string directly
+          return `data:image/png;base64,${data}`;
+        } else if (data && data.data) {
+          // If response has data field
+          return `data:image/png;base64,${data.data}`;
+        } else if (data && data.files && Array.isArray(data.files) && data.files.length > 0) {
+          // If response has files array (some NovelAI endpoints return this)
+          return `data:image/png;base64,${data.files[0]}`;
+        } else {
+          throw new Error('Invalid response format from NovelAI API');
+        }
+      } catch (jsonError) {
+        // If JSON parsing fails, try as text (might be base64)
+        const text = await response.text();
+        if (text && text.length > 100) {
+          // Likely base64 image data
+          return `data:image/png;base64,${text}`;
+        }
+        throw new Error('Failed to parse NovelAI API response');
+      }
     }
   } catch (error) {
-    console.error('[NovelAI Prompter] Image generation failed:', error);
-    throw error;
+    clearTimeout(timeoutId);
+    
+    if (error.name === 'AbortError') {
+      throw new Error('Request timeout: Image generation took too long (over 2 minutes)');
+    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      throw new Error('Network error: Could not connect to NovelAI API. Please check your internet connection and try again.');
+    } else {
+      console.error('[NovelAI Prompter] Image generation failed:', error);
+      throw error;
+    }
   }
 }
 
@@ -455,6 +514,7 @@ function createPrompterElement() {
           width: 420px;
           max-width: calc(100vw - 40px);
           max-height: calc(100vh - 40px);
+          max-height: calc(100dvh - 40px); /* Use dynamic viewport height on mobile */
           background: oklch(19% 0.02 260);
           border: 1px solid oklch(30% 0.05 260);
           border-radius: 12px;
@@ -464,6 +524,31 @@ function createPrompterElement() {
           flex-direction: column;
           overflow: hidden;
           backdrop-filter: blur(10px);
+        }
+        
+        /* Mobile-specific fixes to prevent UI jumping */
+        @media (max-width: 640px) {
+          .novelai-prompter {
+            bottom: env(safe-area-inset-bottom, 20px);
+            right: env(safe-area-inset-right, 20px);
+            left: env(safe-area-inset-left, 20px);
+            width: auto;
+            max-width: none;
+            max-height: calc(100dvh - env(safe-area-inset-bottom, 20px) - env(safe-area-inset-top, 20px) - 40px);
+          }
+          
+          /* Prevent zoom on input focus (iOS) */
+          .novelai-prompter-input,
+          .novelai-prompter-textarea {
+            font-size: 16px !important;
+          }
+          
+          /* Prevent layout shift when keyboard appears */
+          .novelai-prompter-content {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+          }
         }
         
         .novelai-prompter.visible {
@@ -1029,7 +1114,10 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
                 imageResultDiv.innerHTML = '<div class="novelai-prompter-loading">Generating ' + numSamples + ' images...</div>';
                 const images = [];
                 for (let i = 0; i < numSamples; i++) {
-                  const imageData = await generateNovelAIImage(result.prompt, negativePrompt, { seed: Math.floor(Math.random() * 4294967295) });
+                  const imageData = await generateNovelAIImage(result.prompt, negativePrompt, { 
+                    seed: Math.floor(Math.random() * 4294967295),
+                    characterPrompt: result.characterPrompt 
+                  });
                   images.push(imageData);
                 }
                 
@@ -1062,7 +1150,9 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
                   </div>
                 `;
               } else {
-                const imageData = await generateNovelAIImage(result.prompt, negativePrompt);
+                const imageData = await generateNovelAIImage(result.prompt, negativePrompt, {
+                  characterPrompt: result.characterPrompt
+                });
                 imageResultDiv.innerHTML = `
                   <div class="novelai-prompter-section">
                     <label class="novelai-prompter-label">Generated Image</label>
