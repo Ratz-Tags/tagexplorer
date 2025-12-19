@@ -29,6 +29,7 @@ let currentModel = PROMPTER_CONFIG.defaultModel;
 let apiKey = null;
 let novelaiApiKey = null;
 let getActiveTagsCallback = null; // Callback to get active tags from gallery
+let enableDegradingTTS = true; // Enable degrading TTS by default
 let imageGenSettings = {
   width: 832,
   height: 1216,
@@ -203,6 +204,47 @@ async function callOpenRouter(messages, model = currentModel) {
   return data.choices?.[0]?.message?.content || '';
 }
 
+// Generate degrading/teasing line based on kinks using AI
+async function generateDegradingLine(kinkTags, sceneDescription, characterDescription = '') {
+  if (!apiKey || !kinkTags || kinkTags.length === 0) return null;
+  
+  const kinkList = kinkTags.slice(0, 10).join(', '); // Limit to 10 kinks for context
+  const fullContext = characterDescription 
+    ? `Character: ${characterDescription}\nScene: ${sceneDescription}`
+    : `Scene: ${sceneDescription}`;
+  
+  const systemPrompt = `You are a seductive, dominant voice that teases and degrades based on kinks. Your tone is:
+- Seductive and whispering
+- Teasing and slightly mocking
+- Degrading but not cruel
+- Personal and intimate
+- 1-2 sentences maximum
+- Focus on the specific kinks mentioned
+- Make it feel like you're catching them in the act
+
+Generate a single line that teases them about their specific kinks and desires. Be direct, seductive, and slightly degrading.`;
+  
+  const userPrompt = `Kinks detected: ${kinkList}
+
+${fullContext}
+
+Generate a seductive, teasing line that degrades them based on these specific kinks. Make it personal and intimate, like you're whispering directly to them.`;
+  
+  try {
+    const response = await callOpenRouter([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ]);
+    
+    // Clean up response - take first sentence or first 200 chars
+    const cleaned = response.trim().split(/[.!?]/)[0].trim();
+    return cleaned || response.trim().substring(0, 200);
+  } catch (error) {
+    console.warn('[NovelAI Prompter] Failed to generate degrading line:', error);
+    return null;
+  }
+}
+
 // Generate NovelAI prompt
 async function generatePrompt(sceneDescription, characterDescription = '') {
   const fullDescription = characterDescription 
@@ -214,6 +256,12 @@ async function generatePrompt(sceneDescription, characterDescription = '') {
   
   // Find matching artists
   const artistMatches = findMatchingArtists(extractedTags);
+  
+  // Extract kink tags from extracted tags
+  const kinkTagsInPrompt = extractedTags.filter(tag => {
+    // Check if tag is in our kink tags list
+    return allKinkTags.some(kink => kink.toLowerCase() === tag.toLowerCase());
+  });
   
   // Build system prompt
   const systemPrompt = `You are an expert prompt engineer for NovelAI v4.5 Full. Your task is to create optimized prompts using ONLY valid Danbooru tags, structured for NovelAI's prompt system.
@@ -300,12 +348,18 @@ Use ONLY valid Danbooru tags.`;
       characterPrompt = characterMatch[1].trim();
     }
     
+    // Extract kink tags from the final prompt
+    const finalKinkTags = positiveTags.filter(tag => {
+      return allKinkTags.some(kink => kink.toLowerCase() === tag.toLowerCase());
+    });
+    
     return {
       prompt: positiveTags.join(', '),
       tags: positiveTags,
       negativePrompt: negativeTags.join(', '),
       characterPrompt: characterPrompt,
       extractedTags,
+      kinkTags: finalKinkTags,
       artistMatches: artistMatches.slice(0, 5),
       rawResponse: response,
     };
@@ -781,6 +835,16 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   loadNovelAIKey();
   loadImageGenSettings();
   
+  // Load degrading TTS setting
+  try {
+    const stored = localStorage.getItem('tagexplorer:novelai-degrading-tts');
+    if (stored !== null) {
+      enableDegradingTTS = JSON.parse(stored);
+    }
+  } catch (e) {
+    console.warn('[NovelAI Prompter] Failed to load TTS setting:', e);
+  }
+  
   // Create element
   const html = createPrompterElement();
   const temp = document.createElement('div');
@@ -850,6 +914,32 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
     
     try {
       const result = await generatePrompt(scene, character);
+      
+      // Generate and speak degrading line if kinks detected and TTS is enabled
+      if (enableDegradingTTS && result.kinkTags && result.kinkTags.length > 0) {
+        try {
+          const degradingLine = await generateDegradingLine(result.kinkTags, scene, character);
+          if (degradingLine) {
+            // Trigger Azure TTS with seductive whisper
+            try {
+              const { azureSpeak } = await import('../azure-tts.js');
+              // Use seductive/whispering style with appropriate intensity
+              await azureSpeak(degradingLine, {
+                style: 'whispering',
+              }, {
+                intensity: 2, // Normal intensity for seductive whispers
+                event: 'prompter-degrading',
+              });
+            } catch (ttsError) {
+              console.warn('[NovelAI Prompter] Azure TTS not available:', ttsError);
+              // Silently fail - TTS is optional
+            }
+          }
+        } catch (ttsError) {
+          console.warn('[NovelAI Prompter] Degrading line generation failed:', ttsError);
+          // Don't block prompt display if TTS fails
+        }
+      }
       
       // Display result
       resultDiv.innerHTML = `
@@ -1146,6 +1236,22 @@ function showSettingsModal() {
             </div>
           </div>
           
+          <div class="novelai-prompter-settings-row full">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="setting-degrading-tts" ${enableDegradingTTS ? 'checked' : ''} 
+                     onchange="
+                       const enabled = this.checked;
+                       window._prompterSetDegradingTTS(enabled);
+                     ">
+              <label class="novelai-prompter-label" for="setting-degrading-tts" style="margin: 0; cursor: pointer;">
+                Enable Degrading TTS (AI-generated teasing based on kinks)
+              </label>
+            </div>
+            <small style="color: oklch(60% 0.05 260); font-size: 11px; display: block; margin-top: 4px;">
+              When enabled, AI will generate seductive degrading lines based on detected kinks and speak them via Azure TTS
+            </small>
+          </div>
+          
           <button class="novelai-prompter-generate-btn" style="margin-top: 16px;" onclick="
             const width = parseInt(document.getElementById('setting-width').value);
             const height = parseInt(document.getElementById('setting-height').value);
@@ -1181,6 +1287,16 @@ function showSettingsModal() {
     // Update negative prompt input if empty
     if (!negativeInput.value.trim() && imageGenSettings.negativePrompt) {
       negativeInput.value = imageGenSettings.negativePrompt;
+    }
+  };
+  
+  // Set degrading TTS enabled/disabled
+  window._prompterSetDegradingTTS = (enabled) => {
+    enableDegradingTTS = enabled;
+    try {
+      localStorage.setItem('tagexplorer:novelai-degrading-tts', JSON.stringify(enabled));
+    } catch (e) {
+      console.warn('[NovelAI Prompter] Failed to save TTS setting:', e);
     }
   };
   
