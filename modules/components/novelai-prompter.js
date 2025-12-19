@@ -30,8 +30,8 @@ let apiKey = null;
 let novelaiApiKey = null;
 let getActiveTagsCallback = null; // Callback to get active tags from gallery
 let imageGenSettings = {
-  width: 512,
-  height: 768,
+  width: 832,
+  height: 1216,
   steps: 28,
   scale: 7,
   sampler: 'k_euler_ancestral',
@@ -216,28 +216,56 @@ async function generatePrompt(sceneDescription, characterDescription = '') {
   const artistMatches = findMatchingArtists(extractedTags);
   
   // Build system prompt
-  const systemPrompt = `You are an expert prompt engineer for NovelAI v4.5 Full. Your task is to create optimized prompts using ONLY valid Danbooru tags.
+  const systemPrompt = `You are an expert prompt engineer for NovelAI v4.5 Full. Your task is to create optimized prompts using ONLY valid Danbooru tags, structured for NovelAI's prompt system.
+
+NovelAI Prompt Structure:
+1. POSITIVE PROMPT: Main scene description with Danbooru tags
+   - Character tags: "1girl", "2girls", "solo", character details
+   - Position/pose: "standing", "sitting", "lying", "kneeling", etc.
+   - Scene/action: "outdoors", "indoors", "bedroom", action tags
+   - Quality/style: "high quality", "detailed", "masterpiece"
+   - Kink tags: Include relevant tags from description
+
+2. NEGATIVE PROMPT: Undesired content (if not provided, suggest common ones)
+   - Quality issues: "lowres", "bad anatomy", "blurry", "worst quality"
+   - Common problems: "deformed", "disfigured", "bad proportions"
+   - Unwanted elements: "text", "watermark", "signature"
+
+3. CHARACTER PROMPTS: For multi-character scenes
+   - Format: Character descriptions with position parameters
+   - Position: "left", "right", "center", "foreground", "background"
+   - Or let NovelAI decide by omitting position
 
 Rules:
-1. Use ONLY valid Danbooru tags (lowercase, underscores, no spaces)
-2. Format: comma-separated tags, no special characters except underscores
-3. Order: character tags first, then scene/action tags, then quality/style tags
-4. Include relevant kink tags if mentioned in the description
-5. Keep prompts concise but descriptive (50-150 tags max)
-6. Use proper tag hierarchy (e.g., "1girl" before specific character details)
+- Use ONLY valid Danbooru tags (lowercase, underscores, no spaces)
+- Format: comma-separated tags
+- Order: character count → character details → pose → scene → quality → kink tags
+- Keep prompts descriptive but concise (50-200 tags max)
+- Separate positive and negative prompts clearly
+- For character prompts, include position if specified, otherwise omit
 
-Valid tag examples: "1girl", "solo", "breasts", "nude", "standing", "smile", "long_hair"
+Valid tag examples: "1girl", "solo", "breasts", "nude", "standing", "smile", "long_hair", "2girls", "left", "right"
 
 Invalid: "long hair" (use "long_hair"), "1 girl" (use "1girl"), "smiling!" (use "smile")
 
-Generate a prompt that accurately represents the scene and characters described.`;
+Generate structured prompts that accurately represent the scene, characters, and any position requirements.`;
 
   const userPrompt = `Scene Description:
 ${fullDescription}
 
 ${extractedTags.length > 0 ? `\nDetected relevant tags: ${extractedTags.slice(0, 20).join(', ')}` : ''}
 
-Generate a NovelAI v4.5 Full prompt using ONLY valid Danbooru tags.`;
+Generate a structured NovelAI v4.5 Full prompt with:
+1. POSITIVE PROMPT: Main scene with Danbooru tags (character, pose, scene, quality, kink tags)
+2. NEGATIVE PROMPT: Suggested undesired content tags (if not provided in description)
+3. CHARACTER PROMPTS: If multiple characters mentioned, include position parameters (left/right/center) or note to let NovelAI decide
+
+Format your response as:
+POSITIVE: [comma-separated Danbooru tags]
+NEGATIVE: [comma-separated undesired tags]
+CHARACTERS: [if applicable, character descriptions with positions or "let NovelAI decide"]
+
+Use ONLY valid Danbooru tags.`;
 
   try {
     const response = await callOpenRouter([
@@ -245,15 +273,38 @@ Generate a NovelAI v4.5 Full prompt using ONLY valid Danbooru tags.`;
       { role: 'user', content: userPrompt },
     ]);
     
-    // Extract just the tag list (remove any explanatory text)
-    const tagMatch = response.match(/(?:^|\n)([a-z0-9_(),\s]+)(?:\n|$)/i);
-    const promptTags = tagMatch 
-      ? tagMatch[1].split(',').map(t => normalizeTag(t.trim())).filter(Boolean)
-      : response.split(',').map(t => normalizeTag(t.trim())).filter(Boolean);
+    // Parse structured response
+    const positiveMatch = response.match(/POSITIVE:\s*([^\n]+)/i) || response.match(/positive[:\s]+([^\n]+)/i);
+    const negativeMatch = response.match(/NEGATIVE:\s*([^\n]+)/i) || response.match(/negative[:\s]+([^\n]+)/i);
+    const characterMatch = response.match(/CHARACTERS?:\s*([^\n]+)/i) || response.match(/character[:\s]+([^\n]+)/i);
+    
+    let positiveTags = [];
+    let negativeTags = [];
+    let characterPrompt = '';
+    
+    if (positiveMatch) {
+      positiveTags = positiveMatch[1].split(',').map(t => normalizeTag(t.trim())).filter(Boolean);
+    } else {
+      // Fallback: try to extract tags from response
+      const tagMatch = response.match(/(?:^|\n)([a-z0-9_(),\s]+)(?:\n|$)/i);
+      positiveTags = tagMatch 
+        ? tagMatch[1].split(',').map(t => normalizeTag(t.trim())).filter(Boolean)
+        : response.split(',').map(t => normalizeTag(t.trim())).filter(Boolean);
+    }
+    
+    if (negativeMatch) {
+      negativeTags = negativeMatch[1].split(',').map(t => normalizeTag(t.trim())).filter(Boolean);
+    }
+    
+    if (characterMatch) {
+      characterPrompt = characterMatch[1].trim();
+    }
     
     return {
-      prompt: promptTags.join(', '),
-      tags: promptTags,
+      prompt: positiveTags.join(', '),
+      tags: positiveTags,
+      negativePrompt: negativeTags.join(', '),
+      characterPrompt: characterPrompt,
       extractedTags,
       artistMatches: artistMatches.slice(0, 5),
       rawResponse: response,
@@ -666,8 +717,11 @@ function createPrompterElement() {
           <textarea 
             class="novelai-prompter-textarea" 
             id="prompter-character"
-            placeholder="Describe the character(s)..."
+            placeholder="Describe the character(s) and positions (e.g., 'girl on left, boy on right' or 'let NovelAI decide positions')..."
           ></textarea>
+          <small style="color: oklch(60% 0.05 260); font-size: 11px; display: block; margin-top: 4px;">
+            For multiple characters, specify positions (left/right/center) or let NovelAI decide
+          </small>
         </div>
         
         <div class="novelai-prompter-section">
@@ -790,13 +844,46 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
       resultDiv.innerHTML = `
         <div class="novelai-prompter-result">
           <div class="novelai-prompter-section">
-            <label class="novelai-prompter-label">Generated Prompt</label>
+            <label class="novelai-prompter-label">Generated Positive Prompt</label>
             <div class="novelai-prompter-prompt">${result.prompt}</div>
             <button class="novelai-prompter-copy-btn" onclick="navigator.clipboard.writeText('${result.prompt.replace(/'/g, "\\'")}')">
-              Copy Prompt
+              Copy Positive Prompt
             </button>
+          </div>
+          
+          ${result.negativePrompt ? `
+            <div class="novelai-prompter-section">
+              <label class="novelai-prompter-label">Suggested Negative Prompt</label>
+              <div class="novelai-prompter-prompt" style="background: oklch(15% 0.02 260); color: oklch(70% 0.25 25);">
+                ${result.negativePrompt}
+              </div>
+              <button class="novelai-prompter-copy-btn" onclick="
+                const negativeInput = document.getElementById('prompter-negative');
+                negativeInput.value = '${result.negativePrompt.replace(/'/g, "\\'")}';
+                navigator.clipboard.writeText('${result.negativePrompt.replace(/'/g, "\\'")}');
+              ">
+                Use as Negative Prompt
+              </button>
+            </div>
+          ` : ''}
+          
+          ${result.characterPrompt ? `
+            <div class="novelai-prompter-section">
+              <label class="novelai-prompter-label">Character Prompt</label>
+              <div class="novelai-prompter-prompt" style="background: oklch(15% 0.02 260); color: oklch(70% 0.14 205);">
+                ${result.characterPrompt}
+              </div>
+              <small style="color: oklch(60% 0.05 260); font-size: 11px; display: block; margin-top: 4px;">
+                ${result.characterPrompt.toLowerCase().includes('novelai decide') 
+                  ? 'NovelAI will automatically position characters' 
+                  : 'Character positions specified'}
+              </small>
+            </div>
+          ` : ''}
+          
+          <div class="novelai-prompter-section">
             ${novelaiApiKey ? `
-              <button class="novelai-prompter-generate-image-btn" id="prompter-generate-image" style="margin-top: 8px;">
+              <button class="novelai-prompter-generate-image-btn" id="prompter-generate-image" style="width: 100%;">
                 🎨 Generate Image (Free)
               </button>
             ` : ''}
@@ -832,7 +919,8 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
             imageResultDiv.style.display = 'block';
             
             try {
-              const negativePrompt = negativeInput.value.trim() || imageGenSettings.negativePrompt;
+              // Use AI-suggested negative prompt if available, otherwise use input or default
+              const negativePrompt = negativeInput.value.trim() || result.negativePrompt || imageGenSettings.negativePrompt;
               const numSamples = imageGenSettings.samples || 1;
               
               // Generate multiple images if samples > 1
@@ -964,11 +1052,14 @@ function showSettingsModal() {
               <select class="novelai-prompter-input" id="setting-preset" onchange="
                 const preset = this.value;
                 const presets = {
-                  'portrait': {width: 512, height: 768},
-                  'landscape': {width: 768, height: 512},
-                  'square': {width: 640, height: 640},
-                  'wide': {width: 832, height: 512},
-                  'tall': {width: 512, height: 832},
+                  'portrait': {width: 832, height: 1216},
+                  'landscape': {width: 1216, height: 832},
+                  'square': {width: 1024, height: 1024},
+                  'wide': {width: 1344, height: 832},
+                  'tall': {width: 832, height: 1344},
+                  'hd-portrait': {width: 1024, height: 1536},
+                  'hd-landscape': {width: 1536, height: 1024},
+                  'ultra-wide': {width: 1920, height: 1088},
                   'custom': null
                 };
                 if (presets[preset]) {
@@ -977,11 +1068,14 @@ function showSettingsModal() {
                 }
               ">
                 <option value="custom">Custom</option>
-                <option value="portrait" ${imageGenSettings.width === 512 && imageGenSettings.height === 768 ? 'selected' : ''}>Portrait (512×768)</option>
-                <option value="landscape" ${imageGenSettings.width === 768 && imageGenSettings.height === 512 ? 'selected' : ''}>Landscape (768×512)</option>
-                <option value="square" ${imageGenSettings.width === 640 && imageGenSettings.height === 640 ? 'selected' : ''}>Square (640×640)</option>
-                <option value="wide" ${imageGenSettings.width === 832 && imageGenSettings.height === 512 ? 'selected' : ''}>Wide (832×512)</option>
-                <option value="tall" ${imageGenSettings.width === 512 && imageGenSettings.height === 832 ? 'selected' : ''}>Tall (512×832)</option>
+                <option value="portrait" ${imageGenSettings.width === 832 && imageGenSettings.height === 1216 ? 'selected' : ''}>Portrait (832×1216)</option>
+                <option value="landscape" ${imageGenSettings.width === 1216 && imageGenSettings.height === 832 ? 'selected' : ''}>Landscape (1216×832)</option>
+                <option value="square" ${imageGenSettings.width === 1024 && imageGenSettings.height === 1024 ? 'selected' : ''}>Square (1024×1024)</option>
+                <option value="wide" ${imageGenSettings.width === 1344 && imageGenSettings.height === 832 ? 'selected' : ''}>Wide (1344×832)</option>
+                <option value="tall" ${imageGenSettings.width === 832 && imageGenSettings.height === 1344 ? 'selected' : ''}>Tall (832×1344)</option>
+                <option value="hd-portrait" ${imageGenSettings.width === 1024 && imageGenSettings.height === 1536 ? 'selected' : ''}>HD Portrait (1024×1536)</option>
+                <option value="hd-landscape" ${imageGenSettings.width === 1536 && imageGenSettings.height === 1024 ? 'selected' : ''}>HD Landscape (1536×1024)</option>
+                <option value="ultra-wide" ${imageGenSettings.width === 1920 && imageGenSettings.height === 1088 ? 'selected' : ''}>Ultra Wide (1920×1088)</option>
               </select>
             </div>
           </div>
@@ -990,12 +1084,12 @@ function showSettingsModal() {
             <div>
               <label class="novelai-prompter-label">Width</label>
               <input type="number" class="novelai-prompter-input" id="setting-width" 
-                     value="${imageGenSettings.width}" min="256" max="1024" step="64">
+                     value="${imageGenSettings.width}" min="256" max="2048" step="64">
             </div>
             <div>
               <label class="novelai-prompter-label">Height</label>
               <input type="number" class="novelai-prompter-input" id="setting-height" 
-                     value="${imageGenSettings.height}" min="256" max="1024" step="64">
+                     value="${imageGenSettings.height}" min="256" max="2048" step="64">
             </div>
           </div>
           
