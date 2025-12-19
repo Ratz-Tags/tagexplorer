@@ -35,6 +35,7 @@ let imageGenSettings = {
   steps: 28,
   scale: 7,
   sampler: 'k_euler_ancestral',
+  samples: 1, // Number of images to generate
   negativePrompt: '',
 };
 
@@ -284,7 +285,7 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
       sampler: settings.sampler,
       steps: settings.steps,
       seed: options.seed || Math.floor(Math.random() * 4294967295),
-      n_samples: 1,
+      n_samples: settings.samples || 1,
       sm: false, // No smearing
       sm_dyn: false,
       decrisper: false,
@@ -832,33 +833,74 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
             
             try {
               const negativePrompt = negativeInput.value.trim() || imageGenSettings.negativePrompt;
-              const imageData = await generateNovelAIImage(result.prompt, negativePrompt);
-              imageResultDiv.innerHTML = `
-                <div class="novelai-prompter-section">
-                  <label class="novelai-prompter-label">Generated Image</label>
-                  <div class="novelai-prompter-image-container">
-                    <img src="${imageData}" alt="Generated image" class="novelai-prompter-image" />
-                    <button class="novelai-prompter-copy-btn" onclick="
-                      const img = this.previousElementSibling;
-                      const canvas = document.createElement('canvas');
-                      const ctx = canvas.getContext('2d');
-                      canvas.width = img.naturalWidth;
-                      canvas.height = img.naturalHeight;
-                      ctx.drawImage(img, 0, 0);
-                      canvas.toBlob(blob => {
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'novelai-generated.png';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                      });
-                    ">
-                      Download Image
-                    </button>
+              const numSamples = imageGenSettings.samples || 1;
+              
+              // Generate multiple images if samples > 1
+              if (numSamples > 1) {
+                imageResultDiv.innerHTML = '<div class="novelai-prompter-loading">Generating ' + numSamples + ' images...</div>';
+                const images = [];
+                for (let i = 0; i < numSamples; i++) {
+                  const imageData = await generateNovelAIImage(result.prompt, negativePrompt, { seed: Math.floor(Math.random() * 4294967295) });
+                  images.push(imageData);
+                }
+                
+                imageResultDiv.innerHTML = `
+                  <div class="novelai-prompter-section">
+                    <label class="novelai-prompter-label">Generated Images (${numSamples})</label>
+                    ${images.map((imgData, idx) => `
+                      <div class="novelai-prompter-image-container" style="margin-bottom: 12px;">
+                        <img src="${imgData}" alt="Generated image ${idx + 1}" class="novelai-prompter-image" />
+                        <button class="novelai-prompter-copy-btn" onclick="
+                          const img = this.previousElementSibling;
+                          const canvas = document.createElement('canvas');
+                          const ctx = canvas.getContext('2d');
+                          canvas.width = img.naturalWidth;
+                          canvas.height = img.naturalHeight;
+                          ctx.drawImage(img, 0, 0);
+                          canvas.toBlob(blob => {
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'novelai-generated-${idx + 1}.png';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          });
+                        ">
+                          Download Image ${idx + 1}
+                        </button>
+                      </div>
+                    `).join('')}
                   </div>
-                </div>
-              `;
+                `;
+              } else {
+                const imageData = await generateNovelAIImage(result.prompt, negativePrompt);
+                imageResultDiv.innerHTML = `
+                  <div class="novelai-prompter-section">
+                    <label class="novelai-prompter-label">Generated Image</label>
+                    <div class="novelai-prompter-image-container">
+                      <img src="${imageData}" alt="Generated image" class="novelai-prompter-image" />
+                      <button class="novelai-prompter-copy-btn" onclick="
+                        const img = this.previousElementSibling;
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+                        canvas.toBlob(blob => {
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'novelai-generated.png';
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        });
+                      ">
+                        Download Image
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }
             } catch (error) {
               imageResultDiv.innerHTML = `
                 <div class="novelai-prompter-error">
@@ -909,79 +951,118 @@ function showSettingsModal() {
   const modal = document.createElement('div');
   modal.className = 'novelai-prompter-modal';
   modal.innerHTML = `
-    <div class="novelai-prompter-modal-content">
-      <div class="novelai-prompter-modal-header">
-        <div class="novelai-prompter-modal-title">Image Generation Settings</div>
-        <button class="novelai-prompter-btn" onclick="this.closest('.novelai-prompter-modal').remove()">×</button>
-      </div>
-      
-      <div class="novelai-prompter-section">
-        <div class="novelai-prompter-settings-row">
-          <div>
-            <label class="novelai-prompter-label">Width</label>
-            <input type="number" class="novelai-prompter-input" id="setting-width" 
-                   value="${imageGenSettings.width}" min="256" max="1024" step="64">
-          </div>
-          <div>
-            <label class="novelai-prompter-label">Height</label>
-            <input type="number" class="novelai-prompter-input" id="setting-height" 
-                   value="${imageGenSettings.height}" min="256" max="1024" step="64">
-          </div>
+      <div class="novelai-prompter-modal-content">
+        <div class="novelai-prompter-modal-header">
+          <div class="novelai-prompter-modal-title">Image Generation Settings</div>
+          <button class="novelai-prompter-btn" onclick="this.closest('.novelai-prompter-modal').remove()">×</button>
         </div>
         
-        <div class="novelai-prompter-settings-row">
-          <div>
-            <label class="novelai-prompter-label">Steps</label>
-            <input type="number" class="novelai-prompter-input" id="setting-steps" 
-                   value="${imageGenSettings.steps}" min="1" max="50" step="1">
+        <div class="novelai-prompter-section">
+          <div class="novelai-prompter-settings-row full">
+            <div>
+              <label class="novelai-prompter-label">Resolution Preset</label>
+              <select class="novelai-prompter-input" id="setting-preset" onchange="
+                const preset = this.value;
+                const presets = {
+                  'portrait': {width: 512, height: 768},
+                  'landscape': {width: 768, height: 512},
+                  'square': {width: 640, height: 640},
+                  'wide': {width: 832, height: 512},
+                  'tall': {width: 512, height: 832},
+                  'custom': null
+                };
+                if (presets[preset]) {
+                  document.getElementById('setting-width').value = presets[preset].width;
+                  document.getElementById('setting-height').value = presets[preset].height;
+                }
+              ">
+                <option value="custom">Custom</option>
+                <option value="portrait" ${imageGenSettings.width === 512 && imageGenSettings.height === 768 ? 'selected' : ''}>Portrait (512×768)</option>
+                <option value="landscape" ${imageGenSettings.width === 768 && imageGenSettings.height === 512 ? 'selected' : ''}>Landscape (768×512)</option>
+                <option value="square" ${imageGenSettings.width === 640 && imageGenSettings.height === 640 ? 'selected' : ''}>Square (640×640)</option>
+                <option value="wide" ${imageGenSettings.width === 832 && imageGenSettings.height === 512 ? 'selected' : ''}>Wide (832×512)</option>
+                <option value="tall" ${imageGenSettings.width === 512 && imageGenSettings.height === 832 ? 'selected' : ''}>Tall (512×832)</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label class="novelai-prompter-label">Guidance Scale</label>
-            <input type="number" class="novelai-prompter-input" id="setting-scale" 
-                   value="${imageGenSettings.scale}" min="1" max="20" step="0.5">
-          </div>
-        </div>
-        
-        <div class="novelai-prompter-settings-row full">
-          <div>
-            <label class="novelai-prompter-label">Sampler</label>
-            <select class="novelai-prompter-input" id="setting-sampler">
-              <option value="k_euler_ancestral" ${imageGenSettings.sampler === 'k_euler_ancestral' ? 'selected' : ''}>k_euler_ancestral</option>
-              <option value="k_euler" ${imageGenSettings.sampler === 'k_euler' ? 'selected' : ''}>k_euler</option>
-              <option value="k_lms" ${imageGenSettings.sampler === 'k_lms' ? 'selected' : ''}>k_lms</option>
-              <option value="plms" ${imageGenSettings.sampler === 'plms' ? 'selected' : ''}>plms</option>
-              <option value="ddim" ${imageGenSettings.sampler === 'ddim' ? 'selected' : ''}>ddim</option>
-            </select>
-          </div>
-        </div>
-        
-        <div class="novelai-prompter-settings-row full">
-          <div>
-            <label class="novelai-prompter-label">Default Negative Prompt</label>
-            <textarea class="novelai-prompter-textarea" id="setting-negative" 
-                      style="min-height: 60px;" placeholder="lowres, bad anatomy, blurry, worst quality">${imageGenSettings.negativePrompt}</textarea>
-          </div>
-        </div>
-        
-        <button class="novelai-prompter-generate-btn" style="margin-top: 16px;" onclick="
-          const width = parseInt(document.getElementById('setting-width').value);
-          const height = parseInt(document.getElementById('setting-height').value);
-          const steps = parseInt(document.getElementById('setting-steps').value);
-          const scale = parseFloat(document.getElementById('setting-scale').value);
-          const sampler = document.getElementById('setting-sampler').value;
-          const negative = document.getElementById('setting-negative').value;
           
-          if (width && height && steps && scale) {
-            window._prompterSaveSettings({
-              width, height, steps, scale, sampler, negativePrompt: negative
-            });
-            this.closest('.novelai-prompter-modal').remove();
-          }
-        ">
-          Save Settings
-        </button>
+          <div class="novelai-prompter-settings-row">
+            <div>
+              <label class="novelai-prompter-label">Width</label>
+              <input type="number" class="novelai-prompter-input" id="setting-width" 
+                     value="${imageGenSettings.width}" min="256" max="1024" step="64">
+            </div>
+            <div>
+              <label class="novelai-prompter-label">Height</label>
+              <input type="number" class="novelai-prompter-input" id="setting-height" 
+                     value="${imageGenSettings.height}" min="256" max="1024" step="64">
+            </div>
+          </div>
+          
+          <div class="novelai-prompter-settings-row">
+            <div>
+              <label class="novelai-prompter-label">Steps (1-50)</label>
+              <input type="number" class="novelai-prompter-input" id="setting-steps" 
+                     value="${imageGenSettings.steps}" min="1" max="50" step="1">
+              <small style="color: oklch(60% 0.05 260); font-size: 11px;">More steps = better quality, slower</small>
+            </div>
+            <div>
+              <label class="novelai-prompter-label">Guidance Scale (1-20)</label>
+              <input type="number" class="novelai-prompter-input" id="setting-scale" 
+                     value="${imageGenSettings.scale}" min="1" max="20" step="0.5">
+              <small style="color: oklch(60% 0.05 260); font-size: 11px;">Higher = follows prompt more closely</small>
+            </div>
+          </div>
+          
+          <div class="novelai-prompter-settings-row">
+            <div>
+              <label class="novelai-prompter-label">Sampler</label>
+              <select class="novelai-prompter-input" id="setting-sampler">
+                <option value="k_euler_ancestral" ${imageGenSettings.sampler === 'k_euler_ancestral' ? 'selected' : ''}>k_euler_ancestral (Recommended)</option>
+                <option value="k_euler" ${imageGenSettings.sampler === 'k_euler' ? 'selected' : ''}>k_euler</option>
+                <option value="k_lms" ${imageGenSettings.sampler === 'k_lms' ? 'selected' : ''}>k_lms</option>
+                <option value="plms" ${imageGenSettings.sampler === 'plms' ? 'selected' : ''}>plms</option>
+                <option value="ddim" ${imageGenSettings.sampler === 'ddim' ? 'selected' : ''}>ddim</option>
+              </select>
+            </div>
+            <div>
+              <label class="novelai-prompter-label">Samples (1-4)</label>
+              <input type="number" class="novelai-prompter-input" id="setting-samples" 
+                     value="${imageGenSettings.samples || 1}" min="1" max="4" step="1">
+              <small style="color: oklch(60% 0.05 260); font-size: 11px;">Number of images to generate</small>
+            </div>
+          </div>
+          
+          <div class="novelai-prompter-settings-row full">
+            <div>
+              <label class="novelai-prompter-label">Default Negative Prompt</label>
+              <textarea class="novelai-prompter-textarea" id="setting-negative" 
+                        style="min-height: 60px;" placeholder="lowres, bad anatomy, blurry, worst quality">${imageGenSettings.negativePrompt}</textarea>
+            </div>
+          </div>
+          
+          <button class="novelai-prompter-generate-btn" style="margin-top: 16px;" onclick="
+            const width = parseInt(document.getElementById('setting-width').value);
+            const height = parseInt(document.getElementById('setting-height').value);
+            const steps = parseInt(document.getElementById('setting-steps').value);
+            const scale = parseFloat(document.getElementById('setting-scale').value);
+            const sampler = document.getElementById('setting-sampler').value;
+            const samples = parseInt(document.getElementById('setting-samples').value) || 1;
+            const negative = document.getElementById('setting-negative').value;
+            
+            if (width && height && steps && scale && samples) {
+              window._prompterSaveSettings({
+                width, height, steps, scale, sampler, samples, negativePrompt: negative
+              });
+              this.closest('.novelai-prompter-modal').remove();
+            } else {
+              alert('Please fill in all required fields');
+            }
+          ">
+            Save Settings
+          </button>
+        </div>
       </div>
-    </div>
   `;
   
   // Save settings function
