@@ -673,7 +673,6 @@ export {
   getActiveTags,
   getSearchFilter,
   getArtistNameFilter,
-  getKinkTags,
   toggleTag,
   spawnBubble,
   setTagSearchMode,
