@@ -30,8 +30,18 @@ export async function fetchWithCache(url, options = {}) {
   try {
     let data;
     if (isBrowser || url.startsWith('http')) {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error(`status ${resp.status}`);
+      const resp = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'default',
+        credentials: 'omit',
+        headers: {
+          'Accept': type === 'json' ? 'application/json' : '*/*',
+        },
+      });
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText || 'Request failed'}`);
+      }
       data = type === 'json' ? await resp.json() : await resp.blob();
     } else {
       const fs = await import('fs/promises');
@@ -68,7 +78,15 @@ export async function fetchWithCache(url, options = {}) {
 
     return data;
   } catch (err) {
-    console.warn(`fetchWithCache failed for ${url}:`, err);
+    // More detailed error logging
+    if (err.name === 'TypeError' && err.message.includes('Failed to fetch')) {
+      console.warn(`fetchWithCache network error for ${url}: CORS or connectivity issue`);
+    } else if (err.message && err.message.includes('HTTP')) {
+      console.warn(`fetchWithCache HTTP error for ${url}:`, err.message);
+    } else {
+      console.warn(`fetchWithCache failed for ${url}:`, err.message || err);
+    }
+    
     if (type === 'image') {
       return placeholder;
     }

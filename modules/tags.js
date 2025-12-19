@@ -648,6 +648,23 @@ function getSearchFilter() {
 }
 
 /**
+ * Gets all kink tags (flat array)
+ */
+export function getKinkTags() {
+  return [...kinkTags];
+}
+
+/**
+ * Gets kink tags by category
+ */
+export function getKinkTagsByCategory() {
+  return kinkTagsByCategory.map(cat => ({
+    category: cat.category,
+    tags: [...cat.tags],
+  }));
+}
+
+/**
  * Gets the current artist name filter
  */
 function getArtistNameFilter() {

@@ -1798,6 +1798,21 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     console.error('[gallery] Failed to initialize tag explorer:', error);
   }
   
+  // Initialize NovelAI Prompt Generator (after tags are loaded)
+  try {
+    const { initNovelAIPrompter, setPrompterArtists, setPrompterKinkTags } = await import('../components/novelai-prompter.js');
+    const { getKinkTags, getKinkTagsByCategory } = await import('../tags.js');
+    // Wait a bit for tags to be fully loaded
+    setTimeout(async () => {
+      await initNovelAIPrompter(artists, getKinkTags(), getKinkTagsByCategory());
+      setPrompterArtists(artists);
+      setPrompterKinkTags(getKinkTags(), getKinkTagsByCategory());
+      console.log('[gallery] NovelAI Prompter initialized');
+    }, 500);
+  } catch (error) {
+    console.warn('[gallery] Failed to initialize NovelAI Prompter:', error);
+  }
+  
   setupBackgroundRotation(setRandomBackground, {
     getActiveTags,
     getFilteredArtists,
