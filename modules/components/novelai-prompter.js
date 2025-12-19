@@ -406,10 +406,14 @@ function createPrompterElement() {
           border-radius: 12px;
           box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
           z-index: 10000;
-          display: flex;
+          display: none;
           flex-direction: column;
           overflow: hidden;
           backdrop-filter: blur(10px);
+        }
+        
+        .novelai-prompter.visible {
+          display: flex;
         }
         
         .novelai-prompter.minimized {
@@ -708,6 +712,7 @@ function createPrompterElement() {
         <div class="novelai-prompter-controls">
           <button class="novelai-prompter-btn" id="prompter-settings" title="Settings">⚙️</button>
           <button class="novelai-prompter-btn" id="prompter-minimize" title="Minimize">−</button>
+          <button class="novelai-prompter-btn" id="prompter-close" title="Close">×</button>
         </div>
       </div>
       
@@ -786,6 +791,7 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   // Setup event listeners
   const minimizeBtn = prompterElement.querySelector('#prompter-minimize');
   const settingsBtn = prompterElement.querySelector('#prompter-settings');
+  const closeBtn = prompterElement.querySelector('#prompter-close');
   const generateBtn = prompterElement.querySelector('#prompter-generate');
   const characterInput = prompterElement.querySelector('#prompter-character');
   const sceneInput = prompterElement.querySelector('#prompter-scene');
@@ -793,6 +799,11 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   const useActiveTagsBtn = prompterElement.querySelector('#prompter-use-active-tags');
   const resultDiv = prompterElement.querySelector('#prompter-result');
   const imageResultDiv = prompterElement.querySelector('#prompter-image-result');
+  
+  // Close button
+  closeBtn.addEventListener('click', () => {
+    hidePrompter();
+  });
   
   // Show "Use Active Tags" button if callback is available
   if (getActiveTagsCallback) {
@@ -1189,6 +1200,34 @@ function loadImageGenSettings() {
     }
   } catch (e) {
     console.warn('[NovelAI Prompter] Failed to load image settings:', e);
+  }
+}
+
+// Show/hide prompter
+export function showPrompter() {
+  if (prompterElement) {
+    prompterElement.classList.add('visible');
+    // Focus scene input for better UX
+    const sceneInput = prompterElement.querySelector('#prompter-scene');
+    if (sceneInput) {
+      setTimeout(() => sceneInput.focus(), 100);
+    }
+  }
+}
+
+export function hidePrompter() {
+  if (prompterElement) {
+    prompterElement.classList.remove('visible');
+  }
+}
+
+export function togglePrompter() {
+  if (prompterElement) {
+    if (prompterElement.classList.contains('visible')) {
+      hidePrompter();
+    } else {
+      showPrompter();
+    }
   }
 }
 

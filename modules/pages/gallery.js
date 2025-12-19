@@ -1654,15 +1654,29 @@ async function setupForceFetch() {
   await new Promise(resolve => setTimeout(resolve, 0));
   
   const forceFetchBtn = document.getElementById('force-fetch-btn');
-  if (!forceFetchBtn) return;
-  forceFetchBtn.addEventListener('click', async () => {
-    try {
-      const { forceFetchStyleTags } = await import('../gallery.js');
-      await forceFetchStyleTags({ refreshCounts: true });
-    } catch (error) {
-      console.error('Failed to launch force fetch', error);
-    }
-  });
+  if (forceFetchBtn) {
+    forceFetchBtn.addEventListener('click', async () => {
+      try {
+        const { forceFetchStyleTags } = await import('../gallery.js');
+        await forceFetchStyleTags({ refreshCounts: true });
+      } catch (error) {
+        console.error('Failed to launch force fetch', error);
+      }
+    });
+  }
+  
+  // NovelAI Prompter toggle button
+  const prompterToggleBtn = document.getElementById('prompter-toggle-btn');
+  if (prompterToggleBtn) {
+    prompterToggleBtn.addEventListener('click', async () => {
+      try {
+        const { togglePrompter } = await import('../components/novelai-prompter.js');
+        togglePrompter();
+      } catch (error) {
+        console.error('[gallery] Failed to toggle prompter:', error);
+      }
+    });
+  }
 }
 
 function setupIdleWhispers() {

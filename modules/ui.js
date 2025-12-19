@@ -470,7 +470,22 @@ function createFullscreenViewer(options = {}) {
  * Sets up keyboard shortcuts for the application
  */
 function setupKeyboardShortcuts(shortcuts = {}) {
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", async (e) => {
+    // NovelAI Prompter toggle (P key)
+    if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const target = e.target;
+      // Only trigger if not typing in an input/textarea
+      if (target.tagName !== 'INPUT' && target.tagName !== 'TEXTAREA' && !target.isContentEditable) {
+        try {
+          const { togglePrompter } = await import('./components/novelai-prompter.js');
+          togglePrompter();
+          e.preventDefault();
+        } catch (error) {
+          // Prompter not loaded yet, ignore
+        }
+      }
+    }
+    
     // Skip if typing in an input
     const target = e.target;
     if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {

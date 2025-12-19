@@ -49,6 +49,14 @@ template.innerHTML = `
           >
             FETCH
           </button>
+          <button
+            id="prompter-toggle-btn"
+            class="control-btn command-btn"
+            type="button"
+            aria-label="Toggle NovelAI Prompt Generator"
+          >
+            PROMPT
+          </button>
         </div>
         <!-- Command deck buttons removed - they were confusing -->
         <div class="command-streak" role="group" aria-label="Return streak tracker">
