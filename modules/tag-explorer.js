@@ -1,6 +1,7 @@
 import {
   getActiveTags,
   getKinkTags,
+  getKinkTagsByCategory,
   toggleTag,
   getArtistNameFilter,
   handleArtistNameFilter,
@@ -399,7 +400,7 @@ function renderCategories() {
   
   const active = getActiveTags();
   const counts = getFilteredCounts(active);
-  const categories = getKinkTags();
+  const categories = getKinkTagsByCategory();
   
   // console.log('[tag-explorer] Rendering categories:', categories.length, 'categories available');
   
@@ -440,6 +441,11 @@ function renderCategories() {
   });
 
   categories.forEach(({ category, tags }, index) => {
+    // Safety check: ensure tags is an array
+    if (!Array.isArray(tags)) {
+      console.warn(`[tag-explorer] Category "${category}" has invalid tags:`, tags);
+      return;
+    }
     const matchingTags = tags.filter((tag) => {
       if (searchValueLower && !tag.toLowerCase().includes(searchValueLower)) {
         return false;

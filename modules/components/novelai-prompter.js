@@ -423,6 +423,17 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
   
   try {
+    console.log('[NovelAI Prompter] Generating image with settings:', {
+      model: PROMPTER_CONFIG.novelaiModel,
+      width: settings.width,
+      height: settings.height,
+      steps: settings.steps,
+      samples: settings.samples,
+      endpoint: PROMPTER_CONFIG.novelaiEndpoint,
+      hasApiKey: !!novelaiApiKey,
+      apiKeyLength: novelaiApiKey ? novelaiApiKey.length : 0,
+    });
+    
     const response = await fetch(PROMPTER_CONFIG.novelaiEndpoint, {
       method: 'POST',
       headers: {
@@ -493,11 +504,14 @@ async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
     
     if (error.name === 'AbortError') {
       throw new Error('Request timeout: Image generation took too long (over 2 minutes)');
-    } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+    } else if (error.name === 'TypeError' && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('fetch'))) {
+      throw new Error('Network error: Could not connect to NovelAI API. Please check your internet connection and try again.');
+    } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('network') || error.message.includes('connection'))) {
       throw new Error('Network error: Could not connect to NovelAI API. Please check your internet connection and try again.');
     } else {
       console.error('[NovelAI Prompter] Image generation failed:', error);
-      throw error;
+      const errorMessage = error.message || error.toString() || 'Unknown error';
+      throw new Error(`Image generation error: ${errorMessage}`);
     }
   }
 }
