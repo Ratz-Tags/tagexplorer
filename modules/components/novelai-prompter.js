@@ -28,6 +28,15 @@ let kinkTagsByCategory = [];
 let currentModel = PROMPTER_CONFIG.defaultModel;
 let apiKey = null;
 let novelaiApiKey = null;
+let getActiveTagsCallback = null; // Callback to get active tags from gallery
+let imageGenSettings = {
+  width: 512,
+  height: 768,
+  steps: 28,
+  scale: 7,
+  sampler: 'k_euler_ancestral',
+  negativePrompt: '',
+};
 
 // Load API key from window or localStorage
 function loadAPIKey() {
@@ -255,10 +264,13 @@ Generate a NovelAI v4.5 Full prompt using ONLY valid Danbooru tags.`;
 }
 
 // Generate image using NovelAI API (free tier only - no anlas)
-async function generateNovelAIImage(prompt, options = {}) {
+async function generateNovelAIImage(prompt, negativePrompt = '', options = {}) {
   if (!novelaiApiKey) {
     throw new Error('NovelAI API key not configured');
   }
+  
+  // Merge user options with saved settings
+  const settings = { ...imageGenSettings, ...options };
   
   // Free tier settings - no anlas usage
   const payload = {
@@ -266,11 +278,11 @@ async function generateNovelAIImage(prompt, options = {}) {
     model: PROMPTER_CONFIG.novelaiModel,
     action: 'generate',
     parameters: {
-      width: options.width || 512,
-      height: options.height || 768,
-      scale: options.scale || 7,
-      sampler: options.sampler || 'k_euler_ancestral',
-      steps: options.steps || 28,
+      width: settings.width,
+      height: settings.height,
+      scale: settings.scale,
+      sampler: settings.sampler,
+      steps: settings.steps,
       seed: options.seed || Math.floor(Math.random() * 4294967295),
       n_samples: 1,
       sm: false, // No smearing
@@ -281,6 +293,8 @@ async function generateNovelAIImage(prompt, options = {}) {
       add_original_image: false,
       // Free tier: no anlas usage
       payment: null, // Explicitly set to null to avoid anlas usage
+      // Negative prompt (undesired content)
+      ...(negativePrompt ? { uc: negativePrompt } : {}),
     },
   };
   
@@ -568,6 +582,73 @@ function createPrompterElement() {
           opacity: 0.5;
           cursor: not-allowed;
         }
+        
+        .novelai-prompter-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.7);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 20000;
+          backdrop-filter: blur(4px);
+        }
+        
+        .novelai-prompter-modal-content {
+          background: oklch(19% 0.02 260);
+          border: 1px solid oklch(30% 0.05 260);
+          border-radius: 12px;
+          padding: 24px;
+          max-width: 500px;
+          width: 90%;
+          max-height: 90vh;
+          overflow-y: auto;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+        
+        .novelai-prompter-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+        }
+        
+        .novelai-prompter-modal-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: oklch(80% 0.14 205);
+        }
+        
+        .novelai-prompter-use-tags-btn {
+          background: oklch(25% 0.02 260);
+          border: 1px solid oklch(30% 0.05 260);
+          color: oklch(70% 0.14 205);
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-size: 12px;
+          cursor: pointer;
+          transition: all 0.2s;
+          margin-top: 8px;
+        }
+        
+        .novelai-prompter-use-tags-btn:hover {
+          background: oklch(30% 0.02 260);
+          color: oklch(80% 0.14 205);
+        }
+        
+        .novelai-prompter-settings-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          margin-bottom: 12px;
+        }
+        
+        .novelai-prompter-settings-row.full {
+          grid-template-columns: 1fr;
+        }
       </style>
       
       <div class="novelai-prompter-header">
@@ -595,6 +676,19 @@ function createPrompterElement() {
             id="prompter-scene"
             placeholder="Describe the scene you want to generate..."
             required
+          ></textarea>
+          <button class="novelai-prompter-use-tags-btn" id="prompter-use-active-tags" style="display: none;">
+            📌 Use Active Tags from Gallery
+          </button>
+        </div>
+        
+        <div class="novelai-prompter-section">
+          <label class="novelai-prompter-label">Negative Prompt (optional)</label>
+          <textarea 
+            class="novelai-prompter-textarea" 
+            id="prompter-negative"
+            placeholder="Tags to avoid (e.g., lowres, bad anatomy, blurry)..."
+            style="min-height: 60px;"
           ></textarea>
         </div>
         
@@ -625,6 +719,7 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   loadConfig();
   loadAPIKey();
   loadNovelAIKey();
+  loadImageGenSettings();
   
   // Create element
   const html = createPrompterElement();
@@ -635,11 +730,33 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   
   // Setup event listeners
   const minimizeBtn = prompterElement.querySelector('#prompter-minimize');
+  const settingsBtn = prompterElement.querySelector('#prompter-settings');
   const generateBtn = prompterElement.querySelector('#prompter-generate');
   const characterInput = prompterElement.querySelector('#prompter-character');
   const sceneInput = prompterElement.querySelector('#prompter-scene');
+  const negativeInput = prompterElement.querySelector('#prompter-negative');
+  const useActiveTagsBtn = prompterElement.querySelector('#prompter-use-active-tags');
   const resultDiv = prompterElement.querySelector('#prompter-result');
   const imageResultDiv = prompterElement.querySelector('#prompter-image-result');
+  
+  // Show "Use Active Tags" button if callback is available
+  if (getActiveTagsCallback) {
+    useActiveTagsBtn.style.display = 'block';
+    useActiveTagsBtn.addEventListener('click', () => {
+      const activeTags = Array.from(getActiveTagsCallback());
+      if (activeTags.length > 0) {
+        const tagsText = activeTags.join(', ');
+        sceneInput.value = sceneInput.value 
+          ? `${sceneInput.value}, ${tagsText}`
+          : tagsText;
+      }
+    });
+  }
+  
+  // Settings modal
+  settingsBtn.addEventListener('click', () => {
+    showSettingsModal();
+  });
   
   minimizeBtn.addEventListener('click', () => {
     isMinimized = !isMinimized;
@@ -714,7 +831,8 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
             imageResultDiv.style.display = 'block';
             
             try {
-              const imageData = await generateNovelAIImage(result.prompt);
+              const negativePrompt = negativeInput.value.trim() || imageGenSettings.negativePrompt;
+              const imageData = await generateNovelAIImage(result.prompt, negativePrompt);
               imageResultDiv.innerHTML = `
                 <div class="novelai-prompter-section">
                   <label class="novelai-prompter-label">Generated Image</label>
@@ -779,5 +897,123 @@ export function setPrompterArtists(artists) {
 export function setPrompterKinkTags(tags, byCategory = []) {
   allKinkTags = Array.isArray(tags) ? tags : [];
   kinkTagsByCategory = Array.isArray(byCategory) ? byCategory : [];
+}
+
+// Set callback to get active tags from gallery
+export function setGetActiveTagsCallback(callback) {
+  getActiveTagsCallback = callback;
+}
+
+// Show settings modal
+function showSettingsModal() {
+  const modal = document.createElement('div');
+  modal.className = 'novelai-prompter-modal';
+  modal.innerHTML = `
+    <div class="novelai-prompter-modal-content">
+      <div class="novelai-prompter-modal-header">
+        <div class="novelai-prompter-modal-title">Image Generation Settings</div>
+        <button class="novelai-prompter-btn" onclick="this.closest('.novelai-prompter-modal').remove()">×</button>
+      </div>
+      
+      <div class="novelai-prompter-section">
+        <div class="novelai-prompter-settings-row">
+          <div>
+            <label class="novelai-prompter-label">Width</label>
+            <input type="number" class="novelai-prompter-input" id="setting-width" 
+                   value="${imageGenSettings.width}" min="256" max="1024" step="64">
+          </div>
+          <div>
+            <label class="novelai-prompter-label">Height</label>
+            <input type="number" class="novelai-prompter-input" id="setting-height" 
+                   value="${imageGenSettings.height}" min="256" max="1024" step="64">
+          </div>
+        </div>
+        
+        <div class="novelai-prompter-settings-row">
+          <div>
+            <label class="novelai-prompter-label">Steps</label>
+            <input type="number" class="novelai-prompter-input" id="setting-steps" 
+                   value="${imageGenSettings.steps}" min="1" max="50" step="1">
+          </div>
+          <div>
+            <label class="novelai-prompter-label">Guidance Scale</label>
+            <input type="number" class="novelai-prompter-input" id="setting-scale" 
+                   value="${imageGenSettings.scale}" min="1" max="20" step="0.5">
+          </div>
+        </div>
+        
+        <div class="novelai-prompter-settings-row full">
+          <div>
+            <label class="novelai-prompter-label">Sampler</label>
+            <select class="novelai-prompter-input" id="setting-sampler">
+              <option value="k_euler_ancestral" ${imageGenSettings.sampler === 'k_euler_ancestral' ? 'selected' : ''}>k_euler_ancestral</option>
+              <option value="k_euler" ${imageGenSettings.sampler === 'k_euler' ? 'selected' : ''}>k_euler</option>
+              <option value="k_lms" ${imageGenSettings.sampler === 'k_lms' ? 'selected' : ''}>k_lms</option>
+              <option value="plms" ${imageGenSettings.sampler === 'plms' ? 'selected' : ''}>plms</option>
+              <option value="ddim" ${imageGenSettings.sampler === 'ddim' ? 'selected' : ''}>ddim</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="novelai-prompter-settings-row full">
+          <div>
+            <label class="novelai-prompter-label">Default Negative Prompt</label>
+            <textarea class="novelai-prompter-textarea" id="setting-negative" 
+                      style="min-height: 60px;" placeholder="lowres, bad anatomy, blurry, worst quality">${imageGenSettings.negativePrompt}</textarea>
+          </div>
+        </div>
+        
+        <button class="novelai-prompter-generate-btn" style="margin-top: 16px;" onclick="
+          const width = parseInt(document.getElementById('setting-width').value);
+          const height = parseInt(document.getElementById('setting-height').value);
+          const steps = parseInt(document.getElementById('setting-steps').value);
+          const scale = parseFloat(document.getElementById('setting-scale').value);
+          const sampler = document.getElementById('setting-sampler').value;
+          const negative = document.getElementById('setting-negative').value;
+          
+          if (width && height && steps && scale) {
+            window._prompterSaveSettings({
+              width, height, steps, scale, sampler, negativePrompt: negative
+            });
+            this.closest('.novelai-prompter-modal').remove();
+          }
+        ">
+          Save Settings
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Save settings function
+  window._prompterSaveSettings = (settings) => {
+    imageGenSettings = { ...imageGenSettings, ...settings };
+    try {
+      localStorage.setItem('tagexplorer:novelai-image-settings', JSON.stringify(imageGenSettings));
+    } catch (e) {
+      console.warn('[NovelAI Prompter] Failed to save settings:', e);
+    }
+    // Update negative prompt input if empty
+    if (!negativeInput.value.trim() && imageGenSettings.negativePrompt) {
+      negativeInput.value = imageGenSettings.negativePrompt;
+    }
+  };
+  
+  document.body.appendChild(modal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) modal.remove();
+  });
+}
+
+// Load image generation settings
+function loadImageGenSettings() {
+  try {
+    const stored = localStorage.getItem('tagexplorer:novelai-image-settings');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      imageGenSettings = { ...imageGenSettings, ...parsed };
+    }
+  } catch (e) {
+    console.warn('[NovelAI Prompter] Failed to load image settings:', e);
+  }
 }
 

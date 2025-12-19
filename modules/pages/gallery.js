@@ -1804,9 +1804,11 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     const { getKinkTags, getKinkTagsByCategory } = await import('../tags.js');
     // Wait a bit for tags to be fully loaded
     setTimeout(async () => {
+      const { initNovelAIPrompter, setPrompterArtists, setPrompterKinkTags, setGetActiveTagsCallback } = await import('../components/novelai-prompter.js');
       await initNovelAIPrompter(artists, getKinkTags(), getKinkTagsByCategory());
       setPrompterArtists(artists);
       setPrompterKinkTags(getKinkTags(), getKinkTagsByCategory());
+      setGetActiveTagsCallback(getActiveTags);
       console.log('[gallery] NovelAI Prompter initialized');
     }, 500);
   } catch (error) {
