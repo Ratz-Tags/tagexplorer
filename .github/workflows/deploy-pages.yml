@@ -83,6 +83,32 @@ jobs:
           EOF
           fi
 
+      - name: Inject NovelAI API Key
+        run: |
+          if [ -n "${{ secrets.NOVELAI_API_KEY }}" ]; then
+            cat > novelai-api.local.js << EOF
+          /**
+           * NovelAI API Configuration (Injected via GitHub Actions)
+           * This file is generated during deployment
+           */
+          if (typeof window !== 'undefined') {
+            window._novelaiApiKey = '${{ secrets.NOVELAI_API_KEY }}';
+          }
+          EOF
+          else
+            echo "Warning: NOVELAI_API_KEY secret not set"
+            # Create placeholder file so script loading doesn't fail
+            cat > novelai-api.local.js << 'EOF'
+          /**
+           * NovelAI API Configuration (Injected via GitHub Actions)
+           * This file is generated during deployment
+           */
+          if (typeof window !== 'undefined') {
+            window._novelaiApiKey = null;
+          }
+          EOF
+          fi
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 

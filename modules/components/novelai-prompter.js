@@ -8,12 +8,15 @@
 const PROMPTER_CONFIG = {
   storageKey: 'tagexplorer:novelai-prompter',
   openRouterEndpoint: 'https://openrouter.ai/api/v1/chat/completions',
+  novelaiEndpoint: 'https://api.novelai.net/ai/generate-image',
   freeNSFWModels: [
     'tngtech/deepseek-r1t2-chimera:free',
     'cognitivecomputations/dolphin-mixtral-8x7b:free',
     'mistralai/mistral-7b-instruct:free',
   ],
   defaultModel: 'tngtech/deepseek-r1t2-chimera:free',
+  // NovelAI v4.5 Full model (free tier compatible)
+  novelaiModel: 'nai-diffusion-4-5-full',
 };
 
 // State
@@ -24,6 +27,7 @@ let allKinkTags = [];
 let kinkTagsByCategory = [];
 let currentModel = PROMPTER_CONFIG.defaultModel;
 let apiKey = null;
+let novelaiApiKey = null;
 
 // Load API key from window or localStorage
 function loadAPIKey() {
@@ -42,6 +46,18 @@ function loadAPIKey() {
     console.warn('[NovelAI Prompter] Failed to load API key from storage:', e);
   }
   
+  return false;
+}
+
+// Load NovelAI API key from window (injected via GitHub Actions)
+function loadNovelAIKey() {
+  if (typeof window !== 'undefined' && window._novelaiApiKey) {
+    novelaiApiKey = window._novelaiApiKey;
+    console.log('[NovelAI Prompter] NovelAI API key loaded from window');
+    return true;
+  }
+  
+  console.warn('[NovelAI Prompter] NovelAI API key not found');
   return false;
 }
 
@@ -234,6 +250,75 @@ Generate a NovelAI v4.5 Full prompt using ONLY valid Danbooru tags.`;
     };
   } catch (error) {
     console.error('[NovelAI Prompter] Generation failed:', error);
+    throw error;
+  }
+}
+
+// Generate image using NovelAI API (free tier only - no anlas)
+async function generateNovelAIImage(prompt, options = {}) {
+  if (!novelaiApiKey) {
+    throw new Error('NovelAI API key not configured');
+  }
+  
+  // Free tier settings - no anlas usage
+  const payload = {
+    input: prompt,
+    model: PROMPTER_CONFIG.novelaiModel,
+    action: 'generate',
+    parameters: {
+      width: options.width || 512,
+      height: options.height || 768,
+      scale: options.scale || 7,
+      sampler: options.sampler || 'k_euler_ancestral',
+      steps: options.steps || 28,
+      seed: options.seed || Math.floor(Math.random() * 4294967295),
+      n_samples: 1,
+      sm: false, // No smearing
+      sm_dyn: false,
+      decrisper: false,
+      controlnet_strength: 1.0,
+      legacy: false,
+      add_original_image: false,
+      // Free tier: no anlas usage
+      payment: null, // Explicitly set to null to avoid anlas usage
+    },
+  };
+  
+  try {
+    const response = await fetch(PROMPTER_CONFIG.novelaiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${novelaiApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+    
+    // NovelAI returns image as base64 string
+    const data = await response.json();
+    if (data && typeof data === 'string') {
+      // If response is base64 string directly
+      return `data:image/png;base64,${data}`;
+    } else if (data && data.data) {
+      // If response has data field
+      return `data:image/png;base64,${data.data}`;
+    } else {
+      throw new Error('Invalid response format from NovelAI API');
+    }
+  } catch (error) {
+    console.error('[NovelAI Prompter] Image generation failed:', error);
     throw error;
   }
 }
@@ -446,6 +531,43 @@ function createPrompterElement() {
           border-radius: 6px;
           font-size: 13px;
         }
+        
+        .novelai-prompter-image {
+          width: 100%;
+          max-width: 512px;
+          height: auto;
+          border-radius: 6px;
+          border: 1px solid oklch(30% 0.05 260);
+          margin-top: 8px;
+        }
+        
+        .novelai-prompter-image-container {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        
+        .novelai-prompter-generate-image-btn {
+          background: oklch(70% 0.18 350);
+          border: none;
+          color: white;
+          padding: 10px 20px;
+          border-radius: 6px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          font-size: 13px;
+        }
+        
+        .novelai-prompter-generate-image-btn:hover:not(:disabled) {
+          background: oklch(75% 0.18 350);
+          transform: translateY(-1px);
+        }
+        
+        .novelai-prompter-generate-image-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
       </style>
       
       <div class="novelai-prompter-header">
@@ -481,6 +603,8 @@ function createPrompterElement() {
         </button>
         
         <div id="prompter-result" style="display: none;"></div>
+        
+        <div id="prompter-image-result" style="display: none;"></div>
       </div>
     </div>
   `;
@@ -500,6 +624,7 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   // Load config
   loadConfig();
   loadAPIKey();
+  loadNovelAIKey();
   
   // Create element
   const html = createPrompterElement();
@@ -514,6 +639,7 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
   const characterInput = prompterElement.querySelector('#prompter-character');
   const sceneInput = prompterElement.querySelector('#prompter-scene');
   const resultDiv = prompterElement.querySelector('#prompter-result');
+  const imageResultDiv = prompterElement.querySelector('#prompter-image-result');
   
   minimizeBtn.addEventListener('click', () => {
     isMinimized = !isMinimized;
@@ -551,6 +677,11 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
             <button class="novelai-prompter-copy-btn" onclick="navigator.clipboard.writeText('${result.prompt.replace(/'/g, "\\'")}')">
               Copy Prompt
             </button>
+            ${novelaiApiKey ? `
+              <button class="novelai-prompter-generate-image-btn" id="prompter-generate-image" style="margin-top: 8px;">
+                🎨 Generate Image (Free)
+              </button>
+            ` : ''}
           </div>
           
           ${result.artistMatches.length > 0 ? `
@@ -570,6 +701,59 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
       `;
       
       resultDiv.style.display = 'block';
+      
+      // Setup image generation button if NovelAI key is available
+      if (novelaiApiKey) {
+        const generateImageBtn = resultDiv.querySelector('#prompter-generate-image');
+        if (generateImageBtn) {
+          generateImageBtn.addEventListener('click', async () => {
+            generateImageBtn.disabled = true;
+            generateImageBtn.textContent = 'Generating Image...';
+            imageResultDiv.style.display = 'none';
+            imageResultDiv.innerHTML = '<div class="novelai-prompter-loading">Generating image (this may take 30-60 seconds)...</div>';
+            imageResultDiv.style.display = 'block';
+            
+            try {
+              const imageData = await generateNovelAIImage(result.prompt);
+              imageResultDiv.innerHTML = `
+                <div class="novelai-prompter-section">
+                  <label class="novelai-prompter-label">Generated Image</label>
+                  <div class="novelai-prompter-image-container">
+                    <img src="${imageData}" alt="Generated image" class="novelai-prompter-image" />
+                    <button class="novelai-prompter-copy-btn" onclick="
+                      const img = this.previousElementSibling;
+                      const canvas = document.createElement('canvas');
+                      const ctx = canvas.getContext('2d');
+                      canvas.width = img.naturalWidth;
+                      canvas.height = img.naturalHeight;
+                      ctx.drawImage(img, 0, 0);
+                      canvas.toBlob(blob => {
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'novelai-generated.png';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                      });
+                    ">
+                      Download Image
+                    </button>
+                  </div>
+                </div>
+              `;
+            } catch (error) {
+              imageResultDiv.innerHTML = `
+                <div class="novelai-prompter-error">
+                  Image Generation Error: ${error.message}
+                </div>
+              `;
+            } finally {
+              generateImageBtn.disabled = false;
+              generateImageBtn.textContent = '🎨 Generate Image (Free)';
+            }
+          });
+        }
+      }
     } catch (error) {
       resultDiv.innerHTML = `
         <div class="novelai-prompter-error">
