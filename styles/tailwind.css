@@ -1709,6 +1709,47 @@ body[data-fold-mode="fold-cover"] .tag-explorer-overlay {
   backdrop-filter: blur(10px);
 }
 
+/* Portrait (non-fold) bottom-sheet style for filter flyout */
+@media (max-width: 768px) and (orientation: portrait) {
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-sidebar {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    height: auto;
+    max-height: min(92vh, 720px);
+    border-left: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 1.5rem 1.5rem 0 0;
+    transform: translateY(110%);
+    padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -24px 70px -35px rgba(255, 118, 214, 0.35);
+    position: fixed;
+    z-index: 1000;
+    background: rgba(12, 12, 20, 0.96);
+  }
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-sidebar.open {
+    transform: translateY(0);
+  }
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-header {
+    position: sticky;
+    top: 0;
+    background: rgba(12, 12, 20, 0.98);
+    z-index: 12;
+  }
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-content {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-categories {
+    max-height: none;
+  }
+  body:not([data-fold-mode="fold-cover"]) .tag-explorer-actions {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .tag-explorer-header {
   @apply flex items-center justify-between p-6 border-b border-white/10;
   flex-shrink: 0;
@@ -1763,6 +1804,26 @@ body[data-fold-mode="fold-cover"] .tag-explorer-overlay {
   /* Ensure proper height calculation for scrolling */
   min-height: 0;
   max-height: calc(100vh - 200px); /* Account for header and search areas */
+}
+
+.tag-explorer-actions {
+  @apply flex items-center justify-between gap-3 p-4 border-t border-white/10 bg-black/40;
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  backdrop-filter: blur(10px);
+}
+
+.tag-action {
+  @apply flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-[0.75rem] font-semibold uppercase tracking-[0.25em] text-slate-100 transition-all duration-200;
+}
+
+.tag-action--clear {
+  @apply border-rose-300/40 text-rose-100 hover:bg-rose-500/15;
+}
+
+.tag-action--close {
+  @apply border-glow/60 bg-glow/20 text-white hover:bg-glow/30;
 }
 
 /* Better spacing on mobile */

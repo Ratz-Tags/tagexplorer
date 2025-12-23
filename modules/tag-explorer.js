@@ -870,6 +870,10 @@ function initTagExplorer() {
         <input id="tag-filter-search" type="search" placeholder="Search tags..." autocomplete="off" />
       </div>
       <div class="tag-explorer-categories" id="tag-explorer-categories"></div>
+      <div class="tag-explorer-actions">
+        <button type="button" class="tag-action tag-action--clear" aria-label="Clear all tags">Clear</button>
+        <button type="button" class="tag-action tag-action--close" aria-label="Apply filters and close">Apply & Close</button>
+      </div>
     </div>
   `;
   // Listen for tag loading events
@@ -976,6 +980,24 @@ function initTagExplorer() {
     searchInputEl.addEventListener("input", (event) => {
       handleSearchInput(event.target.value || "");
     });
+    // Let users press Enter to add a free-typed tag (works with global Danbooru search)
+    searchInputEl.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      const raw = (event.target.value || "").trim();
+      if (!raw) return;
+      event.preventDefault();
+      const normalized = raw.toLowerCase().replace(/\s+/g, "_");
+      try {
+        const active = getActiveTags ? getActiveTags() : new Set();
+        if (!active.has(normalized)) {
+          toggleTag(normalized);
+          handleTagSearch(normalized);
+          renderCategories();
+        }
+      } catch (error) {
+        console.warn("[tag-explorer] Failed to add typed tag for global search:", error);
+      }
+    });
   }
 
   const sortCheckboxes = popoverEl.querySelectorAll('input[name="sort"]');
@@ -1008,6 +1030,23 @@ function initTagExplorer() {
       }
     }
   });
+
+  // Mobile-friendly action buttons
+  const clearAction = popoverEl.querySelector(".tag-action--clear");
+  if (clearAction) {
+    clearAction.addEventListener("click", (e) => {
+      e.preventDefault();
+      clearAllTags();
+      renderCategories();
+    });
+  }
+  const closeAction = popoverEl.querySelector(".tag-action--close");
+  if (closeAction) {
+    closeAction.addEventListener("click", (e) => {
+      e.preventDefault();
+      closeTagExplorer();
+    });
+  }
 
   // ensureHeightSyncListeners removed
   renderExplorer();
