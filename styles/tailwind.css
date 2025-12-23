@@ -152,6 +152,157 @@ border-radius: 9999px;
   }
 }
 
+/* Portrait Mobile (Non-Fold) Optimizations - Medium screens (521px-768px) */
+@media (min-width: 521px) and (max-width: 768px) and (orientation: portrait) {
+  /* Only apply when NOT in fold-cover mode */
+  body:not([data-fold-mode="fold-cover"]) .gallery-grid {
+    gap: 0.75rem !important; /* Reduced from 1.5rem for more content visibility */
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .gallery-chunk {
+    gap: 0.75rem !important;
+  }
+  
+  /* Reduce container padding */
+  body:not([data-fold-mode="fold-cover"]) .gallery-shell {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.75rem !important;
+  }
+  
+  /* Optimize card sizing */
+  body:not([data-fold-mode="fold-cover"]) .artist-card {
+    border-radius: 1rem !important; /* Smaller radius for mobile */
+  }
+  
+  /* Reduce footer padding */
+  body:not([data-fold-mode="fold-cover"]) .artist-footer {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Optimize command bar for mobile */
+  body:not([data-fold-mode="fold-cover"]) .command-bar {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.5rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .command-group {
+    gap: 0.5rem !important;
+  }
+  
+  /* Reduce gallery layout gap */
+  body:not([data-fold-mode="fold-cover"]) .gallery-layout {
+    gap: 1rem !important;
+  }
+  
+  /* Optimize top surface padding */
+  body:not([data-fold-mode="fold-cover"]) .top-surface {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+  
+  /* Better image aspect ratio for portrait */
+  body:not([data-fold-mode="fold-cover"]) .artist-media {
+    aspect-ratio: 3/4; /* Maintain portrait-friendly aspect */
+  }
+  
+  /* Reduce empty state padding */
+  body:not([data-fold-mode="fold-cover"]) .gallery-empty-state {
+    padding: 1.5rem !important;
+    border-radius: 1.25rem !important;
+  }
+  
+  /* Optimize scrolling behavior */
+  body:not([data-fold-mode="fold-cover"]) .gallery-shell {
+    padding-bottom: 4rem !important; /* Reduced from default for better scroll */
+  }
+  
+  /* Improve touch scrolling */
+  body:not([data-fold-mode="fold-cover"]) .gallery-grid {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+}
+
+/* Small Portrait Mobile (520px and below, non-fold) */
+@media (max-width: 520px) and (orientation: portrait) {
+  /* Only apply when NOT in fold-cover mode */
+  body:not([data-fold-mode="fold-cover"]) .gallery-grid {
+    gap: 0.5rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .gallery-chunk {
+    gap: 0.5rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .gallery-shell {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    padding-top: 0.5rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .artist-card {
+    border-radius: 0.875rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .artist-footer {
+    padding: 0.625rem !important;
+    gap: 0.375rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .command-bar {
+    padding: 0.5rem !important;
+    gap: 0.375rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .command-group {
+    gap: 0.375rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .gallery-layout {
+    gap: 0.75rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .top-surface {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+  
+  /* Smaller font sizes for very small screens */
+  body:not([data-fold-mode="fold-cover"]) .artist-name {
+    font-size: 0.875rem !important;
+  }
+  
+  body:not([data-fold-mode="fold-cover"]) .gallery-empty-state {
+    padding: 1rem !important;
+    border-radius: 1rem !important;
+  }
+  
+  /* Optimize scrolling behavior for small screens */
+  body:not([data-fold-mode="fold-cover"]) .gallery-shell {
+    padding-bottom: 3.5rem !important; /* Reduced for better scroll */
+  }
+  
+  /* Improve touch scrolling */
+  body:not([data-fold-mode="fold-cover"]) .gallery-grid {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Optimize results banner for small screens */
+  body:not([data-fold-mode="fold-cover"]) .results-banner {
+    padding: 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+}
+
 .background-lattice {
 @apply fixed inset-0 bg-[radial-gradient(circle_at_top,rgba(255,100,212,0.22),transparent_55%),radial-gradient(circle_at_bottom_right,rgba(102,243,255,0.18),transparent_60%),radial-gradient(circle_at_20%_80%,rgba(255,130,87,0.16),transparent_55%)] bg-night opacity-95 transition-opacity duration-700;
 }
