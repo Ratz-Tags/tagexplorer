@@ -29,6 +29,12 @@ export function setSimilarityMode(mode) {
   localStorage.setItem('similarityMode', similarityMode);
 }
 
+// artists.json stores content tags as `kinkTags`; style tags are fetched on demand.
+function artistTagsFor(artist, mode) {
+  if (mode === 'style') return artist.styleTags || [];
+  return artist.kinkTags || artist.tags || [];
+}
+
 /**
  * Calculate similarity score between two artists based on shared tags
  */
@@ -36,8 +42,8 @@ function calculateSimilarity(artist1, artist2, mode = similarityMode) {
   if (!artist1 || !artist2) return 0;
   
   // Choose which tags to use based on mode
-  const tags1 = new Set(mode === 'style' ? (artist1.styleTags || []) : (artist1.tags || []));
-  const tags2 = new Set(mode === 'style' ? (artist2.styleTags || []) : (artist2.tags || []));
+  const tags1 = new Set(artistTagsFor(artist1, mode));
+  const tags2 = new Set(artistTagsFor(artist2, mode));
   
   if (tags1.size === 0 || tags2.size === 0) return 0;
   
@@ -80,8 +86,8 @@ export function findSimilarArtists(artist, options = {}) {
  * Get shared tags between two artists
  */
 function getSharedTags(artist1, artist2, mode = similarityMode) {
-  const tags1 = new Set(mode === 'style' ? (artist1.styleTags || []) : (artist1.tags || []));
-  const tags2 = new Set(mode === 'style' ? (artist2.styleTags || []) : (artist2.tags || []));
+  const tags1 = new Set(artistTagsFor(artist1, mode));
+  const tags2 = new Set(artistTagsFor(artist2, mode));
   
   const shared = [];
   for (const tag of tags1) {

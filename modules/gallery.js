@@ -3,7 +3,6 @@ import {
   fetchArtistImages,
   clearArtistCache,
   buildImageUrl,
-  fetchAllArtistImages,
   getArtistImageCount,
   fetchArtistStyleTags,
   getArtistSlug,
@@ -1731,84 +1730,17 @@ async function openArtistZoom(artist) {
   document.querySelectorAll(".fullscreen-wrapper").forEach((el) => el.remove());
 
   let grid, zoomContent, backBtn;
+  // Small pages fetched on demand: the first thumbnails appear after one
+  // light request instead of after the artist's whole post history.
   const LIMIT = 40;
+  const VIEWER_FIELDS = "id,file_ext,preview_file_url,large_file_url,file_url,tag_string,is_banned,is_deleted";
+  const MAX_EMPTY_PAGES = 3;
+  const totalPages = artist.postCount > 0 ? Math.ceil(artist.postCount / LIMIT) : Infinity;
   let posts = [];
-  let page = 1;
-  let zoomTotalPages = Infinity;
+  let nextPage = 1;
+  let exhausted = false;
   let loading = false;
   let currentIndex = 0;
-  const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-  const allPostsCacheKey = `allPosts-${artist.artistName}`;
-
-  const updatePageFromInitial = (initialCount) => {
-    const hasMore = posts.length > initialCount;
-    if (!initialCount) {
-      page = zoomTotalPages + 1;
-      return;
-    }
-    const pagesRendered = Math.ceil(initialCount / LIMIT);
-    page = hasMore ? pagesRendered + 1 : zoomTotalPages + 1;
-  };
-  try {
-    const cachedAll = getWithTTL(allPostsCacheKey);
-    if (cachedAll && Array.isArray(cachedAll) && cachedAll.length > 0) {
-      console.debug(`[gallery] allPosts cache hit for ${artist.artistName}: ${cachedAll.length} posts`);
-      posts = cachedAll.slice();
-      zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-      const initial = posts.slice(0, LIMIT);
-      renderThumbs(initial, 0);
-      updatePageFromInitial(initial.length);
-    } else {
-      // Attempt to reconstruct from per-page session cache (danbooru-api-... keys)
-      try {
-        const prefix = `danbooru-api-${artist.artistName}-`;
-        const pageEntries = [];
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          if (!key || !key.startsWith(prefix)) continue;
-          const suffix = key.slice(prefix.length);
-          const m = suffix.match(/p(\d+)l(\d+)o(.+)/);
-          const pageNum = m ? Number(m[1]) : NaN;
-          try {
-            const raw = sessionStorage.getItem(key);
-            if (!raw) continue;
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              pageEntries.push({ page: isNaN(pageNum) ? 0 : pageNum, posts: parsed });
-            }
-          } catch (e) {
-            // ignore parse errors
-          }
-        }
-        if (pageEntries.length) {
-          pageEntries.sort((a, b) => a.page - b.page);
-          const reconstructed = [];
-          for (const e of pageEntries) {
-            reconstructed.push(...e.posts);
-          }
-          if (reconstructed.length) {
-            console.debug(`[gallery] reconstructed ${reconstructed.length} posts for ${artist.artistName} from per-page session cache`);
-            posts = reconstructed;
-            setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
-            zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-            const initial = posts.slice(0, LIMIT);
-            renderThumbs(initial, 0);
-            updatePageFromInitial(initial.length);
-          } else {
-            console.debug(`[gallery] failed to reconstruct posts for ${artist.artistName} from per-page session cache`);
-          }
-        } else {
-          console.debug(`[gallery] no per-page session cache found for ${artist.artistName}`);
-        }
-      } catch (e) {
-        console.debug(`[gallery] error reconstructing per-page cache for ${artist.artistName}:`, e);
-        // ignore reconstruction failures and continue to network fetch below
-      }
-    }
-  } catch (e) {
-    console.debug(`[gallery] error in allPosts cache/reconstruction for ${artist.artistName}:`, e);
-    // ignore cache parse errors
-  }
 
   function returnToGrid() {
     if (zoomContent) zoomContent.style.display = "none";
@@ -1836,6 +1768,12 @@ async function openArtistZoom(artist) {
   grid.style.overflowY = "auto";
   wrapper.appendChild(grid);
 
+  const status = document.createElement("p");
+  status.className = "artist-thumb-status";
+  status.setAttribute("role", "status");
+  status.textContent = "Loading images…";
+  grid.appendChild(status);
+
   const sentinel = document.createElement("div");
   sentinel.id = "grid-sentinel";
   grid.appendChild(sentinel);
@@ -1845,80 +1783,43 @@ async function openArtistZoom(artist) {
   document.body.appendChild(wrapper);
   wrapper.focus();
 
+  function updateStatus() {
+    if (posts.length) {
+      status.hidden = true;
+      return;
+    }
+    status.hidden = false;
+    status.textContent = loading ? "Loading images…" : "No images found for this artist.";
+  }
+
   async function loadPage() {
-    if (loading || page > zoomTotalPages) return;
+    if (loading || exhausted) return;
     loading = true;
     try {
       const api = await import("./api.js");
-
-      // If we already have cached posts that include this page, render from them
-      const startIdx = (page - 1) * LIMIT;
-      const endIdx = page * LIMIT;
-      if (posts.length >= endIdx) {
-        const slice = posts.slice(startIdx, endIdx);
-        renderThumbs(slice, startIdx);
-        page++;
-        return;
-      }
-
-      // If this is the first network fetch, try to get a rough page count from the API
-      if (page === 1) {
-        try {
-          const count = await api.getArtistImageCount(artist.artistName);
-          if (count && Number.isFinite(count)) {
-            zoomTotalPages = Math.max(1, Math.ceil(count / LIMIT));
-          }
-        } catch {
-          zoomTotalPages = Infinity;
-        }
-      }
-
-      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 10, batchDelay: 40 });
-
-      if (Array.isArray(newPosts) && newPosts.length > 0) {
-        console.debug(`[gallery] network fetchAllArtistImages loaded ${newPosts.length} posts for ${artist.artistName}`);
-        posts = newPosts.slice();
-        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch (e) {}
-        zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-        const initial = posts.slice(0, LIMIT);
-        renderThumbs(initial, 0);
-        updatePageFromInitial(initial.length);
-        if (posts.length <= LIMIT) return;
-      } else {
-        console.debug(`[gallery] network fetchAllArtistImages returned no posts for ${artist.artistName}, falling back to per-page fetch`);
-        const startIdx = (page - 1) * LIMIT;
-        const endIdx = page * LIMIT;
-        if (posts.length >= endIdx) {
-          const slice = posts.slice(startIdx, endIdx);
-          renderThumbs(slice, startIdx);
-          page++;
-          return;
-        }
-
-        const perPagePosts = await api.fetchArtistImages(artist.artistName, [], {
+      let emptyPages = 0;
+      while (nextPage <= totalPages) {
+        const batch = await api.fetchArtistImages(artist.artistName, [], {
           limit: LIMIT,
-          page,
+          page: nextPage++,
           order: "approvals",
+          only: VIEWER_FIELDS,
+          priority: "high",
         });
-
-        if (!Array.isArray(perPagePosts) || perPagePosts.length === 0) {
-          console.debug(`[gallery] per-page fetch returned no posts for ${artist.artistName}`);
-          zoomTotalPages = page - 1;
+        if (Array.isArray(batch) && batch.length) {
+          const start = posts.length;
+          posts = posts.concat(batch);
+          renderThumbs(batch, start);
           return;
         }
-
-        const start = posts.length;
-        posts = posts.concat(perPagePosts);
-        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch(e) {}
-
-        renderThumbs(perPagePosts, start);
-        page++;
-        return;
+        // A page can come back empty after filtering out deleted/banned
+        // posts; keep paging only while the post count says more exist.
+        if (totalPages === Infinity || ++emptyPages >= MAX_EMPTY_PAGES) break;
       }
-
-      
+      exhausted = true;
     } finally {
       loading = false;
+      updateStatus();
     }
   }
 
@@ -2054,7 +1955,7 @@ async function openArtistZoom(artist) {
   });
 
   nextBtn.addEventListener("click", async () => {
-    if (currentIndex === posts.length - 1 && page <= zoomTotalPages) {
+    if (currentIndex === posts.length - 1 && !exhausted) {
       await loadPage();
     }
     if (currentIndex < posts.length - 1) {
@@ -2115,7 +2016,7 @@ async function openArtistZoom(artist) {
     let attempts = 0;
     while (
       attempts < maxExtraLoads &&
-      page <= zoomTotalPages &&
+      !exhausted &&
       grid.scrollHeight <= grid.clientHeight + 48
     ) {
       await loadPage();
@@ -3047,9 +2948,9 @@ function setAllArtists(artists) {
   }
   // Also set artists for similar-artists module
   setSimilarArtists(allArtists);
-  
-  // Start background fetch of style tags for all artists
-  fetchStyleTagsForAllArtists();
+  // Style tags are fetched on request (FETCH button). Crawling all ~11k
+  // artists on every load clogged the request queue for previews and the
+  // image viewer.
 }
 
 /**
@@ -3101,16 +3002,6 @@ async function fetchStyleTagsForArtistList(artistList, onProgress = null, should
   
   console.log('Style tag fetch complete');
   if (onProgress) onProgress(total, total);
-}
-
-/**
- * Fetch style tags for all artists in the background
- * This runs slowly over time to avoid overwhelming the API
- * @param {Function} onProgress - Optional callback(current, total) for progress updates
- * @param {Function} shouldCancel - Optional callback that returns true if fetch should be cancelled
- */
-async function fetchStyleTagsForAllArtists(onProgress = null, shouldCancel = null) {
-  return fetchStyleTagsForArtistList(allArtists, onProgress, shouldCancel);
 }
 
 /**
