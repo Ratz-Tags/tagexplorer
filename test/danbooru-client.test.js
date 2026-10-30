@@ -17,7 +17,7 @@ process.env.DANBOORU_LOGIN = 'tester';
 process.env.DANBOORU_API_KEY = 'secret';
 
 const { createDanbooruClient, DanbooruBlockedError, USER_AGENT } = await import('../scripts/lib/danbooru.js');
-const fastClient = (opts = {}) => createDanbooruClient({ baseDelayMs: 0, ...opts });
+const fastClient = (opts = {}) => createDanbooruClient({ ratePerSecond: Infinity, rateLimitBackoffMs: 20, ...opts });
 
 test.after(() => server.close());
 
@@ -35,6 +35,23 @@ test('retries server errors before succeeding', async () => {
   respond = () => (++calls < 3 ? [502, 'bad gateway'] : [200, { counts: { posts: 7 } }]);
   assert.equal(await fastClient().countPosts('flaky'), 7);
   assert.equal(calls, 3);
+});
+
+test('rides out 429 rate limiting instead of failing', async () => {
+  let calls = 0;
+  respond = () => (++calls <= 3 ? [429, 'slow down', { 'retry-after': '0' }] : [200, { counts: { posts: 9 } }]);
+  const client = fastClient();
+  assert.equal(await client.countPosts('busy'), 9);
+  assert.equal(client.stats.rateLimited, 3);
+  assert.equal(client.stats.failed, 0);
+});
+
+test('spaces request starts to the configured rate', async () => {
+  respond = () => [200, { counts: { posts: 1 } }];
+  const client = createDanbooruClient({ ratePerSecond: 20, concurrency: 5 });
+  const started = Date.now();
+  await Promise.all(Array.from({ length: 5 }, (_, i) => client.countPosts(`t${i}`)));
+  assert.ok(Date.now() - started >= 180, 'five requests at 20/s take at least ~200ms');
 });
 
 test('repeated 403s trip the breaker and stop all further requests', async () => {

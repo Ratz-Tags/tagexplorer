@@ -68,7 +68,9 @@ async function updateCounts() {
   }
 
   await fs.writeFile(ARTISTS_PATH, JSON.stringify(artists, null, 2) + '\n');
-  console.log(`✅ artists.json written: ${changed} counts changed (${client.stats.requests} requests)`);
+  console.log(
+    `✅ artists.json written: ${changed} counts changed (${client.stats.requests} requests, ${client.stats.rateLimited} rate-limited retries)`,
+  );
 }
 
 updateCounts().catch((err) => {

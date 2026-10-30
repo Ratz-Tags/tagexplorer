@@ -101,18 +101,26 @@ export async function mapPool(items, limit, fn) {
 }
 
 export function createDanbooruClient(options = {}) {
-  const concurrency = Number(options.concurrency ?? process.env.DANBOORU_CONCURRENCY ?? 6);
-  const baseDelay = Number(options.baseDelayMs ?? process.env.DANBOORU_BASE_DELAY_MS ?? 150);
-  const maxRetries = Number(options.maxRetries ?? 3);
+  const concurrency = Number(options.concurrency ?? process.env.DANBOORU_CONCURRENCY ?? 3);
+  // Danbooru answers bursts with HTTP 429, so request starts are spaced
+  // globally (the old updater ran ~6 req/s for months without trouble).
+  const ratePerSecond = Number(options.ratePerSecond ?? process.env.DANBOORU_RATE ?? 5);
+  const minInterval = ratePerSecond > 0 && Number.isFinite(ratePerSecond) ? 1000 / ratePerSecond : 0;
+  const maxRetries = Number(options.maxRetries ?? 3); // network errors and 5xx
+  const maxRateLimitRetries = Number(options.maxRateLimitRetries ?? 8);
+  const rateLimitBackoffMs = Number(options.rateLimitBackoffMs ?? 2000);
   // Consecutive 401/403 responses tolerated before the whole run is aborted.
   const blockThreshold = Number(options.blockThreshold ?? 5);
 
-  let delay = baseDelay;
+  let interval = minInterval;
+  let nextStartAt = 0;
+  let pausedUntil = 0;
+  let rateLimitStreak = 0;
   let active = 0;
   const waiting = [];
   let consecutiveRefusals = 0;
   let blockedError = null;
-  const stats = { requests: 0, ok: 0, refused: 0, failed: 0 };
+  const stats = { requests: 0, ok: 0, refused: 0, rateLimited: 0, failed: 0 };
 
   async function withSlot(fn) {
     if (active >= concurrency) {
@@ -128,6 +136,16 @@ export function createDanbooruClient(options = {}) {
     }
   }
 
+  // Waits for this request's start slot; a 429 pauses every request.
+  async function waitTurn() {
+    for (;;) {
+      const wait = Math.max(pausedUntil, nextStartAt) - Date.now();
+      if (wait <= 0) break;
+      await sleep(wait);
+    }
+    nextStartAt = Math.max(Date.now(), nextStartAt) + interval;
+  }
+
   async function request(path, params = {}) {
     if (blockedError) throw blockedError;
     const url = new URL(`${BASE_URL}${path}`);
@@ -137,20 +155,22 @@ export function createDanbooruClient(options = {}) {
     const href = url.toString();
 
     return withSlot(async () => {
-      for (let attempt = 0; ; attempt++) {
+      let attempt = 0;
+      let rateLimitedAttempts = 0;
+      for (;;) {
         if (blockedError) throw blockedError;
-        if (delay > 0) await sleep(delay);
+        await waitTurn();
         stats.requests++;
 
         let resp;
         try {
           resp = await fetch(href, { headers: buildHeaders() });
         } catch (err) {
-          if (attempt >= maxRetries) {
+          if (attempt++ >= maxRetries) {
             stats.failed++;
             throw err;
           }
-          delay = Math.min(delay * 1.5 + 100, 8000);
+          await sleep(Math.min(500 * 2 ** attempt, 8000));
           continue;
         }
 
@@ -165,28 +185,42 @@ export function createDanbooruClient(options = {}) {
           throw new DanbooruRequestError(resp.status, details.url);
         }
 
-        if (resp.status === 429 || resp.status >= 500) {
+        if (resp.status === 429) {
           await discard(resp);
-          if (attempt >= maxRetries) {
+          stats.rateLimited++;
+          if (rateLimitedAttempts++ >= maxRateLimitRetries) {
             stats.failed++;
             throw new DanbooruRequestError(resp.status, href);
           }
-          let wait = Math.max(delay * 1.5 + 100, 500);
+          rateLimitStreak++;
           const retryAfter = resp.headers.get('retry-after');
-          if (retryAfter && /^\d+$/.test(retryAfter)) wait = Math.max(wait, Number(retryAfter) * 1000);
-          delay = Math.min(Math.max(delay, Math.floor(wait / Math.max(1, concurrency))), 12000);
-          await sleep(wait);
+          const retryAfterMs = retryAfter && /^\d+$/.test(retryAfter) ? Number(retryAfter) * 1000 : 0;
+          const backoff = Math.min(rateLimitBackoffMs * 2 ** Math.min(rateLimitStreak - 1, 5), 60000);
+          pausedUntil = Math.max(pausedUntil, Date.now() + Math.max(backoff, retryAfterMs));
+          // Run slower for a while; successes ease it back to the base rate.
+          interval = Math.min(Math.max(interval, 50) * 1.5, 2000);
+          continue;
+        }
+
+        if (resp.status >= 500) {
+          await discard(resp);
+          if (attempt++ >= maxRetries) {
+            stats.failed++;
+            throw new DanbooruRequestError(resp.status, href);
+          }
+          await sleep(Math.min(500 * 2 ** attempt, 8000));
           continue;
         }
 
         consecutiveRefusals = 0;
+        rateLimitStreak = 0;
         if (!resp.ok) {
           await discard(resp);
           stats.failed++;
           throw new DanbooruRequestError(resp.status, href);
         }
         stats.ok++;
-        delay = Math.max(baseDelay, Math.floor(delay * 0.9));
+        interval = Math.max(minInterval, interval * 0.97);
         return resp.json();
       }
     });
@@ -211,7 +245,7 @@ export function createDanbooruClient(options = {}) {
   // One request per endpoint the updaters use. Throws DanbooruBlockedError
   // (with the response details) if any of them is refused.
   async function preflight() {
-    const probe = createDanbooruClient({ concurrency: 1, baseDelayMs: 0, maxRetries: 2, blockThreshold: 1 });
+    const probe = createDanbooruClient({ concurrency: 1, ratePerSecond: Infinity, maxRetries: 2, blockThreshold: 1 });
     await probe.countPosts('femdom');
     await probe.posts('femdom', { limit: 1, only: 'id' });
     await probe.tagExists('femdom');
