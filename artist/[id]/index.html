@@ -27,13 +27,18 @@
         <h1 class="artist-title" data-artist-name>Loading artist…</h1>
         <p class="artist-subtitle" data-artist-tagline>Wait while we fetch the proof of what you really wanted.</p>
         <div class="artist-actions">
-          <a class="artist-back" href="../../gallery/" data-router-link>&larr; Back to gallery</a>
+          <button class="artist-browse" data-artist-browse type="button">Browse all images</button>
           <button class="artist-favorite" data-artist-favorite type="button">Add to favorites</button>
+          <a class="artist-back" href="../../gallery/" data-router-link>&larr; Back to gallery</a>
         </div>
       </section>
       <section class="artist-preview" data-artist-preview aria-label="Artist preview"></section>
       <section class="artist-tags" data-artist-tags aria-label="Artist tags"></section>
       <section class="artist-links" data-artist-links aria-label="Artist links"></section>
+      <section class="artist-similar" data-artist-similar aria-labelledby="artist-similar-title" hidden>
+        <h2 id="artist-similar-title" class="artist-section-title">Similar artists</h2>
+        <ol class="artist-similar-list"></ol>
+      </section>
     </main>
   </div>
   <te-audio-panel data-src-prefix="../../"></te-audio-panel>

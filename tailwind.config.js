@@ -3,6 +3,8 @@ export default {
     './index.html',
     './gallery/index.html',
     './about/index.html',
+    './artist/**/*.html',
+    './data/index.html',
     './main.js',
     './modules/**/*.js',
   ],

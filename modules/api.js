@@ -1246,6 +1246,10 @@ export function getArtistSlug(name) {
   return toArtistSlug(name);
 }
 
+export async function getAllArtistsList() {
+  return ensureArtistsList();
+}
+
 export async function getArtistBySlug(slug) {
   if (!slug) return null;
   const normalized = toArtistSlug(slug);

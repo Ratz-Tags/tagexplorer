@@ -2,12 +2,16 @@ import {
   getArtistBySlug,
   preloadArtistBySlug,
   fetchArtistImages,
+  getAllArtistsList,
+  getArtistSlug,
 } from '../api.js';
 import {
   loadFavorites,
   toggleFavorite,
   isFavorite,
 } from '../favorites.js';
+import { openLightbox } from '../lightbox.js';
+import { findSimilarArtists, setAllArtists as setSimilarArtists } from '../similar-artists.js';
 
 function resolveSlug() {
   const url = new URL(window.location.href);
@@ -38,6 +42,10 @@ function renderTags(container, tags = []) {
     container.innerHTML = '<p>No recorded kink tags. Curious.</p>';
     return;
   }
+  const title = document.createElement('h2');
+  title.className = 'artist-section-title';
+  title.textContent = 'Tags';
+  container.appendChild(title);
   const list = document.createElement('ul');
   list.className = 'artist-tag-list';
   tags.forEach((tag) => {
@@ -106,6 +114,32 @@ function renderLinks(container, artist) {
   container.appendChild(list);
 }
 
+async function renderSimilar(section, artist) {
+  if (!section) return;
+  const artists = await getAllArtistsList();
+  setSimilarArtists(artists);
+  const matches = findSimilarArtists(artist, { limit: 10, minSimilarity: 0.05, mode: 'content' });
+  if (!matches.length) return;
+  const list = section.querySelector('.artist-similar-list');
+  list.replaceChildren(
+    ...matches.map(({ artist: other, score }) => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.className = 'artist-similar-link';
+      link.href = `?slug=${encodeURIComponent(getArtistSlug(other.artistName))}`;
+      const name = document.createElement('span');
+      name.textContent = other.artistName.replace(/_/g, ' ');
+      const meta = document.createElement('span');
+      meta.className = 'artist-similar-meta';
+      meta.textContent = `${Math.round(score * 100)}% match${other.postCount ? ` · ${other.postCount.toLocaleString()} posts` : ''}`;
+      link.append(name, meta);
+      item.appendChild(link);
+      return item;
+    }),
+  );
+  section.hidden = false;
+}
+
 function updateFavoriteButton(button, artistName) {
   if (!button) return;
   const favorite = isFavorite(artistName);
@@ -141,11 +175,23 @@ export async function initArtistPage() {
     nameEl.textContent = artist.artistName.replace(/_/g, ' ');
   }
   if (taglineEl) {
-    const count = typeof artist.postCount === 'number' ? ` · ${artist.postCount} posts logged` : '';
-    taglineEl.textContent = `Still fixated on ${artist.artistName.replace(/_/g, ' ')}${count}?`; 
+    taglineEl.textContent =
+      typeof artist.postCount === 'number' ? `${artist.postCount.toLocaleString()} posts on Danbooru` : '';
   }
+  const browseBtn = document.querySelector('[data-artist-browse]');
+  if (browseBtn) {
+    browseBtn.addEventListener('click', () => {
+      openLightbox(artist, {
+        onCopy: (target) => navigator.clipboard?.writeText(`artist:${target.artistName}`).catch(() => {}),
+      });
+    });
+  }
+  renderSimilar(document.querySelector('[data-artist-similar]'), artist).catch((error) => {
+    console.warn('[artist] Failed to find similar artists', error);
+  });
   if (previewEl) {
     renderPreview(previewEl, artist);
+    previewEl.addEventListener('click', () => document.querySelector('[data-artist-browse]')?.click());
   }
   if (tagsEl) {
     renderTags(tagsEl, artist.kinkTags);
