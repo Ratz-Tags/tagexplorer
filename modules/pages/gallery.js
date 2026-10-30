@@ -14,7 +14,6 @@ import {
   initTags,
   setAllArtists as setTagsArtists,
   setRenderArtistsCallback,
-  setRandomBackgroundCallback,
   setTagTooltips,
   setTagTaunts,
   setTaunts,
@@ -28,7 +27,6 @@ import {
 import {
   initGallery,
   filterArtists,
-  setRandomBackground,
   setAllArtists as setGalleryArtists,
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,
@@ -38,17 +36,16 @@ import {
   getCurrentPage,
   setCurrentPage,
   renderArtistsPage,
-  getFilteredArtists,
   showArtistList,
   findArtistByName,
   clearGalleryFilters,
   openArtistZoom,
 } from '../gallery.js';
 import { initSavedPanel, toggleSavedPanel, closeSavedPanel } from '../saved-panel.js';
+import { initSettingsPanel, toggleSettingsPanel } from '../settings-panel.js';
 import {
   initUI,
   setupInfiniteScroll,
-  setupBackgroundRotation,
   showToast,
   vibrate,
   vibratePattern,
@@ -59,14 +56,12 @@ import {
   restoreGalleryState,
 } from '../api.js';
 import { startTauntTicker, setHumiliationArtists } from '../humiliation.js';
-import { createTTSToggleButton, createTTSIntensityControl } from '../tts-toggle.js';
 import {
   initTagExplorer,
   toggleTagExplorer,
   syncTagExplorerDock,
   setAllArtists as setExplorerArtists,
 } from '../tag-explorer.js';
-import { openVoiceSettings } from '../whisper-voice.js';
 import { configureWhisperCatalog, dispatchWhisperEvent } from '../tts-dispatcher.js';
 import {
   evaluateRitualTriggers,
@@ -476,9 +471,6 @@ function handleCommandEscape({ silent = false, source = 'button' } = {}) {
     baseline = [];
   }
   hydrateTagState(baseline);
-  if (typeof setRandomBackground === 'function') {
-    setRandomBackground();
-  }
   try {
     setIndulgenceLevel(preset.asmrLevel ?? 0, { source: 'command-deck' });
     commandDeckState.asmrLevel = preset.asmrLevel ?? 0;
@@ -552,9 +544,6 @@ function handleCommandAction(commandId, { silent = false, source = 'button', pre
   (preset.tagsAdd || []).forEach((tag) => nextTagsSet.add(tag));
   const nextTags = Array.from(nextTagsSet);
   hydrateTagState(nextTags);
-  if (typeof setRandomBackground === 'function') {
-    setRandomBackground();
-  }
   try {
     const nextLevel = Number(preset.asmrLevel ?? commandDeckState.asmrLevel ?? 0);
     setIndulgenceLevel(nextLevel, { source: 'command-deck' });
@@ -951,45 +940,6 @@ function setupRitualObserver() {
   };
 }
 
-function setupVoiceSelectorButton() {
-  const audioControls = document.querySelector('.audio-controls');
-  if (!audioControls || document.getElementById('whisper-voice-btn')) return;
-  const voiceBtn = document.createElement('button');
-  voiceBtn.type = 'button';
-  voiceBtn.id = 'whisper-voice-btn';
-  voiceBtn.className = 'audio-pill';
-  voiceBtn.textContent = 'Voice';
-  voiceBtn.setAttribute('aria-haspopup', 'dialog');
-  voiceBtn.addEventListener('click', () => openVoiceSettings());
-  audioControls.appendChild(voiceBtn);
-}
-
-function setupThemeToggle() {
-  const themeToggles = Array.from(document.querySelectorAll('.theme-toggle'));
-  const bodyEl = document.body;
-  if (!bodyEl) return;
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'incognito') {
-    bodyEl.classList.add('incognito-theme');
-    bodyEl.classList.remove('fem-theme');
-    setRandomBackground();
-  } else {
-    bodyEl.classList.add('fem-theme');
-    bodyEl.classList.remove('incognito-theme');
-  }
-  if (!themeToggles.length) return;
-  const handleToggle = () => {
-    bodyEl.classList.toggle('incognito-theme');
-    bodyEl.classList.toggle('fem-theme');
-    const current = bodyEl.classList.contains('incognito-theme') ? 'incognito' : 'fem';
-    localStorage.setItem('theme', current);
-    setRandomBackground();
-  };
-  themeToggles.forEach((toggleEl) => {
-    toggleEl.addEventListener('click', handleToggle);
-  });
-}
-
 function setupTagSearchModeSelector() {
   const tagSearchModeSelect = document.createElement('select');
   tagSearchModeSelect.id = 'tag-search-mode';
@@ -1230,6 +1180,23 @@ function setupAudioToggle() {
   audioPanelEl.querySelector('.audio-close')?.addEventListener('click', () => setAudioHidden(true));
 
   setAudioHidden(audioPanelEl.classList.contains('hidden'));
+  return setAudioHidden;
+}
+
+async function setupSettingsPanel({ openPlayer, setMotion }) {
+  await customElements.whenDefined('te-command-bar');
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  initSettingsPanel({
+    isMuted: () => getGlobalMuteState(),
+    toggleMute: () => toggleGlobalMute(),
+    getMotion: () => document.body.dataset.motion || readMotionPreference(),
+    setMotion,
+    openPlayer,
+  });
+  document.querySelectorAll('.settings-toggle').forEach((button) => {
+    button.addEventListener('click', () => toggleSettingsPanel());
+  });
 }
 
 function setupMuteToggle() {
@@ -1842,24 +1809,19 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   initSidebar();
   await initAudio();
   initAudioUI();
-  createTTSToggleButton();
-  createTTSIntensityControl();
-  setupVoiceSelectorButton();
-  setupAudioToggle();
+  const setAudioPanelHidden = setupAudioToggle();
   setupMuteToggle();
-  setupMotionToggle(readMotionPreference());
+  const setMotionMode = setupMotionToggle(readMotionPreference());
   const pressureProgression = setupPressureProgression();
   const foldCleanup = setupFoldModeSync({
     foldAdapter,
   });
 
-  // Don't call setRandomBackground() here - let the controller handle it after initialization
-
   await initShameDossier();
   
   // Initialize tags first and ensure they're loaded before proceeding
   console.log('[gallery] Initializing tags...');
-  await initTags(artists, filterArtists, setRandomBackground);
+  await initTags(artists, filterArtists);
   console.log('[gallery] Tags initialized, setting up gallery...');
   
   initGallery();
@@ -1870,7 +1832,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setExplorerArtists(artists);
 
   setRenderArtistsCallback(filterArtists);
-  setRandomBackgroundCallback(setRandomBackground);
   setGetActiveTagsCallback(getActiveTags);
   setGetArtistNameFilterCallback(getArtistNameFilter);
 
@@ -1939,11 +1900,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
     console.warn('[gallery] Failed to initialize NovelAI Prompter:', error);
   }
   
-  setupBackgroundRotation(setRandomBackground, {
-    getActiveTags,
-    getFilteredArtists,
-    getPaginationInfo,
-  });
   setupInfiniteScroll({
     onForward: () => {
       const info = getPaginationInfo();
@@ -1966,7 +1922,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
 
   const ritualCleanup = setupRitualObserver();
 
-  setupThemeToggle();
   setupTagSearchModeSelector();
   setupSidebarToggle();
   setupSortControls();
@@ -1976,6 +1931,10 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   const appBarCleanup = trackAppBarHeight();
   setupForceFetch();
   setupFavoritesButton();
+  setupSettingsPanel({
+    openPlayer: () => setAudioPanelHidden?.(false),
+    setMotion: setMotionMode,
+  });
   setupDossierButton();
 
   const commandDeckCleanup = await setupCommandDeck();
@@ -1984,7 +1943,6 @@ export async function initGalleryPage({ foldAdapter } = {}) {
 
   window.kexplorer = {
     filterArtists,
-    setRandomBackground,
     getActiveTags,
     renderTagButtons,
   };

@@ -50,7 +50,7 @@ const PREFERRED_DEVICE_VOICES = [/aria/i, /jenny/i, /samantha/i, /ava/i, /alliso
 let settings = loadSettings();
 let puterPromise = null;
 // Set after a cloud failure (usage limit, network) so the session stops
-// retrying it; reconnecting in the dialog clears it.
+// retrying it; reconnecting in Settings clears it.
 let cloudPaused = false;
 let lastCloudVoice = null;
 let audioEl = null;
@@ -59,8 +59,7 @@ let currentUtterance = null;
 let warnedSignedOut = false;
 let playToken = 0;
 const cloudCache = new Map();
-let dialog = null;
-let returnFocus = null;
+let controls = null;
 
 function loadSettings() {
   const defaults = { engine: 'device', cloudVoice: 'rotate', deviceVoice: '' };
@@ -139,7 +138,7 @@ async function synthesizeCloud(text, event, lane) {
     return hit.src;
   }
   const puter = await loadPuter();
-  // Never let a taunt open Puter's sign-in popup; that only happens from the dialog.
+  // Never let a taunt open Puter's sign-in popup; that only happens from Settings.
   if (!puter.auth.isSignedIn()) throw new SignedOutError();
   const voice = pickCloudVoice();
   const audio = await puter.ai.txt2speech(text, {
@@ -306,102 +305,58 @@ export function initWhisperVoice() {
   getDeviceVoices();
 }
 
-// --- Settings dialog -------------------------------------------------------
+// --- Voice controls (rendered inside the Settings panel) --------------------
 
-export function openVoiceSettings() {
-  ensureDialog();
-  returnFocus = document.activeElement;
-  dialog.hidden = false;
-  // On the document so Esc still works after a click drops focus to <body>.
-  document.addEventListener('keydown', onDialogKeydown, true);
-  render();
-  if (settings.engine === 'cloud') warmPuter();
-  dialog.querySelector('input[name="voice-engine"]:checked')?.focus();
-}
-
-// Loaded ahead of the Connect click so its sign-in popup opens from that click.
-function warmPuter() {
-  loadPuter().then(render, () => render());
-}
-
-function closeVoiceSettings() {
-  if (!dialog || dialog.hidden) return;
-  dialog.hidden = true;
-  document.removeEventListener('keydown', onDialogKeydown, true);
-  if (returnFocus && document.contains(returnFocus)) returnFocus.focus({ preventScroll: true });
-}
-
-function onDialogKeydown(event) {
-  if (event.key !== 'Escape') return;
-  event.stopPropagation();
-  closeVoiceSettings();
-}
-
-function ensureDialog() {
-  if (dialog) return;
-  dialog = document.createElement('div');
-  dialog.className = 'voice-dialog';
-  dialog.hidden = true;
-  dialog.innerHTML = `
-    <div class="voice-dialog__backdrop" data-close></div>
-    <section class="voice-dialog__panel" role="dialog" aria-modal="true" aria-labelledby="voice-dialog-title">
-      <header class="voice-dialog__head">
-        <h2 id="voice-dialog-title" class="voice-dialog__title">Whisper voice</h2>
-        <button type="button" class="voice-dialog__close" data-close aria-label="Close">✕</button>
-      </header>
-      <fieldset class="voice-dialog__engines">
-        <legend class="sr-only">Voice engine</legend>
-        <label class="voice-option">
-          <input type="radio" name="voice-engine" value="cloud">
-          <span>
-            <strong>Expressive cloud whisper</strong>
-            <small>Free with a Puter account (sign in once). Real whispering, with the mood changing per taunt.</small>
-          </span>
-        </label>
-        <label class="voice-option">
-          <input type="radio" name="voice-engine" value="device">
-          <span>
-            <strong>Device voice</strong>
-            <small>Your browser's built-in voice. No sign-in, but it can't whisper or emote.</small>
-          </span>
-        </label>
-      </fieldset>
-      <div class="voice-dialog__group" data-group="cloud">
-        <p class="voice-dialog__status" aria-live="polite"></p>
-        <div class="voice-dialog__row">
-          <button type="button" class="voice-dialog__btn voice-dialog__btn--primary" data-act="connect">Connect Puter</button>
-          <button type="button" class="voice-dialog__btn" data-act="disconnect">Disconnect</button>
-        </div>
-        <label class="voice-dialog__field">Voice
-          <select data-field="cloudVoice">
-            <option value="rotate">Rotate voices</option>
-            ${CLOUD_VOICES.map((voice) => `<option value="${voice}">${voice[0].toUpperCase()}${voice.slice(1)}</option>`).join('')}
-          </select>
-        </label>
+export function mountVoiceControls(container) {
+  controls = container;
+  container.innerHTML = `
+    <fieldset class="voice-engines">
+      <legend class="settings__label">Voice</legend>
+      <label class="voice-option">
+        <input type="radio" name="voice-engine" value="cloud">
+        <span>
+          <strong>Expressive cloud whisper</strong>
+          <small>Free with a Puter account (sign in once). Real whispering, with the mood changing per taunt.</small>
+        </span>
+      </label>
+      <label class="voice-option">
+        <input type="radio" name="voice-engine" value="device">
+        <span>
+          <strong>Device voice</strong>
+          <small>Your browser's built-in voice. No sign-in, but it can't whisper or emote.</small>
+        </span>
+      </label>
+    </fieldset>
+    <div class="voice-group" data-group="cloud">
+      <p class="voice-status" aria-live="polite"></p>
+      <div class="voice-row">
+        <button type="button" class="settings-btn settings-btn--primary" data-act="connect">Connect Puter</button>
+        <button type="button" class="settings-btn" data-act="disconnect">Disconnect</button>
       </div>
-      <div class="voice-dialog__group" data-group="device">
-        <label class="voice-dialog__field">Voice
-          <select data-field="deviceVoice"></select>
-        </label>
-      </div>
-      <footer class="voice-dialog__foot">
-        <button type="button" class="voice-dialog__btn" data-act="preview">Play a sample</button>
-      </footer>
-    </section>
+      <label class="settings-field">Cloud voice
+        <select data-field="cloudVoice">
+          <option value="rotate">Rotate voices</option>
+          ${CLOUD_VOICES.map((voice) => `<option value="${voice}">${voice[0].toUpperCase()}${voice.slice(1)}</option>`).join('')}
+        </select>
+      </label>
+    </div>
+    <div class="voice-group" data-group="device">
+      <label class="settings-field">Device voice
+        <select data-field="deviceVoice"></select>
+      </label>
+    </div>
+    <div class="voice-row">
+      <button type="button" class="settings-btn" data-act="preview">Play a sample</button>
+    </div>
   `;
-  document.body.appendChild(dialog);
 
-  dialog.addEventListener('click', (event) => {
-    if (event.target.closest('[data-close]')) {
-      closeVoiceSettings();
-      return;
-    }
+  container.addEventListener('click', (event) => {
     const action = event.target.closest('[data-act]')?.dataset.act;
     if (action === 'connect') connectCloud();
     else if (action === 'disconnect') disconnectCloud();
     else if (action === 'preview') speakWhisper(SAMPLE_LINE, { event: 'tag_add', lane: 2 });
   });
-  dialog.addEventListener('change', (event) => {
+  container.addEventListener('change', (event) => {
     const target = event.target;
     if (target.name === 'voice-engine') {
       saveSettings({ engine: target.value });
@@ -409,18 +364,23 @@ function ensureDialog() {
         cloudPaused = false;
         warmPuter();
       }
-      render();
+      renderVoiceControls();
     } else if (target.dataset.field) {
       saveSettings({ [target.dataset.field]: target.value });
     }
   });
-  window.speechSynthesis?.addEventListener?.('voiceschanged', () => {
-    if (!dialog.hidden) render();
-  });
+  window.speechSynthesis?.addEventListener?.('voiceschanged', () => renderVoiceControls());
+  if (settings.engine === 'cloud') warmPuter();
+  renderVoiceControls();
+}
+
+// Loaded ahead of the Connect click so its sign-in popup opens from that click.
+function warmPuter() {
+  loadPuter().then(renderVoiceControls, () => renderVoiceControls());
 }
 
 async function connectCloud() {
-  const status = dialog.querySelector('.voice-dialog__status');
+  const status = controls.querySelector('.voice-status');
   status.textContent = 'Opening Puter sign-in…';
   try {
     const puter = await loadPuter();
@@ -435,10 +395,11 @@ async function connectCloud() {
       : 'Sign-in didn’t finish. You can try again any time.';
     return;
   }
-  render();
+  await renderVoiceControls();
+  controls.querySelector('[data-act="disconnect"]')?.focus();
 }
 
-function disconnectCloud() {
+async function disconnectCloud() {
   try {
     window.puter?.auth?.signOut();
   } catch {
@@ -446,24 +407,25 @@ function disconnectCloud() {
   }
   cloudCache.clear();
   saveSettings({ engine: 'device' });
-  render();
+  await renderVoiceControls();
+  controls.querySelector('input[name="voice-engine"]:checked')?.focus();
 }
 
-async function render() {
-  if (!dialog || dialog.hidden) return;
+export async function renderVoiceControls() {
+  if (!controls || !controls.isConnected) return;
   const cloud = settings.engine === 'cloud';
-  dialog.querySelectorAll('input[name="voice-engine"]').forEach((input) => {
+  controls.querySelectorAll('input[name="voice-engine"]').forEach((input) => {
     input.checked = input.value === settings.engine;
   });
-  dialog.querySelector('[data-group="cloud"]').hidden = !cloud;
-  dialog.querySelector('[data-group="device"]').hidden = cloud;
-  dialog.querySelector('[data-field="cloudVoice"]').value = settings.cloudVoice;
+  controls.querySelector('[data-group="cloud"]').hidden = !cloud;
+  controls.querySelector('[data-group="device"]').hidden = cloud;
+  controls.querySelector('[data-field="cloudVoice"]').value = settings.cloudVoice;
 
-  const deviceSelect = dialog.querySelector('[data-field="deviceVoice"]');
+  const deviceSelect = controls.querySelector('[data-field="deviceVoice"]');
   const voices = getDeviceVoices();
   const automatic = document.createElement('option');
   automatic.value = '';
-  automatic.textContent = 'Automatic';
+  automatic.textContent = window.speechSynthesis ? 'Automatic' : 'Not supported in this browser';
   deviceSelect.replaceChildren(
     automatic,
     ...voices.map((voice) => {
@@ -474,18 +436,11 @@ async function render() {
     }),
   );
   deviceSelect.value = voices.some((voice) => voice.voiceURI === settings.deviceVoice) ? settings.deviceVoice : '';
-  if (!voices.length && !window.speechSynthesis) {
-    automatic.textContent = 'Not supported in this browser';
-  }
 
   const connected = isCloudConnected();
-  dialog.querySelector('[data-act="connect"]').hidden = connected;
-  dialog.querySelector('[data-act="disconnect"]').hidden = !connected;
-  // Connect/Disconnect hide the button that was just pressed; keep focus inside.
-  if (!dialog.contains(document.activeElement)) {
-    dialog.querySelector('input[name="voice-engine"]:checked')?.focus();
-  }
-  const status = dialog.querySelector('.voice-dialog__status');
+  controls.querySelector('[data-act="connect"]').hidden = connected;
+  controls.querySelector('[data-act="disconnect"]').hidden = !connected;
+  const status = controls.querySelector('.voice-status');
   if (!window.puter) {
     status.textContent = puterPromise ? 'Loading Puter…' : 'Puter couldn’t load. Check your connection or ad blocker.';
   } else if (!connected) {

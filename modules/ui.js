@@ -213,50 +213,6 @@ function setupStickyTopBar() {
 }
 
 /**
- * Sets up random background changes at intervals
- */
-async function setupBackgroundRotation(setBackgroundCallback, options = {}) {
-  if (typeof setBackgroundCallback !== 'function') return null;
-
-  let config = options;
-  if (typeof options === 'number') {
-    config = { interval: options };
-  }
-  const controllerOptions = {
-    setBackground: setBackgroundCallback,
-    getActiveTags: config?.getActiveTags,
-    getFilteredArtists: config?.getFilteredArtists,
-    getPaginationInfo: config?.getPaginationInfo,
-    interval: typeof config?.interval === 'number' ? config.interval : 15000,
-  };
-
-  try {
-    const module = await import('./ambience-controller.js');
-    if (module?.initAmbienceController) {
-      return module.initAmbienceController(controllerOptions);
-    }
-  } catch (error) {
-    console.warn('Failed to initialize ambience controller, falling back to timer', error);
-  }
-
-  setBackgroundCallback();
-  const interval = controllerOptions.interval;
-  const timer = setInterval(() => {
-    try {
-      setBackgroundCallback();
-    } catch (err) {
-      console.warn('Background rotation fallback failed', err);
-    }
-  }, interval);
-
-  return {
-    dispose() {
-      clearInterval(timer);
-    },
-  };
-}
-
-/**
  * Adds the lipstick kiss watermark if not present
  */
 function addLipstickKiss() {
@@ -496,7 +452,6 @@ function pulseScreen() {
 // showNoEntriesMsg: exported, used by other modules
 // setupInfiniteScroll: exported, used by main.js
 // setupBackToTop: used by initUI
-// setupBackgroundRotation: exported, used by main.js
 // addLipstickKiss: used by initUI
 // createSpinner: exported, used by gallery.js
 // debounce: exported, used by tags.js
@@ -517,7 +472,6 @@ export {
   showNoEntriesMsg,
   setupInfiniteScroll,
   setupBackToTop,
-  setupBackgroundRotation,
   addLipstickKiss,
   createSpinner,
   debounce,

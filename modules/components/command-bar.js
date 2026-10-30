@@ -35,6 +35,9 @@ template.innerHTML = `
           </button>
         </div>
         <div class="toolbar__group toolbar__group--end" role="group" aria-label="Settings">
+          <button class="control-btn toolbar__btn settings-toggle" type="button" aria-haspopup="dialog" title="Settings: voice, sound, motion">
+            <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span>Settings</span>
+          </button>
           <button class="control-btn toolbar__btn toolbar__btn--icon mute-toggle" type="button" aria-pressed="false" aria-label="Mute (M)" title="Mute (M)">
             <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4V9Z"/><path d="m17 9 4 6M21 9l-4 6"/></svg><span class="sr-only" data-label>Mute</span>
           </button>
@@ -55,15 +58,6 @@ template.innerHTML = `
         aria-controls="shame-dossier-overlay"
       >
         <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l4 4v14H7V3Z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg><span>Dossier</span><small>Activity log</small>
-      </button>
-      <button class="more-menu__item audio-toggle" type="button" role="menuitem">
-        <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg><span>Audio &amp; ambience</span><small>Music, whispers, indulgence</small>
-      </button>
-      <button class="more-menu__item theme-toggle" type="button" role="menuitem">
-        <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><span>Glow theme</span><small>Switch color theme</small>
-      </button>
-      <button class="more-menu__item motion-toggle" type="button" role="menuitemcheckbox" aria-pressed="false">
-        <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span data-label>Motion</span><small>Reduce animations</small>
       </button>
       <button
         id="streak-chip"
@@ -89,9 +83,9 @@ template.innerHTML = `
     </div>
     <div class="command-bar-safe-area command-bar-safe-area--bottom" data-region="cover">
       <nav class="cover-command-bar bottom-nav" role="navigation" aria-label="Quick controls">
-        <a href="../" class="cover-command-btn bottom-nav__btn" data-router-link aria-label="Go to TagExplorer home">
-          <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4v-9Z"/></svg><span class="cover-command-label">Home</span>
-        </a>
+        <button class="cover-command-btn bottom-nav__btn settings-toggle" type="button" aria-haspopup="dialog">
+          <svg class="tb-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg><span class="cover-command-label">Settings</span>
+        </button>
         <button
           id="cover-filters-btn"
           class="cover-command-btn bottom-nav__btn bottom-nav__btn--primary"

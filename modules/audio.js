@@ -1376,37 +1376,21 @@ function initAudioUI() {
   // Add input for adding track by URL
   let urlInput = document.getElementById("add-track-url");
   let urlBtn = document.getElementById("add-track-url-btn");
-  if (!urlInput) {
+  const panel = document.getElementById("audio-panel");
+  if (panel && (!urlInput || !urlBtn)) {
+    const row = document.createElement("div");
+    row.className = "audio-add-track";
     urlInput = document.createElement("input");
     urlInput.id = "add-track-url";
     urlInput.type = "url";
-    urlInput.placeholder = "Paste direct MP3 URL";
-    urlInput.style.margin = "0.5em 0.2em";
-    urlInput.style.borderRadius = "2em";
-    urlInput.style.padding = "0.5em 1em";
-    urlInput.style.border = "2px solid #fd7bc5";
-    urlInput.style.fontFamily = "'Hi Melody',cursive";
-    urlInput.style.width = "60%";
-    const panel = document.getElementById("audio-panel");
-    if (panel) {
-      panel.appendChild(urlInput);
-    }
-  }
-  if (!urlBtn) {
+    urlInput.placeholder = "Paste a direct MP3 link";
+    urlInput.setAttribute("aria-label", "Direct MP3 link");
     urlBtn = document.createElement("button");
     urlBtn.id = "add-track-url-btn";
-    urlBtn.textContent = "➕ Add Track";
-    urlBtn.style.marginLeft = "0.5em";
-    urlBtn.style.borderRadius = "2em";
-    urlBtn.style.padding = "0.5em 1em";
-    urlBtn.style.backgroundColor = "#fd7bc5";
-    urlBtn.style.color = "#fff";
-    urlBtn.style.fontFamily = "'Hi Melody',cursive";
-    urlBtn.style.cursor = "pointer";
-    const panel = document.getElementById("audio-panel");
-    if (panel) {
-      panel.appendChild(urlBtn);
-    }
+    urlBtn.type = "button";
+    urlBtn.textContent = "Add track";
+    row.append(urlInput, urlBtn);
+    panel.appendChild(row);
   }
 
   // Handle track addition by URL

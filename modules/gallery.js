@@ -7,7 +7,6 @@ import {
   getArtistImageCount,
   fetchArtistStyleTags,
   getArtistSlug,
-  getRandomBackgroundImage,
   filterValidImagePosts,
   isApiRateLimited,
   getRateLimitDetail,
@@ -133,36 +132,6 @@ function queueFetchArtistImages(artistName, tags = [], options = {}, isPreview =
   return enqueueImageFetch(() => fetchArtistImages(artistName, tags, options), false);
 }
 
-const DEFAULT_AMBIENT_TAGS = [
-  'chastity_cage',
-  'femdom',
-  'humiliation',
-  'pegging',
-  'bondage',
-  'crossdressing',
-  'feminization',
-  'collar',
-  'leash',
-  'orgasm_denial',
-  'spanking',
-  'bdsm',
-  'latex',
-];
-
-const ambienceState = {
-  currentUrl: null,
-  activeLayer: null,
-  motionModulePromise: null,
-  intensity: 2,
-  motionMode: 'full',
-  lastQuery: 'chastity_cage',
-};
-
-// Ambient background fetch guardrails to prevent request storms
-let _ambientBackgroundBusy = false;
-let _lastAmbientApplyTs = 0;
-const AMBIENT_MIN_INTERVAL_MS = 2500; // coalesce bursts (tags toggled rapidly, etc.)
-
 const resolvePerPage = (value) => {
   const floored = Math.floor(Number(value));
   if (Number.isFinite(floored) && floored > 0) {
@@ -209,7 +178,6 @@ function setCurrentPage(val) {
 
 // DOM references
 let artistGallery = null;
-let backgroundBlur = null;
 let gallerySentinel = null;
 let galleryStartSentinel = null;
 
@@ -928,300 +896,6 @@ function resolveCountFetchConcurrency() {
   return 2;
 }
 
-function normaliseAmbientTag(tag) {
-  if (!tag) return "";
-  return String(tag).trim().toLowerCase().replace(/\s+/g, "_");
-}
-
-function toWeightMap(input) {
-  const map = new Map();
-  if (!input) return map;
-  if (input instanceof Map) {
-    input.forEach((value, key) => {
-      const safeKey = normaliseAmbientTag(key);
-      const numeric = Number(value);
-      if (!safeKey || !Number.isFinite(numeric)) return;
-      map.set(safeKey, numeric);
-    });
-    return map;
-  }
-  if (Array.isArray(input)) {
-    input.forEach((key) => {
-      const safeKey = normaliseAmbientTag(key);
-      if (!safeKey) return;
-      const prev = map.get(safeKey) || 0;
-      map.set(safeKey, prev + 1);
-    });
-    return map;
-  }
-  if (typeof input === "object") {
-    Object.entries(input).forEach(([key, value]) => {
-      const safeKey = normaliseAmbientTag(key);
-      const numeric = Number(value);
-      if (!safeKey || !Number.isFinite(numeric)) return;
-      map.set(safeKey, numeric);
-    });
-    return map;
-  }
-  return map;
-}
-
-function deriveAmbientWeights(tagWeights) {
-  const base = toWeightMap(tagWeights);
-  if (base.size === 0) {
-    const sample = filtered.slice(0, 80);
-    sample.forEach((artist, index) => {
-      const tags = Array.isArray(artist?.kinkTags) ? artist.kinkTags : [];
-      const bias = Math.max(1, sample.length - index);
-      tags.forEach((tag) => {
-        const safeKey = normaliseAmbientTag(tag);
-        if (!safeKey) return;
-        const prev = base.get(safeKey) || 0;
-        base.set(safeKey, prev + 1 * bias);
-      });
-    });
-  }
-  if (base.size === 0) {
-    DEFAULT_AMBIENT_TAGS.forEach((tag, index) => {
-      base.set(tag, DEFAULT_AMBIENT_TAGS.length - index);
-    });
-  }
-  return base;
-}
-
-function selectWeightedTag(weights, excludeTag = null) {
-  const entries = Array.from(weights.entries()).filter(([tag, weight]) => {
-    if (!tag || !Number.isFinite(Number(weight))) return false;
-    if (excludeTag && tag === excludeTag) return false;
-    return Number(weight) > 0;
-  });
-  if (entries.length === 0) return null;
-  const total = entries.reduce((sum, [, value]) => sum + Number(value), 0);
-  let threshold = Math.random() * total;
-  for (const [tag, value] of entries) {
-    threshold -= Number(value);
-    if (threshold <= 0) {
-      return tag;
-    }
-  }
-  return entries[entries.length - 1][0];
-}
-
-function buildAmbientQuery(weights, intensity = 2) {
-  const sorted = Array.from(weights.entries()).sort((a, b) => b[1] - a[1]);
-  const primary = sorted[0]?.[0] || selectWeightedTag(weights) || DEFAULT_AMBIENT_TAGS[0];
-  
-  // Return just the tag - fetchPosts will add the order parameter
-  console.log(`[ambience] built query: "${primary}" from weights`);
-  return primary;
-}
-
-async function ensureMotionModule() {
-  if (typeof window === "undefined") return null;
-  try {
-    if (
-      window.matchMedia &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
-      return null;
-    }
-  } catch (error) {
-    // Ignore matchMedia errors
-  }
-  if (!ambienceState.motionModulePromise) {
-    ambienceState.motionModulePromise = import(
-      "https://cdn.jsdelivr.net/npm/motion@10.16.4/+esm"
-    ).catch((error) => {
-      console.warn("[ambience] Motion One import failed", error);
-      return null;
-    });
-  }
-  try {
-    return await ambienceState.motionModulePromise;
-  } catch (error) {
-    console.warn("[ambience] Motion module failed", error);
-    return null;
-  }
-}
-
-async function preloadImage(url) {
-  return new Promise((resolve, reject) => {
-    if (!url) {
-      reject(new Error("Empty ambient url"));
-      return;
-    }
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => resolve(url);
-    img.onerror = (err) => reject(err);
-    img.src = url;
-  });
-}
-
-function createAmbientLayer(url) {
-  const layer = document.createElement("div");
-  layer.className = "ambient-layer";
-  layer.style.backgroundImage = `url(${url})`;
-  layer.style.opacity = "0";
-  return layer;
-}
-
-async function applyAmbientLayer(container, url) {
-  if (!container || !url) return;
-  const newLayer = createAmbientLayer(url);
-  container.appendChild(newLayer);
-  const previous = ambienceState.activeLayer;
-  let motionModule = null;
-  if (ambienceState.motionMode !== "reduced") {
-    motionModule = await ensureMotionModule();
-  }
-
-  if (motionModule && typeof motionModule.animate === "function") {
-    const animations = [
-      motionModule
-        .animate(
-          newLayer,
-          {
-            opacity: [0, 0.82],
-            transform: ["scale(1.05)", "scale(1)"],
-            filter: ["blur(8px)", "blur(0px)"],
-          },
-          {
-            duration: 1000,
-            easing: "cubic-bezier(.4,-0.2,.2,1.2)",
-            fill: "forwards",
-          }
-        )
-        .finished.catch(() => {}),
-    ];
-    if (previous) {
-      animations.push(
-        motionModule
-          .animate(
-            previous,
-            {
-              opacity: [Number(previous.style.opacity) || 0.75, 0],
-              filter: ["blur(0px)", "blur(18px)"],
-            },
-            {
-              duration: 800,
-              easing: "ease-out",
-              fill: "forwards",
-            }
-          )
-          .finished.catch(() => {})
-      );
-    }
-    await Promise.all(animations);
-  } else {
-    newLayer.style.opacity = "0.8";
-    if (previous) previous.style.opacity = "0";
-  }
-
-  if (previous && previous !== newLayer) {
-    setTimeout(() => {
-      try {
-        previous.remove();
-      } catch (error) {
-        console.warn("[ambience] failed to remove old layer", error);
-      }
-    }, 240);
-  }
-
-  ambienceState.activeLayer = newLayer;
-  container.classList.add("ambient-layer-container");
-}
-
-/**
- * Sets the background image based on ambient tag weights.
- */
-async function setRandomBackground(options = {}) {
-  const blur = document.getElementById('background-blur');
-  console.log('[ambience] setRandomBackground called', { options, blur: !!blur });
-  
-  if (!blur) {
-    console.warn('[ambience] #background-blur element not found');
-    return;
-  }
-
-  if (document.body?.classList.contains('incognito-theme')) {
-    console.log('[ambience] incognito mode active, clearing background');
-    blur.style.backgroundImage = 'none';
-    blur.style.backgroundColor = '#111';
-    if (ambienceState.activeLayer) {
-      try { ambienceState.activeLayer.remove(); } catch {}
-      ambienceState.activeLayer = null;
-    }
-    return;
-  }
-
-  // Throttle and de-dupe background refreshes to avoid request storms
-  const now = Date.now();
-  const force = options?.force === true || options?.reason === 'init';
-  if (_ambientBackgroundBusy && !force) {
-    console.log('[ambience] refresh skipped: in-flight');
-    return;
-  }
-  if (!force && now - _lastAmbientApplyTs < AMBIENT_MIN_INTERVAL_MS) {
-    console.log('[ambience] refresh skipped: within min interval');
-    return;
-  }
-
-  const { tagWeights, intensity, motionMode } = options;
-  if (Number.isFinite(Number(intensity))) {
-    ambienceState.intensity = Number(intensity);
-  }
-  if (motionMode === 'reduced' || motionMode === 'full') {
-    ambienceState.motionMode = motionMode;
-  }
-
-  const weights = deriveAmbientWeights(tagWeights);
-  const query = buildAmbientQuery(weights, ambienceState.intensity);
-  ambienceState.lastQuery = query;
-  console.log('[ambience] derived query:', query, 'from weights:', Object.fromEntries(weights || []));
-
-  let imageUrl = null;
-  _ambientBackgroundBusy = true;
-  try {
-    imageUrl = await getRandomBackgroundImage(query);
-    console.log('[ambience] fetched imageUrl:', imageUrl);
-  } catch (error) {
-    console.warn('[ambience] failed to fetch background', error);
-  }
-
-  if (!imageUrl && ambienceState.currentUrl) {
-    console.log('[ambience] no new image, reusing current:', ambienceState.currentUrl);
-    imageUrl = ambienceState.currentUrl;
-  }
-
-  if (!imageUrl) {
-    console.warn('[ambience] no image available, will retry on next refresh');
-    // Don't set backgroundColor here - leave it transparent so lattice shows
-    // The controller will retry automatically
-    return;
-  }
-
-  if (imageUrl === ambienceState.currentUrl && ambienceState.activeLayer) {
-    console.log('[ambience] image unchanged, skipping layer update');
-    return;
-  }
-
-  try {
-    const loadedUrl = await preloadImage(imageUrl);
-    console.log('[ambience] preloaded image:', loadedUrl);
-    await applyAmbientLayer(blur, loadedUrl);
-    ambienceState.currentUrl = loadedUrl;
-    blur.style.backgroundImage = 'none';
-    blur.style.backgroundColor = 'transparent';
-    console.log('[ambience] ✓ background applied successfully');
-    _lastAmbientApplyTs = Date.now();
-  } catch (error) {
-    console.warn('[ambience] failed to apply background', error);
-  } finally {
-    _ambientBackgroundBusy = false;
-  }
-}
-
 /**
  * Sets the best image for an artist with caching and lazy loading
  */
@@ -1462,24 +1136,6 @@ function setBestImage(artist, img) {
                 toggleBtn.style.display = 'inline-block';
               }
 
-              // Desktop hover
-              card.addEventListener('mouseenter', () => {
-                // Only auto-start if not manually toggled on (to avoid double intervals, though startSlideshow handles that)
-                // and if we want hover behavior. 
-                // If the user manually toggled it ON, we don't need to do anything on enter.
-                // If the user manually toggled it OFF (not implemented, just on/off), we might want to respect that?
-                // For now, let's say manual toggle overrides hover.
-                if (!img.__manualSlideshow) {
-                   startSlideshow(img);
-                }
-              });
-              card.addEventListener('mouseleave', () => {
-                // Only stop if not manually toggled on
-                if (!img.__manualSlideshow) {
-                  stopSlideshow(img);
-                }
-              });
-              
               // Mobile auto-cycle via IntersectionObserver is handled globally or by a separate observer
               if (typeof registerMobileSlideshowObserver === "function") {
                  registerMobileSlideshowObserver(card);
@@ -2095,55 +1751,6 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       }
     });
 
-    // Hover Slideshow
-    let slideshowTimer = null;
-    let slideshowInterval = null;
-
-    media.addEventListener("mouseenter", () => {
-      if (slideshowTimer) clearTimeout(slideshowTimer);
-      
-      // Save original src if not already saved (and if it's not a placeholder)
-      if (!img._originalSrc && img.src && !img.src.includes('data:image')) {
-        img._originalSrc = img.src;
-      }
-
-      slideshowTimer = setTimeout(async () => {
-        // If we don't have images yet, fetch them
-        if (!artist._slideshowImages) {
-          try {
-            // Fetch a few images for the slideshow using preview mode (faster)
-            const posts = await queueFetchArtistImages(artist.artistName, [], { limit: 6, order: 'score' }, true);
-            artist._slideshowImages = posts
-              .map(p => p.preview_file_url || p.large_file_url || p.file_url)
-              .filter(Boolean);
-          } catch (e) {
-            // console.warn("Slideshow fetch failed for", artist.artistName, e);
-            artist._slideshowImages = []; // Prevent retry loop
-          }
-        }
-
-        if (artist._slideshowImages && artist._slideshowImages.length > 1) {
-          let idx = 0;
-          slideshowInterval = setInterval(() => {
-            idx = (idx + 1) % artist._slideshowImages.length;
-            const nextUrl = artist._slideshowImages[idx];
-            if (nextUrl) img.src = nextUrl;
-          }, 1200);
-        }
-      }, 600); // 600ms delay to prevent accidental triggers during scroll
-    });
-
-    media.addEventListener("mouseleave", () => {
-      if (slideshowTimer) clearTimeout(slideshowTimer);
-      if (slideshowInterval) clearInterval(slideshowInterval);
-      slideshowTimer = null;
-      slideshowInterval = null;
-      
-      // Restore original image
-      if (img._originalSrc) {
-        img.src = img._originalSrc;
-      }
-    });
 
     const name = document.createElement("div");
     name.className = "artist-name";
@@ -2589,7 +2196,6 @@ let lastSortMode = null;
 // Call this on gallery init
 function initGallery() {
   artistGallery = document.getElementById("artist-gallery");
-  backgroundBlur = document.getElementById("background-blur");
   // Patch: remember last sort mode
   const sortSelect = document.querySelector(".sort-controls select, #sort-by");
   if (sortSelect) {
@@ -2905,7 +2511,6 @@ export {
   openArtistZoom,
   setSortPreference,
   forceSortAndRender,
-  setRandomBackground,
   setAllArtists,
   setGetActiveTagsCallback,
   setGetArtistNameFilterCallback,

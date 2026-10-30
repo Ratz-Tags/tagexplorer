@@ -2,111 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>TagExplorer · Initiation</title>
+  <title>TagExplorer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Enter TagExplorer's humiliation-driven Danbooru gallery if you dare."/>
+  <meta name="description" content="Browse Danbooru artists by tag.">
   <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Parisienne&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <!-- The site opens straight on the gallery. -->
+  <meta http-equiv="refresh" content="0; url=gallery/">
+  <link rel="canonical" href="gallery/">
+  <script>location.replace('gallery/' + location.search + location.hash);</script>
+  <style>body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0c0b16; color: #e2e8f0; font: 16px/1.5 system-ui, sans-serif; } a { color: #66f3ff; }</style>
 </head>
-<body data-page="landing" class="landing-body">
-  <div class="landing-background" aria-hidden="true">
-    <div id="background-blur" class="background-lattice" aria-hidden="true"></div>
-    <div class="landing-grid"></div>
-    <div class="landing-noise"></div>
-  </div>
-  <div class="landing-shell">
-    <header class="landing-header">
-      <div class="landing-brand">
-        <span class="tag-explorer-wordmark">TagExplorer</span>
-        <p class="landing-whisper">caught you creeping back in</p>
-      </div>
-      <nav class="landing-nav" aria-label="Primary">
-        <a class="landing-link" href="./gallery/" data-router-link>Gallery</a>
-        <a class="landing-link" href="./about/" data-router-link>About</a>
-        <a class="landing-link" href="./data/" data-router-link>Data</a>
-      </nav>
-    </header>
-    <main class="landing-main" aria-labelledby="landing-title">
-      <h1 id="landing-title" class="landing-title" data-shadow="Whisper Protocol Engaged">Whisper Protocol Engaged</h1>
-      <p class="landing-intro">Each tap leaves a trace. Every filter, every tag — archived, mocked, replayed in soft hisses. Step through if the shame-glow is what you wanted.</p>
-      <section
-        class="landing-meter"
-        data-pressure-meter
-        data-pressure-tier="0"
-        data-pressure-level="0"
-        aria-labelledby="pressure-meter-label"
-      >
-        <header class="landing-meter__header">
-          <span id="pressure-meter-label" class="landing-meter__eyebrow">Shame pressure</span>
-          <button
-            type="button"
-            class="landing-meter__reset"
-            data-pressure-reset
-            aria-disabled="true"
-            disabled
-          >
-            Reset pressure
-          </button>
-        </header>
-        <div class="landing-meter__body">
-          <div
-            class="landing-meter__gauge"
-            role="meter"
-            aria-valuemin="0"
-            aria-valuemax="100"
-            aria-valuenow="0"
-            aria-describedby="pressure-meter-caption"
-            data-pressure-gauge
-          >
-            <div class="landing-meter__track">
-              <div class="landing-meter__fill" data-pressure-fill></div>
-            </div>
-            <div class="landing-meter__value" data-pressure-value>00%</div>
-            <span class="landing-meter__status" data-pressure-label>Dormant</span>
-          </div>
-          <p
-            id="pressure-meter-caption"
-            class="landing-meter__caption"
-            data-pressure-caption
-            aria-live="polite"
-          >
-            Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
-          </p>
-          <div class="landing-meter__actions">
-            <a
-              class="landing-meter__control landing-meter__enter landing-cta landing-enter"
-              href="./gallery/"
-              data-router-link
-              data-glitch-trigger
-              data-landing-enter
-            >
-              Enter Gallery
-            </a>
-            <button
-              class="landing-meter__control landing-meter__control--ghost landing-audio"
-              data-landing-audio
-              type="button"
-            >
-              Unmute the whispers
-            </button>
-          </div>
-        </div>
-        <span class="landing-meter__sr" data-pressure-caption-live aria-live="polite">
-          Dormant sensors. No shame logged yet. Reset keeps the slate pretending to be clean.
-        </span>
-      </section>
-      <div class="landing-disclaimer" role="note">
-        <p>18+. Explicit Danbooru content. Whispered voice lines. Motion-heavy. Switch on <span>reduce motion</span> if you bruise easy.</p>
-      </div>
-    </main>
-    <footer class="landing-footer">
-      <p>Galaxy Z Fold4 tuned. Local storage captures your filter guilt. Proceeding implies consent to gentle torment.</p>
-    </footer>
-  </div>
-  <te-audio-panel data-landing-panel hidden></te-audio-panel>
-  <script type="module" src="main.js"></script>
+<body>
+  <a href="gallery/">Open the gallery</a>
 </body>
 </html>
