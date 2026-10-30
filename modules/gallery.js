@@ -1,9 +1,9 @@
-import { createFullscreenViewer, createSpinner, showToast } from "./ui.js";
+import { createSpinner, showToast } from "./ui.js";
+import { openLightbox } from "./lightbox.js";
 import {
   fetchArtistImages,
   clearArtistCache,
   buildImageUrl,
-  fetchAllArtistImages,
   getArtistImageCount,
   fetchArtistStyleTags,
   getArtistSlug,
@@ -260,6 +260,26 @@ function isRateLimitActive() {
 
 // External dependencies
 let allArtists = [];
+
+const cardIcon = (paths) => `<svg class="card-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+const CARD_ICONS = {
+  copy: cardIcon('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
+  reload: cardIcon('<path d="M20 11a8 8 0 0 0-14.5-4.6L4 8"/><path d="M4 4v4h4M4 13a8 8 0 0 0 14.5 4.6L20 16"/><path d="M20 20v-4h-4"/>'),
+  tag: cardIcon('<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.5"/>'),
+  similar: cardIcon('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>'),
+  play: cardIcon('<path d="M8 5v14l11-7L8 5Z"/>'),
+  pause: cardIcon('<path d="M8 5v14M16 5v14"/>'),
+};
+
+// Favorites can change from the lightbox or Saved panel; keep card hearts in step.
+if (typeof document !== "undefined") {
+  document.addEventListener("favorites:changed", (event) => {
+    const favorites = new Set(event?.detail?.favorites || []);
+    document.querySelectorAll(".artist-card[data-artist]").forEach((card) => {
+      card.querySelector(".artist-heart")?.classList.toggle("is-favorite", favorites.has(card.dataset.artist));
+    });
+  });
+}
 let getActiveTags = null;
 let getArtistNameFilter = null;
 let getActiveTagsCallbackFn = null;
@@ -617,7 +637,8 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
     for (const m of modes) {
       let diff = 0;
       if (m === "count") {
-        diff = (b._totalImageCount || 0) - (a._totalImageCount || 0);
+        // Fresh API counts when loaded, otherwise the counts shipped in artists.json.
+        diff = (b._totalImageCount ?? b.postCount ?? 0) - (a._totalImageCount ?? a.postCount ?? 0);
       } else if (m === "tag-frequency") {
         diff = (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0);
       } else if (m === "shuffle") {
@@ -638,9 +659,11 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
   return list;
 }
 
+// Only tag-match sorting needs counts fetched for the active filter; post
+// counts already ship in artists.json.
 function requiresCountBasedData(mode = sortMode) {
   const modes = Array.isArray(mode) ? mode : [mode];
-  return modes.includes("count") || modes.includes("tag-frequency");
+  return modes.includes("tag-frequency");
 }
 
 function reshuffleArtists() {
@@ -1726,405 +1749,9 @@ function primeVisibleArtistImages(buffer = PRIME_VISIBLE_BUFFER) {
 /**
  * Opens the fullscreen artist zoom view
  */
-async function openArtistZoom(artist) {
-  // remove existing viewer
-  document.querySelectorAll(".fullscreen-wrapper").forEach((el) => el.remove());
-
-  let grid, zoomContent, backBtn;
-  const LIMIT = 40;
-  let posts = [];
-  let page = 1;
-  let zoomTotalPages = Infinity;
-  let loading = false;
-  let currentIndex = 0;
-  const selectedTags = getActiveTags ? Array.from(getActiveTags()) : [];
-  const allPostsCacheKey = `allPosts-${artist.artistName}`;
-
-  const updatePageFromInitial = (initialCount) => {
-    const hasMore = posts.length > initialCount;
-    if (!initialCount) {
-      page = zoomTotalPages + 1;
-      return;
-    }
-    const pagesRendered = Math.ceil(initialCount / LIMIT);
-    page = hasMore ? pagesRendered + 1 : zoomTotalPages + 1;
-  };
-  try {
-    const cachedAll = getWithTTL(allPostsCacheKey);
-    if (cachedAll && Array.isArray(cachedAll) && cachedAll.length > 0) {
-      console.debug(`[gallery] allPosts cache hit for ${artist.artistName}: ${cachedAll.length} posts`);
-      posts = cachedAll.slice();
-      zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-      const initial = posts.slice(0, LIMIT);
-      renderThumbs(initial, 0);
-      updatePageFromInitial(initial.length);
-    } else {
-      // Attempt to reconstruct from per-page session cache (danbooru-api-... keys)
-      try {
-        const prefix = `danbooru-api-${artist.artistName}-`;
-        const pageEntries = [];
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          if (!key || !key.startsWith(prefix)) continue;
-          const suffix = key.slice(prefix.length);
-          const m = suffix.match(/p(\d+)l(\d+)o(.+)/);
-          const pageNum = m ? Number(m[1]) : NaN;
-          try {
-            const raw = sessionStorage.getItem(key);
-            if (!raw) continue;
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              pageEntries.push({ page: isNaN(pageNum) ? 0 : pageNum, posts: parsed });
-            }
-          } catch (e) {
-            // ignore parse errors
-          }
-        }
-        if (pageEntries.length) {
-          pageEntries.sort((a, b) => a.page - b.page);
-          const reconstructed = [];
-          for (const e of pageEntries) {
-            reconstructed.push(...e.posts);
-          }
-          if (reconstructed.length) {
-            console.debug(`[gallery] reconstructed ${reconstructed.length} posts for ${artist.artistName} from per-page session cache`);
-            posts = reconstructed;
-            setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS);
-            zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-            const initial = posts.slice(0, LIMIT);
-            renderThumbs(initial, 0);
-            updatePageFromInitial(initial.length);
-          } else {
-            console.debug(`[gallery] failed to reconstruct posts for ${artist.artistName} from per-page session cache`);
-          }
-        } else {
-          console.debug(`[gallery] no per-page session cache found for ${artist.artistName}`);
-        }
-      } catch (e) {
-        console.debug(`[gallery] error reconstructing per-page cache for ${artist.artistName}:`, e);
-        // ignore reconstruction failures and continue to network fetch below
-      }
-    }
-  } catch (e) {
-    console.debug(`[gallery] error in allPosts cache/reconstruction for ${artist.artistName}:`, e);
-    // ignore cache parse errors
-  }
-
-  function returnToGrid() {
-    if (zoomContent) zoomContent.style.display = "none";
-    if (backBtn) backBtn.style.display = "none";
-    if (grid) grid.style.display = "grid";
-  }
-
-  const viewer = createFullscreenViewer({ onImageClick: returnToGrid });
-  const { wrapper, img: zoomed, tagList, topTags, noEntriesMsg, prevBtn, nextBtn } = viewer;
-  zoomContent = wrapper.querySelector(".zoom-content");
-
-  backBtn = document.createElement("button");
-  backBtn.className = "zoom-back-btn";
-  backBtn.textContent = "Back";
-  backBtn.addEventListener("click", returnToGrid);
-  zoomContent.appendChild(backBtn);
-  backBtn.style.display = "none";
-
-  grid = document.createElement("div");
-  grid.className = "artist-thumb-grid";
-  grid.style.display = "grid";
-  grid.style.gridTemplateColumns = "repeat(8, minmax(0%, 100%))";
-  grid.style.gap = "3px";
-  grid.style.height = "100%";
-  grid.style.overflowY = "auto";
-  wrapper.appendChild(grid);
-
-  const sentinel = document.createElement("div");
-  sentinel.id = "grid-sentinel";
-  grid.appendChild(sentinel);
-
-  zoomContent.style.display = "none";
-
-  document.body.appendChild(wrapper);
-  wrapper.focus();
-
-  async function loadPage() {
-    if (loading || page > zoomTotalPages) return;
-    loading = true;
-    try {
-      const api = await import("./api.js");
-
-      // If we already have cached posts that include this page, render from them
-      const startIdx = (page - 1) * LIMIT;
-      const endIdx = page * LIMIT;
-      if (posts.length >= endIdx) {
-        const slice = posts.slice(startIdx, endIdx);
-        renderThumbs(slice, startIdx);
-        page++;
-        return;
-      }
-
-      // If this is the first network fetch, try to get a rough page count from the API
-      if (page === 1) {
-        try {
-          const count = await api.getArtistImageCount(artist.artistName);
-          if (count && Number.isFinite(count)) {
-            zoomTotalPages = Math.max(1, Math.ceil(count / LIMIT));
-          }
-        } catch {
-          zoomTotalPages = Infinity;
-        }
-      }
-
-      const newPosts = await api.fetchAllArtistImages(artist.artistName, [], { order: 'approvals', parallel: true, maxConcurrent: 10, batchDelay: 40 });
-
-      if (Array.isArray(newPosts) && newPosts.length > 0) {
-        console.debug(`[gallery] network fetchAllArtistImages loaded ${newPosts.length} posts for ${artist.artistName}`);
-        posts = newPosts.slice();
-        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch (e) {}
-        zoomTotalPages = Math.max(1, Math.ceil(posts.length / LIMIT));
-        const initial = posts.slice(0, LIMIT);
-        renderThumbs(initial, 0);
-        updatePageFromInitial(initial.length);
-        if (posts.length <= LIMIT) return;
-      } else {
-        console.debug(`[gallery] network fetchAllArtistImages returned no posts for ${artist.artistName}, falling back to per-page fetch`);
-        const startIdx = (page - 1) * LIMIT;
-        const endIdx = page * LIMIT;
-        if (posts.length >= endIdx) {
-          const slice = posts.slice(startIdx, endIdx);
-          renderThumbs(slice, startIdx);
-          page++;
-          return;
-        }
-
-        const perPagePosts = await api.fetchArtistImages(artist.artistName, [], {
-          limit: LIMIT,
-          page,
-          order: "approvals",
-        });
-
-        if (!Array.isArray(perPagePosts) || perPagePosts.length === 0) {
-          console.debug(`[gallery] per-page fetch returned no posts for ${artist.artistName}`);
-          zoomTotalPages = page - 1;
-          return;
-        }
-
-        const start = posts.length;
-        posts = posts.concat(perPagePosts);
-        try { setWithTTL(allPostsCacheKey, posts, DEFAULT_ALLPOSTS_TTL_MS); } catch(e) {}
-
-        renderThumbs(perPagePosts, start);
-        page++;
-        return;
-      }
-
-      
-    } finally {
-      loading = false;
-    }
-  }
-
-  function renderThumbs(list, startIndex) {
-    list.forEach((raw, idx) => {
-      const url = buildImageUrl(raw.preview_file_url || raw.large_file_url || raw.file_url);
-      if (!url) return;
-      const thumb = document.createElement("img");
-      thumb.src = url;
-      thumb.loading = "lazy";
-      thumb.className = "artist-thumb";
-      thumb.style.width = "100%";
-      thumb.style.height = "100%";
-      // Default cover behavior. We'll attempt to bias/center on faces below.
-      thumb.style.objectFit = "cover";
-      thumb.style.objectPosition = "center center";
-
-      // Face-aware centering: use the browser FaceDetector API when available
-      // for reliable face bounding boxes. Fallback to an upward bias (center
-      // 30%) so faces that are in the upper area of illustrations are more
-      // likely to be visible in the cropped preview.
-      const applyUpwardBias = () => {
-        // move framing slightly upwards which commonly shows faces in portraits
-        thumb.style.objectPosition = 'center 30%';
-      };
-
-      const runFaceDetection = async () => {
-        // If the FaceDetector API is available, run it on the loaded image.
-        if (typeof FaceDetector !== 'undefined') {
-          try {
-            // Ensure the image is loaded before detecting
-            if (!thumb.complete) await new Promise((res) => { thumb.onload = res; thumb.onerror = res; });
-            const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
-            const faces = await detector.detect(thumb);
-            if (faces && faces.length > 0) {
-              const face = faces[0].boundingBox; // x, y, width, height
-              // Compute center of face in percentage coordinates
-              const cx = (face.x + face.width / 2) / thumb.naturalWidth * 100;
-              const cy = (face.y + face.height / 2) / thumb.naturalHeight * 100;
-              // Set object-position so the face center lines up in the thumbnail
-              thumb.style.objectPosition = `${Math.round(cx)}% ${Math.round(cy)}%`;
-              return;
-            }
-          } catch (e) {
-            // FaceDetector may throw on some images/browsers — fallback below
-          }
-        }
-        // If FaceDetector not available or failed, apply upward bias
-        applyUpwardBias();
-      };
-
-      // Apply persisted object-position if available (per-artist)
-      try {
-        const artistName = raw?.artist || raw?.tag_string?.split && raw?.tag_string[0];
-        const cacheKey = artistName ? `objpos-${artistName}` : null;
-        const persisted = cacheKey ? localStorage.getItem(cacheKey) : null;
-        if (persisted) {
-          thumb.style.objectPosition = persisted;
-        }
-      } catch (e) {}
-
-      // Schedule non-blocking detection after insertion so it doesn't stall rendering
-      setTimeout(() => { void runFaceDetection(); }, 10);
-
-      // Ensure the faceObserver will observe this thumbnail to persist results
-      try {
-        const fobs = initFaceObserver();
-        if (fobs) fobs.observe(thumb);
-      } catch (e) {}
-      const index = startIndex + idx;
-      thumb.addEventListener("click", () => {
-        currentIndex = index;
-        showZoom(index);
-      });
-      grid.insertBefore(thumb, sentinel);
-    });
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          loadPage();
-        }
-      });
-    },
-    { root: grid, rootMargin: "0px", threshold: 0.1 }
-  );
-
-  observer.observe(sentinel);
-
-  function showZoom(index) {
-    grid.style.display = "none";
-    zoomContent.style.display = "flex";
-    backBtn.style.display = "block";
-    showPost(index);
-  }
-
-  function showPost(index) {
-    const raw = posts[index];
-    if (!raw) return;
-    const full = buildImageUrl(raw.large_file_url || raw.file_url);
-    const preview = buildImageUrl(raw.preview_file_url || raw.large_file_url || raw.file_url);
-    zoomed.style.opacity = "0.5";
-    zoomed.src = preview;
-    zoomed.onload = () => {
-      zoomed.onload = null;
-      zoomed.src = full;
-      zoomed.style.opacity = "1";
-    };
-    if (tagList) {
-      tagList.innerHTML = "";
-      if (raw.tag_string) {
-        raw.tag_string.split(" ").forEach((t) => {
-          if (!t) return;
-          const pill = document.createElement("span");
-          pill.className = "zoom-tag-pill";
-          pill.textContent = t.replace(/_/g, " ");
-          tagList.appendChild(pill);
-        });
-        tagList.style.display = "flex";
-      } else {
-        tagList.style.display = "none";
-      }
-    }
-    if (topTags) topTags.style.display = "none";
-  }
-
-  prevBtn.addEventListener("click", () => {
-    if (posts.length === 0) return;
-    currentIndex = (currentIndex - 1 + posts.length) % posts.length;
-    showPost(currentIndex);
-  });
-
-  nextBtn.addEventListener("click", async () => {
-    if (currentIndex === posts.length - 1 && page <= zoomTotalPages) {
-      await loadPage();
-    }
-    if (currentIndex < posts.length - 1) {
-      currentIndex++;
-      showPost(currentIndex);
-    }
-  });
-
-  if (wrapper && !wrapper.querySelector('.zoom-toolbar')) {
-    const content = wrapper.querySelector('.zoom-content') || wrapper;
-    const toolbar = document.createElement('div');
-    toolbar.className = 'zoom-toolbar';
-
-    const focusBtn = document.createElement('button');
-    focusBtn.type = 'button';
-    focusBtn.className = 'zoom-tool';
-    focusBtn.textContent = 'Focus';
-    focusBtn.title = 'Toggle focus mode';
-    focusBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isFocused = wrapper.classList.toggle('zoom-focus-mode');
-      focusBtn.setAttribute('aria-pressed', String(isFocused));
-    });
-
-    const tagsBtn = document.createElement('button');
-    tagsBtn.type = 'button';
-    tagsBtn.className = 'zoom-tool';
-    tagsBtn.textContent = 'Tags';
-    tagsBtn.title = 'Show/hide tags';
-    tagsBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const hidden = wrapper.classList.toggle('hide-tags');
-      tagsBtn.setAttribute('aria-pressed', String(!hidden));
-    });
-
-    const danbooruBtn = document.createElement('button');
-    danbooruBtn.type = 'button';
-    danbooruBtn.className = 'zoom-tool';
-    danbooruBtn.title = 'Open on Danbooru (order:approval)';
-    danbooruBtn.innerHTML = 'Go to Danbooru';
-    danbooruBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      openArtistOnDanbooru(artist);
-    });
-
-    toolbar.appendChild(focusBtn);
-    toolbar.appendChild(tagsBtn);
-    toolbar.appendChild(danbooruBtn);
-    content.appendChild(toolbar);
-  }
-
-  // Removed taunt overlay - no longer needed
-
-  await loadPage();
-
-  async function ensureInitialDepth(maxExtraLoads = 2) {
-    if (!grid) return;
-    let attempts = 0;
-    while (
-      attempts < maxExtraLoads &&
-      page <= zoomTotalPages &&
-      grid.scrollHeight <= grid.clientHeight + 48
-    ) {
-      await loadPage();
-      attempts += 1;
-    }
-  }
-
-  await ensureInitialDepth();
-} // end openArtistZoom
+function openArtistZoom(artist) {
+  openLightbox(artist, { onCopy: (target) => handleArtistCopy(target) });
+}
 
 /**
  * Returns a copy of the currently filtered artists.
@@ -2520,12 +2147,12 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const name = document.createElement("div");
     name.className = "artist-name";
-    let displayName = artist.artistName.replace(/_/g, " ");
+    const displayName = artist.artistName.replace(/_/g, " ");
     const total =
       typeof artist.postCount === "number" ? artist.postCount : undefined;
-    if (typeof total === "number") {
-      displayName += ` [${total}]`;
-    }
+    const meta = document.createElement("div");
+    meta.className = "artist-meta";
+    meta.textContent = typeof total === "number" ? `${total.toLocaleString()} posts` : "";
     const nameLink = document.createElement("a");
     nameLink.textContent = displayName;
     nameLink.href = `../artist/[id]/?slug=${encodeURIComponent(artistSlug || '')}`;
@@ -2555,10 +2182,10 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
-    copyBtn.className = "copy-button";
-    copyBtn.setAttribute("aria-label", "Copy artist name");
-    copyBtn.textContent = "📋";
-    copyBtn.title = "Copy name";
+    copyBtn.className = "copy-button card-icon-btn";
+    copyBtn.setAttribute("aria-label", "Copy artist tag");
+    copyBtn.innerHTML = CARD_ICONS.copy;
+    copyBtn.title = "Copy artist tag";
     copyBtn.onclick = (e) => {
       e.stopPropagation();
       handleArtistCopy(artist, img.src);
@@ -2566,9 +2193,9 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const reloadBtn = document.createElement("button");
     reloadBtn.type = "button";
-    reloadBtn.className = "reload-button";
+    reloadBtn.className = "reload-button card-icon-btn";
     reloadBtn.setAttribute("aria-label", "Reload artist");
-    reloadBtn.textContent = "⟳";
+    reloadBtn.innerHTML = CARD_ICONS.reload;
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       // Prevent any default browser action and stop event bubbling so
@@ -2613,49 +2240,26 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const tagsToggle = document.createElement("button");
     tagsToggle.type = "button";
-    tagsToggle.className = "tags-toggle";
+    tagsToggle.className = "tags-toggle card-icon-btn";
     tagsToggle.setAttribute("aria-controls", tagsId);
     tagsToggle.setAttribute("aria-expanded", "false");
     tagsToggle.title = "Show tags";
-    tagsToggle.textContent = "🏷️";
+    tagsToggle.setAttribute("aria-label", "Show tags");
+    tagsToggle.innerHTML = CARD_ICONS.tag;
     tagsToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       const willShow = card.classList.toggle("show-tags");
       taglist.hidden = !willShow;
       tagsToggle.setAttribute("aria-expanded", String(willShow));
       tagsToggle.title = willShow ? "Hide tags" : "Show tags";
+      tagsToggle.setAttribute("aria-label", tagsToggle.title);
     });
-
-    // Pin/Favorite button
-    const pinBtn = document.createElement("button");
-    pinBtn.type = "button";
-    pinBtn.className = "copy-button";
-    const isCurrentlyFavorited = isFavorite(artist.artistName);
-    pinBtn.textContent = isCurrentlyFavorited ? "⭐" : "📌";
-    pinBtn.title = isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites";
-    pinBtn.setAttribute("aria-label", isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites");
-    pinBtn.style.filter = isCurrentlyFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
-    pinBtn.onclick = (e) => {
-      e.stopPropagation();
-      const nowFavorited = toggleFavorite(artist.artistName);
-      pinBtn.textContent = nowFavorited ? "⭐" : "📌";
-      pinBtn.title = nowFavorited ? "Remove from favorites" : "Add to favorites";
-      pinBtn.setAttribute("aria-label", nowFavorited ? "Remove from favorites" : "Add to favorites");
-      pinBtn.style.filter = nowFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
-      
-      // Show toast notification
-      const message = nowFavorited ? `★ ${artist.artistName} added to favorites` : `Removed ${artist.artistName} from favorites`;
-      if (typeof window.showToast === 'function') {
-        window.showToast(message);
-      }
-    };
 
     // Similar artists button
     const similarBtn = document.createElement("button");
     similarBtn.type = "button";
-    similarBtn.className = "browse-btn";
-    similarBtn.style.cssText = "padding: 0.35rem 0.75rem; font-size: 0.55rem;";
-    similarBtn.textContent = "Similar";
+    similarBtn.className = "browse-btn card-similar-btn";
+    similarBtn.innerHTML = `${CARD_ICONS.similar}<span>Similar</span>`;
     similarBtn.title = "Find similar artists";
     similarBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2665,9 +2269,10 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     // Slideshow toggle button (hidden by default)
     const slideshowBtn = document.createElement("button");
     slideshowBtn.type = "button";
-    slideshowBtn.className = "slideshow-toggle copy-button"; // Reuse copy-button style for consistency
-    slideshowBtn.textContent = "▶️";
-    slideshowBtn.title = "Toggle slideshow";
+    slideshowBtn.className = "slideshow-toggle copy-button card-icon-btn";
+    slideshowBtn.innerHTML = CARD_ICONS.play;
+    slideshowBtn.title = "Play slideshow";
+    slideshowBtn.setAttribute("aria-label", "Play slideshow");
     slideshowBtn.style.display = "none"; // Hidden until we know we have multiple images
     slideshowBtn.onclick = (e) => {
       e.stopPropagation();
@@ -2676,35 +2281,26 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       img.__manualSlideshow = !img.__manualSlideshow;
       if (img.__manualSlideshow) {
         startSlideshow(img);
-        slideshowBtn.textContent = "⏸️";
+        slideshowBtn.innerHTML = CARD_ICONS.pause;
         slideshowBtn.title = "Pause slideshow";
+        slideshowBtn.setAttribute("aria-label", "Pause slideshow");
         slideshowBtn.classList.add("active");
       } else {
         stopSlideshow(img);
-        slideshowBtn.textContent = "▶️";
+        slideshowBtn.innerHTML = CARD_ICONS.play;
         slideshowBtn.title = "Play slideshow";
+        slideshowBtn.setAttribute("aria-label", "Play slideshow");
         slideshowBtn.classList.remove("active");
       }
     };
 
     const actions = document.createElement("div");
     actions.className = "artist-actions";
-    actions.style.display = "flex";
-    actions.style.gap = "0.5rem";
-    actions.style.flexWrap = "wrap";
-    actions.appendChild(copyBtn);
-    actions.appendChild(pinBtn);
-    actions.appendChild(reloadBtn);
-    actions.appendChild(similarBtn);
-    actions.appendChild(slideshowBtn);
-  // Profile link removed per UI update
-    actions.appendChild(tagsToggle);
+    actions.append(similarBtn, copyBtn, tagsToggle, slideshowBtn, reloadBtn);
 
     const footer = document.createElement("div");
     footer.className = "artist-footer";
-    footer.appendChild(name);
-    footer.appendChild(taglist);
-    footer.appendChild(actions);
+    footer.append(name, meta, taglist, actions);
 
     card.appendChild(media);
     card.appendChild(footer);
@@ -3047,9 +2643,9 @@ function setAllArtists(artists) {
   }
   // Also set artists for similar-artists module
   setSimilarArtists(allArtists);
-  
-  // Start background fetch of style tags for all artists
-  fetchStyleTagsForAllArtists();
+  // Style tags are fetched on request (FETCH button). Crawling all ~11k
+  // artists on every load clogged the request queue for previews and the
+  // image viewer.
 }
 
 /**
@@ -3101,16 +2697,6 @@ async function fetchStyleTagsForArtistList(artistList, onProgress = null, should
   
   console.log('Style tag fetch complete');
   if (onProgress) onProgress(total, total);
-}
-
-/**
- * Fetch style tags for all artists in the background
- * This runs slowly over time to avoid overwhelming the API
- * @param {Function} onProgress - Optional callback(current, total) for progress updates
- * @param {Function} shouldCancel - Optional callback that returns true if fetch should be cancelled
- */
-async function fetchStyleTagsForAllArtists(onProgress = null, shouldCancel = null) {
-  return fetchStyleTagsForArtistList(allArtists, onProgress, shouldCancel);
 }
 
 /**
@@ -3260,27 +2846,27 @@ function openArtistOnDanbooru(artist) {
 /**
  * Filter gallery to show only favorited artists
  */
-async function filterGalleryToFavorites() {
-  const { filterToFavorites, getFavoritesCount } = await import('./favorites.js');
-  
-  if (getFavoritesCount() === 0) {
-    console.warn('No favorite artists to filter');
-    return;
-  }
-  
-  // Filter the current artist list to favorites only
-  filtered = filterToFavorites(allArtists);
-  
-  // Reset pagination and re-render
+// Shows only the named artists (a favorites list or a collection), keeping
+// the current sort; clearGalleryFilters() returns to the tag/name filters.
+function showArtistList(names) {
+  const wanted = new Set(names || []);
+  filtered = allArtists.filter((artist) => artist && wanted.has(artist.artistName));
   currentPage = 1;
   renderedPages.clear();
   totalPages = Math.ceil(filtered.length / artistsPerPage);
   pagination.current = 1;
   pagination.total = totalPages;
-  
   renderArtistsPage({ force: true });
-  
-  console.log(`Filtered to ${filtered.length} favorite artists`);
+  return filtered.length;
+}
+
+async function filterGalleryToFavorites() {
+  const { getAllFavorites } = await import('./favorites.js');
+  return showArtistList(getAllFavorites());
+}
+
+function findArtistByName(name) {
+  return allArtists.find((artist) => artist?.artistName === name) || null;
 }
 
 /**
@@ -3331,6 +2917,8 @@ export {
   openArtistOnDanbooru,
   enhanceGalleryImages,
   filterGalleryToFavorites,
+  showArtistList,
+  findArtistByName,
   clearGalleryFilters
 };
 // Note: forceFetchStyleTags is exported inline on line ~1692

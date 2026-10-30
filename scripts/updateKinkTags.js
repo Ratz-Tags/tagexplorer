@@ -336,7 +336,7 @@ async function updateKinkTags() {
   console.log(`✅ kink-tags.json: ${tags.length} tags across ${categorizedTags.length} categories (was ${previousTags.length})`);
   await fs.writeFile(ARTISTS_PATH, JSON.stringify(finalArtists, null, 2) + '\n');
   console.log(
-    `✅ artists.json: ${finalArtists.length} artists (${added.length} discovered, was ${artists.length}; ${client.stats.requests} requests)`,
+    `✅ artists.json: ${finalArtists.length} artists (${added.length} discovered, was ${artists.length}; ${client.stats.requests} requests, ${client.stats.rateLimited} rate-limited retries)`,
   );
 }
 

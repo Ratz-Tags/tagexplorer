@@ -179,5 +179,89 @@ export function filterToFavorites(artists) {
   );
 }
 
+// --- Collections: named lists of artists, kept separately from favorites ---
+
+const COLLECTIONS_STORAGE_KEY = 'tagexplorer_collections';
+let collections = new Map(); // name -> Set of artist names
+
+function loadCollections() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(COLLECTIONS_STORAGE_KEY) || '{}');
+    collections = new Map(
+      Object.entries(parsed && typeof parsed === 'object' ? parsed : {})
+        .filter(([, names]) => Array.isArray(names))
+        .map(([name, names]) => [name, new Set(names)]),
+    );
+  } catch (error) {
+    console.warn('Failed to load collections:', error);
+    collections = new Map();
+  }
+}
+
+function saveCollections(action, name = '', artistName = '') {
+  try {
+    const plain = Object.fromEntries([...collections].map(([key, names]) => [key, [...names]]));
+    localStorage.setItem(COLLECTIONS_STORAGE_KEY, JSON.stringify(plain));
+  } catch (error) {
+    console.warn('Failed to save collections:', error);
+  }
+  document.dispatchEvent(
+    new CustomEvent('collections:changed', { detail: { action, collection: name, artist: artistName } }),
+  );
+}
+
+export function getCollections() {
+  return [...collections]
+    .map(([name, names]) => ({ name, artists: [...names] }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function getCollection(name) {
+  return collections.has(name) ? [...collections.get(name)] : [];
+}
+
+export function createCollection(name) {
+  const clean = String(name || '').trim();
+  if (!clean || collections.has(clean)) return false;
+  collections.set(clean, new Set());
+  saveCollections('created', clean);
+  return true;
+}
+
+export function renameCollection(oldName, newName) {
+  const clean = String(newName || '').trim();
+  if (!collections.has(oldName) || !clean || collections.has(clean)) return false;
+  collections.set(clean, collections.get(oldName));
+  collections.delete(oldName);
+  saveCollections('renamed', clean);
+  return true;
+}
+
+export function deleteCollection(name) {
+  if (!collections.delete(name)) return false;
+  saveCollections('deleted', name);
+  return true;
+}
+
+export function isInCollection(name, artistName) {
+  return Boolean(collections.get(name)?.has(artistName));
+}
+
+// Returns whether the artist is in the collection afterwards.
+export function toggleInCollection(name, artistName) {
+  const set = collections.get(name);
+  if (!set || !artistName) return false;
+  const nowIn = !set.has(artistName);
+  if (nowIn) set.add(artistName);
+  else set.delete(artistName);
+  saveCollections(nowIn ? 'added' : 'removed', name, artistName);
+  return nowIn;
+}
+
+export function getCollectionsForArtist(artistName) {
+  return [...collections].filter(([, names]) => names.has(artistName)).map(([name]) => name);
+}
+
 // Initialize favorites on module load
 loadFavorites();
+loadCollections();

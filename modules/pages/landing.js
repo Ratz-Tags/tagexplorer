@@ -743,6 +743,14 @@ export async function initLandingPage({ shell, foldAdapter }) {
     if (panel) {
       panel.classList.remove('hidden');
       panel.setAttribute('aria-hidden', 'false');
+      const closeButton = panel.querySelector('.audio-close');
+      if (closeButton && !closeButton.dataset.bound) {
+        closeButton.dataset.bound = 'true';
+        closeButton.addEventListener('click', () => {
+          panel.classList.add('hidden');
+          panel.setAttribute('aria-hidden', 'true');
+        });
+      }
     }
   }
 

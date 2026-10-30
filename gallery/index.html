@@ -44,6 +44,15 @@
             <div class="gallery-results__bar">
               <div id="filtered-results" aria-live="polite" aria-label="Search results summary" class="results-banner"></div>
               <button id="clear-tags" class="browse-btn gallery-results__clear" type="button" style="display: none;">Clear tags</button>
+              <label class="results-sort">
+                <span>Sort</span>
+                <select id="results-sort">
+                  <option value="name">Name (A–Z)</option>
+                  <option value="count">Most posts</option>
+                  <option value="tag-frequency">Best tag match</option>
+                  <option value="shuffle">Shuffle</option>
+                </select>
+              </label>
             </div>
             <section id="artist-gallery" aria-label="Artist gallery" role="region" class="gallery-grid"></section>
           </section>

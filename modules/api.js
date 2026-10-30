@@ -308,7 +308,14 @@ async function rateLimitedFetch(url, options = {}) {
   }
   
   const promise = new Promise((resolve, reject) => {
-    requestQueue.push({ url, options, resolve, reject, retries: 0 });
+    const entry = { url, options, resolve, reject, retries: 0 };
+    // Interactive requests (e.g. the image viewer) jump ahead of background
+    // card fetches; `priority` also doubles as the fetch() priority hint.
+    if (options.priority === 'high') {
+      requestQueue.unshift(entry);
+    } else {
+      requestQueue.push(entry);
+    }
     console.debug && console.debug('[api] enqueued', url, 'queueLen=', requestQueue.length);
     scheduleQueueProcessing();
   });
@@ -685,6 +692,8 @@ async function fetchPosts(tags, options = {}) {
     order = "score",
     useCache = true,
     cacheKey = null,
+    only = null,
+    priority,
   } = options;
 
   // Check cache if enabled
@@ -703,7 +712,7 @@ async function fetchPosts(tags, options = {}) {
   const tagsParam = Array.isArray(tags) ? tags.join(" ") : tags;
   const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(
     tagsParam
-  )}+order:${order}&limit=${limit}&page=${page}`;
+  )}+order:${order}&limit=${limit}&page=${page}${only ? `&only=${encodeURIComponent(only)}` : ''}`;
 
   try {
     // Use a memory cache key: prefer the explicit cacheKey, otherwise use the URL
@@ -712,7 +721,7 @@ async function fetchPosts(tags, options = {}) {
       return apiMemoryCache.get(memoryKey);
     }
 
-    const response = await rateLimitedFetch(url);
+    const response = await rateLimitedFetch(url, priority ? { priority } : undefined);
     
     // Check if the response is ok before trying to parse JSON
     if (!response.ok) {
@@ -883,7 +892,10 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
   const tagsSignature = selectedTags.length > 0 
     ? `-tags-${selectedTags.sort().join('-')}` 
     : '';
-  const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`, tagsSignature].join("");
+  // `only` trims the response to the listed fields; keep slim and full
+  // results in separate cache entries.
+  const only = options.only || null;
+  const cacheSignature = [`p${page}`, `l${limit}`, `o${order}`, tagsSignature, only ? `-f${only}` : ''].join("");
   const apiCacheKey = `danbooru-api-${artistName}-${cacheSignature}`;
   const useCache = options.useCache !== false;
 
@@ -926,6 +938,8 @@ async function fetchArtistImages(artistName, selectedTags = [], options = {}) {
     limit,
     page,
     order,
+    only,
+    priority: options.priority,
   });
   
   // Store the promise for deduplication
@@ -1230,6 +1244,10 @@ export async function fetchArtistsByTag(searchTags = [], options = {}) {
 
 export function getArtistSlug(name) {
   return toArtistSlug(name);
+}
+
+export async function getAllArtistsList() {
+  return ensureArtistsList();
 }
 
 export async function getArtistBySlug(slug) {

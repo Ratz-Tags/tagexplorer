@@ -5,6 +5,7 @@ template.innerHTML = `
       <div class="audio-header">
         <span aria-hidden="true">🎧</span>
         <span id="audio-track-name">No track playing</span>
+        <button type="button" class="audio-close" aria-label="Close audio panel">✕</button>
       </div>
       <div class="audio-playlist-selector" role="group" aria-label="Ambience playlist">
         <label class="field-label" for="audio-playlist-select">Ambience</label>

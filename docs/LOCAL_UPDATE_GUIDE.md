@@ -39,8 +39,8 @@ Individual steps: `npm run update:tags` (tags + discovery) and `npm run update:c
 | --- | --- | --- |
 | `DANBOORU_LOGIN` / `DANBOORU_API_KEY` | — | Authenticate requests |
 | `DANBOORU_USER_AGENT` | `TagExplorer-DataUpdater/2.0 (…)` | Identifying User-Agent sent with every request |
-| `DANBOORU_CONCURRENCY` | `6` | Parallel requests |
-| `DANBOORU_BASE_DELAY_MS` | `150` | Delay before each request (backs off on 429/5xx) |
+| `DANBOORU_RATE` | `5` | Requests per second (on HTTP 429 all requests pause and back off, then recover) |
+| `DANBOORU_CONCURRENCY` | `3` | Requests in flight at once |
 | `DISCOVER_MAX_PAGES` | `100` | Pages of 200 posts scanned per tag combo |
 | `MIN_ARTIST_POSTS` | `40` | Artists below this post count are dropped |
 | `MAX_FAILURE_RATIO` | `0.05` | Count lookups allowed to fail before the run is rejected |

@@ -39,7 +39,12 @@ import {
   setCurrentPage,
   renderArtistsPage,
   getFilteredArtists,
+  showArtistList,
+  findArtistByName,
+  clearGalleryFilters,
+  openArtistZoom,
 } from '../gallery.js';
+import { initSavedPanel, toggleSavedPanel, closeSavedPanel } from '../saved-panel.js';
 import {
   initUI,
   setupInfiniteScroll,
@@ -1022,66 +1027,107 @@ async function setupFavoritesButton() {
   await customElements.whenDefined('te-command-bar');
   await new Promise(resolve => setTimeout(resolve, 0));
 
-  const favoritesBtn = document.getElementById('favorites-btn');
+  initSavedPanel({
+    showList: (names) => showArtistList(names),
+    clearList: () => clearGalleryFilters(),
+    openArtist: (name) => {
+      const artist = findArtistByName(name);
+      if (artist) openArtistZoom(artist);
+    },
+    findArtist: findArtistByName,
+    notify: (message) => showToast(message, 3200),
+  });
+
+  document.querySelectorAll('.saved-toggle').forEach((button) => {
+    button.addEventListener('click', () => toggleSavedPanel());
+  });
+
   const favoritesCount = document.getElementById('favorites-count');
-  if (!favoritesBtn) return;
+  const updateCount = (count) => {
+    if (!favoritesCount) return;
+    favoritesCount.textContent = count;
+    favoritesCount.classList.toggle('hidden', count === 0);
+  };
+  document.addEventListener('favorites:changed', (e) => updateCount(e.detail.count));
+  const { getFavoritesCount } = await import('../favorites.js');
+  updateCount(getFavoritesCount());
+}
 
-  let showingFavorites = false;
+// The More menu lives outside the (horizontally scrolling) toolbar so it is
+// never clipped; it is positioned under whichever toggle opened it.
+function setupMoreMenu() {
+  const menu = document.getElementById('more-menu');
+  const toggles = Array.from(document.querySelectorAll('[data-more-toggle]'));
+  if (!menu || !toggles.length) return () => {};
+  // Escape the sticky app bar's stacking context so the menu layers above
+  // floating overlays (toasts, taunt meter).
+  document.body.appendChild(menu);
 
-  favoritesBtn.addEventListener('click', async () => {
-    const { filterGalleryToFavorites, clearGalleryFilters } = await import('../gallery.js');
-    const { getFavoritesCount } = await import('../favorites.js');
+  const close = ({ restoreFocus = false } = {}) => {
+    if (menu.hidden) return;
+    menu.hidden = true;
+    toggles.forEach((toggle) => toggle.setAttribute('aria-expanded', 'false'));
+    if (restoreFocus) menu._opener?.focus({ preventScroll: true });
+  };
 
-    if (getFavoritesCount() === 0) {
-      showToast('No trophies on your wall yet. Go star someone before begging.', 4200);
-      // Ensure the command bar button keeps focus for keyboard users
-      requestAnimationFrame(() => {
-        if (typeof favoritesBtn.focus === 'function') {
-          favoritesBtn.focus({ preventScroll: true });
-        }
-      });
+  const open = (opener) => {
+    closeSavedPanel();
+    menu.hidden = false;
+    menu._opener = opener;
+    opener.setAttribute('aria-expanded', 'true');
+    const rect = opener.getBoundingClientRect();
+    if (document.body.dataset.foldMode === 'fold-cover') {
+      menu.style.removeProperty('top');
+      menu.style.removeProperty('right');
+    } else {
+      menu.style.top = `${Math.round(rect.bottom + 6)}px`;
+      menu.style.right = `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`;
+    }
+    menu.querySelector('.more-menu__item')?.focus({ preventScroll: true });
+  };
+
+  toggles.forEach((toggle) => {
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (menu.hidden) open(toggle);
+      else close();
+    });
+  });
+
+  // Toggles like Motion and streak tracking update in place; everything
+  // else opens something, so the menu gets out of the way.
+  menu.addEventListener('click', (event) => {
+    const item = event.target.closest('.more-menu__item');
+    if (item && !item.matches('.motion-toggle, .streak-chip')) close();
+  });
+
+  const onDocumentClick = (event) => {
+    if (!menu.hidden && !menu.contains(event.target)) close();
+  };
+  const onKeydown = (event) => {
+    if (menu.hidden) return;
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      close({ restoreFocus: true });
       return;
     }
-
-    showingFavorites = !showingFavorites;
-
-    if (showingFavorites) {
-      filterGalleryToFavorites();
-      favoritesBtn.classList.add('active');
-      favoritesBtn.setAttribute('aria-pressed', 'true');
-    } else {
-      clearGalleryFilters();
-      favoritesBtn.classList.remove('active');
-      favoritesBtn.setAttribute('aria-pressed', 'false');
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const items = Array.from(menu.querySelectorAll('.more-menu__item'));
+      const current = items.indexOf(document.activeElement);
+      const next = (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[next]?.focus();
     }
-  });
-
-  document.addEventListener('favorites:changed', (e) => {
-    if (favoritesCount) {
-      const count = e.detail.count;
-      favoritesCount.textContent = count;
-      favoritesCount.classList.toggle('hidden', count === 0);
-    }
-
-    if (favoritesBtn) {
-      const count = e.detail.count;
-      favoritesBtn.disabled = count === 0;
-      if (count === 0 && favoritesBtn.classList.contains('active')) {
-        favoritesBtn.classList.remove('active');
-        favoritesBtn.setAttribute('aria-pressed', 'false');
-      }
-    }
-  });
-
-  (async () => {
-    const { getFavoritesCount } = await import('../favorites.js');
-    const count = getFavoritesCount();
-    if (favoritesCount) {
-      favoritesCount.textContent = count;
-      favoritesCount.classList.toggle('hidden', count === 0);
-    }
-    favoritesBtn.disabled = count === 0;
-  })();
+  };
+  const onResize = () => close();
+  document.addEventListener('click', onDocumentClick);
+  document.addEventListener('keydown', onKeydown, true);
+  window.addEventListener('resize', onResize);
+  return () => {
+    document.removeEventListener('click', onDocumentClick);
+    document.removeEventListener('keydown', onKeydown, true);
+    window.removeEventListener('resize', onResize);
+  };
 }
 
 function setupSidebarToggle() {
@@ -1196,6 +1242,7 @@ function setupAudioToggle() {
       setAudioHidden(willHide);
     });
   });
+  audioPanelEl.querySelector('.audio-close')?.addEventListener('click', () => setAudioHidden(true));
 
   setAudioHidden(audioPanelEl.classList.contains('hidden'));
 }
@@ -1610,23 +1657,32 @@ function setupFoldModeSync({ foldAdapter, closeSettings }) {
   };
 }
 
+const SORT_STORAGE_KEY = 'te.sort';
+
+// Sort lives in the results bar; name is always the tiebreaker.
 function setupSortControls() {
-  const sortSelect = document.getElementById('sort-by');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', () => {});
+  const select = document.getElementById('results-sort');
+  if (!select) return;
+  const apply = (value, { persist = true } = {}) => {
+    setSortMode(value === 'name' ? ['name'] : [value, 'name']);
+    if (!persist) return;
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, value);
+    } catch {
+      // storage unavailable
+    }
+  };
+  let saved = null;
+  try {
+    saved = localStorage.getItem(SORT_STORAGE_KEY);
+  } catch {
+    // storage unavailable
   }
-  const sortButtonElem = document.getElementById('sort-button');
-  if (sortButtonElem && sortSelect) {
-    sortButtonElem.addEventListener('click', () => {
-      setSortMode(sortSelect.value);
-    });
+  if (saved && Array.from(select.options).some((option) => option.value === saved)) {
+    select.value = saved;
+    if (saved !== 'name') apply(saved, { persist: false });
   }
-  const sortPreferenceElem = document.getElementById('sort-preference');
-  if (sortPreferenceElem) {
-    sortPreferenceElem.addEventListener('change', (e) => {
-      setSortPreference(e.target.value);
-    });
-  }
+  select.addEventListener('change', () => apply(select.value));
 }
 
 async function setupFiltersButton() {
@@ -1931,6 +1987,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupSortControls();
   setupFiltersButton();
   const shortcutsCleanup = setupKeyboardShortcuts();
+  const moreMenuCleanup = setupMoreMenu();
   const appBarCleanup = trackAppBarHeight();
   setupForceFetch();
   setupFavoritesButton();
@@ -1991,6 +2048,7 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       }
       shortcutsCleanup();
       appBarCleanup();
+      moreMenuCleanup();
     },
   };
 }

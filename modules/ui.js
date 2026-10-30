@@ -356,117 +356,6 @@ function createModal(content, className = "modal") {
 }
 
 /**
- * Creates a fullscreen image viewer
- */
-function createFullscreenViewer(options = {}) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "fullscreen-wrapper";
-
-  // Zoom content container (strict 3-column flex)
-  const content = document.createElement("div");
-  content.className = "zoom-content";
-
-  // Prev arrow column
-  const prevBtn = document.createElement("button");
-  prevBtn.className = "zoom-prev";
-  prevBtn.textContent = "←";
-  content.appendChild(prevBtn);
-
-  // Main column: image and tags stacked vertically
-  const main = document.createElement("div");
-  main.className = "zoom-main";
-
-  const img = document.createElement("img");
-  img.className = "fullscreen-img";
-  main.appendChild(img);
-
-  // No entries message (below image)
-  const noEntriesMsg = document.createElement("div");
-  noEntriesMsg.className = "no-entries-msg";
-  noEntriesMsg.textContent = "No images found for this artist.";
-  noEntriesMsg.style.display = "none";
-  main.appendChild(noEntriesMsg);
-
-  // Tag list (below image)
-  const tagList = document.createElement("div");
-  tagList.className = "zoom-tags";
-  tagList.style.display = "none";
-  main.appendChild(tagList);
-
-  // Top tags (below tag list)
-  const topTags = document.createElement("div");
-  topTags.className = "zoom-top-tags";
-  topTags.style.display = "none";
-  main.appendChild(topTags);
-
-  content.appendChild(main);
-
-  // Next arrow column
-  const nextBtn = document.createElement("button");
-  nextBtn.className = "zoom-next";
-  nextBtn.textContent = "→";
-  content.appendChild(nextBtn);
-
-  // Close button (top right, absolutely/flex positioned by CSS)
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "zoom-close";
-  closeBtn.textContent = "×";
-  closeBtn.onclick = () => {
-    wrapper.remove();
-  };
-  content.appendChild(closeBtn);
-
-  wrapper.appendChild(content);
-
-  // Tap/click behavior for image
-  if (typeof options.onImageClick === "function") {
-    img.addEventListener("click", (e) => {
-      e.preventDefault();
-      options.onImageClick(e);
-    });
-  } else {
-    img.addEventListener("click", () => {
-      tagList.style.display =
-        tagList.style.display === "none" ? "block" : "none";
-      topTags.style.display =
-        topTags.style.display === "none" ? "block" : "none";
-    });
-  }
-
-  // Keyboard navigation
-  wrapper.tabIndex = 0;
-  wrapper.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowLeft") {
-      prevBtn.click();
-      e.preventDefault();
-    }
-    if (e.key === "ArrowRight") {
-      nextBtn.click();
-      e.preventDefault();
-    }
-    if (e.key === "Escape") {
-      closeBtn.click();
-      e.preventDefault();
-    }
-  });
-
-  wrapper.addEventListener("click", (e) => {
-    if (e.target === wrapper) wrapper.remove();
-  });
-
-  return {
-    wrapper,
-    img,
-    tagList,
-    topTags,
-    noEntriesMsg,
-    closeBtn,
-    prevBtn,
-    nextBtn,
-  };
-}
-
-/**
  * Sets up keyboard shortcuts for the application
  */
 function setupKeyboardShortcuts(shortcuts = {}) {
@@ -613,7 +502,6 @@ function pulseScreen() {
 // debounce: exported, used by tags.js
 // throttle: exported, not used internally (for external use)
 // createModal: exported, used by createConfirmationModal
-// createFullscreenViewer: exported, used by gallery.js
 // setupKeyboardShortcuts: exported, not used internally (for external use)
 // initUI: exported, used by main.js
 // showToast: exported, used by sidebar.js, humiliation.js, audio.js
@@ -635,7 +523,6 @@ export {
   debounce,
   throttle,
   createModal,
-  createFullscreenViewer,
   setupKeyboardShortcuts,
   initUI,
   showToast,
