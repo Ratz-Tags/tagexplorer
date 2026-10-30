@@ -40,36 +40,39 @@ let imageGenSettings = {
   negativePrompt: '',
 };
 
-// Load API key from window or localStorage
-function loadAPIKey() {
-  if (typeof window !== 'undefined' && window._openRouterApiKey) {
-    apiKey = window._openRouterApiKey;
-    return true;
-  }
-  
+// API keys are never shipped with the site. Each visitor pastes their own in
+// Settings and it stays in this browser's localStorage.
+const KEY_STORAGE = {
+  openRouter: 'tagexplorer:openrouter-key',
+  novelai: 'tagexplorer:novelai-key',
+};
+
+function readStoredKey(storageKey) {
   try {
-    const stored = localStorage.getItem('tagexplorer:openrouter-key');
-    if (stored) {
-      apiKey = stored;
-      return true;
-    }
+    return localStorage.getItem(storageKey) || null;
   } catch (e) {
-    console.warn('[NovelAI Prompter] Failed to load API key from storage:', e);
+    console.warn('[NovelAI Prompter] Failed to read API key from storage:', e);
+    return null;
   }
-  
-  return false;
 }
 
-// Load NovelAI API key from window (injected via GitHub Actions)
-function loadNovelAIKey() {
-  if (typeof window !== 'undefined' && window._novelaiApiKey) {
-    novelaiApiKey = window._novelaiApiKey;
-    console.log('[NovelAI Prompter] NovelAI API key loaded from window');
-    return true;
+function storeKey(storageKey, value) {
+  try {
+    if (value) localStorage.setItem(storageKey, value);
+    else localStorage.removeItem(storageKey);
+  } catch (e) {
+    console.warn('[NovelAI Prompter] Failed to save API key:', e);
   }
-  
-  console.warn('[NovelAI Prompter] NovelAI API key not found');
-  return false;
+}
+
+function loadAPIKey() {
+  apiKey = readStoredKey(KEY_STORAGE.openRouter);
+  return Boolean(apiKey);
+}
+
+function loadNovelAIKey() {
+  novelaiApiKey = readStoredKey(KEY_STORAGE.novelai);
+  return Boolean(novelaiApiKey);
 }
 
 // Load config from storage
@@ -79,7 +82,6 @@ function loadConfig() {
     if (stored) {
       const config = JSON.parse(stored);
       if (config.model) currentModel = config.model;
-      if (config.apiKey) apiKey = config.apiKey;
     }
   } catch (e) {
     console.warn('[NovelAI Prompter] Failed to load config:', e);
@@ -91,7 +93,6 @@ function saveConfig() {
   try {
     localStorage.setItem(PROMPTER_CONFIG.storageKey, JSON.stringify({
       model: currentModel,
-      apiKey: apiKey ? '***' : null, // Don't store actual key
     }));
   } catch (e) {
     console.warn('[NovelAI Prompter] Failed to save config:', e);
@@ -1003,7 +1004,8 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
     }
     
     if (!apiKey) {
-      alert('OpenRouter API key not configured. Please set it in settings.');
+      showSettingsModal();
+      document.getElementById('setting-openrouter-key')?.focus();
       return;
     }
     
@@ -1251,6 +1253,20 @@ function showSettingsModal() {
         </div>
         
         <div class="novelai-prompter-section">
+          <div class="novelai-prompter-settings-row">
+            <div>
+              <label class="novelai-prompter-label" for="setting-openrouter-key">OpenRouter API key</label>
+              <input type="password" class="novelai-prompter-input" id="setting-openrouter-key" autocomplete="off" spellcheck="false" placeholder="sk-or-…">
+            </div>
+            <div>
+              <label class="novelai-prompter-label" for="setting-novelai-key">NovelAI API key (optional)</label>
+              <input type="password" class="novelai-prompter-input" id="setting-novelai-key" autocomplete="off" spellcheck="false" placeholder="pst-…">
+            </div>
+          </div>
+          <small style="color: oklch(60% 0.05 260); font-size: 11px; display: block; margin: -4px 0 12px;">
+            Keys are saved only in this browser and sent only to OpenRouter / NovelAI. Clear a field to forget it.
+          </small>
+
           <div class="novelai-prompter-settings-row full">
             <div>
               <label class="novelai-prompter-label">Resolution Preset</label>
@@ -1364,10 +1380,12 @@ function showSettingsModal() {
             const sampler = document.getElementById('setting-sampler').value;
             const samples = parseInt(document.getElementById('setting-samples').value) || 1;
             const negative = document.getElementById('setting-negative').value;
-            
+            const openRouterKey = document.getElementById('setting-openrouter-key').value.trim();
+            const novelaiKey = document.getElementById('setting-novelai-key').value.trim();
+
             if (width && height && steps && scale && samples) {
               window._prompterSaveSettings({
-                width, height, steps, scale, sampler, samples, negativePrompt: negative
+                width, height, steps, scale, sampler, samples, negativePrompt: negative, openRouterKey, novelaiKey
               });
               this.closest('.novelai-prompter-modal').remove();
             } else {
@@ -1380,8 +1398,15 @@ function showSettingsModal() {
       </div>
   `;
   
+  modal.querySelector('#setting-openrouter-key').value = apiKey || '';
+  modal.querySelector('#setting-novelai-key').value = novelaiApiKey || '';
+
   // Save settings function
-  window._prompterSaveSettings = (settings) => {
+  window._prompterSaveSettings = ({ openRouterKey, novelaiKey, ...settings }) => {
+    apiKey = openRouterKey || null;
+    novelaiApiKey = novelaiKey || null;
+    storeKey(KEY_STORAGE.openRouter, apiKey);
+    storeKey(KEY_STORAGE.novelai, novelaiApiKey);
     imageGenSettings = { ...imageGenSettings, ...settings };
     try {
       localStorage.setItem('tagexplorer:novelai-image-settings', JSON.stringify(imageGenSettings));
@@ -1389,7 +1414,8 @@ function showSettingsModal() {
       console.warn('[NovelAI Prompter] Failed to save settings:', e);
     }
     // Update negative prompt input if empty
-    if (!negativeInput.value.trim() && imageGenSettings.negativePrompt) {
+    const negativeInput = document.getElementById('prompter-negative');
+    if (negativeInput && !negativeInput.value.trim() && imageGenSettings.negativePrompt) {
       negativeInput.value = imageGenSettings.negativePrompt;
     }
   };
