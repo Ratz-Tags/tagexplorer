@@ -22,6 +22,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Records each deploy on the repo's Deployments page (github-pages).
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
