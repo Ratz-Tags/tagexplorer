@@ -66,8 +66,9 @@ export default {
         ritual: '0.375rem',
       },
       screens: {
-        'fold-cover': {'raw': '(max-width: 520px) and (orientation: portrait)'},
-        'fold-inner': {'raw': '(min-width: 980px) and (min-height: 980px)'},
+        // Width-only so desktops get the docked layout (see modules/fold-adapter.js).
+        'fold-cover': {'raw': '(max-width: 640px)'},
+        'fold-inner': {'raw': '(min-width: 1024px)'},
       },
       backdropBlur: {
         glass: '18px',

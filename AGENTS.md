@@ -74,10 +74,11 @@ Redesign **TagExplorer** into a sleek, modern, animated gallery that surfaces ar
 ### Breakpoints (Tailwind)
 ```js
 screens: {
-  'fold-cover': {'raw': '(max-width: 520px) and (orientation: portrait)'},
-  'fold-inner': {'raw': '(min-width: 980px) and (min-height: 980px)'}
+  'fold-cover': {'raw': '(max-width: 640px)'},
+  'fold-inner': {'raw': '(min-width: 1024px)'}
 }
 ```
+Breakpoints are width-only so ordinary laptops/desktops get the inner (docked) layout; a height gate pushed them into the phone UI. Widths in between use the default layout (filters as a drawer).
 
 ### Cover Display
 - 1-column gallery list.  

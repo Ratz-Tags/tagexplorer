@@ -626,9 +626,86 @@ function unbindEscapeListener() {
   escapeListener = null;
 }
 
+// Desktop ("fold-inner") docks the filter panel as a persistent column;
+// cover/default keep it as a drawer. Mode comes from the fold adapter.
+const DOCK_COLLAPSED_KEY = "te.filters.collapsed";
+
+function isDockedLayout() {
+  return typeof document !== "undefined" && document.body?.dataset?.foldMode === "fold-inner";
+}
+
+function isCoverLayout() {
+  return typeof document !== "undefined" && document.body?.dataset?.foldMode === "fold-cover";
+}
+
+function getFilterButtons() {
+  return [
+    document.getElementById("filters-btn"),
+    document.getElementById("cover-filters-btn"),
+  ].filter(Boolean);
+}
+
+function clearPopoverInlineStyles() {
+  if (!popoverEl) return;
+  ["transform", "visibility", "opacity", "left", "right", "top"].forEach((prop) => {
+    popoverEl.style.removeProperty(prop);
+  });
+}
+
+// persist/focus are for user toggles; automatic syncs restore state silently.
+function setDockCollapsed(collapsed, { persist = true, focus = persist } = {}) {
+  if (typeof document === "undefined" || !document.body) return;
+  document.body.classList.toggle("filters-collapsed", collapsed);
+  getFilterButtons().forEach((btn) => btn.setAttribute("aria-expanded", collapsed ? "false" : "true"));
+  if (persist) {
+    try {
+      localStorage.setItem(DOCK_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+      // storage unavailable
+    }
+  }
+  if (focus && !collapsed && searchInputEl) {
+    try {
+      searchInputEl.focus({ preventScroll: true });
+    } catch {
+      // ignore focus issues
+    }
+  }
+}
+
+function syncTagExplorerDock() {
+  if (typeof document === "undefined") return;
+  if (!isInitialized) initTagExplorer();
+  if (!popoverEl) return;
+  if (isDockedLayout()) {
+    let collapsed = false;
+    try {
+      collapsed = localStorage.getItem(DOCK_COLLAPSED_KEY) === "1";
+    } catch {
+      // storage unavailable
+    }
+    if (!isOpen) {
+      openTagExplorer({ focus: false });
+    }
+    unbindEscapeListener();
+    unbindOutsideClickListener();
+    clearPopoverInlineStyles();
+    const overlay = document.querySelector("#tag-explorer-overlay");
+    if (overlay) overlay.classList.remove("visible");
+    setDockCollapsed(collapsed, { persist: false });
+  } else {
+    document.body.classList.remove("filters-collapsed");
+    if (isOpen) closeTagExplorer();
+  }
+}
+
 function toggleTagExplorer(event) {
   if (event && typeof event.preventDefault === "function") {
     event.preventDefault();
+  }
+  if (isDockedLayout() && isOpen) {
+    setDockCollapsed(!document.body.classList.contains("filters-collapsed"));
+    return;
   }
   if (isOpen) {
     closeTagExplorer();
@@ -637,7 +714,7 @@ function toggleTagExplorer(event) {
   }
 }
 
-function openTagExplorer() {
+function openTagExplorer({ focus = true } = {}) {
   if (!isInitialized) initTagExplorer();
   if (!filtersButtonEl && typeof document !== "undefined") {
     filtersButtonEl = document.getElementById("filters-btn");
@@ -660,24 +737,14 @@ function openTagExplorer() {
   
   // Show overlay on mobile/cover mode
   const overlay = document.querySelector("#tag-explorer-overlay");
-  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
-  const isCoverMode = foldMode === 'fold-cover' || 
-    (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px)').matches);
-  const isInnerMode = foldMode === 'fold-inner' || 
-    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches);
+  const isCoverMode = isCoverLayout();
+  const isInnerMode = isDockedLayout();
   
   // Only show overlay on cover mode, not inner mode
   if (overlay && isCoverMode && !isInnerMode) {
     overlay.classList.add("visible");
   }
   
-  // On fold-inner mode, ensure sidebar is always visible
-  if (isInnerMode && popoverEl) {
-    popoverEl.classList.add("open");
-    popoverEl.style.transform = "translateX(0)";
-    popoverEl.style.visibility = "visible";
-    popoverEl.style.opacity = "1";
-  }
   if (typeof document !== 'undefined' && document.body) {
     document.body.classList.add('filters-open');
     // Add class for fold-inner mode to control gallery layout
@@ -698,10 +765,12 @@ function openTagExplorer() {
     nameInputEl.value = currentName || "";
   }
   renderExplorer();
-  if (searchInputEl) {
+  if (!focus) {
+    // Docked panel opened automatically; don't steal focus.
+  } else if (searchInputEl) {
     // Avoid auto-focusing the search input on small screens to prevent
     // triggering the mobile virtual keyboard and browser zoom behavior.
-    if (typeof window !== 'undefined' && window.innerWidth > 520) {
+    if (typeof window !== 'undefined' && window.innerWidth > 640) {
       try {
         searchInputEl.focus({ preventScroll: true });
       } catch {
@@ -716,14 +785,16 @@ function openTagExplorer() {
       // ignore focus issues
     }
   }
-  positionPopover();
-  if (typeof requestAnimationFrame === "function") {
-    requestAnimationFrame(() => {
-      positionPopover();
-    });
+  if (!isInnerMode) {
+    positionPopover();
+    if (typeof requestAnimationFrame === "function") {
+      requestAnimationFrame(() => {
+        positionPopover();
+      });
+    }
+    bindEscapeListener();
+    bindOutsideClickListener();
   }
-  bindEscapeListener();
-  bindOutsideClickListener();
   emitOverlayToggle(true);
 }
 
@@ -731,20 +802,12 @@ function closeTagExplorer() {
   if (!popoverEl) return;
   
   // Check fold mode explicitly
-  const foldMode = document.documentElement?.dataset?.foldMode || document.body?.dataset?.foldMode;
-  const isCoverMode = foldMode === 'fold-cover' || 
-    (typeof window !== 'undefined' && window.matchMedia('(max-width: 520px) and (orientation: portrait)').matches);
-  const isInnerMode = foldMode === 'fold-inner' || 
-    (typeof window !== 'undefined' && window.matchMedia('(min-width: 980px) and (min-height: 980px)').matches && !isCoverMode);
+  const isCoverMode = isCoverLayout();
+  const isInnerMode = isDockedLayout();
   
-  // Don't close on fold-inner mode (persistent sidebar)
+  // Docked layout never closes the panel; it collapses it instead.
   if (isInnerMode && !isCoverMode) {
-    // On fold-inner, just update aria but keep visible
-    const filterButtons = [
-      document.getElementById('filters-btn'),
-      document.getElementById('cover-filters-btn'),
-    ].filter(Boolean);
-    filterButtons.forEach(btn => btn.setAttribute('aria-expanded', 'true'));
+    setDockCollapsed(true);
     return;
   }
   
@@ -752,6 +815,7 @@ function closeTagExplorer() {
   isOpen = false;
   popoverEl.classList.remove("open");
   popoverEl.setAttribute("aria-hidden", "true");
+  clearPopoverInlineStyles();
   
   // Update aria-expanded on all filter buttons
   const filterButtons = [
@@ -1057,4 +1121,4 @@ function getGlobalSearchMode() {
   return isGlobalSearchMode;
 }
 
-export { openTagExplorer, initTagExplorer, toggleTagExplorer, setAllArtists, getFilteredCounts, getGlobalSearchMode };
+export { openTagExplorer, initTagExplorer, toggleTagExplorer, syncTagExplorerDock, setAllArtists, getFilteredCounts, getGlobalSearchMode };

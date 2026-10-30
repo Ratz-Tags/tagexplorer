@@ -1,5 +1,7 @@
-const COVER_QUERY = '(max-width: 520px) and (orientation: portrait)';
-const INNER_QUERY = '(min-width: 980px) and (min-height: 980px)';
+// Layout modes are width-driven so ordinary laptops/desktops get the full
+// docked layout (the old min-height gate pushed them into phone UI).
+const COVER_QUERY = '(max-width: 640px)';
+const INNER_QUERY = '(min-width: 1024px)';
 
 function resolveMode(coverMedia, innerMedia) {
   // Check for dual-screen/foldable segments API
