@@ -260,6 +260,26 @@ function isRateLimitActive() {
 
 // External dependencies
 let allArtists = [];
+
+const cardIcon = (paths) => `<svg class="card-icon" viewBox="0 0 24 24" aria-hidden="true">${paths}</svg>`;
+const CARD_ICONS = {
+  copy: cardIcon('<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>'),
+  reload: cardIcon('<path d="M20 11a8 8 0 0 0-14.5-4.6L4 8"/><path d="M4 4v4h4M4 13a8 8 0 0 0 14.5 4.6L20 16"/><path d="M20 20v-4h-4"/>'),
+  tag: cardIcon('<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9-9-9Z"/><circle cx="8" cy="8" r="1.5"/>'),
+  similar: cardIcon('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6.5 6.5 0 0 1 3.5 6"/>'),
+  play: cardIcon('<path d="M8 5v14l11-7L8 5Z"/>'),
+  pause: cardIcon('<path d="M8 5v14M16 5v14"/>'),
+};
+
+// Favorites can change from the lightbox or Saved panel; keep card hearts in step.
+if (typeof document !== "undefined") {
+  document.addEventListener("favorites:changed", (event) => {
+    const favorites = new Set(event?.detail?.favorites || []);
+    document.querySelectorAll(".artist-card[data-artist]").forEach((card) => {
+      card.querySelector(".artist-heart")?.classList.toggle("is-favorite", favorites.has(card.dataset.artist));
+    });
+  });
+}
 let getActiveTags = null;
 let getArtistNameFilter = null;
 let getActiveTagsCallbackFn = null;
@@ -617,7 +637,8 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
     for (const m of modes) {
       let diff = 0;
       if (m === "count") {
-        diff = (b._totalImageCount || 0) - (a._totalImageCount || 0);
+        // Fresh API counts when loaded, otherwise the counts shipped in artists.json.
+        diff = (b._totalImageCount ?? b.postCount ?? 0) - (a._totalImageCount ?? a.postCount ?? 0);
       } else if (m === "tag-frequency") {
         diff = (b._mostCommonTagCount || 0) - (a._mostCommonTagCount || 0);
       } else if (m === "shuffle") {
@@ -638,9 +659,11 @@ function sortCurrentArtists(list = filtered, mode = sortMode) {
   return list;
 }
 
+// Only tag-match sorting needs counts fetched for the active filter; post
+// counts already ship in artists.json.
 function requiresCountBasedData(mode = sortMode) {
   const modes = Array.isArray(mode) ? mode : [mode];
-  return modes.includes("count") || modes.includes("tag-frequency");
+  return modes.includes("tag-frequency");
 }
 
 function reshuffleArtists() {
@@ -2124,12 +2147,12 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const name = document.createElement("div");
     name.className = "artist-name";
-    let displayName = artist.artistName.replace(/_/g, " ");
+    const displayName = artist.artistName.replace(/_/g, " ");
     const total =
       typeof artist.postCount === "number" ? artist.postCount : undefined;
-    if (typeof total === "number") {
-      displayName += ` [${total}]`;
-    }
+    const meta = document.createElement("div");
+    meta.className = "artist-meta";
+    meta.textContent = typeof total === "number" ? `${total.toLocaleString()} posts` : "";
     const nameLink = document.createElement("a");
     nameLink.textContent = displayName;
     nameLink.href = `../artist/[id]/?slug=${encodeURIComponent(artistSlug || '')}`;
@@ -2159,10 +2182,10 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const copyBtn = document.createElement("button");
     copyBtn.type = "button";
-    copyBtn.className = "copy-button";
-    copyBtn.setAttribute("aria-label", "Copy artist name");
-    copyBtn.textContent = "📋";
-    copyBtn.title = "Copy name";
+    copyBtn.className = "copy-button card-icon-btn";
+    copyBtn.setAttribute("aria-label", "Copy artist tag");
+    copyBtn.innerHTML = CARD_ICONS.copy;
+    copyBtn.title = "Copy artist tag";
     copyBtn.onclick = (e) => {
       e.stopPropagation();
       handleArtistCopy(artist, img.src);
@@ -2170,9 +2193,9 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const reloadBtn = document.createElement("button");
     reloadBtn.type = "button";
-    reloadBtn.className = "reload-button";
+    reloadBtn.className = "reload-button card-icon-btn";
     reloadBtn.setAttribute("aria-label", "Reload artist");
-    reloadBtn.textContent = "⟳";
+    reloadBtn.innerHTML = CARD_ICONS.reload;
     reloadBtn.title = "Reload artist images/count";
     reloadBtn.addEventListener("click", async (e) => {
       // Prevent any default browser action and stop event bubbling so
@@ -2217,49 +2240,26 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
 
     const tagsToggle = document.createElement("button");
     tagsToggle.type = "button";
-    tagsToggle.className = "tags-toggle";
+    tagsToggle.className = "tags-toggle card-icon-btn";
     tagsToggle.setAttribute("aria-controls", tagsId);
     tagsToggle.setAttribute("aria-expanded", "false");
     tagsToggle.title = "Show tags";
-    tagsToggle.textContent = "🏷️";
+    tagsToggle.setAttribute("aria-label", "Show tags");
+    tagsToggle.innerHTML = CARD_ICONS.tag;
     tagsToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       const willShow = card.classList.toggle("show-tags");
       taglist.hidden = !willShow;
       tagsToggle.setAttribute("aria-expanded", String(willShow));
       tagsToggle.title = willShow ? "Hide tags" : "Show tags";
+      tagsToggle.setAttribute("aria-label", tagsToggle.title);
     });
-
-    // Pin/Favorite button
-    const pinBtn = document.createElement("button");
-    pinBtn.type = "button";
-    pinBtn.className = "copy-button";
-    const isCurrentlyFavorited = isFavorite(artist.artistName);
-    pinBtn.textContent = isCurrentlyFavorited ? "⭐" : "📌";
-    pinBtn.title = isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites";
-    pinBtn.setAttribute("aria-label", isCurrentlyFavorited ? "Remove from favorites" : "Add to favorites");
-    pinBtn.style.filter = isCurrentlyFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
-    pinBtn.onclick = (e) => {
-      e.stopPropagation();
-      const nowFavorited = toggleFavorite(artist.artistName);
-      pinBtn.textContent = nowFavorited ? "⭐" : "📌";
-      pinBtn.title = nowFavorited ? "Remove from favorites" : "Add to favorites";
-      pinBtn.setAttribute("aria-label", nowFavorited ? "Remove from favorites" : "Add to favorites");
-      pinBtn.style.filter = nowFavorited ? "brightness(1.3) drop-shadow(0 0 3px gold)" : "";
-      
-      // Show toast notification
-      const message = nowFavorited ? `★ ${artist.artistName} added to favorites` : `Removed ${artist.artistName} from favorites`;
-      if (typeof window.showToast === 'function') {
-        window.showToast(message);
-      }
-    };
 
     // Similar artists button
     const similarBtn = document.createElement("button");
     similarBtn.type = "button";
-    similarBtn.className = "browse-btn";
-    similarBtn.style.cssText = "padding: 0.35rem 0.75rem; font-size: 0.55rem;";
-    similarBtn.textContent = "Similar";
+    similarBtn.className = "browse-btn card-similar-btn";
+    similarBtn.innerHTML = `${CARD_ICONS.similar}<span>Similar</span>`;
     similarBtn.title = "Find similar artists";
     similarBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -2269,9 +2269,10 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
     // Slideshow toggle button (hidden by default)
     const slideshowBtn = document.createElement("button");
     slideshowBtn.type = "button";
-    slideshowBtn.className = "slideshow-toggle copy-button"; // Reuse copy-button style for consistency
-    slideshowBtn.textContent = "▶️";
-    slideshowBtn.title = "Toggle slideshow";
+    slideshowBtn.className = "slideshow-toggle copy-button card-icon-btn";
+    slideshowBtn.innerHTML = CARD_ICONS.play;
+    slideshowBtn.title = "Play slideshow";
+    slideshowBtn.setAttribute("aria-label", "Play slideshow");
     slideshowBtn.style.display = "none"; // Hidden until we know we have multiple images
     slideshowBtn.onclick = (e) => {
       e.stopPropagation();
@@ -2280,35 +2281,26 @@ function renderArtistCards(artists, selectedTagsOverride, options = 1) {
       img.__manualSlideshow = !img.__manualSlideshow;
       if (img.__manualSlideshow) {
         startSlideshow(img);
-        slideshowBtn.textContent = "⏸️";
+        slideshowBtn.innerHTML = CARD_ICONS.pause;
         slideshowBtn.title = "Pause slideshow";
+        slideshowBtn.setAttribute("aria-label", "Pause slideshow");
         slideshowBtn.classList.add("active");
       } else {
         stopSlideshow(img);
-        slideshowBtn.textContent = "▶️";
+        slideshowBtn.innerHTML = CARD_ICONS.play;
         slideshowBtn.title = "Play slideshow";
+        slideshowBtn.setAttribute("aria-label", "Play slideshow");
         slideshowBtn.classList.remove("active");
       }
     };
 
     const actions = document.createElement("div");
     actions.className = "artist-actions";
-    actions.style.display = "flex";
-    actions.style.gap = "0.5rem";
-    actions.style.flexWrap = "wrap";
-    actions.appendChild(copyBtn);
-    actions.appendChild(pinBtn);
-    actions.appendChild(reloadBtn);
-    actions.appendChild(similarBtn);
-    actions.appendChild(slideshowBtn);
-  // Profile link removed per UI update
-    actions.appendChild(tagsToggle);
+    actions.append(similarBtn, copyBtn, tagsToggle, slideshowBtn, reloadBtn);
 
     const footer = document.createElement("div");
     footer.className = "artist-footer";
-    footer.appendChild(name);
-    footer.appendChild(taglist);
-    footer.appendChild(actions);
+    footer.append(name, meta, taglist, actions);
 
     card.appendChild(media);
     card.appendChild(footer);

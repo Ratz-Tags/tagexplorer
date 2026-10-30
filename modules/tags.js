@@ -156,27 +156,14 @@ function updateFilteredResultsSummary(filteredCount, totalCount) {
   if (typeof document === "undefined") return;
   const filteredResultsEl = document.getElementById("filtered-results");
   if (!filteredResultsEl) return;
-
-  if (activeTags.size > 0 || artistNameFilter) {
-    // Show summary when filters are active
-    const tagText =
-      activeTags.size > 0 ? `Tags: ${Array.from(activeTags).join(", ")}` : "";
-    const nameText = artistNameFilter
-      ? `Name filter: "${artistNameFilter}"`
-      : "";
-    const filterText = [tagText, nameText].filter((t) => t).join(" | ");
-
-    filteredResultsEl.innerHTML = `
-      <div class="filter-summary">
-        <div class="filter-count">Showing ${filteredCount} of ${totalCount} artists</div>
-        <div class="filter-details">${filterText}</div>
-      </div>
-    `;
-    filteredResultsEl.style.display = "block";
-  } else {
-    // Hide summary when no filters are active
-    filteredResultsEl.style.display = "none";
-  }
+  // Active tags show as removable pills and the name filter sits in the
+  // search box, so the summary only needs the count.
+  const format = (value) => Number(value || 0).toLocaleString();
+  const filtering = activeTags.size > 0 || Boolean(artistNameFilter);
+  filteredResultsEl.textContent = filtering
+    ? `${format(filteredCount)} of ${format(totalCount)} artists`
+    : `${format(totalCount)} artists`;
+  filteredResultsEl.style.display = "block";
 }
 
 /**

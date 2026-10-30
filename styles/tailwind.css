@@ -4723,3 +4723,108 @@ body[data-page="gallery"] .more-menu .streak-chip .streak-chip__tier {
   font-size: 0.75rem;
   color: var(--ui-muted, #94a3b8);
 }
+
+/* ==========================================================================
+   Cards, results bar and sort (redesign)
+   ========================================================================== */
+body[data-page="gallery"] .gallery-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+}
+body[data-page="gallery"] .artist-footer { gap: 0.25rem; }
+body[data-page="gallery"] .artist-name-link { color: inherit; text-decoration: none; }
+body[data-page="gallery"] .artist-name-link:hover { color: var(--ui-cyan); }
+.artist-meta { font-size: 0.75rem; color: var(--ui-muted, #94a3b8); min-height: 1em; }
+body[data-page="gallery"] .artist-actions {
+  display: flex;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 0.375rem !important;
+  margin-top: 0.375rem;
+}
+.card-icon {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+body[data-page="gallery"] .artist-actions > .card-icon-btn {
+  width: 2rem;
+  height: 2rem;
+  color: var(--ui-muted, #94a3b8);
+  filter: none !important;
+}
+body[data-page="gallery"] .artist-actions > .card-icon-btn:hover { color: var(--ui-text, #e2e8f0); }
+body[data-page="gallery"] .artist-actions > .card-icon-btn[aria-expanded="true"],
+body[data-page="gallery"] .artist-actions > .slideshow-toggle.active { color: var(--ui-cyan, #66f3ff); }
+body[data-page="gallery"] .artist-actions > .card-similar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 2rem;
+  padding: 0 0.625rem !important;
+  border-radius: 8px;
+  font: 600 0.75rem/1 Inter, system-ui, sans-serif !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none;
+  color: var(--ui-text, #e2e8f0);
+}
+body[data-page="gallery"][data-fold-mode="fold-cover"] .card-similar-btn span { display: none; }
+body[data-page="gallery"][data-fold-mode="fold-cover"] .artist-actions > .card-icon-btn { width: 1.875rem; height: 1.875rem; }
+@media (hover: none) {
+  body[data-page="gallery"] .artist-heart { opacity: 0.9; transform: none; }
+}
+
+/* Results bar: one-line count + sort */
+body[data-page="gallery"] .results-banner { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.results-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  font: 500 0.8125rem/1 Inter, system-ui, sans-serif;
+  color: var(--ui-muted, #94a3b8);
+}
+.results-sort select {
+  height: 2.125rem;
+  padding: 0 2rem 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: rgba(255, 255, 255, 0.04) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") right 0.6rem center / 0.9rem no-repeat;
+  color: var(--ui-text, #e2e8f0);
+  font: 500 0.8125rem/1 Inter, system-ui, sans-serif;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+.results-sort select:focus-visible { outline: 2px solid var(--ui-cyan, #66f3ff); outline-offset: 2px; }
+.results-sort option { background: var(--ui-panel, #161525); color: var(--ui-text, #e2e8f0); }
+body[data-page="gallery"] .gallery-results__bar { flex-wrap: wrap; }
+/* Sorting lives in the results bar now. */
+body[data-page="gallery"] .tag-explorer-sort { display: none; }
+body[data-page="gallery"] .selected-tags-label {
+  font: 600 0.6875rem/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: var(--ui-muted, #94a3b8);
+  text-transform: uppercase;
+}
+body[data-page="gallery"][data-fold-mode="fold-cover"] .artist-actions > .reload-button { display: none; }
+/* Cards size to their own content; an expanded tag list doesn't stretch the row. */
+body[data-page="gallery"] .gallery-grid { align-items: start; }
+body[data-page="gallery"] .artist-footer { justify-content: flex-start; flex: 0 0 auto; }
+body[data-page="gallery"] .artist-card.show-tags .artist-tags { display: flex; flex-wrap: wrap; gap: 0.25rem; margin-top: 0.25rem; }
+body[data-page="gallery"] .gallery-tag {
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--ui-line, rgba(255, 255, 255, 0.09));
+  background: rgba(255, 255, 255, 0.04);
+  font: 500 0.6875rem/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ui-muted, #94a3b8);
+}

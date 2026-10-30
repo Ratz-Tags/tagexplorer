@@ -1657,23 +1657,32 @@ function setupFoldModeSync({ foldAdapter, closeSettings }) {
   };
 }
 
+const SORT_STORAGE_KEY = 'te.sort';
+
+// Sort lives in the results bar; name is always the tiebreaker.
 function setupSortControls() {
-  const sortSelect = document.getElementById('sort-by');
-  if (sortSelect) {
-    sortSelect.addEventListener('change', () => {});
+  const select = document.getElementById('results-sort');
+  if (!select) return;
+  const apply = (value, { persist = true } = {}) => {
+    setSortMode(value === 'name' ? ['name'] : [value, 'name']);
+    if (!persist) return;
+    try {
+      localStorage.setItem(SORT_STORAGE_KEY, value);
+    } catch {
+      // storage unavailable
+    }
+  };
+  let saved = null;
+  try {
+    saved = localStorage.getItem(SORT_STORAGE_KEY);
+  } catch {
+    // storage unavailable
   }
-  const sortButtonElem = document.getElementById('sort-button');
-  if (sortButtonElem && sortSelect) {
-    sortButtonElem.addEventListener('click', () => {
-      setSortMode(sortSelect.value);
-    });
+  if (saved && Array.from(select.options).some((option) => option.value === saved)) {
+    select.value = saved;
+    if (saved !== 'name') apply(saved, { persist: false });
   }
-  const sortPreferenceElem = document.getElementById('sort-preference');
-  if (sortPreferenceElem) {
-    sortPreferenceElem.addEventListener('change', (e) => {
-      setSortPreference(e.target.value);
-    });
-  }
+  select.addEventListener('change', () => apply(select.value));
 }
 
 async function setupFiltersButton() {
