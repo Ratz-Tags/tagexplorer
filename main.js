@@ -4,7 +4,6 @@ import { initRouter } from './modules/router.js';
 import { initFoldAdapter } from './modules/fold-adapter.js';
 
 const PAGE_LAZY_MODULES = {
-  landing: () => import('./modules/pages/landing.js'),
   gallery: () => import('./modules/pages/gallery.js'),
   about: () => import('./modules/pages/about.js'),
   artist: () => import('./modules/pages/artist.js'),
@@ -41,7 +40,7 @@ async function bootstrap() {
     }
     const foldAdapter = foldAdapterInstance;
 
-    if (['landing', 'gallery', 'artist'].includes(pageId)) {
+    if (['gallery', 'artist'].includes(pageId)) {
       initWhisperVoice();
     }
 
@@ -60,7 +59,7 @@ async function bootstrap() {
     const loadModule = PAGE_LAZY_MODULES[pageId];
     if (loadModule) {
       const module = await loadModule();
-      const initializer = module.initPage || module.initGalleryPage || module.initLandingPage;
+      const initializer = module.initPage || module.initGalleryPage;
       if (typeof initializer === 'function') {
         const lifecycle = await initializer({ page: pageId, shell, foldAdapter });
         if (lifecycle && typeof lifecycle.beforeNavigate === 'function') {
@@ -77,7 +76,7 @@ async function bootstrap() {
       <div class="boot-error">
         <h1>Failed to initialize TagExplorer</h1>
         <p>${error?.message || 'An unknown error occurred.'}</p>
-        <p class="boot-error__hint">Refresh or return to the <a href="/" data-router-link>landing page</a>.</p>
+        <p class="boot-error__hint">Refresh, or <a href="${new URL('gallery/', import.meta.url)}">open the gallery</a>.</p>
       </div>
     `;
   }

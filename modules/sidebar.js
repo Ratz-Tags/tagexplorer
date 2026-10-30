@@ -5,13 +5,6 @@
 import { vibrate } from "./ui.js";
 import { getThumbnailUrl } from "./gallery.js";
 import { getActiveTags } from "./tags.js";
-import { createTTSToggleButton } from "./tts-toggle.js";
-
-if (typeof window !== "undefined") {
-  window.addEventListener("DOMContentLoaded", () => {
-    createTTSToggleButton();
-  });
-}
 
 let copiedArtists = new Set();
 
@@ -51,7 +44,6 @@ function showToast(message) {
   toast.textContent = message;
   document.body.appendChild(toast);
   speakToast(message);
-  createTTSToggleButton();
   // Suppress audio play errors
   const audioEl = document.getElementById('moan-audio');
   if (audioEl && audioEl.src && audioEl.src !== '' && audioEl.src !== 'null') {

@@ -1,19 +1,8 @@
-// Simple TTS toggle state and UI
+// Whisper on/off and intensity state, persisted in localStorage. The
+// controls live in the Settings panel (settings-panel.js).
 const STORAGE_KEY = "ttsEnabled";
 const INTENSITY_STORAGE_KEY = "ttsIntensity";
 const DEFAULT_INTENSITY = 2;
-const INTENSITY_LABELS = [
-  "Muted",
-  "Hushed",
-  "Teasing",
-  "Severe",
-];
-
-function describeIntensity(level) {
-  const index = Number.isFinite(Number(level)) ? Math.max(0, Math.min(INTENSITY_LABELS.length - 1, Math.floor(Number(level)))) : 0;
-  return INTENSITY_LABELS[index] || INTENSITY_LABELS[0];
-}
-
 let ttsEnabled = true;
 let ttsIntensity = DEFAULT_INTENSITY;
 let lastNonZeroIntensity = DEFAULT_INTENSITY;
@@ -81,8 +70,6 @@ function applyTTSEnabledState(options = {}) {
   if (typeof window !== "undefined") {
     window._ttsEnabled = ttsEnabled;
   }
-  updateTTSToggleButton();
-  updateIntensityControl();
   dispatchToggleEvent(didChange);
 }
 
@@ -91,8 +78,6 @@ function applyIntensityState(options = {}) {
   if (typeof window !== "undefined") {
     window._ttsIntensity = ttsIntensity;
   }
-  updateTTSToggleButton();
-  updateIntensityControl();
   dispatchIntensityEvent(didChange);
 }
 
@@ -188,103 +173,12 @@ function loadTTSPreferences() {
   applyIntensityState({ didChange: false });
 }
 
-function createTTSToggleButton() {
-  if (typeof document === "undefined") return;
-  const controls = document.querySelector(".audio-controls");
-  if (!controls) return;
-
-  let btn = document.getElementById("tts-toggle-btn");
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "tts-toggle-btn";
-    btn.className = "audio-pill";
-    btn.addEventListener("click", () => {
-      setTTSEnabled(!isTTSEnabled());
-    });
-    controls.appendChild(btn);
-  }
-  updateTTSToggleButton();
-}
-
-function createTTSIntensityControl() {
-  if (typeof document === "undefined") return;
-  const controls = document.querySelector(".audio-controls");
-  if (!controls) return;
-
-  let btn = document.getElementById("tts-intensity-btn");
-  if (!btn) {
-    btn = document.createElement("button");
-    btn.type = "button";
-    btn.id = "tts-intensity-btn";
-    btn.className = "audio-pill tts-intensity-btn";
-    btn.addEventListener("click", () => {
-      const current = getTTSIntensity();
-      const next = (current + 1) % 4;
-      setTTSIntensity(next);
-    });
-    btn.addEventListener("keydown", (event) => {
-      if (event.key === "ArrowRight" || event.key === "ArrowUp") {
-        event.preventDefault();
-        const next = Math.min(3, getTTSIntensity() + 1);
-        setTTSIntensity(next);
-      } else if (event.key === "ArrowLeft" || event.key === "ArrowDown") {
-        event.preventDefault();
-        const next = Math.max(0, getTTSIntensity() - 1);
-        setTTSIntensity(next);
-      }
-    });
-    controls.appendChild(btn);
-  }
-  updateIntensityControl();
-}
-
-function updateIntensityControl() {
-  if (typeof document === "undefined") return;
-  const btn = document.getElementById("tts-intensity-btn");
-  if (!btn) return;
-  const enabled = isTTSEnabled();
-  const intensity = getTTSIntensity();
-  const readable = describeIntensity(intensity);
-  const label = intensity === 0 ? "Muted" : readable;
-  btn.textContent = `🎚 ${label}`;
-  const ariaSuffix = !enabled ? " (muted)" : "";
-  btn.setAttribute("aria-label", `Whisper intensity ${label}${ariaSuffix}`);
-  btn.setAttribute("data-intensity", String(intensity));
-  btn.setAttribute("title", `Whisper intensity: ${label}`);
-  if (btn.classList && typeof btn.classList.toggle === "function") {
-    btn.classList.toggle("is-muted", !enabled || intensity === 0);
-  } else if (typeof btn.setAttribute === "function") {
-    btn.setAttribute("data-muted", (!enabled || intensity === 0) ? "true" : "false");
-  }
-}
-
-function updateTTSToggleButton() {
-  if (typeof document === "undefined") return;
-  const btn = document.getElementById("tts-toggle-btn");
-  if (!btn) return;
-
-  const enabled = isTTSEnabled();
-  const intensity = getTTSIntensity();
-  const readable = describeIntensity(enabled ? intensity : 0);
-  const label = enabled
-    ? `Disable whispered taunts (current intensity ${readable})`
-    : "Enable whispered taunts";
-  const text = enabled && intensity > 0 ? `🔊 Whisper ${readable}` : "🔇 Whisper Off";
-  btn.textContent = text;
-  btn.setAttribute("aria-pressed", enabled ? "true" : "false");
-  btn.setAttribute("aria-label", label);
-  btn.setAttribute("title", label);
-}
-
 // On load
 loadTTSPreferences();
 
 export {
   isTTSEnabled,
   setTTSEnabled,
-  createTTSToggleButton,
-  createTTSIntensityControl,
   getTTSIntensity,
   setTTSIntensity,
 };

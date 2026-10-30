@@ -30,7 +30,7 @@ Redesign **TagExplorer** into a sleek, modern, animated gallery that surfaces ar
 ---
 
 ## Information Architecture
-- `/` — Landing (ominous intro, disclaimer, Enter).  
+- `/` — Redirects to `/gallery/` (the landing page was removed).  
 - `/gallery/` — Main gallery grid + filters.  
 - `/artist/:id/` — Artist profile (preview, tags, links).  
 - `/about/` — Project info, disclaimers, credits.  
@@ -82,7 +82,7 @@ Breakpoints are width-only so ordinary laptops/desktops get the inner (docked) l
 
 ### Cover Display
 - 1-column gallery list.  
-- Bottom nav bar: Home, Filters, Settings, Mute, Motion.  
+- Bottom nav bar: Settings, Filters, Saved, Mute, More.  
 - Filters: bottom sheet modal.  
 - Motion minimized: opacity/translate only.  
 
@@ -136,6 +136,7 @@ Mood: {{EVENT_MOOD}} {{INTENSITY_TONE}}
 
 ### UX Rules on Fold4
 - Mute in bottom bar (cover) and top toolbar (inner).  
+- Voice, intensity, mute and motion live in the Settings panel (gear button).  
 - Auto-suppress during rapid scroll.  
 - Captions bottom-centered (cover), right column (inner).  
 
