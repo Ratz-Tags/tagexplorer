@@ -17,7 +17,7 @@ echo "📦 Installing dependencies..."
 npm install || echo "⚠️  No dependencies needed"
 
 echo "🔄 Running update script..."
-node scripts/updateKinkTags.js
+npm run update:data
 
 # Check if there are changes
 if git diff --quiet && git diff --cached --quiet; then

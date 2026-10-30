@@ -58,6 +58,7 @@ import { createTTSToggleButton, createTTSIntensityControl } from '../tts-toggle.
 import {
   initTagExplorer,
   toggleTagExplorer,
+  syncTagExplorerDock,
   setAllArtists as setExplorerArtists,
 } from '../tag-explorer.js';
 import { showAzureVoiceSelector } from '../azure-tts.js';
@@ -1200,25 +1201,29 @@ function setupAudioToggle() {
 }
 
 function setupMuteToggle() {
-  const muteBtn = document.getElementById('cover-mute-btn');
-  if (!muteBtn) return;
+  const muteButtons = Array.from(document.querySelectorAll('.mute-toggle'));
+  if (!muteButtons.length) return;
 
   const updateButtonState = (muted) => {
     const isMuted = Boolean(muted);
-    muteBtn.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
-    muteBtn.classList.toggle('is-active', isMuted);
-    muteBtn.dataset.state = isMuted ? 'muted' : 'unmuted';
-    const label = muteBtn.querySelector('.cover-command-label');
-    if (label) {
-      label.textContent = isMuted ? 'Muted' : 'Mute';
-    }
+    muteButtons.forEach((muteBtn) => {
+      muteBtn.setAttribute('aria-pressed', isMuted ? 'true' : 'false');
+      muteBtn.classList.toggle('is-active', isMuted);
+      muteBtn.dataset.state = isMuted ? 'muted' : 'unmuted';
+      const label = muteBtn.querySelector('[data-label]');
+      if (label) {
+        label.textContent = isMuted ? 'Muted' : 'Mute';
+      }
+    });
   };
 
   updateButtonState(typeof getGlobalMuteState === 'function' ? getGlobalMuteState() : false);
 
-  muteBtn.addEventListener('click', () => {
-    const muted = typeof toggleGlobalMute === 'function' ? toggleGlobalMute() : false;
-    updateButtonState(muted);
+  muteButtons.forEach((muteBtn) => {
+    muteBtn.addEventListener('click', () => {
+      const muted = typeof toggleGlobalMute === 'function' ? toggleGlobalMute() : false;
+      updateButtonState(muted);
+    });
   });
 
   document.addEventListener('audio:mutechange', (event) => {
@@ -1285,23 +1290,26 @@ async function setupDossierButton() {
 
 function setupMotionToggle(initialMode) {
   const desiredMode = initialMode || readMotionPreference();
-  const motionBtn = document.getElementById('cover-motion-btn');
+  const motionButtons = Array.from(document.querySelectorAll('.motion-toggle'));
+  let currentMode = desiredMode === 'reduced' ? 'reduced' : 'full';
 
   const updateButtonState = (mode) => {
-    if (!motionBtn) return;
     const normalized = mode === 'reduced' ? 'reduced' : 'full';
     const isReduced = normalized === 'reduced';
-    motionBtn.setAttribute('aria-pressed', isReduced ? 'true' : 'false');
-    motionBtn.setAttribute(
-      'aria-label',
-      isReduced ? 'Enable motion animations' : 'Reduce motion animations',
-    );
-    motionBtn.classList.toggle('is-active', isReduced);
-    motionBtn.dataset.state = normalized;
-    const label = motionBtn.querySelector('.cover-command-label');
-    if (label) {
-      label.textContent = isReduced ? 'Motion Off' : 'Motion';
-    }
+    currentMode = normalized;
+    motionButtons.forEach((motionBtn) => {
+      motionBtn.setAttribute('aria-pressed', isReduced ? 'true' : 'false');
+      motionBtn.setAttribute(
+        'aria-label',
+        isReduced ? 'Enable motion animations' : 'Reduce motion animations',
+      );
+      motionBtn.classList.toggle('is-active', isReduced);
+      motionBtn.dataset.state = normalized;
+      const label = motionBtn.querySelector('[data-label]');
+      if (label) {
+        label.textContent = isReduced ? 'Motion off' : 'Motion';
+      }
+    });
   };
 
   const applyAndUpdate = (mode) => {
@@ -1309,16 +1317,12 @@ function setupMotionToggle(initialMode) {
     updateButtonState(normalized);
   };
 
-  if (!motionBtn) {
-    applyAndUpdate(desiredMode);
-    return () => {};
-  }
-
   applyAndUpdate(desiredMode);
 
-  motionBtn.addEventListener('click', () => {
-    const nextMode = motionBtn.dataset.state === 'reduced' ? 'full' : 'reduced';
-    applyAndUpdate(nextMode);
+  motionButtons.forEach((motionBtn) => {
+    motionBtn.addEventListener('click', () => {
+      applyAndUpdate(currentMode === 'reduced' ? 'full' : 'reduced');
+    });
   });
 
   document.addEventListener('motion:change', (event) => {
@@ -1558,6 +1562,10 @@ function syncSidebarForFold(mode) {
   sidebar._setSidebarHidden(shouldHide);
 }
 
+// Set once the filter buttons are bound; before that the initial dock sync
+// would run against a command bar that isn't wired yet.
+let filtersReady = false;
+
 function setupFoldModeSync({ foldAdapter, closeSettings }) {
   const applyMode = (mode) => {
     const normalized = mode || 'default';
@@ -1578,6 +1586,7 @@ function setupFoldModeSync({ foldAdapter, closeSettings }) {
       document.body.classList.remove('filters-open');
     }
     syncSidebarForFold(normalized);
+    if (filtersReady) syncTagExplorerDock();
   };
 
   const currentMode =
@@ -1642,11 +1651,71 @@ async function setupFiltersButton() {
 
   document.addEventListener('tagFilters:toggle', (event) => {
     const isOpen = Boolean(event?.detail?.open);
+    const docked = document.body.dataset.foldMode === 'fold-inner';
     filterButtons.forEach((btn) => {
-      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      btn.setAttribute('aria-expanded', isOpen && !document.body.classList.contains('filters-collapsed') ? 'true' : 'false');
     });
-    document.body.classList.toggle('filters-open', isOpen);
+    document.body.classList.toggle('filters-open', isOpen && !docked);
   });
+
+  filtersReady = true;
+  syncTagExplorerDock();
+}
+
+// The docked filter column sits below the sticky app bar, whose height
+// changes with wrapping/fold mode, so expose it as a CSS variable.
+function trackAppBarHeight() {
+  const bar = document.querySelector('[data-app-bar]');
+  if (!bar || typeof ResizeObserver === 'undefined') return () => {};
+  const apply = () => {
+    document.documentElement.style.setProperty('--app-bar-h', `${Math.round(bar.getBoundingClientRect().height)}px`);
+  };
+  const observer = new ResizeObserver(apply);
+  observer.observe(bar);
+  apply();
+  return () => observer.disconnect();
+}
+
+function isTypingTarget(target) {
+  if (!target) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName ? target.tagName.toLowerCase() : '';
+  return tag === 'input' || tag === 'textarea' || tag === 'select';
+}
+
+function setupKeyboardShortcuts() {
+  const handler = (event) => {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+    const searchInput = document.getElementById('artist-name-filter');
+    if (event.key === 'Escape' && event.target === searchInput) {
+      searchInput.blur();
+      return;
+    }
+    if (isTypingTarget(event.target) || event.shiftKey) return;
+    switch (event.key) {
+      case '/':
+        if (!searchInput) return;
+        event.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+        break;
+      case 'f':
+      case 'F':
+        event.preventDefault();
+        toggleTagExplorer();
+        break;
+      case 'm':
+      case 'M':
+        event.preventDefault();
+        // audio.js broadcasts audio:mutechange, which syncs the buttons.
+        if (typeof toggleGlobalMute === 'function') toggleGlobalMute();
+        break;
+      default:
+        break;
+    }
+  };
+  document.addEventListener('keydown', handler);
+  return () => document.removeEventListener('keydown', handler);
 }
 
 async function setupForceFetch() {
@@ -1861,6 +1930,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
   setupSidebarToggle();
   setupSortControls();
   setupFiltersButton();
+  const shortcutsCleanup = setupKeyboardShortcuts();
+  const appBarCleanup = trackAppBarHeight();
   setupForceFetch();
   setupFavoritesButton();
   setupDossierButton();
@@ -1918,6 +1989,8 @@ export async function initGalleryPage({ foldAdapter } = {}) {
       if (typeof streakCleanup === 'function') {
         streakCleanup();
       }
+      shortcutsCleanup();
+      appBarCleanup();
     },
   };
 }

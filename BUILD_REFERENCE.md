@@ -14,7 +14,9 @@ npm run build:css
 
 ### Other Build Commands
 ```bash
-npm run update:tags     # Update kink tags from source
+npm run update:data     # Check Danbooru access, update kink tags + artists, refresh post counts
+npm run update:counts   # Refresh artist post counts only
+npm run update:tags     # Update kink tags + discover artists only
 npm run update:audio    # Generate audio file list
 npm run serve          # Start local dev server on port 8080
 ```

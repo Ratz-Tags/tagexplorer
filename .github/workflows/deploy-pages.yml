@@ -7,10 +7,7 @@ on:
       - master
       - Holding
     paths-ignore:
-      - 'artists.json'
-      - 'kink-tags.json'
-      - '.github/workflows/main.yml'
-      - '.github/workflows/Update.yml'
+      - '.github/workflows/update-data.yml'
   workflow_dispatch:
 
 permissions:
@@ -32,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install dependencies
         run: npm ci

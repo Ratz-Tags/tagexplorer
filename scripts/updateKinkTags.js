@@ -1,7 +1,22 @@
+// Re-checks the kink tag list against Danbooru, discovers artists for each
+// core+kink tag combo, and fills in post counts for newly found artists.
+// Nothing is written unless the run completes and the result passes sanity
+// checks; a refused or degraded run exits non-zero and leaves the data as is.
 import fs from 'fs/promises';
-import { getArtistImageCount } from '../modules/api.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import {
+  createDanbooruClient,
+  DanbooruBlockedError,
+  formatRefusal,
+  mapPool,
+  REFUSAL_HELP,
+} from './lib/danbooru.js';
+import { categorizeTags, flattenCategorizedTags, KINK_CATEGORY_RULES } from '../modules/tag-categories.js';
 
-import { categorizeTags, KINK_CATEGORY_RULES } from '../modules/tag-categories.js';
+const DATA_DIR = process.env.DATA_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const ARTISTS_PATH = path.join(DATA_DIR, 'artists.json');
+const KINK_TAGS_PATH = path.join(DATA_DIR, 'kink-tags.json');
 
 // List of core tags used to limit collected tags
 const coreTags = [
@@ -161,201 +176,83 @@ const extraTags = [
   'leather',
 ];
 
-// Basic throttle to avoid hammering Danbooru
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-const RATE_DELAY_MS = 300;
+const MIN_ARTIST_POSTS = Number(process.env.MIN_ARTIST_POSTS || 40);
+const DISCOVER_MAX_PAGES = Number(process.env.DISCOVER_MAX_PAGES || 100);
+// Guards against committing a degraded result (e.g. a partially refused run).
+const MAX_TAG_DROP_RATIO = Number(process.env.MAX_TAG_DROP_RATIO ?? 0.1);
+const MAX_ARTIST_DROP_RATIO = Number(process.env.MAX_ARTIST_DROP_RATIO ?? 0.05);
+const MAX_DISCOVER_FAILURE_RATIO = Number(process.env.MAX_DISCOVER_FAILURE_RATIO ?? 0.05);
 
-// Adaptive rate limiting and concurrency
-const MAX_CONCURRENCY = Number(process.env.DANBOORU_CONCURRENCY || 8);
-const BASE_DELAY_MS = Number(process.env.DANBOORU_BASE_DELAY_MS || 150);
-let dynamicDelay = BASE_DELAY_MS;
-let _active = 0;
-const _queue = [];
-async function withConcurrency(fn) {
-  if (_active >= MAX_CONCURRENCY) {
-    await new Promise((resolve) => _queue.push(resolve));
-  }
-  _active++;
-  try {
-    return await fn();
-  } finally {
-    _active--;
-    const next = _queue.shift();
-    if (next) next();
-  }
-}
-
-async function rateLimitedFetch(url, opts = {}, retries = 3) {
-  // Initial delay before acquiring a slot
-  if (dynamicDelay > 0) await sleep(dynamicDelay);
-  return withConcurrency(async () => {
-    let attempt = 0;
-    while (true) {
-      let resp;
-      try {
-        resp = await fetch(url, opts);
-      } catch (err) {
-        if (attempt >= retries) throw err;
-        attempt++;
-        dynamicDelay = Math.min(dynamicDelay * 1.5 + 50, 8000);
-        await sleep(dynamicDelay);
-        continue;
-      }
-
-      if (resp.status === 429 || resp.status === 503) {
-        // Backoff using Retry-After if provided
-        let wait = Math.max(dynamicDelay * 1.5 + 100, BASE_DELAY_MS);
-        const ra = resp.headers.get('retry-after');
-        if (ra) {
-          if (/^\d+$/.test(ra)) {
-            wait = Math.max(wait, parseInt(ra, 10) * 1000);
-          } else {
-            const ts = Date.parse(ra);
-            if (!Number.isNaN(ts)) wait = Math.max(wait, ts - Date.now());
-          }
-        }
-        dynamicDelay = Math.min(Math.max(dynamicDelay, Math.floor(wait / Math.max(1, MAX_CONCURRENCY))), 12000);
-        if (attempt >= retries) throw new Error(`HTTP ${resp.status} after retries`);
-        attempt++;
-        await sleep(wait);
-        continue;
-      }
-
-      if (!resp.ok && resp.status >= 500 && attempt < retries) {
-        attempt++;
-        dynamicDelay = Math.min(dynamicDelay * 1.5 + 100, 8000);
-        await sleep(dynamicDelay);
-        continue;
-      }
-
-      // Success: gently reduce delay toward base
-      if (resp.ok) {
-        dynamicDelay = Math.max(BASE_DELAY_MS, Math.floor(dynamicDelay * 0.9));
-      }
-      return resp;
-    }
-  });
-}
+const client = createDanbooruClient();
 
 function normalizeTag(tag) {
   return String(tag).trim().toLowerCase().replace(/\s+/g, '_');
 }
 
+// Only drops a tag when Danbooru answers that it doesn't exist; a failed
+// lookup keeps it (these lists are curated), refusals abort the run.
 async function tagExistsOnDanbooru(tag) {
   try {
-    const norm = normalizeTag(tag);
-    const resp = await rateLimitedFetch(`https://danbooru.donmai.us/tags.json?search[name]=${encodeURIComponent(norm)}&limit=1`);
-    if (!resp.ok) return false;
-    const data = await resp.json();
-    return data.length > 0 && (data[0].name?.toLowerCase?.() === norm);
+    return await client.tagExists(tag);
   } catch (err) {
-    console.warn(`⚠️ could not verify ${tag} on Danbooru: ${err.message}`);
+    if (err instanceof DanbooruBlockedError) throw err;
+    console.warn(`⚠️ could not verify ${tag} on Danbooru (${err.message}); keeping it`);
     return true;
   }
 }
 
-async function getPostCountForQuery(query) {
-  const url = `https://danbooru.donmai.us/counts/posts.json?tags=${encodeURIComponent(query)}`;
-  const resp = await rateLimitedFetch(url);
-  if (!resp.ok) throw new Error(`counts failed ${resp.status}`);
-  const data = await resp.json();
-  return data?.counts?.posts ?? 0;
-}
-
-async function getArtistTotalCount(artistName, cache) {
-  if (cache.has(artistName)) return cache.get(artistName);
-  const count = await getArtistImageCount(artistName);
-  cache.set(artistName, count);
-  return count;
-}
-
-async function buildTagArtistCounts(tags, artists) {
-  const totalCache = new Map();
-  const result = {};
-  for (const tag of tags) {
-    const withTag = artists.filter(a => Array.isArray(a.kinkTags) && a.kinkTags.includes(tag));
-    const rows = [];
-    // Concurrency for per-artist tag counts
-    const limit = Number(process.env.PER_TAG_CONCURRENCY || 6);
-    let idx = 0;
-    async function next() {
-      if (idx >= withTag.length) return;
-      const current = withTag[idx++];
-      try {
-        const tagCount = await getPostCountForQuery(`${current.artistName} ${tag}`);
-        if (tagCount) {
-          const totalPosts = await getArtistTotalCount(current.artistName, totalCache);
-          rows.push({ artistName: current.artistName, tagCount, totalPosts });
-        }
-      } catch (e) {
-        console.warn(`⚠️ count failed for ${current.artistName} ${tag}: ${e.message}`);
-      }
-      return next();
-    }
-    await Promise.all(Array.from({ length: limit }, next));
-    rows.sort((a, b) => b.tagCount - a.tagCount);
-    result[tag] = rows;
-  }
-  return result;
-}
-
-async function fetchPostsForQuery(query, page = 1, limit = 100) {
-  const url = `https://danbooru.donmai.us/posts.json?tags=${encodeURIComponent(query)}&limit=${limit}&page=${page}`;
-  const resp = await rateLimitedFetch(url);
-  if (!resp.ok) throw new Error(`posts failed ${resp.status}`);
-  return await resp.json();
-}
-
-async function discoverArtistsByCoreAndKink(coreTags, kinkTags, options = {}) {
-  const { maxPages = 100, perPage = 200, maxArtistsPerCombo = 0 } = options;
+async function discoverArtistsByCoreAndKink(cores, kinkTags) {
+  const combos = cores.flatMap((core) => kinkTags.map((tag) => [normalizeTag(core), normalizeTag(tag)]));
   const found = new Map();
-  for (const core of coreTags) {
-    for (const tag of kinkTags) {
-      const q = `${normalizeTag(core)} ${normalizeTag(tag)}`;
-      const collectedForCombo = new Set();
-      for (let p = 1; p <= maxPages; p++) {
-        let posts = [];
-        try {
-          posts = await fetchPostsForQuery(q, p, perPage);
-        } catch (e) {
-          console.warn(`⚠️ discover failed for ${q} p${p}: ${e.message}`);
-          break;
-        }
-        if (!Array.isArray(posts) || posts.length === 0) break;
-        for (const post of posts) {
-          const artistsStr = post.tag_string_artist || "";
-          if (!artistsStr) continue;
-          const names = artistsStr.split(" ").filter(Boolean);
-          for (const name of names) {
-            collectedForCombo.add(name);
-            if (!found.has(name)) found.set(name, new Set());
-            const set = found.get(name);
-            set.add(normalizeTag(core));
-            set.add(normalizeTag(tag));
-          }
-          if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
-        }
-        if (maxArtistsPerCombo && collectedForCombo.size >= maxArtistsPerCombo) break;
-        if (posts.length < perPage) break; // last page
+  let failedCombos = 0;
+  let done = 0;
+
+  await mapPool(combos, client.concurrency, async ([core, tag]) => {
+    const query = `${core} ${tag}`;
+    for (let page = 1; page <= DISCOVER_MAX_PAGES; page++) {
+      let posts;
+      try {
+        posts = await client.posts(query, { page, limit: 200, only: 'tag_string_artist' });
+      } catch (err) {
+        if (err instanceof DanbooruBlockedError) throw err;
+        console.warn(`⚠️ discover failed for ${query} p${page}: ${err.message}`);
+        failedCombos++;
+        break;
       }
+      if (!Array.isArray(posts) || posts.length === 0) break;
+      for (const post of posts) {
+        for (const name of String(post.tag_string_artist || '').split(' ').filter(Boolean)) {
+          if (!found.has(name)) found.set(name, new Set());
+          found.get(name).add(core).add(tag);
+        }
+      }
+      if (posts.length < 200) break;
     }
+    done++;
+    if (done % 100 === 0 || done === combos.length) {
+      console.log(`[discover ${done}/${combos.length}] ${found.size} artists found`);
+    }
+  });
+
+  const failureRatio = failedCombos / Math.max(1, combos.length);
+  if (failureRatio > MAX_DISCOVER_FAILURE_RATIO) {
+    throw new Error(`discovery failed for ${failedCombos}/${combos.length} tag combos`);
   }
   return found;
 }
 
 function mergeDiscoveredIntoArtists(existing, discoveredMap) {
-  const byName = new Map(existing.map((a) => [a.artistName, a]));
+  const byName = new Map(existing.map((a) => [a.artistName, { ...a }]));
   const added = [];
   for (const [artistName, tagSet] of discoveredMap.entries()) {
     const normName = String(artistName).trim();
-    const addTags = Array.from(tagSet);
     const entry = byName.get(normName);
     if (entry) {
-      const s = new Set(entry.kinkTags || []);
-      addTags.forEach((t) => s.add(t));
-      entry.kinkTags = Array.from(s).sort();
+      const merged = new Set(entry.kinkTags || []);
+      tagSet.forEach((t) => merged.add(t));
+      entry.kinkTags = Array.from(merged).sort();
     } else {
-      const newArtist = { artistName: normName, kinkTags: addTags.sort() };
+      const newArtist = { artistName: normName, kinkTags: Array.from(tagSet).sort() };
       byName.set(normName, newArtist);
       added.push(newArtist);
     }
@@ -364,178 +261,90 @@ function mergeDiscoveredIntoArtists(existing, discoveredMap) {
   return { updated, added };
 }
 
-async function consolidateCountsFromKinkTagArtists(artists) {
-  let data;
-  try {
-    const raw = await fs.readFile('kink-tag-artists.json', 'utf8');
-    data = JSON.parse(raw);
-  } catch {
-    return { artists, changed: false }; // File not present; nothing to consolidate
-  }
-  const byNameMax = new Map();
-  for (const tag of Object.keys(data || {})) {
-    const rows = Array.isArray(data[tag]) ? data[tag] : [];
-    for (const row of rows) {
-      const name = row?.artistName;
-      const total = Number(row?.totalPosts || 0);
-      if (!name) continue;
-      const prev = byNameMax.get(name) || 0;
-      if (total > prev) byNameMax.set(name, total);
+async function fillCounts(list, label) {
+  let filled = 0;
+  await mapPool(list, client.concurrency, async (artist) => {
+    try {
+      const count = await client.countPosts(artist.artistName);
+      if (Number.isInteger(count) && count > 0) {
+        artist.postCount = count;
+        filled++;
+      }
+    } catch (err) {
+      if (err instanceof DanbooruBlockedError) throw err;
+      console.warn(`⚠️ ${label} count failed for ${artist.artistName}: ${err.message}`);
     }
-  }
-  if (byNameMax.size === 0) return { artists, changed: false };
-  let changed = false;
-  const updated = artists.map((a) => {
-    const max = byNameMax.get(a.artistName);
-    if (typeof max === 'number' && max >= 0 && a.postCount !== max) {
-      changed = true;
-      return { ...a, postCount: max };
-    }
-    return a;
   });
-  return { artists: updated, changed };
+  return filled;
+}
+
+function assertNoLargeDrop(label, before, after, maxRatio) {
+  if (before > 0 && after < before * (1 - maxRatio)) {
+    throw new Error(`${label} would shrink from ${before} to ${after} (> ${(maxRatio * 100).toFixed(0)}% drop); refusing to write`);
+  }
 }
 
 async function updateKinkTags() {
-  let artists;
+  const artists = JSON.parse(await fs.readFile(ARTISTS_PATH, 'utf8'));
+  let previousTags = [];
   try {
-    artists = JSON.parse(await fs.readFile('artists.json', 'utf8'));
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      console.error("Error: 'artists.json' file not found. Please ensure the file exists in the current directory.");
-      process.exit(1);
-    } else {
-      throw err;
-    }
+    previousTags = flattenCategorizedTags(JSON.parse(await fs.readFile(KINK_TAGS_PATH, 'utf8')));
+  } catch {
+    // first run: nothing to compare against
   }
+
+  await client.preflight();
 
   const tagSet = new Set();
   for (const artist of artists) {
     const tags = artist.kinkTags || [];
-    if (!tags.some(tag => coreTags.includes(tag))) continue;
-    tags.forEach(tag => tagSet.add(tag));
+    if (!tags.some((tag) => coreTags.includes(tag))) continue;
+    tags.forEach((tag) => tagSet.add(tag));
   }
-
   for (const tag of extraTags) {
     const norm = normalizeTag(tag);
     if (await tagExistsOnDanbooru(norm)) {
       tagSet.add(norm);
     } else {
-      console.warn(`⚠️ skipped invalid Danbooru tag: ${tag} -> ${norm}`);
+      console.warn(`⚠️ skipped tag missing on Danbooru: ${tag}`);
     }
   }
-
-  const tags = Array.from(new Set(tagSet)).sort();
+  const tags = Array.from(tagSet).sort();
+  assertNoLargeDrop('kink-tags.json', previousTags.length, tags.length, MAX_TAG_DROP_RATIO);
   const categorizedTags = categorizeTags(tags, KINK_CATEGORY_RULES);
-  await fs.writeFile('kink-tags.json', JSON.stringify(categorizedTags, null, 2) + '\n');
-  console.log(`✅ kink-tags.json updated with ${tags.length} tags across ${categorizedTags.length} categories`);
 
-  // Discover artists by (coreTag + kinkTag) and augment artists.json
-  console.log('⏳ discovering artists by core+kink tags...');
-  const discovered = await discoverArtistsByCoreAndKink(coreTags, tags, { maxPages: 100, perPage: 200, maxArtistsPerCombo: 0 });
-  const { updated: updatedArtists, added } = mergeDiscoveredIntoArtists(artists, discovered);
+  console.log(`⏳ discovering artists across ${coreTags.length}×${tags.length} core+kink combos...`);
+  const discovered = await discoverArtistsByCoreAndKink(coreTags, tags);
+  const { updated, added } = mergeDiscoveredIntoArtists(artists, discovered);
 
-  // Set postCount for newly added artists with limited concurrency
   if (added.length) {
-    const limit = Number(process.env.NEW_ARTIST_COUNT_CONCURRENCY || 6);
-    let i = 0;
-    async function next() {
-      if (i >= added.length) return;
-      const a = added[i++];
-      try {
-        const c = await getArtistImageCount(a.artistName, { force: true });
-        if (Number.isInteger(c) && c > 0) a.postCount = c;
-      } catch (e) {
-        console.warn(`⚠️ postCount failed for ${a.artistName}: ${e.message}`);
-      }
-      return next();
-    }
-    await Promise.all(Array.from({ length: limit }, next));
+    console.log(`⏳ fetching post counts for ${added.length} new artists...`);
+    await fillCounts(added, 'new-artist');
+  }
+  const missing = updated.filter((a) => !added.includes(a) && (!Number.isInteger(a.postCount) || a.postCount <= 0));
+  if (missing.length) {
+    const filled = await fillCounts(missing, 'zero-count');
+    console.log(`ℹ️ refreshed ${filled}/${missing.length} zero or missing counts`);
   }
 
-  // Consolidate counts from existing kink-tag-artists.json (if present)
-  const consolidated = await consolidateCountsFromKinkTagArtists(updatedArtists);
-  let finalArtists = consolidated.artists;
+  const finalArtists = updated.filter((a) => Number.isInteger(a.postCount) && a.postCount >= MIN_ARTIST_POSTS);
+  const removed = updated.length - finalArtists.length;
+  if (removed > 0) console.log(`ℹ️ dropped ${removed} artists with fewer than ${MIN_ARTIST_POSTS} posts`);
+  assertNoLargeDrop('artists.json', artists.length, finalArtists.length, MAX_ARTIST_DROP_RATIO);
 
-  // Remove artists below minimum post count threshold (configurable)
-  const MIN_ARTIST_POSTS = Number(process.env.MIN_ARTIST_POSTS || 40);
-  const beforeCount = finalArtists.length;
-  const removedArtists = finalArtists.filter(a => !(Number.isInteger(a.postCount) && a.postCount >= MIN_ARTIST_POSTS));
-  finalArtists = finalArtists.filter(a => Number.isInteger(a.postCount) && a.postCount >= MIN_ARTIST_POSTS);
-  const removedCount = beforeCount - finalArtists.length;
-  if (removedCount > 0) {
-    console.log(`ℹ️ removed ${removedCount} artists with postCount < ${MIN_ARTIST_POSTS}`);
-    if (removedArtists.length <= 50) console.log('Removed artists:', removedArtists.map(a => a.artistName).join(', '));
-    else console.log('Removed sample:', removedArtists.slice(0,50).map(a => a.artistName).join(', ') + ' …');
-  }
-
-  let changed = JSON.stringify(artists) !== JSON.stringify(finalArtists);
-  if (changed) {
-    await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
-    console.log(`✅ artists.json updated (consolidated counts${added.length ? `, ${added.length} new` : ''})`);
-  } else {
-    console.log('ℹ️ no changes to artists.json');
-  }
-
-  // Always refresh zero/missing counts (fast pass) unless explicitly disabled
-  const REFRESH_ZERO_COUNTS = process.env.REFRESH_ZERO_COUNTS !== '0';
-  if (REFRESH_ZERO_COUNTS) {
-    const zeroList = finalArtists.filter(a => !Number.isInteger(a.postCount) || a.postCount <= 0);
-    if (zeroList.length) {
-      console.log(`⏳ refreshing ${zeroList.length} zero/missing artist post counts...`);
-      const limit = Number(process.env.ZERO_COUNT_CONCURRENCY || process.env.REFRESH_COUNTS_CONCURRENCY || 8);
-      let i = 0;
-      let anyChanged = false;
-      async function next() {
-        if (i >= zeroList.length) return;
-        const a = zeroList[i++];
-        try {
-          const c = await getArtistImageCount(a.artistName, { force: true });
-          if (Number.isInteger(c) && c > 0) {
-            a.postCount = c;
-            anyChanged = true;
-          }
-        } catch (e) {
-          console.warn(`⚠️ zero-count refresh failed for ${a.artistName}: ${e.message}`);
-        }
-        return next();
-      }
-      await Promise.all(Array.from({ length: limit }, next));
-      if (anyChanged) {
-        await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
-        console.log('✅ artists.json zero/missing counts refreshed');
-      } else {
-        console.log('ℹ️ no zero/missing counts could be refreshed');
-      }
-    }
-  }
-
-  // Optional: refresh all counts from API if requested
-  if (process.env.REFRESH_ALL_COUNTS === '1') {
-    console.log('⏳ refreshing all artist post counts from API...');
-    const limit = Number(process.env.REFRESH_COUNTS_CONCURRENCY || 8);
-    let i = 0;
-    async function next() {
-      if (i >= finalArtists.length) return;
-      const a = finalArtists[i++];
-      try {
-        const c = await getArtistImageCount(a.artistName, { force: true });
-        if (Number.isInteger(c) && c >= 0) a.postCount = c;
-      } catch (e) {
-        console.warn(`⚠️ refresh count failed for ${a.artistName}: ${e.message}`);
-      }
-      return next();
-    }
-    await Promise.all(Array.from({ length: limit }, next));
-    await fs.writeFile('artists.json', JSON.stringify(finalArtists, null, 2) + '\n');
-    console.log('✅ artists.json counts refreshed');
-  }
-
-  // Skip generating kink-tag-artists.json to save time
-  console.log('ℹ️ skipping kink-tag-artists.json generation.');
+  await fs.writeFile(KINK_TAGS_PATH, JSON.stringify(categorizedTags, null, 2) + '\n');
+  console.log(`✅ kink-tags.json: ${tags.length} tags across ${categorizedTags.length} categories (was ${previousTags.length})`);
+  await fs.writeFile(ARTISTS_PATH, JSON.stringify(finalArtists, null, 2) + '\n');
+  console.log(
+    `✅ artists.json: ${finalArtists.length} artists (${added.length} discovered, was ${artists.length}; ${client.stats.requests} requests)`,
+  );
 }
 
-updateKinkTags().catch(err => {
-  console.error('Failed to update kink tags:', err);
+updateKinkTags().catch((err) => {
+  if (err instanceof DanbooruBlockedError) {
+    console.error(`❌ ${formatRefusal(err.details)}\n\n${REFUSAL_HELP}`);
+  } else {
+    console.error('❌ Kink tag update failed; nothing was written:', err.message || err);
+  }
   process.exit(1);
 });
