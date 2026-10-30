@@ -1569,10 +1569,11 @@ function updateAudioHumiliationMeter() {
     document.body.appendChild(meter);
   }
   // Responsive placement
-  if (window.innerWidth <= 600) {
+  if (window.innerWidth <= 640) {
     meter.style.right = "0.5em";
     meter.style.left = "0.5em";
-    meter.style.bottom = "4.5em";
+    // Clear the phone bottom nav (and the home indicator).
+    meter.style.bottom = "calc(5.5rem + env(safe-area-inset-bottom, 0px))";
     meter.style.width = "auto";
     meter.style.maxWidth = "90vw";
   } else {

@@ -2854,27 +2854,27 @@ function openArtistOnDanbooru(artist) {
 /**
  * Filter gallery to show only favorited artists
  */
-async function filterGalleryToFavorites() {
-  const { filterToFavorites, getFavoritesCount } = await import('./favorites.js');
-  
-  if (getFavoritesCount() === 0) {
-    console.warn('No favorite artists to filter');
-    return;
-  }
-  
-  // Filter the current artist list to favorites only
-  filtered = filterToFavorites(allArtists);
-  
-  // Reset pagination and re-render
+// Shows only the named artists (a favorites list or a collection), keeping
+// the current sort; clearGalleryFilters() returns to the tag/name filters.
+function showArtistList(names) {
+  const wanted = new Set(names || []);
+  filtered = allArtists.filter((artist) => artist && wanted.has(artist.artistName));
   currentPage = 1;
   renderedPages.clear();
   totalPages = Math.ceil(filtered.length / artistsPerPage);
   pagination.current = 1;
   pagination.total = totalPages;
-  
   renderArtistsPage({ force: true });
-  
-  console.log(`Filtered to ${filtered.length} favorite artists`);
+  return filtered.length;
+}
+
+async function filterGalleryToFavorites() {
+  const { getAllFavorites } = await import('./favorites.js');
+  return showArtistList(getAllFavorites());
+}
+
+function findArtistByName(name) {
+  return allArtists.find((artist) => artist?.artistName === name) || null;
 }
 
 /**
@@ -2925,6 +2925,8 @@ export {
   openArtistOnDanbooru,
   enhanceGalleryImages,
   filterGalleryToFavorites,
+  showArtistList,
+  findArtistByName,
   clearGalleryFilters
 };
 // Note: forceFetchStyleTags is exported inline on line ~1692

@@ -4453,3 +4453,273 @@ html.lb-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   .lb__img, .lb__thumb { transition: none; }
 }
+
+/* ==========================================================================
+   More menu (command bar) + Saved panel (modules/saved-panel.js)
+   ========================================================================== */
+.more-menu {
+  position: fixed;
+  z-index: 11500;
+  display: flex;
+  flex-direction: column;
+  width: min(20rem, calc(100vw - 1rem));
+  padding: 0.375rem;
+  border-radius: 14px;
+  border: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: var(--ui-panel, #161525);
+  box-shadow: 0 24px 60px -16px rgba(0, 0, 0, 0.75);
+  font-family: Inter, system-ui, sans-serif;
+}
+.more-menu[hidden] { display: none; }
+body[data-page="gallery"] .more-menu .more-menu__item {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+  min-height: 0;
+  padding: 0.55rem 0.625rem;
+  border: 0 !important;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ui-text, #e2e8f0) !important;
+  font: 500 0.875rem/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: left;
+  box-shadow: none !important;
+  transform: none !important;
+  overflow: visible;
+  cursor: pointer;
+}
+body[data-page="gallery"] .more-menu .more-menu__item::before,
+body[data-page="gallery"] .more-menu .more-menu__item::after { display: none; }
+body[data-page="gallery"] .more-menu .more-menu__item:hover,
+body[data-page="gallery"] .more-menu .more-menu__item:focus-visible {
+  background: rgba(255, 255, 255, 0.07);
+  outline: none;
+}
+.more-menu__item > .tb-icon { grid-row: 1 / span 2; width: 1.15rem; height: 1.15rem; color: var(--ui-muted, #94a3b8); }
+.more-menu__item > small { grid-column: 2; font-size: 0.75rem; color: var(--ui-muted, #94a3b8); font-weight: 400; letter-spacing: normal; text-transform: none; }
+.more-menu__item[aria-pressed="true"] > .tb-icon { color: var(--ui-cyan, #66f3ff); }
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__label { display: inline; font: inherit; letter-spacing: normal; text-transform: none; }
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__value { font-weight: 700; color: var(--ui-cyan, #66f3ff); }
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__suffix { text-transform: lowercase; }
+body[data-page="gallery"] .more-menu .streak-chip[aria-pressed="false"] { opacity: 0.65; }
+body[data-page="gallery"] .more-menu .dossier-toggle[data-has-entries='true']::after {
+  display: block;
+  content: '';
+  position: absolute;
+  top: 0.9rem;
+  right: 0.75rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--ui-cyan, #66f3ff);
+}
+body[data-page="gallery"] .more-menu .dossier-toggle { position: relative; }
+.more-menu__divider { height: 1px; margin: 0.375rem 0.25rem; background: var(--ui-line, rgba(255, 255, 255, 0.09)); }
+body[data-page="gallery"][data-fold-mode="fold-cover"] .more-menu {
+  left: 0.5rem;
+  right: 0.5rem;
+  top: auto;
+  bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  width: auto;
+}
+
+/* Saved panel */
+.saved { position: fixed; inset: 0; z-index: 11800; }
+.saved[hidden] { display: none; }
+html.saved-open { overflow: hidden; }
+.saved__backdrop { position: absolute; inset: 0; background: rgba(5, 4, 12, 0.55); }
+.saved__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(26rem, 100vw);
+  padding: calc(1rem + env(safe-area-inset-top, 0px)) 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+  border-left: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: var(--ui-base, #0c0b16);
+  color: var(--ui-text, #e2e8f0);
+  font-family: Inter, system-ui, sans-serif;
+  box-shadow: -24px 0 60px -20px rgba(0, 0, 0, 0.7);
+}
+.saved__head { display: flex; align-items: center; justify-content: space-between; }
+.saved__title { margin: 0; font: 600 1.125rem/1.2 Inter, system-ui, sans-serif; letter-spacing: normal; text-transform: none; text-shadow: none !important; }
+.saved__close {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-muted, #94a3b8);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.saved__close:hover { background: rgba(255, 255, 255, 0.07); color: var(--ui-text, #e2e8f0); }
+.saved__lists { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.saved__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: transparent;
+  color: var(--ui-muted, #94a3b8);
+  font: 500 0.8125rem/1 Inter, system-ui, sans-serif;
+  cursor: pointer;
+}
+.saved__tab[aria-selected="true"] {
+  border-color: color-mix(in oklch, var(--ui-pink, #ff64d4) 60%, transparent);
+  background: color-mix(in oklch, var(--ui-pink, #ff64d4) 18%, transparent);
+  color: var(--ui-text, #e2e8f0);
+}
+.saved__count { font-size: 0.6875rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: rgba(255, 255, 255, 0.08); }
+.saved__new { display: flex; gap: 0.375rem; }
+.saved__new input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--ui-text, #e2e8f0);
+  font-size: 0.875rem;
+}
+.saved__new button, .saved__actions button, .results-scope button {
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  border-radius: 10px;
+  border: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--ui-text, #e2e8f0);
+  font: 500 0.8125rem/1 Inter, system-ui, sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.saved__new button { background: var(--ui-cyan, #66f3ff); color: #0c0b16; border-color: transparent; font-weight: 600; }
+.saved__actions { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+.saved__actions button:hover:not(:disabled), .results-scope button:hover { background: rgba(255, 255, 255, 0.1); }
+.saved__actions button:disabled { opacity: 0.45; cursor: default; }
+.saved__actions button[hidden] { display: none; }
+.saved__actions [data-act="delete"] { color: #fda4af; }
+.saved__artists { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1 1 auto; display: flex; flex-direction: column; gap: 0.125rem; }
+.saved__artist { display: flex; align-items: center; gap: 0.25rem; }
+.saved__open {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.55rem 0.625rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-text, #e2e8f0);
+  font: 500 0.875rem/1.2 Inter, system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.saved__open > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saved__open:hover { background: rgba(255, 255, 255, 0.06); }
+.saved__meta { flex: 0 0 auto; font-size: 0.75rem; color: var(--ui-muted, #94a3b8); }
+.saved__remove {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-muted, #94a3b8);
+  cursor: pointer;
+}
+.saved__remove:hover { background: rgba(253, 164, 175, 0.12); color: #fda4af; }
+.saved__empty { margin: 0; color: var(--ui-muted, #94a3b8); font-size: 0.875rem; }
+.saved__empty[hidden] { display: none; }
+.saved__tab:focus-visible, .saved__open:focus-visible, .saved__remove:focus-visible, .saved__close:focus-visible,
+.saved__actions button:focus-visible, .saved__new button:focus-visible, .results-scope button:focus-visible {
+  outline: 2px solid var(--ui-cyan, #66f3ff);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .saved__panel {
+    top: auto;
+    left: 0;
+    width: 100%;
+    max-height: 85vh;
+    border-left: 0;
+    border-top: 1px solid var(--ui-line-strong, rgba(255, 255, 255, 0.16));
+    border-radius: 18px 18px 0 0;
+  }
+}
+
+/* "Showing <list>" chip in the results bar */
+.results-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.25rem 0.25rem 0.25rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklch, var(--ui-pink, #ff64d4) 50%, transparent);
+  background: color-mix(in oklch, var(--ui-pink, #ff64d4) 12%, transparent);
+  color: var(--ui-text, #e2e8f0);
+  font: 500 0.8125rem/1 Inter, system-ui, sans-serif;
+}
+.results-scope button { height: 1.875rem; border-radius: 999px; }
+
+/* Audio panel: closable, and kept above the phone bottom nav */
+.audio-header { display: flex; align-items: center; gap: 0.5rem; }
+.audio-close {
+  margin-left: auto;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ui-muted, #94a3b8);
+  cursor: pointer;
+}
+.audio-close:hover { background: rgba(255, 255, 255, 0.08); color: var(--ui-text, #e2e8f0); }
+.audio-close:focus-visible { outline: 2px solid var(--ui-cyan, #66f3ff); outline-offset: 2px; }
+body[data-fold-mode="fold-cover"] .audio-panel {
+  left: 0.5rem;
+  right: 0.5rem;
+  min-width: 0;
+  transform: none;
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  max-height: calc(100vh - 7.5rem);
+  overflow-y: auto;
+}
+
+/* Toasts sit at the bottom so they never cover the search box */
+body[data-page="gallery"] .toast-popup {
+  top: auto;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100vw - 2rem);
+  text-align: center;
+}
+body[data-page="gallery"][data-fold-mode="fold-cover"] .toast-popup {
+  bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+}
+/* Phones: the bottom nav carries Saved/Mute/More, so the toolbar row goes. */
+body[data-page="gallery"][data-fold-mode="fold-cover"] .command-bar-safe-area--top { display: none; }
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__suffix,
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__tier {
+  font: inherit;
+  font-size: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+}
+body[data-page="gallery"] .more-menu .streak-chip .streak-chip__tier {
+  font-size: 0.75rem;
+  color: var(--ui-muted, #94a3b8);
+}
