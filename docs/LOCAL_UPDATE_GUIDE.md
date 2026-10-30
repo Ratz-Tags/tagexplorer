@@ -1,115 +1,47 @@
-# Local Update Guide
+# Data Update Guide
 
-## Running Updates Locally
+`artists.json` and `kink-tags.json` are refreshed from the Danbooru API by the
+**Update Danbooru data** workflow (`.github/workflows/update-data.yml`):
 
-Instead of waiting for GitHub Actions (which can take an hour), you can run the update scripts locally and create PRs manually.
+- **Daily** — refreshes every artist's post count.
+- **Weekly (Sunday)** — re-checks the kink tag list, discovers new artists for each core+kink tag combo, then refreshes counts.
+- **Manually** — Actions → *Update Danbooru data* → *Run workflow* (`full` or `counts`).
 
-### Quick Start
+Each run checks Danbooru access first, commits the result straight to the branch it ran on, and redeploys GitHub Pages so the live site picks up the new data.
 
-**Windows (PowerShell):**
-```powershell
-# Just update the files locally
-npm run update:tags:local
+## When Danbooru refuses requests
 
-# Or use the helper script to create a PR automatically
-.\scripts\update-kink-tags-local.ps1 -CreatePR
-```
+If Danbooru answers with HTTP 401/403 (for example a Cloudflare block on GitHub's runners), the run **fails with the response details in the job summary and writes nothing**. The scripts never fall back to stale or partial data. To fix it:
 
-**Linux/Mac (Bash):**
+1. Create an API key on Danbooru (*My Account → API Key*, read access is enough).
+2. Add two repository secrets (*Settings → Secrets and variables → Actions*): `DANBOORU_LOGIN` (your username) and `DANBOORU_API_KEY`.
+3. Re-run the workflow. If it is still refused, run the update locally (below).
+
+## Running locally
+
 ```bash
-# Just update the files locally
-npm run update:tags:local
-
-# Or use the helper script to create a PR automatically
-./scripts/update-kink-tags-local.sh --pr
+npm run check:danbooru   # confirm this machine can reach the API
+npm run update:data      # tags + artist discovery + post counts
 ```
 
-### Manual Process
+Then commit `artists.json` / `kink-tags.json` and push to `Holding`; pushing data files triggers the Pages deploy. The helper scripts do the same and can open a PR instead:
 
-1. **Run the update script:**
-   ```bash
-   npm run update:tags:local
-   # or
-   node scripts/updateKinkTags.js
-   ```
-
-2. **Check what changed:**
-   ```bash
-   git status
-   git diff
-   ```
-
-3. **Create a branch and commit:**
-   ```bash
-   git checkout -b update/kink-tags-$(date +%Y%m%d)
-   git add -A
-   git commit -m "chore: update kink-tags.json (local run)"
-   ```
-
-4. **Push and create PR:**
-   ```bash
-   git push -u origin update/kink-tags-$(date +%Y%m%d)
-   # Then create PR on GitHub, or use GitHub CLI:
-   gh pr create --title "chore: update kink-tags.json" --base Holding
-   ```
-
-### Benefits of Local Updates
-
-- ✅ **Faster**: Run on your machine, no queue time
-- ✅ **Control**: See progress in real-time
-- ✅ **Flexibility**: Stop/resume as needed
-- ✅ **No blocking**: GitHub Actions won't interfere
-- ✅ **PR workflow**: Review changes before merging
-
-### GitHub Actions vs Local
-
-**GitHub Actions (Current):**
-- Runs automatically on schedule
-- Creates PR automatically
-- Uses GitHub's compute time
-- Can take 1+ hours
-- May conflict with other workflows
-
-**Local (Recommended):**
-- Run when you want
-- Create PR when ready
-- Uses your machine
-- Can monitor progress
-- No conflicts
-
-### Workflow Recommendations
-
-1. **For regular updates**: Run locally weekly/monthly
-2. **For urgent updates**: Run locally immediately
-3. **For automated updates**: Keep GitHub Actions as backup
-4. **For testing**: Always test locally first
-
-### Troubleshooting
-
-**Script takes too long?**
-- The script is rate-limited to respect Danbooru API
-- It processes many tags and artists
-- This is normal - expect 30-60 minutes
-
-**Want to speed it up?**
-- Adjust `MAX_CONCURRENCY` in the script (default: 8)
-- Adjust `BASE_DELAY_MS` (default: 150ms)
-- Set environment variables:
-  ```bash
-  export DANBOORU_CONCURRENCY=12
-  export DANBOORU_BASE_DELAY_MS=100
-  npm run update:tags:local
-  ```
-
-**GitHub CLI not installed?**
 ```bash
-# Windows (via winget or scoop)
-winget install GitHub.cli
-
-# Mac
-brew install gh
-
-# Linux
-# See: https://github.com/cli/cli/blob/trunk/docs/install_linux.md
+./scripts/update-kink-tags-local.sh --pr          # Linux/Mac
+.\scripts\update-kink-tags-local.ps1 -CreatePR    # Windows
 ```
 
+Individual steps: `npm run update:tags` (tags + discovery) and `npm run update:counts` (counts only).
+
+## Tuning
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `DANBOORU_LOGIN` / `DANBOORU_API_KEY` | — | Authenticate requests |
+| `DANBOORU_USER_AGENT` | `TagExplorer-DataUpdater/2.0 (…)` | Identifying User-Agent sent with every request |
+| `DANBOORU_CONCURRENCY` | `6` | Parallel requests |
+| `DANBOORU_BASE_DELAY_MS` | `150` | Delay before each request (backs off on 429/5xx) |
+| `DISCOVER_MAX_PAGES` | `100` | Pages of 200 posts scanned per tag combo |
+| `MIN_ARTIST_POSTS` | `40` | Artists below this post count are dropped |
+| `MAX_FAILURE_RATIO` | `0.05` | Count lookups allowed to fail before the run is rejected |
+| `MAX_TAG_DROP_RATIO` / `MAX_ARTIST_DROP_RATIO` | `0.1` / `0.05` | Largest shrink allowed before a run is rejected |

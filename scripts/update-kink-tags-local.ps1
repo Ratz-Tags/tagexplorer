@@ -18,7 +18,11 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "🔄 Running update script..." -ForegroundColor Cyan
-node scripts/updateKinkTags.js
+npm run update:data
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "❌ Update failed; nothing to commit." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
 
 # Check if there are changes
 $hasChanges = $false

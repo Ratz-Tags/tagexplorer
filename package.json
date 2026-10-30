@@ -7,6 +7,9 @@
     "test": "node --test",
     "update:tags": "node scripts/updateKinkTags.js",
     "update:tags:local": "node scripts/updateKinkTags.js",
+    "update:counts": "node scripts/updateCounts.js",
+    "update:data": "node scripts/check-danbooru.js && node scripts/updateKinkTags.js && node scripts/updateCounts.js",
+    "check:danbooru": "node scripts/check-danbooru.js",
     "update:audio": "node scripts/generate-audio-list.js",
     "build:css": "tailwindcss -i styles/tailwind.css -o style.css --minify",
     "serve": "npx http-server -c-1 . -p 8080 --silent"
