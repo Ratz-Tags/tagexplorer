@@ -66,7 +66,7 @@ import {
   syncTagExplorerDock,
   setAllArtists as setExplorerArtists,
 } from '../tag-explorer.js';
-import { showAzureVoiceSelector } from '../azure-tts.js';
+import { openVoiceSettings } from '../whisper-voice.js';
 import { configureWhisperCatalog, dispatchWhisperEvent } from '../tts-dispatcher.js';
 import {
   evaluateRitualTriggers,
@@ -953,30 +953,15 @@ function setupRitualObserver() {
 
 function setupVoiceSelectorButton() {
   const audioControls = document.querySelector('.audio-controls');
-  if (!audioControls) return;
-
-  let voiceBtn = document.getElementById('azure-voice-style-btn');
-  if (!voiceBtn) {
-    voiceBtn = document.createElement('button');
-    voiceBtn.type = 'button';
-    voiceBtn.id = 'azure-voice-style-btn';
-    voiceBtn.className = 'audio-pill';
-    voiceBtn.textContent = 'Voice & Style';
-    voiceBtn.setAttribute('aria-haspopup', 'dialog');
-    voiceBtn.setAttribute('aria-expanded', 'false');
-    voiceBtn.addEventListener('click', () => {
-      showAzureVoiceSelector();
-    });
-    audioControls.appendChild(voiceBtn);
-  }
-  if (!voiceBtn.dataset.selectorBound) {
-    const updateExpandedState = (event) => {
-      const isOpen = Boolean(event?.detail?.open);
-      voiceBtn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    };
-    document.addEventListener('azureTTS:selector', updateExpandedState);
-    voiceBtn.dataset.selectorBound = 'true';
-  }
+  if (!audioControls || document.getElementById('whisper-voice-btn')) return;
+  const voiceBtn = document.createElement('button');
+  voiceBtn.type = 'button';
+  voiceBtn.id = 'whisper-voice-btn';
+  voiceBtn.className = 'audio-pill';
+  voiceBtn.textContent = 'Voice';
+  voiceBtn.setAttribute('aria-haspopup', 'dialog');
+  voiceBtn.addEventListener('click', () => openVoiceSettings());
+  audioControls.appendChild(voiceBtn);
 }
 
 function setupThemeToggle() {

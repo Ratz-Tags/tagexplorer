@@ -245,7 +245,7 @@ function getCaptionForState() {
     return `${levelLabel}. Awaiting ASMR pack.`;
   }
   if (ttsActive) {
-    return `${levelLabel}. Whisper ducked for Azure line.`;
+    return `${levelLabel}. Ducked for a whisper line.`;
   }
   return `${levelLabel}. Pressure ${pressurePercent}%.`;
 }

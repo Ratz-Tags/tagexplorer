@@ -1,4 +1,4 @@
-import { ensureDefaultWhisperVoice } from './modules/azure-tts.js';
+import { initWhisperVoice } from './modules/whisper-voice.js';
 import { mountShell } from './modules/shell.js';
 import { initRouter } from './modules/router.js';
 import { initFoldAdapter } from './modules/fold-adapter.js';
@@ -42,7 +42,7 @@ async function bootstrap() {
     const foldAdapter = foldAdapterInstance;
 
     if (['landing', 'gallery', 'artist'].includes(pageId)) {
-      await ensureDefaultWhisperVoice();
+      initWhisperVoice();
     }
 
     initRouter({

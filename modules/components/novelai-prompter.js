@@ -1021,18 +1021,12 @@ export async function initNovelAIPrompter(artists = [], kinkTags = [], kinkTagsB
         try {
           const degradingLine = await generateDegradingLine(result.kinkTags, scene, character);
           if (degradingLine) {
-            // Trigger Azure TTS with seductive whisper
             try {
-              const { azureSpeak } = await import('../azure-tts.js');
-              // Use seductive/whispering style with appropriate intensity
-              await azureSpeak(degradingLine, {
-                style: 'whispering',
-              }, {
-                intensity: 2, // Normal intensity for seductive whispers
-                event: 'prompter-degrading',
-              });
+              const { speakWhisper } = await import('../whisper-voice.js');
+              // Not awaited: the prompt shows while the line plays.
+              speakWhisper(degradingLine, { event: 'prompter-degrading', lane: 2 }).catch(() => {});
             } catch (ttsError) {
-              console.warn('[NovelAI Prompter] Azure TTS not available:', ttsError);
+              console.warn('[NovelAI Prompter] Whisper voice not available:', ttsError);
               // Silently fail - TTS is optional
             }
           }
@@ -1368,7 +1362,7 @@ function showSettingsModal() {
               </label>
             </div>
             <small style="color: oklch(60% 0.05 260); font-size: 11px; display: block; margin-top: 4px;">
-              When enabled, AI will generate seductive degrading lines based on detected kinks and speak them via Azure TTS
+              When enabled, AI will generate seductive degrading lines based on detected kinks and whisper them aloud
             </small>
           </div>
           
