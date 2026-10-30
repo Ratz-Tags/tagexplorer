@@ -42,7 +42,7 @@ function getCopiedCount() {
  */
 
 function speakToast() {
-  // Toast notifications remain visual-only to avoid Azure whisper overlap.
+  // Toast notifications remain visual-only to avoid overlapping the whispers.
 }
 
 function showToast(message) {

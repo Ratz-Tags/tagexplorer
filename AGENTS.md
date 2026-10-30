@@ -2,7 +2,7 @@
 
 This consolidated document merges all prior specs:
 1. **Base redesign** (gallery, humiliation factor).  
-2. **Moodboard & Azure Whisper TTS**.  
+2. **Moodboard & Whisper TTS**.  
 3. **Galaxy Z Fold4–first extension**.  
 
 ---
@@ -11,7 +11,7 @@ This consolidated document merges all prior specs:
 Redesign **TagExplorer** into a sleek, modern, animated gallery that surfaces artists (curated via Danbooru tag filters). The site must:  
 - Present artists in a gallery filtered by tags.  
 - Emphasize a **humiliation/discomfort theme** through copy, visuals, motion, and audio.  
-- Use **Azure TTS (whisper-only voices)** to deliver whispered, teasing/guilting lines.  
+- Use **free whisper TTS** (expressive cloud voice prompted to whisper, device-voice fallback) to deliver whispered, teasing/guilting lines.  
 - Be fully **mobile-first with special optimization for Galaxy Z Fold4** (cover + inner display).  
 - Remain polished, navigable, and performant despite hostile/teasing UX layer.  
 
@@ -24,7 +24,7 @@ Redesign **TagExplorer** into a sleek, modern, animated gallery that surfaces ar
 - **Data Source:** Pre-generated JSON: `{artist_id, name, preview, tags[], links}`.  
 - **Persistence:** localStorage for filters, preferences, TTS, humiliation mode.  
 - **Hosting:** GitHub Pages (static).  
-- **Audio/TTS:** Azure Cognitive Services Speech, **whisper-only voices** enforced.  
+- **Audio/TTS:** Puter.js cloud voice (OpenAI `gpt-4o-mini-tts`, prompted to whisper) with the browser's `speechSynthesis` as fallback. **No API keys** in the repo or the deploy.  
 - **Accessibility:** Captions for all TTS lines; prefers-reduced-motion respected; safe-area insets respected on Fold4.  
 
 ---
@@ -63,7 +63,7 @@ Redesign **TagExplorer** into a sleek, modern, animated gallery that surfaces ar
 - Easing: sticky, uncanny cubic-bezier(.4,-0.2,.2,1.2).  
 
 ### Audio/TTS
-- Azure **whispering style voices only**.  
+- Every cloud line is **prompted to whisper**; the mood follows the event and intensity.  
 - Captions mirrored on screen.  
 - Random rotation of whisper voices to avoid repetition.  
 
@@ -102,24 +102,23 @@ Breakpoints are width-only so ordinary laptops/desktops get the inner (docked) l
 
 ---
 
-## Azure Whisper TTS Spec
+## Whisper TTS Spec
 
-### Runtime Voice Filtering
-- Query Azure voices at init.  
-- Filter to only whisper-capable voices.  
-- Rotate randomly or round-robin.  
-- If none found: disable TTS gracefully.  
+### Engines (`modules/whisper-voice.js`)
+- **Cloud (opt-in, free):** Puter.js, loaded lazily from `https://js.puter.com/v2/`, calls `puter.ai.txt2speech(text, { provider: 'openai', model: 'gpt-4o-mini-tts', voice, instructions })`. Puter is "user-pays": each listener signs in once with their own free Puter account, so the site needs no key.  
+- **Device (default):** the browser's `speechSynthesis`, slower and quieter per intensity (it cannot whisper).  
+- Sign-in only ever starts from the Voice dialog, never from a taunt; a signed-out listener hears the device voice.  
+- After a cloud failure (usage limit, network) the session falls back to the device voice.  
+- Rotate cloud voices (shimmer, nova, sage, coral) without immediate repeats, or pin one. Recently spoken lines replay from memory.  
 
-### SSML Template
-```xml
-<speak version="1.0" xml:lang="en-US">
-  <voice name="{{VOICE}}">
-    <mstts:express-as style="whispering">
-      <prosody rate="-10%" volume="-25%">Caught you narrowing it down again, hm?</prosody>
-    </mstts:express-as>
-  </voice>
-</speak>
+### Delivery Prompt (replaces the SSML template)
 ```
+Whisper softly and close, breathy and intimate, as if leaning in to the listener's ear.
+Never raise your voice. Slow pacing with small pauses.
+Mood: {{EVENT_MOOD}} {{INTENSITY_TONE}}
+```
+- Event moods: tag add = teasing/amused, stack = mocking, clear = softly accusing, artist open = pleased/possessive, idle = bored tease, back = smug.  
+- Intensity tones: 1 = gentle and hushed, 2 = confident and teasing, 3 = colder and contemptuous.  
 
 ### Event-to-Line Map
 - Tag add → “You really need *that* tag?”  
@@ -192,7 +191,7 @@ Breakpoints are width-only so ordinary laptops/desktops get the inner (docked) l
 ## Acceptance Criteria
 - Works on Fold4 cover + inner displays with continuity.  
 - Gallery filters + humiliation layer fully functional.  
-- TTS uses whisper-only Azure voices with captions.  
+- TTS whispers (cloud voice prompted to whisper, device fallback) with captions.  
 - A11y: keyboard, TalkBack, captions, reduced motion.  
 - Visual style = neon/glass, motion-heavy, but performant.  
 
@@ -230,5 +229,5 @@ Breakpoints are width-only so ordinary laptops/desktops get the inner (docked) l
 - Static build for GitHub Pages.  
 - Tailwind config with foldable screens.  
 - Example datasets (`artists.json`, `tts_lines.json`).  
-- `tts.js` with Azure whisper integration.  
-- README with setup + Azure keys config.  
+- `modules/whisper-voice.js` (Puter cloud whisper + device fallback).  
+- README with setup (no API keys needed).  

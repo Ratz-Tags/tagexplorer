@@ -1,7 +1,4 @@
-import {
-  azureSpeak,
-  composeWhisperSSML,
-} from './azure-tts.js';
+import { speakWhisper, stopWhisper } from './whisper-voice.js';
 import {
   isTTSEnabled,
   getTTSIntensity,
@@ -45,7 +42,6 @@ let generalFallback = [];
 let captionRoot = null;
 let captionTextEl = null;
 let captionTimer = null;
-let audioEl = null;
 
 let lastTriggerTimes = new Map();
 let globalCooldownUntil = 0;
@@ -127,22 +123,6 @@ function ensureCaptionRoot() {
   captionRoot.appendChild(captionTextEl);
   document.body.appendChild(captionRoot);
   return captionRoot;
-}
-
-function ensureAudioElement() {
-  if (typeof window === 'undefined') return null;
-  if (audioEl && document.body.contains(audioEl)) return audioEl;
-  audioEl = document.getElementById('whisper-audio-element');
-  if (!audioEl) {
-    audioEl = document.createElement('audio');
-    audioEl.id = 'whisper-audio-element';
-    audioEl.setAttribute('aria-hidden', 'true');
-    audioEl.setAttribute('preload', 'auto');
-    audioEl.className = 'whisper-audio-element hidden';
-    document.body.appendChild(audioEl);
-  }
-  audioEl.volume = 1;
-  return audioEl;
 }
 
 function hideCaptionSoon() {
@@ -269,71 +249,32 @@ function getTagLineForIntensity(tag, lane, fallback) {
   return fallback || null;
 }
 
-async function playLineThroughAzure(text, eventKey, lane) {
-  try {
-    const { ssml, voice, style, intensity } = composeWhisperSSML(text, {
-      intensity: lane,
-      event: eventKey,
-      rotate: true,
-    });
-    const url = await azureSpeak(text, { ssml, voice, style, intensity }, {
-      event: eventKey,
-      intensity: lane,
-    });
-    if (!url) return false;
-    const audio = ensureAudioElement();
-    if (!audio) return false;
-    if (!audio.paused) {
-      try {
-        audio.pause();
-      } catch (error) {
-        // ignore pause errors
-      }
-    }
-    audio.currentTime = 0;
-    audio.src = url;
-    audio.play().catch(() => {});
+async function playLine(text, eventKey, lane) {
+  const notify = (detail) => {
     try {
       document.dispatchEvent(
         new CustomEvent('humiliationAudio:tts', {
-          detail: { state: 'start', event: eventKey, lane, intensity },
+          detail: { event: eventKey, lane, intensity: lane, ...detail },
         }),
       );
     } catch (error) {
-      console.warn('[tts-dispatcher] failed to dispatch humiliation start', error);
+      console.warn('[tts-dispatcher] failed to dispatch humiliation audio event', error);
     }
+  };
+  let started = false;
+  const reason = await speakWhisper(text, {
+    event: eventKey,
+    lane,
+    onStart: (engine) => {
+      started = true;
+      notify({ state: 'start', engine });
+    },
+  });
+  if (started) notify({ state: 'stop', reason });
+}
 
-    const cleanup = (reason = 'ended') => {
-      audio.removeEventListener('ended', onEnded);
-      audio.removeEventListener('pause', onPause);
-      audio.removeEventListener('error', onError);
-      try {
-        document.dispatchEvent(
-          new CustomEvent('humiliationAudio:tts', {
-            detail: { state: 'stop', reason, event: eventKey, lane, intensity },
-          }),
-        );
-      } catch (error) {
-        console.warn('[tts-dispatcher] failed to dispatch humiliation stop', error);
-      }
-    };
-
-    const onEnded = () => cleanup('ended');
-    const onPause = () => {
-      if (!audio.ended && audio.currentTime > 0) {
-        cleanup('pause');
-      }
-    };
-    const onError = () => cleanup('error');
-
-    audio.addEventListener('ended', onEnded, { once: true });
-    audio.addEventListener('pause', onPause);
-    audio.addEventListener('error', onError, { once: true });
-    return true;
-  } catch (error) {
-    console.warn('[tts-dispatcher] Failed to play whisper', error);
-    return false;
-  }
+function isGloballyMuted() {
+  return typeof document !== 'undefined' && document.body?.classList.contains('audio-muted');
 }
 
 function shouldSuppressForScroll(now) {
@@ -405,7 +346,7 @@ function dispatchWhisperEvent(eventKey, options = {}) {
     return { skipped: true, reason: 'no-line' };
   }
 
-  const enabled = isTTSEnabled();
+  const enabled = isTTSEnabled() && !isGloballyMuted();
   updateCaption(line, { muted: !enabled });
   lastTriggerTimes.set(key, now);
   globalCooldownUntil = now + GLOBAL_COOLDOWN_MS;
@@ -415,7 +356,9 @@ function dispatchWhisperEvent(eventKey, options = {}) {
     return { skipped: true, text: line, reason: 'tts-disabled' };
   }
 
-  playLineThroughAzure(line, key, lane);
+  playLine(line, key, lane).catch((error) => {
+    console.warn('[tts-dispatcher] Failed to play whisper', error);
+  });
   return { text: line, intensity: lane };
 }
 
@@ -426,8 +369,12 @@ if (
   document.addEventListener('tts:toggle', (event) => {
     const enabled = Boolean(event?.detail?.enabled);
     if (!enabled) {
+      stopWhisper();
       updateCaption('Whispers muted', { muted: true });
     }
+  });
+  document.addEventListener('audio:mutechange', (event) => {
+    if (event?.detail?.muted) stopWhisper();
   });
 }
 

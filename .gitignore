@@ -2,6 +2,7 @@
 azure-tts.local.js
 # Ignore local API keys
 openrouter-api.local.js
+novelai-api.local.js
 .github/instructions/*
 .github/copilot-instructions.md
 .github/prompts/promptsfile.prompt.md
